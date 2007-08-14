@@ -1,0 +1,21 @@
+$module Refal5;
+
+$entry Prout;
+$entry Print;
+$entry Card;
+$entry Br;
+$entry Dg;
+$entry Open;
+$entry Get;
+$entry Put;
+$entry Putout;
+$entry Arg;
+$entry Exit;
+$entry FileExist;
+$entry ExistFile;
+$entry FileExists;
+$entry FileExist-T;
+$entry ExistFile-T;
+$entry FileExists-T;
+
+$end Refal5.

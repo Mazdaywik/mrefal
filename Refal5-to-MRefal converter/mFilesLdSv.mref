@@ -1,0 +1,31 @@
+$MODULE MFilesLdSv;
+
+$IMPORT Refal5;
+
+$ENTRY Load
+	e.FileName =
+		<Refal5::Open 'r' 10 e.FileName>
+		<DoLoad <Refal5::Get 10> >;
+
+DoLoad {
+	0 = <Refal5::Open 'r' 10 'nul'>;
+	e.Line 0 = (e.Line) <Refal5::Open 'r' 10 'nul'>;
+	e.Line = (e.Line) <DoLoad <Refal5::Get 10> >;
+}
+
+$ENTRY Save
+	(e.FileName) e.Content =
+		<Refal5::Open 'w' 10 e.FileName>
+		<DoSave e.Content>;
+
+Nil e.X = ;
+
+DoSave {
+	(e.Line) e.Tail =
+		<Nil <Refal5::Putout 10 e.Line> >
+		<DoSave e.Tail>;
+
+	= <Refal5::Open 'r' 10 'nul'>;
+}
+
+$END MFilesLdSv.

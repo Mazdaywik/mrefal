@@ -1,0 +1,33 @@
+$MODULE MExtTable;
+
+$IMPORT MR2M-Error;
+
+// Внутренний формат ( (e.Name(e.Qualified))* )
+
+$ENTRY Create {
+	= ();
+}
+
+$ENTRY Add {
+	(e.Aliases) (e.ModName) e.Function ', ' e.Tail =
+		<Add
+			( e.Aliases (e.Function (e.ModName '::' e.Function)) )
+			( e.ModName )
+			e.Tail
+		>;
+
+	(e.Aliases) (e.ModName) e.Function ';' =
+		( e.Aliases (e.Function (e.ModName '::' e.Function)) );
+
+	t.Table (e.ModName) e.Other =
+		<MR2M-Error::Halt 'Invalid function list: ' e.Other>;
+}
+
+$ENTRY Qualify {
+	( e.Begin (e.FnName(e.Qualified)) e.End ) e.FnName =
+		e.Qualified;
+
+	( e.Other ) e.FnName = e.FnName;
+}
+
+$END MExtTable.

@@ -1,0 +1,12 @@
+$module Refal5;
+
+$entry Prout { }
+$entry Card { }
+$entry Br { }
+$entry Dg { }
+$entry Open { }
+$entry Get { }
+$entry Put { }
+$entry Putout { }
+
+$end Refal5.

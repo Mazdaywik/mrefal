@@ -1,0 +1,147 @@
+*$FROM Error
+$EXTERN Error;
+
+*$FROM Modules
+$EXTERN SymName, OutName;
+
+$ENTRY CreateContext {
+	= (
+		(ModulesList
+			/* ( (Name 'Refal5')
+				(Sym <SymName 'Refal5'>)
+				(Out <OutName 'Refal5'>)
+				(Src None)
+				(StartPoint None)
+				(InitPoint None)
+				(Status CompileComplete)
+			) */
+		)
+	);
+}
+
+$ENTRY UpdateModuleInfo {
+	(
+		(ModulesList
+			e.OtherModules-B
+			( (Name e.ModName) e.Options )
+			e.OtherModules-E
+		)
+	) (e.ModName) e.NewOptions =
+		(
+			(ModulesList
+				e.OtherModules-B
+				( (Name e.ModName) <UpdateOptions (e.Options) e.NewOptions> )
+				e.OtherModules-E
+			)
+		);
+
+	( (ModulesList e.OtherModules) )
+	(e.ModName) e.NewOptions =
+		( (ModulesList e.OtherModules
+			( (Name e.ModName)
+				<UpdateOptions
+					( (Sym None)
+						(Out None)
+						(Src None)
+						(StartPoint None)
+						(InitPoint None)
+						(Status Unknown)
+					) e.NewOptions
+				>
+			)
+		) );
+}
+
+$ENTRY LastModule {
+	( (ModulesList
+		e.Modules-B
+		( (Name e.ModName) e.Info )
+		e.Modules-E
+	) ) e.ModName =
+		( (ModulesList
+			e.Modules-B e.Modules-E
+			( (Name e.ModName) e.Info )
+		) );
+}
+
+UpdateOptions {
+	( (s.Option e.OldVal) e.OldOptions )
+	e.NewOptions-B (s.Option e.NewVal) e.NewOptions-E =
+		(s.Option e.NewVal)
+		<UpdateOptions
+			( e.OldOptions )
+			e.NewOptions-B
+			e.NewOptions-E
+		>;
+
+	( t.Option e.OldOptions ) e.NewOptions =
+		t.Option <UpdateOptions (e.OldOptions) e.NewOptions>;
+
+	() = ;
+
+	() e.NewOptions =
+		<Error
+			'F' 'Unknown options in function Context::UpdateOptions: '
+			e.NewOptions
+		>;
+}
+
+$ENTRY DeleteContext {
+	t.Context = ;
+}
+
+* <ExtractOption t.Context s.Option e.ModName>
+*	== t.Context Found e.Option
+*	== t.Context ModuleNotFound
+*	!fail abort!
+$ENTRY ExtractOption {
+	( (ModulesList e.Modules-B ( (Name e.ModName) e.Options ) e.Modules-E) )
+	s.Option e.ModName =
+		( (ModulesList e.Modules-B
+				( (Name e.ModName) e.Options )
+				e.Modules-E
+			)
+		) Found <FindOption s.Option e.Options>;
+
+	t.Context s.Option e.ModName = t.Context ModuleNotFound;
+}
+
+FindOption {
+	s.Option e.Options-B (s.Option e.Value) e.Options-E =
+		e.Value;
+}
+
+$ENTRY GetProgName {
+	( (ModulesList
+		e.Modules
+		( (Name e.LastModule) e.Info )
+	) ) =
+		( (ModulesList
+			e.Modules
+			( (Name e.LastModule) e.Info )
+		) ) e.LastModule
+}
+
+* <ExtractModuleList t.Context>
+*	== t.Context (e.ModuleName)*
+$ENTRY ExtractModulesList {
+	( (ModulesList e.Modules) ) =
+		<DoExtractModulesList
+			( (ModulesList) )
+			e.Modules
+		>;
+}
+
+DoExtractModulesList {
+	( (e.ModulesList) )
+	e.Modules
+	( (Name e.LastName) e.LastInfo ) =
+		<DoExtractModulesList
+			( (e.ModulesList
+				( (Name e.LastName) e.LastInfo )
+			) )
+			e.Modules
+		> (e.LastName);
+
+	( (e.ModulesList) ) = ( (e.ModulesList) );
+}

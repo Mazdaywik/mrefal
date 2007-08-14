@@ -1,0 +1,28 @@
+
+.mref:
+
+Module = '$module' ModuleName ';' ModuleBody '$end' ModuleName '.' .
+ModuleName = IDENTIFIER .
+ModuleBody = ModuleElement+ .
+ModuleElement = ImportBlock | FunctionDefinion .
+ImportBlock = '$import' ModuleName ';' .
+FunctionDefinion = [ '$entry' ] FunctionName FunctionBody .
+FunctionName = IDENTIFIER .
+FunctionBody = Block | Sentense .
+Block = '{' Sentense* '}' .
+Sentense = PatternExpr '=' ResultExpr ';' .
+PatternExpr = PatternTerm* .
+PatternTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
+	| '(' PatternExpr ')' | DQWORD .
+ResultExpr = ResultTerm* .
+ResultTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
+	| '(' ResultExpr ')' | DQWORD | FunctionCall .
+FunctionCall = '<' Callee ResultExpr '>' .
+Callee = FunctionName | ModuleNameName '::' FunctionName .
+
+.msym:
+
+SymModule = '$module' ModuleName ';' SymModuleBody '$end' ModuleName '.' .
+SymModuleBody = SymModuleElement* .
+SymModuleElement = FunctionDeclaration | ImportBlock .
+FunctionDeclaration = '$entry' FunctionName ';' .

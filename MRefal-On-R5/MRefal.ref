@@ -1,0 +1,90 @@
+*$FROM Context
+$EXTERN CreateContext, DeleteContext;
+
+*$FROM Compiler
+$EXTERN CompileByModuleName, CompileByFileName;
+
+*$FROM Linker
+$EXTERN Link;
+
+*$FROM Error
+$EXTERN Error;
+
+*$FROM Modules
+$EXTERN CanonicalModuleName;
+
+$ENTRY Go { = <StartCompiling>; }
+
+StartCompiling {
+	= <Results
+		<Link
+			<CompileList <CreateContext> <LoadModuleList> >
+		>
+	>;
+}
+
+Results {
+	t.Context = <DeleteContext t.Context>;
+}
+
+LoadModuleList {
+	= <DoLoadModuleList () 2 <Arg 1>>;
+}
+
+DoLoadModuleList {
+	(e.Modules) 2 =
+		<Error 'F' 'Command line error: use MRefal module1 module2'>;
+
+	(e.Modules) s.NextNumArg =
+		e.Modules;
+
+	(e.Modules) s.NextNumArg e.ModuleOrFile =
+		<DoLoadModuleList
+			(e.Modules <ModuleOrFile e.ModuleOrFile>)
+			<Add s.NextNumArg 1>
+			<Arg s.NextNumArg>
+		>;
+}
+
+ModuleOrFile {
+	e.Name = <SwModuleOrFile (<Lower e.Name>) e.Name>;
+}
+
+SwModuleOrFile {
+	( e.FnameName '.mref' ) e.FnameNameExtCase =
+		(File e.FnameNameExtCase);
+	( e.ModNameLower ) e.ModNameCase =
+		(Module <CanonicalModuleName e.ModNameCase>);
+}
+
+CompileList {
+	t.Context e.Modules =
+		<CompileFilesFromList t.Context e.Modules (Delim)>;
+}
+
+CompileFilesFromList {
+	t.Context (File e.FileName) e.Modules =
+		<CompileFilesFromList
+			<CompileByFileName t.Context e.FileName> e.Modules
+		>;
+	
+	t.Context (Module e.ModName) e.Modules =
+		<CompileFilesFromList
+			t.Context e.Modules (Module e.ModName)
+		>;
+
+	t.Context (Delim) e.ModulesOnly =
+		<CompileModulesFromList
+			t.Context e.ModulesOnly
+		>;
+}
+
+CompileModulesFromList {
+	t.Context (Module e.ModName) e.Modules =
+		<CompileModulesFromList
+			<CompileByModuleName t.Context e.ModName> e.Modules
+		>;
+
+	t.Context =
+		t.Context;
+}

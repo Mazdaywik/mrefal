@@ -1,0 +1,202 @@
+F1 { e.i2=<Prout e.i2 >; }
+
+F4 { e.i2=<Print e.i2 >; }
+
+F6 {=<Card >; }
+
+F8 {
+e.i9 '=' e.i10=<Br e.i9 '=' e.i10 >;
+}
+
+F12 { e.i9=<Dg e.i9 >; }
+
+F14 {
+s.i15 s.i16 e.i17=<Open s.i15 s.i16 e.i17 >;
+}
+
+F19 { s.i16=<Get s.i16 >; }
+
+F21 { s.i16 e.i22=<Put s.i16 e.i22 >; }
+
+F24 { s.i16 e.i22=<Putout s.i16 e.i22 >; }
+
+F26 { s.i27=<Arg s.i27 >; }
+
+F29 { s.i30=<Exit s.i30 >; }
+
+F32 { e.i33=<ExistFile e.i33 >; }
+
+F35 { e.i33=<ExistFile e.i33 >; }
+
+F36 { e.i33=<ExistFile e.i33 >; }
+
+F37 {
+e.i33=<ExistFile e.i33 > e.i33;
+}
+
+F38 {
+e.i33=<ExistFile e.i33 > e.i33;
+}
+
+F39 {
+e.i33=<ExistFile e.i33 > e.i33;
+}
+
+F40 {
+e.i41=
+<F1 'HALTED. ' e.i41 ><F29 1 >;
+}
+
+
+F42 {
+=
+( );
+}
+
+F43 {
+( e.i44 )( e.i45 ) e.i46 ', ' e.i47=
+<F43( e.i44( e.i46( e.i45 '::' e.i46 ) ) )( e.i45 ) e.i47 >;
+( e.i44 )( e.i45 ) e.i46 ';'=
+( e.i44( e.i46( e.i45 '::' e.i46 ) ) );
+t.i48( e.i45 ) e.i49=
+<F40 'Invalid function list: ' e.i49 >;
+}
+
+F50 {
+( e.i51( e.i52( e.i53 ) ) e.i54 ) e.i52=
+e.i53;
+( e.i49 ) e.i52=
+e.i52;
+}
+
+
+F55 {
+e.i33=
+<F14 'r' 10 e.i33 ><F56<F19 10 > >;
+}
+
+F56 {
+0=
+<F14 'r' 10 'nul' >;
+e.i22 0=
+( e.i22 )<F14 'r' 10 'nul' >;
+e.i22=
+( e.i22 )<F56<F19 10 > >;
+}
+
+F57 {
+( e.i33 ) e.i58=
+<F14 'w' 10 e.i33 ><F59 e.i58 >;
+}
+
+F60 {
+e.i61=
+;
+}
+
+F59 {
+( e.i22 ) e.i47=
+<F60<F24 10 e.i22 > ><F59 e.i47 >;
+=
+<F14 'r' 10 'nul' >;
+}
+
+
+F62 {
+e.i33=
+<F63<F42 >( )<F55 e.i33 > >;
+}
+
+F63 {
+t.i48( e.i64 )( '*$FROM Error' )( '$EXTERN ' e.i65 ) e.i47=
+<F63<F43 t.i48( 'MError' ) e.i65 >( e.i64( '$IMPORT MError;' ) ) e.i47 >;
+t.i48( e.i64 )( '*$FROM ' e.i45 )( '$EXTERN ' e.i65 ) e.i47=
+<F63<F43 t.i48( e.i45 ) e.i65 >( e.i64( '$IMPORT ' e.i45 ';' ) ) e.i47 >;
+t.i48( e.i64 )( '*$FROM ' e.i45 ) e.i66=
+<F40 '$EXTERN after *$FROM expected' >;
+t.i48( e.i64 )( '$EXTERN ' e.i65 ) e.i66=
+<F40 'Unexpected $EXTERN' >;
+t.i48( e.i64 ) t.i49 e.i47=
+<F63 t.i48( e.i64 t.i49 ) e.i47 >;
+t.i48( e.i64 )=
+t.i48 e.i64;
+}
+
+
+F67 {
+=
+<F68<F26 1 > >;
+}
+
+F68 {
+=
+<F40 'Command line error. Type r5-2-mref reffile' >;
+e.i33 '.ref'=
+e.i33;
+e.i49=
+<F40 'Command line error. Type reffile name' >;
+}
+
+F69 {
+=
+<F67 > '.mref';
+}
+
+F70 {
+=
+<F67 > '.ref';
+}
+
+
+F71 {
+t.i48 e.i72=
+<F73 t.i48( ) e.i72 >;
+}
+
+F73 {
+t.i48( e.i74 )( e.i51 '<' e.i54 ) e.i47=
+<F73 t.i48( e.i74( e.i51 '<'<F75 t.i48<F76 e.i54 > > ) ) e.i47 >;
+t.i48( e.i74 ) t.i77 e.i47=
+<F73 t.i48( e.i74 t.i77 ) e.i47 >;
+t.i48( e.i74 )=
+<F57(<F69 > )( '$MODULE '<F67 > ';' )( ) e.i74( )( '$END '<F67 > '.' ) >;
+}
+
+F76 {
+' ' e.i47=
+( ' ' e.i47 );
+'>' e.i47=
+( '>' e.i47 );
+'(' e.i47=
+( '(' e.i47 );
+'<' e.i47=
+( '<' e.i47 );
+=
+( );
+s.i49 e.i47=
+s.i49<F76 e.i47 >;
+}
+
+F75 {
+t.i48 e.i78( e.i79 )=
+<F50 t.i48 e.i78 ><F80 t.i48 e.i79 >;
+}
+
+F80 {
+t.i48 e.i51 '<' e.i54=
+e.i51 '<'<F75 t.i48<F76 e.i54 > >;
+t.i48 e.i22=
+e.i22;
+}
+
+
+F81 {
+=
+<F71<F62<F70 > > >;
+}
+
+
+
+$ENTRY Go { = 
+	<F81>
+;}

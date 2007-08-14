@@ -1,0 +1,2 @@
+/* Необходим для утилиты ref5make */
+$ENTRY VotTebeEntryPoint { = ; }

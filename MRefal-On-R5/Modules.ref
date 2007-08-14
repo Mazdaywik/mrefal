@@ -1,0 +1,16 @@
+$ENTRY CanonicalModuleName {
+	s.Initial e.Tail =
+		<Upper s.Initial> <Lower e.Tail>;
+}
+
+$ENTRY SymName {
+	e.ModName = 'Defs\\' e.ModName '.rsym';
+}
+
+$ENTRY OutName {
+	e.ModName = 'ROut\\' e.ModName '.rout';
+}
+
+$ENTRY SrcName {
+	e.ModName = e.ModName '.mref';
+}

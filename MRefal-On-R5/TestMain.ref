@@ -1,0 +1,127 @@
+F1 { e.i2=<Prout e.i2 >; }
+
+F4 {=<Card >; }
+
+F6 {
+e.i7 '=' e.i8=<Br e.i7 '=' e.i8 >;
+}
+
+F10 { e.i7=<Dg e.i7 >; }
+
+F12 {
+s.i13 s.i14 e.i15=<Open s.i13 s.i14 e.i15 >;
+}
+
+F17 { s.i14=<Get s.i14 >; }
+
+F19 { s.i14 e.i20=<Put s.i14 e.i20 >; }
+
+F22 { s.i14 e.i20=<Putout s.i14 e.i20 >; }
+
+F24 { s.i25=<Arg s.i25 >; }
+
+F27 { s.i28=<Exit s.i28 >; }
+
+F30 { e.i31=<ExistFile e.i31 >; }
+
+F33 { e.i31=<ExistFile e.i31 >; }
+
+F34 { e.i31=<ExistFile e.i31 >; }
+
+F35 {
+e.i31=<ExistFile e.i31 > e.i31;
+}
+
+F36 {
+e.i31=<ExistFile e.i31 > e.i31;
+}
+
+F37 {
+e.i31=<ExistFile e.i31 > e.i31;
+}
+
+F38 {
+e.i39 'x' e.i40=
+e.i40 'y' e.i39;
+=
+;
+}
+
+F41 {
+s.i42 e.i43=
+<F41 e.i43 > s.i42;
+=
+;
+}
+
+F44 {
+e.i20=
+<F45( ) e.i20 >;
+}
+
+F45 {
+( e.i46 ) 'a' e.i43=
+<F45( e.i46 'b' ) e.i43 >;
+( e.i46 ) 'A' e.i43=
+<F45( e.i46 'B' ) e.i43 >;
+( e.i46 ) s.i39 e.i43=
+<F45( e.i46 s.i39 ) e.i43 >;
+( e.i46 )=
+e.i46;
+}
+
+F47 {
+=
+Init;
+}
+
+
+F48 {
+e.i2=
+<F49( ) e.i2 >;
+}
+
+F50 {
+=
+<F1 'PrintBrackets initialized' >;
+}
+
+F49 {
+( e.i51 )( e.i52 ) e.i43=
+<F1 e.i51 '(' ><F49( e.i51 ' ' ) e.i52 ><F1 e.i51 ')' ><F49( e.i51 ) e.i43 >;
+( e.i51 ) e.i53( e.i52 ) e.i43=
+<F1 e.i51 e.i53 ><F49( e.i51 )( e.i52 ) e.i43 >;
+( e.i51 ) e.i53=
+<F1 e.i51 e.i53 >;
+}
+
+
+F54 {
+=
+<F1 'Type very long literal, very long literal, very long litera'
+'l, very long literal, very long literal, very long literal, very'
+' long literal, very long literal, very long literal, very long l'
+'iteral, very long literal, very long literal, very long literal,'
+' very long literal, very long literal, very long literal' ><F1 "T"
+"ype very long double quoted literal, very long double quoted lit"
+"eral, very long double quoted literal, very long double quoted l"
+"iteral, very long double quoted literal, very long double quoted"
+" literal, very long double quoted literal, very long double quot"
+"ed literal, very long double quoted literal, very long double qu"
+"oted literal, very long double quoted literal, very long double "
+"quoted literal, very long double quoted literal, very long doubl"
+"e quoted literal, very long double quoted literal, very long dou"
+"ble quoted literal" ><F1 'Null arg = '<F24 0 > ><F1<F38 'execute' > ><F1
+<F41 'Улыбок тебе дед М0кар' > ><F1<F44 'Abracadabra' > ><F48(( Function
+( 'swap' )( Ptr 'a' )( Ptr 'b' ) )( Var 'temp' )( Assign( 'temp' )
+( Deref( 'a' ) ) )( Assign( Deref( 'a' ) )( Deref( 'b' ) ) )( Assign
+( Deref( 'b' ) )( 'temp' ) ) ) >;
+}
+
+
+
+$ENTRY Go { = 
+	<F47>
+	<F50>
+	<F54>
+;}

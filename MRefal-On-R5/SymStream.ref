@@ -1,0 +1,147 @@
+/*
+	** Описание абстрактного типа данных "Символьный поток" SymStream **
+	Определены операции:
+
+	<NewSymStream e.FileName> == t.SymStream
+	создаёт новый поток;
+
+	<NextChar t.SymStream> == t.SymStream s.Char
+	возвращает следующий символ из потока, CrLf в случае перехода на новую
+строку, EOF в случае конца файла;
+
+	<CloseStream t.SymStream> == empty
+	закрывает поток;
+	
+	<LineNumber t.SymStream> == t.SymStream s.LineNumber
+	выдаёт номер cтроки;
+	<UnGetChar t.SymStream s.Char> == t.SymStream
+	возвращает символ обратно в поток, при необходимости корректируется номер
+строки;
+
+	<ExtractFromSet (e.Set) t.SymStream>
+		== s.Char t.SymStream //Если символ из набора.
+		== t.SymStream //Если символ не из набора.
+	извлекает из потока символ из заданного набора; во втором случае символ
+возвращается в поток;
+
+	<ExtractsFromSet (e.Set) t.SymStream>
+		== t.SymStream e.Chars
+	аналогично ExtractFromSet, но возвращает последовательность символов из
+заданного набора (которая может быть и пустой).
+
+	Примечание. При чтении из потока комментарии Рефала автоматически удаляются.
+Комментарии Рефала имеют вид:
+	/НАЧАЛО-СТРОКИ/ { ' ' | '\t' } '*' e.СодержимоеКомментария /КОНЕЦ-СТРОКИ/
+*/
+
+/*
+	Внутреннее устройство:
+	(s.LineNumber t.FInput e.BufferedChars)
+	Символы e.BufferedChars в порядке чтения располагаются слева направо.
+*/
+
+*$FROM Error
+$EXTERN Error;
+
+*$FROM FileIO
+$EXTERN FOpen, FClose, FReadLine, FExtractFileName;
+
+$ENTRY ExtractFileName {
+	(s.LineNumber t.FInput e.BufferedChars) =
+		(<FExtractFileName t.FInput>);
+}
+
+$ENTRY NewSymStream {
+	e.FileName =
+		<SwNewSymStream <FOpen 'r' e.FileName>  e.FileName>;
+}
+
+SwNewSymStream {
+	t.FInput e.FileName =
+		(1 t.FInput <CheckEnd-and-Uncomment <FReadLine t.FInput>>);
+}
+
+CheckEnd-and-Uncomment {
+	t.FInput e.Line 0 = <RefalUnComment e.Line> EOF;
+	t.FInput e.Line = <RefalUnComment e.Line>;
+}
+
+RefalUnComment {
+	' ' e.Line = ' ' <RefalUnComment e.Line>;
+	'\t' e.Line = '\t' <RefalUnComment e.Line>;
+
+	/* Защита от комментариев языка C */
+	'*' e.Comment '*/' e.Line = '*/' e.Line;
+	'*/' e.Line = '*/' e.Line;
+
+	/* Комментарий эквивалентен пробельному символу */
+	'*' e.Line = ' ';
+	e.Line = e.Line;
+}
+
+$ENTRY NextChar {
+	(s.LineNumber t.FInput) =
+		<NextChar
+			(s.LineNumber t.FInput CrLf
+				<CheckEnd-and-Uncomment <FReadLine t.FInput>>
+			)
+		>;
+	(s.LineNumber t.FInput CrLf e.Buffered) =
+		(s.LineNumber t.FInput AfterCrLf e.Buffered) CrLf;
+	(s.LineNumber t.FInput EOF) = (s.LineNumber t.FInput EOF) EOF;
+	(s.LineNumber t.FInput AfterCrLf e.Buffered) =
+		<NextChar (<Add s.LineNumber 1> t.FInput e.Buffered)>;
+	(s.LineNumber t.FInput s.Char e.Other)
+		= (s.LineNumber t.FInput e.Other) s.Char;
+}
+
+$ENTRY CloseStream {
+	(s.LineNumber t.FInput e.Buffered) =
+		<FClose t.FInput>;
+}
+
+$ENTRY LineNumber {
+	(s.LineNumber t.FInput e.Buffered) =
+		(s.LineNumber t.FInput e.Buffered) s.LineNumber;
+}
+
+$ENTRY UnGetChar {
+	(s.LineNumber t.FInput EOF) EOF =
+		(s.LineNumber t.FInput EOF);
+	(s.LineNumber t.FInput e.Buffered) EOF =
+		<Error 'F' 'Can\'t return EOF to not finalized stream'>;
+	(s.LineNumber t.FInput e.Buffered) CrLf =
+		(<Sub s.LineNumber 1> t.FInput CrLf e.Buffered);
+	(s.LineNumber t.FInput e.Buffered) s.Char =
+		(s.LineNumber t.FInput s.Char e.Buffered);
+}
+
+$ENTRY ExtractFromSet {
+	t.SymStream (e.Set) =
+		<SwExtractFromSet
+			(e.Set) <NextChar t.SymStream>
+		>;
+}
+
+SwExtractFromSet {
+	(e.Set-B s.Char e.Set-E) t.SymStream s.Char =
+		t.SymStream s.Char;
+	(e.Set) t.SymStream s.Char =
+		<UnGetChar t.SymStream s.Char>;
+}
+
+$ENTRY ExtractsFromSet {
+	t.SymStream (e.Set) =
+		<DoExtractsFromSet () (e.Set) <NextChar t.SymStream>>;
+}
+
+DoExtractsFromSet {
+	(e.Line) (e.Set-B s.Char e.Set-E) t.SymStream s.Char =
+		<DoExtractsFromSet
+			(e.Line s.Char)
+			(e.Set-B s.Char e.Set-E)
+			<NextChar t.SymStream>
+		>;
+	(e.Line) (e.Set) t.SymStream s.Char =
+		<UnGetChar t.SymStream s.Char> e.Line;
+}

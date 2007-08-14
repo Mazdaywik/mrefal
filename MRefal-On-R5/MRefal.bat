@@ -1,0 +1,1 @@
+@refgo MRefal.rsl+Context.rsl+Error.rsl+Modules.rsl+Compiler.rsl+Lexer.rsl+SymStream.rsl+FileIO.rsl+FileHandles.rsl+Types.rsl+InOut.rsl+Refal5.rsl+Linker.rsl %1 %2 %3 %4 %5 %6 %7 %8 %9

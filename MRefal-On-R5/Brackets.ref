@@ -1,0 +1,29 @@
+*-------------------------------------------------------------------------------
+* Выводит на экран скобочную структуру в более-менее читабельном формате
+*-------------------------------------------------------------------------------
+
+$ENTRY PrintBrackets {
+	e.Structure = <DoPrintBrackets () e.Structure>;
+}
+
+DoPrintBrackets {
+	(e.Tabs) (e.InBrackets) e.Rest =
+		<Prout e.Tabs '('>
+		<DoPrintBrackets (e.Tabs ' ') e.InBrackets>
+		<Prout e.Tabs ')'>
+		<DoPrintBrackets (e.Tabs) e.Rest>;
+
+	(e.Tabs) e.Plain (e.InBrackets) e.Rest =
+		<Prout e.Tabs e.Plain>
+		<DoPrintBrackets (e.Tabs) (e.InBrackets) e.Rest>;
+
+	(e.Tabs) = ;
+	(e.Tabs) e.Plain = <Prout e.Tabs e.Plain>;
+}
+
+$ENTRY TitledBrackets {
+	(e.Title) e.Expr =
+		<Prout e.Title>
+		<PrintBrackets e.Expr>
+		<Prout>;
+}

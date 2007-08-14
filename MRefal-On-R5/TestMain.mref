@@ -1,0 +1,31 @@
+$module TestMain;
+//Главный модуль
+
+$import Refal5;
+$import TestRefalModule;
+$import MPrintBrackets;
+
+$entry Go {
+	= <Refal5::Prout 'Type very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal, very long literal'>
+		<Refal5::Prout "Type very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal, very long double quoted literal">
+		<Refal5::Prout 'Null arg = ' <Refal5::Arg 0>>
+		<Refal5::Prout
+			<TestRefalModule::Public 'execute'>
+		>
+		<Refal5::Prout
+			<TestRefalModule::Reverse 'Улыбок тебе дед М0кар'>
+		>
+		<Refal5::Prout
+			<TestRefalModule::ChAtoB 'Abracadabra'>
+		>
+		<MPrintBrackets::Print
+			( (Function ('swap') (Ptr 'a') (Ptr 'b'))
+				(Var 'temp')
+				( Assign ('temp') (Deref ('a')) )
+				( Assign (Deref ('a')) (Deref ('b')) )
+				( Assign (Deref ('b')) ('temp') )
+			)
+		>;
+}
+
+$end TestMain.

@@ -1,0 +1,405 @@
+*$FROM SymStream
+$EXTERN NewSymStream, NextChar, CloseStream, LineNumber, UnGetChar,
+	ExtractFromSet, ExtractsFromSet, ExtractFileName;
+
+*$FROM Types
+$EXTERN CharType, OneOf, FirstOneOf, UpAlph, LoAlph, Digits;
+
+*$FROM Error
+$EXTERN Error, Warning;
+
+$ENTRY NewLexer {
+	e.FileName = (<NewSymStream e.FileName>);
+}
+
+/*
+	Обработка ведётся по цепочке:
+	Blanks - Comment - NotIdent - Ident - Macro
+	Blanks -- удаляет начальные символы пустого пространства (если они есть);
+	Comment -- Если далее комментарий -- удаляет его и перебрасывает на начало
+цепочки, т.к. после комментария могут следовать пробелы;
+	NotIdent -- пытается извлечь из потока служебные символы, директивы и
+закавыченные элементы (слова ("words") и литералы ('literals')), если находит,
+то возвращает их как следующую лексему, в противном случае передаёт вычисления
+далее по цепочке;
+	Ident -- пытается прочесть из потока идентификатор (разновидность символа
+или имя функции), в противном случае передаёт вычисление по цепочке;
+	Macro -- считывает макроцифру; при попытке считывания слишком большого чис-
+ла генерируется ошибка; при неудачном считывании также генерируется ошибка.
+*/
+
+$ENTRY NextToken {
+	(t.SymStream) =
+		<NextToken-Chain-Blanks
+			<ExtractsFromSet t.SymStream ( ' \t\n' CrLf )>
+		>;
+	(t.SymStream t.Token e.Tokens) = (t.SymStream e.Tokens) t.Token;
+}
+
+$ENTRY UnGetToken {
+	(t.SymStream e.UnGetTokens) t.Token =
+		(t.SymStream t.Token e.UnGetTokens);
+}
+
+$ENTRY CloseLexer {
+	(t.SymStream e.UnGetTokens) =
+		<CloseStream t.SymStream>;
+}
+
+NextToken-Chain-Blanks {
+	t.SymStream e.Blanks =
+		<NextToken-Chain-Comment <ExtractFromSet t.SymStream ('/')> >;
+}
+
+NextToken-Chain-Comment {
+	t.SymStream =
+		<NextToken-Chain-NotIdent t.SymStream>;
+	t.SymStream s.StartComment =
+		<ParseComment s.StartComment <ExtractFromSet t.SymStream ( '/*' )> >;
+}
+
+ParseComment {
+	/* s.StartComment t.SymStream s.SecondChar */
+
+	/* Комментарий в стиле C++ */
+	'/' t.SymStream '/' =
+		<EatCPPOneLineComment t.SymStream>;
+
+	/* Комментарий в стиле C */
+	'/' t.SymStream '*' =
+		<EatCMultiLineComment t.SymStream>;
+
+	/* Первые два символа не являются началом комментария.
+	Возвращаем их в поток и движемся далее по цепочке.
+	*/
+	s.StartComment t.SymStream s.SecondChar =
+		<NextToken-Chain-NotIdent
+			<UnGetChar
+				<UnGetChar t.SymStream s.SecondChar>
+				s.StartComment
+			>
+		>;
+}
+
+EatCPPOneLineComment {
+	t.SymStream =
+		<DoEatOneLineComment <NextChar t.SymStream>>;
+}
+
+DoEatOneLineComment {
+	/* Прочитали строку */
+	t.SymStream CrLf =
+		<NextToken (t.SymStream)>;
+
+	/* Достигли конца файла */
+	t.SymStream EOF =
+		<NextToken (<UnGetChar t.SymStream EOF>)>;
+
+	t.SymStream s.X =
+		<DoEatOneLineComment <NextChar t.SymStream>>;
+}
+
+LineNumberOnly {
+	t.SymStream s.LineNumber = s.LineNumber;
+}
+
+EatCMultiLineComment {
+	t.SymStream =
+		<DoEatCMultiLineComment
+			<LineNumberOnly <LineNumber t.SymStream>>
+			<NextChar t.SymStream>
+		>;
+}
+
+DoEatCMultiLineComment {
+	s.LineNumber t.SymStream EOF =
+		<Error
+			<ExtractFileName t.SymStream>
+			s.LineNumber
+			'Unclosed comment'
+		>;
+	s.LineNumber t.SymStream '*' =
+		<EndEatCMultiLineComment
+			<ExtractFromSet t.SymStream ('/')>
+		>;
+	s.LineNumber t.SymStream s.X =
+		<EatCMultiLineComment t.SymStream>;
+}
+
+EndEatCMultiLineComment {
+	t.SymStream '/' =
+		<NextToken (t.SymStream)>;
+	t.SymStream =
+		<EatCMultiLineComment t.SymStream>;
+}
+
+AppendLineNumber {
+	t.SymStream s.LineNumber =
+		<InsertLineNumberToToken
+			s.LineNumber
+			<SwNextToken-Chain-NotIdent
+				<ExtractFromSet t.SymStream ( EOF 'tes$\'\"(){}<>=;,&:.' ) >
+			>
+		>;
+}
+
+InsertLineNumberToToken {
+	s.LineNumber (t.SymStream) (s.TokenName e.Content) =
+		(t.SymStream)
+		(s.TokenName (LineNumber s.LineNumber) e.Content);
+}
+
+NextToken-Chain-NotIdent {
+	t.SymStream =
+		<AppendLineNumber
+			<LineNumber t.SymStream>
+		>;
+}
+
+SwNextToken-Chain-NotIdent {
+	t.SymStream EOF = (t.SymStream) (EndOfText);
+	t.SymStream 't' = <Variable TVar t.SymStream>;
+	t.SymStream 'e' = <Variable EVar t.SymStream>;
+	t.SymStream 's' = <Variable SVar t.SymStream>;
+	t.SymStream '$' = <Directive t.SymStream>;
+	t.SymStream '\'' = <Literal t.SymStream>;
+	t.SymStream '\"' = <DQWord t.SymStream>;
+	t.SymStream '(' = (t.SymStream) (LeftBrac);
+	t.SymStream ')' = (t.SymStream) (RigthBrac);
+	t.SymStream '{' = (t.SymStream) (OpenBlock);
+	t.SymStream '}' = (t.SymStream) (CloseBlock);
+	t.SymStream '<' = (t.SymStream) (OpenFnCall);
+	t.SymStream '>' = (t.SymStream) (CloseFnCall);
+	t.SymStream '=' = (t.SymStream) (Replaces);
+	t.SymStream ';' = (t.SymStream) (EndSent);
+	t.SymStream ',' = (t.SymStream) (Comma);
+	t.SymStream ':' = <Colon t.SymStream>;
+	t.SymStream '&' = (t.SymStream) (Ampersand);
+	t.SymStream '.' = (t.SymStream) (Dot);
+	t.SymStream =
+		<NextToken-Chain-Ident <ExtractFromSet t.SymStream (<UpAlph>)> >;
+}
+
+Colon {
+	t.SymStream =
+		<SwColon <ExtractFromSet t.SymStream (':')> >;
+}
+
+SwColon {
+	t.SymStream ':' =
+		(t.SymStream) (DoubleColon);
+	t.SymStream =
+		(t.SymStream) (Colon);
+}
+
+NextToken-Chain-Ident {
+	t.SymStream s.FirstChar =
+		<Identifier
+			s.FirstChar
+			<ExtractsFromSet
+				t.SymStream (<UpAlph><LoAlph><Digits>'-_')
+			>
+		>;
+	t.SymStream =
+		<NextToken-Chain-Macro
+			<LineNumberOnly <LineNumber t.SymStream>>
+			<ExtractsFromSet t.SymStream (<Digits>)>
+		>;
+}
+
+CharOnly {
+	t.SymStream = <SwCharOnly <NextChar t.SymStream>>;
+}
+
+SwCharOnly {
+	t.SymStream s.Char = s.Char;
+}
+
+NextToken-Chain-Macro {
+	s.LineNumber t.SymStream =
+		<Error
+			<ExtractFileName t.SymStream>
+			s.LineNumber
+			'Unknown symbol `' <CharOnly t.SymStream> '`'
+		>;
+	s.LineNumber t.SymStream e.Digits =
+		(t.SymStream) (Macro <ParseMacro s.LineNumber e.Digits>);
+}
+
+Variable {
+	s.VarType t.SymStream =
+		<SwVariable
+			s.VarType
+			<ExtractFromSet t.SymStream (<UpAlph><LoAlph><Digits>'.')>
+		>;
+}
+
+SwVariable {
+	s.VarType t.SymStream '.' =
+		<OutVar
+			s.VarType
+			<ExtractsFromSet t.SymStream (<UpAlph><LoAlph><Digits> '-_')>
+		>;
+	s.VarType t.SymStream s.Index =
+		(t.SymStream) (s.VarType s.Index);
+
+	s.VarType t.SymStream =
+		<Error 'S' 'Unknown variable index' >;
+}
+
+OutVar {
+	s.VarType t.SymStream e.Index =
+		(t.SymStream) (s.VarType '.' e.Index);
+}
+
+/* Директивы $ENTRY, $EXTERN, $EXTERNAL, $EXTRN, $MODULE, $IMPORT, $END. */
+Directive {
+	t.SymStream =
+		<SwDirective
+			<LineNumberOnly <LineNumber t.SymStream>>
+			<ExtractsFromSet t.SymStream (<UpAlph><LoAlph>)>
+		>;
+}
+
+SwDirective {
+	s.LineNumber t.SymStream 'ENTRY' = (t.SymStream)(Directive Entry);
+	s.LineNumber t.SymStream 'entry' = (t.SymStream)(Directive Entry);
+	s.LineNumber t.SymStream 'EXTERN' = (t.SymStream)(Directive External);
+	s.LineNumber t.SymStream 'EXTRN' = (t.SymStream)(Directive External);
+	s.LineNumber t.SymStream 'EXTERNAL' = (t.SymStream)(Directive External);
+	s.LineNumber t.SymStream 'MODULE' = (t.SymStream)(Directive Module);
+	s.LineNumber t.SymStream 'module' = (t.SymStream)(Directive Module);
+	s.LineNumber t.SymStream 'END' = (t.SymStream)(Directive End);
+	s.LineNumber t.SymStream 'end' = (t.SymStream)(Directive End);
+	s.LineNumber t.SymStream 'IMPORT' = (t.SymStream)(Directive Import);
+	s.LineNumber t.SymStream 'import' = (t.SymStream)(Directive Import);
+	s.LineNumber t.SymStream e.Other =
+		<Error
+			<ExtractFileName t.SymStream>
+			s.LineNumber
+			'Unknown directive `' e.Other'`'
+		>;
+}
+
+Literal {
+	t.SymStream =
+		<Quoted Literal '\'' <LineNumber t.SymStream>>;
+}
+
+DQWord {
+	t.SymStream =
+		<Quoted DQWord '\"' <LineNumber t.SymStream>>;
+}
+
+Quoted {
+	s.QName s.Quote t.SymStream s.LineNumber =
+		<OutQuoted
+			s.QName
+			<DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>
+		>;
+}
+
+OutQuoted {
+	s.QName e.QLine t.SymStream = (t.SymStream) (s.QName e.QLine);
+}
+
+DoQuoted {
+	s.Quote s.LineNumber t.SymStream '\\' =
+		<Quoted-Escape s.Quote s.LineNumber <NextChar t.SymStream>>;
+	s.Quote s.LineNumber t.SymStream EOF =
+		<Error
+			<ExtractFileName t.SymStream>
+			s.LineNumber
+			'Unexpected EOF: not closed quote'
+		>;
+	s.Quote s.LineNumber t.SymStream CrLf =
+		<Error <ExtractFileName t.SymStream> s.LineNumber 'Unexpected end of line: not closed quote'>;
+	/* Конец рекурсии */
+	s.Quote s.LineNumber t.SymStream s.Quote =
+		t.SymStream;
+	s.Quote s.LineNumber t.SymStream s.Char =
+		s.Char <DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+}
+
+Quoted-Escape {
+	s.Quote s.LineNumber t.SymStream '\\' =
+		'\\' <DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+	s.Quote s.LineNumber t.SymStream 't' =
+		'\t' <DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+	s.Quote s.LineNumber t.SymStream 'n' =
+		'\n' <DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+	s.Quote s.LineNumber t.SymStream '\'' =
+		'\'' <DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+	s.Quote s.LineNumber t.SymStream '\"' =
+		'\"' <DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+	/* Разобьём строку также, как и в C */
+	s.Quote s.LineNumber t.SymStream CrLf =
+		<DoQuoted s.Quote s.LineNumber <NextChar t.SymStream>>;
+	s.Quote s.LineNumber t.SymStream EOF =
+		<Error
+			<ExtractFileName t.SymStream>
+			s.LineNumber
+			'Unexpected end of file in quoted expression'
+		>;
+	s.Quote s.LineNumber t.SymStream s.Other =
+		<Warning s.LineNumber 'Unknown escape sequence \\' s.Other>;
+}
+
+* Максимальное значение макрочисла 4 294 967 295
+ParseMacro {
+	s.LineNumber e.Digits =
+		<ParseMacro-CheckLength
+			s.LineNumber <ValidLen <Lenw e.Digits> >
+		>;
+}
+
+ValidLen {
+	s.Len e.Val = <ValidLen1 s.Len> e.Val;
+}
+
+ValidLen1 {
+	1 = T; 2 = T; 3 = T; 4 = T; 5 = T;
+	6 = T; 7 = T; 8 = T; 9 = T;
+	10 = Ten;
+	s.N = F;
+}
+
+ParseMacro-CheckLength {
+	s.LineNumber T e.Digits = <Numb e.Digits>;
+	s.LineNumber F e.Digits =
+		<Error
+			s.LineNumber 'Number is very big (' e.Digits ' > 4 294 968 295)'
+		>;
+	s.LineNumber Ten e.Digits-head s.Last =
+		<ParseMacro-CheckLength-Ten
+			s.LineNumber
+			<Compare <Numb e.Digits-head> 429496829>
+			e.Digits-head
+			s.Last
+		>;
+}
+
+ParseMacro-CheckLength-Ten {
+	s.LineNumber '-' e.Digits = <Numb e.Digits>;
+	s.LineNumber '0' e.Digits-head s.Last =
+		<ParseMacro-CheckLength-Limit
+			s.LineNumber e.Digits-head s.Last <OneOf s.Last ('012345')>
+		>;
+	s.LineNumber '+' e.Digits =
+		<Error
+			s.LineNumber 'Number is very big (' e.Digits ' > 4 294 968 295)'
+		>;
+}
+
+ParseMacro-CheckLength-Limit {
+	s.LineNumber e.Digits T = <Numb e.Digits>;
+	s.LineNumber e.Digits F =
+		<Error
+			s.LineNumber 'Number is very big (' e.Digits ' > 4 294 968 295)'
+		>;
+}
+
+Identifier {
+	s.First t.SymStream e.Identifier-tail =
+		(t.SymStream) (Identifier s.First e.Identifier-tail);
+}

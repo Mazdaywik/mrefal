@@ -1,0 +1,28 @@
+$module MPrintBrackets;
+
+$import Refal5;
+
+$entry Print {
+	e.Arg = <DoPrint () e.Arg>;
+}
+
+$entry Init {
+	= <Refal5::Prout 'PrintBrackets initialized'>;
+}
+
+DoPrint {
+	(e.Tabs) (e.InBrackets) e.Tail =
+		<Refal5::Prout e.Tabs '('>
+		<DoPrint (e.Tabs ' ') e.InBrackets>
+		<Refal5::Prout e.Tabs ')'>
+		<DoPrint (e.Tabs) e.Tail>;
+
+	(e.Tabs) e.Plain (e.InBrackets) e.Tail =
+		<Refal5::Prout e.Tabs e.Plain>
+		<DoPrint (e.Tabs) (e.InBrackets) e.Tail>;
+
+	(e.Tabs) e.Plain =
+		<Refal5::Prout e.Tabs e.Plain>;
+}
+
+$end MPrintBrackets.

@@ -1,0 +1,66 @@
+$MODULE FileIO;
+
+$IMPORT FileHandles;
+$IMPORT MError;
+$IMPORT Refal5;
+
+$ENTRY FOpen {
+	'r' e.FileName =
+		<CheckExistAndOpenForRead
+			<Refal5::ExistFile e.FileName>
+			e.FileName
+		>;
+	'w' e.FileName =
+		<SwFOpen <FileHandles::GetHandle> 'w' e.FileName>;
+
+	s.OtherMode e.FileName =
+		<MError::Error
+			'F' s.OtherMode ' -- unknown open file mode ('
+			'file \'' e.FileName '\')'
+		>;
+}
+
+CheckExistAndOpenForRead {
+	True e.FileName =
+		<SwFOpen <FileHandles::GetHandle> 'r' e.FileName>;
+
+	False e.FileName =
+		<MError::Error 'F' 'Can\'t open file \'' e.FileName '\' for reading' >;
+}
+
+SwFOpen {
+	None s.Mode e.FileName =
+		<MError::Error
+			'F' 'Can\'t open file ' e.FileName ': no free handles'
+		>;
+
+	s.Handle s.Mode e.FileName =
+		(s.Handle e.FileName) <Refal5::Open s.Mode s.Handle e.FileName>;
+}
+
+$ENTRY FClose {
+	(s.Handle e.FileName) =
+		<Refal5::Open 'r' s.Handle e.FileName>
+		<FileHandles::ReleaseHandle s.Handle>;
+}
+
+$ENTRY FReadLine {
+	(s.Handle e.FileName) =
+		(s.Handle e.FileName) <Refal5::Get s.Handle>;
+}
+
+$ENTRY FWriteLine {
+	(s.Handle e.FileName) e.Line =
+		(s.Handle e.FileName) <Refal5::Putout s.Handle e.Line>;
+}
+
+$ENTRY FWriteLine-T {
+	(s.Handle e.FileName) e.Line =
+		(s.Handle e.FileName) <Refal5::Put s.Handle e.Line>;
+}
+
+$ENTRY FExtractFileName {
+	(s.Handle e.FileName) = e.FileName;
+}
+
+$END FileIO.

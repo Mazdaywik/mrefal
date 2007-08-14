@@ -1,3 +1,5 @@
+$MODULE Compiler;
+
 /*******************************************************************************
 	Модуль реализует трансляцию отдельных модулей исходного текста Модульного
 Рефала. Точки входа в модуль -- функции CompileByModuleName и CompileByFileName
@@ -15,27 +17,17 @@
 ние.
 *******************************************************************************/
 
-*$FROM Lexer
-$EXTERN NewLexer, NextToken, CloseLexer;
-
-*$FROM Context
-$EXTERN UpdateModuleInfo, ExtractOption, LastModule;
-
-*$FROM Error
-$EXTERN Error;
-
-*$FROM Modules
-$EXTERN SrcName, OutName, SymName, CanonicalModuleName;
-
-*$FROM FileIO
-$EXTERN FOpen, FWriteLine, FClose;
-
-*$FROM InOut
-$EXTERN WriteLine;
+$IMPORT Lexer;
+$IMPORT Context;
+$IMPORT MError;
+$IMPORT Modules;
+$IMPORT FileIO;
+$IMPORT InOut;
+$IMPORT Refal5;
 
 $ENTRY CompileByModuleName {
 	t.Context e.ModuleName =
-		<ParseAndCompile t.Context <SrcName e.ModuleName> >;
+		<ParseAndCompile t.Context <Modules::SrcName e.ModuleName> >;
 }
 
 $ENTRY CompileByFileName {
@@ -45,16 +37,16 @@ $ENTRY CompileByFileName {
 
 ParseAndCompile {
 	t.Context e.FileName =
-		<WriteLine 'Compiling file ' e.FileName '...'>
+		<InOut::WriteLine 'Compiling file ' e.FileName '...'>
 		<Compile
 			(File e.FileName)
 			<NModule
 				t.Context
 				<NewSymTable>
 				()
-				<NextToken <NewLexer e.FileName>>
+				<Lexer::NextToken <Lexer::NewLexer e.FileName>>
 			>
-		>;
+		> <InOut::WriteLine 'File ' e.FileName ' compiled'>;
 }
 
 *-------------------------------------------------------------------------------
@@ -67,12 +59,12 @@ NModule {
 			t.Cntx
 			t.SymTable
 			( (Directive t.LnNum Module) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable () t.Lexer
 	( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			'Expected \'$MODULE\', got ' s.Unknown '(' e.Info ')'
 		>;
@@ -82,12 +74,12 @@ NModule {
 		<NModule
 			t.Cntx t.SymTable
 			( ExpectEndSent (StartModule t.LnNum e.Ident) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( (Directive t.LnNum Module) )
 	t.Lexer ( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			'Expected module name, got ' s.Unknown '(' e.Info ')'
 		>;
@@ -99,14 +91,14 @@ NModule {
 				t.Cntx
 				<AddCurModuleToSymTable t.SymTable t.LnNum2 e.ModName>
 				( ((StartModule e.ModName)) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
 	t.Cntx t.SymTable
 	( ExpectEndSent (StartModule t.LnNum1 e.ModName) )
 	t.Lexer (s.Other (LineNumber s.ErrorLine) e.OtherInfo) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected semicolon after modult name, got '
@@ -115,7 +107,7 @@ NModule {
 
 	t.Cntx t.SymTable ( (Directive t.LnNum Module) )
 	t.Lexer (s.Other (LineNumber s.ErrorNumber) e.OtherInfo) =
-		<Error
+		<MError::Error
 			s.ErrorNumber
 			<ExtractCurrentModule t.SymTable>
 			'Expected module name, got ' s.Other '(' e.OtherInfo ')'
@@ -125,7 +117,7 @@ NModule {
 	t.Lexer (Directive t.LnNum End) =
 		<NModule
 			t.Cntx t.SymTable ( Ending (e.ModuleBody) (StartModule e.ModName) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( Ending (e.ModuleBody) (StartModule e.NameOfCurModule) )
@@ -133,7 +125,7 @@ NModule {
 		<NModule
 			t.Cntx t.SymTable
 			( ExpectEndDot (Module e.NameOfCurModule) e.ModuleBody)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( ExpectEndDot (Module e.ModuleName) e.ModuleBody )
@@ -141,12 +133,12 @@ NModule {
 		<NModule
 			t.Cntx t.SymTable
 			( ExpectEOF (Module e.ModuleName) e.ModuleBody )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( ExpectEndDot (Module e.ModuleName) e.ModuleBody )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.ModuleName)
 			'Unexpected ' s.Unknown '(' e.Info '), expected \'.\''
@@ -155,11 +147,11 @@ NModule {
 	t.Cntx t.SymTable ( ExpectEOF (Module e.ModuleName) e.ModuleBody )
 	t.Lexer (EndOfText t.LnNum) =
 		t.Cntx t.SymTable ( (Module e.ModuleName) e.ModuleBody )
-		<CloseLexer t.Lexer>;
+		<Lexer::CloseLexer t.Lexer>;
 
 	t.Cntx t.SymTable ( ExpectEOF (Module e.ModuleName) e.ModuleBody )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.ModuleName)
 			'Expected end of file, got ' s.Unknown '(' e.Info ')'
@@ -167,7 +159,7 @@ NModule {
 
 	t.Cntx t.SymTable ( Ending (e.ModuleBody) (StartModule e.NameOfCurModule) )
 	t.Lexer (Identifier (LineNumber s.ErrorLine) e.NameOfCurModule2) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Mismatch module name in begin and end of module'
@@ -182,7 +174,7 @@ NModuleBody {
 				t.Cntx
 				t.SymTable
 				( (e.Elements t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
@@ -192,7 +184,7 @@ NModuleBody {
 			<NFunctionDefinion
 				t.Cntx t.SymTable
 				( Entry (e.Elements t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
@@ -213,7 +205,7 @@ NModuleBody {
 
 	t.Cntx t.SymTable ( e.Elements t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected import block, function definion or end of module, got '
@@ -228,12 +220,12 @@ NImportBlock {
 			t.Cntx
 			<AddImportModuleToSymTable t.SymTable s.LineNumber e.ModuleName>
 			( (Import e.ModuleName) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected identifier, got ' s.Unknown '(' e.Info ')'
@@ -242,11 +234,11 @@ NImportBlock {
 	t.Cntx t.SymTable ( (Import e.ModuleName) (e.ParentStack) )
 	t.Lexer (EndSent t.LnNum) =
 		t.Cntx t.SymTable ( (Import e.ModuleName) e.ParentStack )
-		<NextToken t.Lexer>;
+		<Lexer::NextToken t.Lexer>;
 
 	t.Cntx t.SymTable ( (Import e.ModuleName) t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected \';\', got ' s.Unknown '(' e.Info ')'
@@ -273,13 +265,13 @@ NFunctionDefinion {
 				<AddFunctionToSymTable
 					t.SymTable s.ScopeClass s.LineNumber e.Ident
 				> ( ((Function s.ScopeClass (e.Ident)) t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
 	t.Cntx t.SymTable ( s.ScopeClass t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected function body, got ' s.Unknown '(' e.Info ')'
@@ -298,7 +290,7 @@ NFunctionBody {
 	t.Lexer (OpenBlock t.LnNumber) =
 		<NBlock
 			t.Cntx t.SymTable ( t.ParentStack )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.ParentStack )
@@ -326,7 +318,7 @@ NBlock {
 	t.Lexer (CloseBlock t.LnNum) =
 		t.Cntx t.SymTable
 		( (<ReverseSentenses e.Sentenses>) e.ParentStack )
-		<NextToken t.Lexer>;
+		<Lexer::NextToken t.Lexer>;
 
 	t.Cntx t.SymTable ( e.Sentenses t.ParentStack )
 	t.Lexer t.StartSentense =
@@ -357,13 +349,13 @@ NSentense {
 			<NResultExpr
 				t.Cntx t.SymTable
 				( t.LnNum '$' (Replaces t.Pattern t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
 	t.Cntx t.SymTable ( t.Pattern t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected \'=\', got ' s.Unknown '(' e.Info ')'
@@ -373,11 +365,11 @@ NSentense {
 	t.Lexer (EndSent t.LnNumber) =
 		t.Cntx <PopSentenseSymTable t.SymTable>
 		( (t.Pattern t.Result) e.ParentStack )
-		<NextToken t.Lexer>;
+		<Lexer::NextToken t.Lexer>;
 
 	t.Cntx t.SymTable ( t.Result Replaces t.Pattern t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected \';\', got ' s.Unknown '(' e.Info ')'
@@ -393,7 +385,7 @@ NPatternExpr {
 				e.PatternExpr
 				(Identifier e.Identifier)
 				t.ParentStack
-			) <NextToken t.Lexer>
+			) <Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -402,7 +394,7 @@ NPatternExpr {
 			t.Cntx
 			<AddVariableToSymTable t.SymTable EVar t.LnNum e.Index>
 			( t.LnNum e.PatternExpr (EVar e.Index) t.ParentStack )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -411,7 +403,7 @@ NPatternExpr {
 			t.Cntx
 			<AddVariableToSymTable t.SymTable SVar t.LnNum e.Index>
 			( t.LnNum e.PatternExpr (SVar e.Index) t.ParentStack )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -420,7 +412,7 @@ NPatternExpr {
 			t.Cntx
 			<AddVariableToSymTable t.SymTable TVar t.LnNum e.Index>
 			( t.LnNum e.PatternExpr (TVar e.Index) t.ParentStack )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -428,7 +420,7 @@ NPatternExpr {
 		<NPatternExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.PatternExpr (Literal e.Content) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -436,7 +428,7 @@ NPatternExpr {
 		<NPatternExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.PatternExpr (DQWord e.Content) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -444,7 +436,7 @@ NPatternExpr {
 		<NPatternExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.PatternExpr (Macro s.Value) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
@@ -452,7 +444,7 @@ NPatternExpr {
 		<NPatternExpr
 			t.Cntx t.SymTable
 			(t.LnNum (e.PatternExpr) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable
@@ -461,12 +453,12 @@ NPatternExpr {
 		<NPatternExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.MultiBracket (Structure e.InBracket) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.OldLnNum '$' e.PatternExpr t.ParentStack)
 	t.Lexer (RigthBrac (LineNumber s.ErrorLine)) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Unballanced structure brackets ( found \')\', but not found '
@@ -481,7 +473,7 @@ NPatternExpr {
 	t.Cntx t.SymTable
 	( (LineNumber s.ErrorLine) (e.MultiBracket) e.InBracket t.ParentStack )
 	t.Lexer (Replaces t.LnNum) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Unballanced structure brackets, expected \')\''
@@ -489,7 +481,7 @@ NPatternExpr {
 
 	t.Cntx t.SymTable (t.OldLnNum e.PatternExpr t.ParentStack)
 	t.Lexer ( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected pattern expression or \'=\', got '
@@ -503,7 +495,7 @@ NResultExpr {
 		<NResultExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.ResultExpr (Identifier e.Ident) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -512,7 +504,7 @@ NResultExpr {
 			t.Cntx
 			<CheckVariableInSymTable t.SymTable EVar t.LnNum e.Index>
 			(t.LnNum e.ResultExpr (EVar e.Index) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -521,7 +513,7 @@ NResultExpr {
 			t.Cntx
 			<CheckVariableInSymTable t.SymTable SVar t.LnNum e.Index>
 			(t.LnNum e.ResultExpr (SVar e.Index) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -530,7 +522,7 @@ NResultExpr {
 			t.Cntx
 			<CheckVariableInSymTable t.SymTable TVar t.LnNum e.Index>
 			(t.LnNum e.ResultExpr (TVar e.Index) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -538,7 +530,7 @@ NResultExpr {
 		<NResultExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.ResultExpr (Literal e.Content) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -546,7 +538,7 @@ NResultExpr {
 		<NResultExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.ResultExpr (DQWord e.Content) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -554,7 +546,7 @@ NResultExpr {
 		<NResultExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.ResultExpr (Macro s.Value) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -562,7 +554,7 @@ NResultExpr {
 		<NResultExpr
 			t.Cntx t.SymTable
 			(t.LnNum ( ')' e.ResultExpr ) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
@@ -571,7 +563,7 @@ NResultExpr {
 			<NCallee
 				t.Cntx t.SymTable
 				( (t.LnNum ( '>' e.ResultExpr ) t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
@@ -581,12 +573,12 @@ NResultExpr {
 		<NResultExpr
 			t.Cntx t.SymTable
 			(t.LnNum e.MultiBracket (Structure e.InBrackets) t.ParentStack)
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
 	t.Lexer ( RigthBrac (LineNumber s.ErrorLine) ) =
-		<Error
+		<MError::Error
 			s.ErrorLine 
 			<ExtractCurrentModule t.SymTable>
 			'Unballanced structure brackets ( found '
@@ -603,12 +595,12 @@ NResultExpr {
 				e.MultiBracket
 				(Function t.Callee e.ResultExprFnArgument)
 				t.ParentStack
-			) <NextToken t.Lexer>
+			) <Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
 	t.Lexer (CloseFnCall (LineNumber s.ErrorLine)) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Unballanced function call brackets '
@@ -625,7 +617,7 @@ NResultExpr {
 		( s.BracketType e.MultiBracket ) e.InBrackets
 		t.ParentStack
 	) t.Lexer (EndSent s.LnNumber) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Not closed \'' s.BracketType '\'. Expected close bracket '
@@ -634,7 +626,7 @@ NResultExpr {
 
 	t.Cntx t.SymTable ( t.OldLnNum e.ResultExpr t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Unexpected \'' s.Unknown '\'(' e.Info '), '
@@ -648,12 +640,12 @@ NCallee {
 		<NCallee
 			t.Cntx t.SymTable
 			( (Name t.LnNum e.Name) t.ParentStack )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable (t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected function or module name, got ' s.Unknown '(' e.Info ')'
@@ -664,7 +656,7 @@ NCallee {
 		<NCallee
 			t.Cntx t.SymTable
 			( (Module t.LnNumName e.Name) t.ParentStack )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable
@@ -679,12 +671,12 @@ NCallee {
 				(Module t.LnNumModName e.ModName)
 				(Function t.LnNumFnName e.FnName)
 			) t.UpParentStack
-		) <NextToken t.Lexer>;
+		) <Lexer::NextToken t.Lexer>;
 
 	t.Cntx t.SymTable
 	( (Module t.LnNumModName e.ModName) t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'Expected function name, got ' s.Unknown '(' e.Info ')'
@@ -711,12 +703,12 @@ NSymModule {
 		<NSymModule
 			t.Cntx t.SymTable
 			( (Directive t.LnNum Module) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable () t.Lexer
 	(s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected \'$MODULE\', got '
@@ -728,12 +720,12 @@ NSymModule {
 		<NSymModule
 			t.Cntx t.SymTable
 			( ExpectEndSent (StartSym t.LnNum2 e.ModName) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( (Directive t.LnNum1 Module) )
 	t.Lexer ( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected module name, got '
@@ -747,13 +739,13 @@ NSymModule {
 				t.Cntx
 				<AddCurModuleToSymTable t.SymTable t.LnNum1 e.ModName>
 				( ((StartSym e.ModName)) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
 	t.Cntx t.SymTable ( ExpectEndSent (StartSym t.LnNum1 e.ModName) )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected \';\', got ' s.Unknown '(' e.Info ')'
@@ -764,7 +756,7 @@ NSymModule {
 		<NSymModule
 			t.Cntx t.SymTable
 			( ExpectEndModuleName t.ModuleBody (StartSym e.ModName) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable
@@ -773,13 +765,13 @@ NSymModule {
 		<NSymModule
 			t.Cntx t.SymTable
 			( ExpectDot t.ModuleBody (StartSym e.ModName) )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable
 	(ExpectEndModuleName t.ModuleBody (StartSym e.Modname) )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected module name, got ' s.ErrorLine '(' e.Info ')'
@@ -790,12 +782,12 @@ NSymModule {
 		<NSymModule
 			t.Cntx t.SymTable
 			( ExpectEOF (SymModule e.ModName) t.ModuleBody )
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( ExpectDot t.ModuleBody (StartSym e.ModName) )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected \'.\', got ' s.Unknown '(' e.Info ')'
@@ -805,11 +797,11 @@ NSymModule {
 	t.Lexer (EndOfText t.LnNum) =
 		t.Cntx t.SymTable
 		( (SymModule e.ModName) t.ModuleBody )
-		<CloseLexer t.Lexer>;
+		<Lexer::CloseLexer t.Lexer>;
 	
 	t.Cntx t.SymTable ( ExpectEOF (SymModule e.ModName) t.ModuleBody )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected end of file, got '
@@ -827,12 +819,12 @@ NFunctionDeclaration {
 		( (Function e.FnName) e.ParentStack )
 		<ExpectEndSent
 			<ExtractCurrentModule t.SymTable>
-			<NextToken t.Lexer>
+			<Lexer::NextToken t.Lexer>
 		>;
 
 	t.Cntx t.SymTable ( t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected function name, got '
@@ -842,10 +834,10 @@ NFunctionDeclaration {
 
 ExpectEndSent {
 	t.CurModule t.Lexer (EndSent t.LnNum) =
-		<NextToken t.Lexer>;
+		<Lexer::NextToken t.Lexer>;
 
 	t.CurModule t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine t.CurModule
 			'in symfile: expected \';\', got ' s.Unknown '(' e.Info ')'
 		>;
@@ -858,7 +850,7 @@ NSymModuleBody {
 			<NImportBlock
 				t.Cntx t.SymTable
 				( (e.Elements t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
@@ -868,7 +860,7 @@ NSymModuleBody {
 			<NFunctionDeclaration
 				t.Cntx t.SymTable
 				( (e.Elements t.ParentStack) )
-				<NextToken t.Lexer>
+				<Lexer::NextToken t.Lexer>
 			>
 		>;
 
@@ -879,7 +871,7 @@ NSymModuleBody {
 
 	t.Cntx t.SymTable ( e.Elements t.ParentStack )
 	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			<ExtractCurrentModule t.SymTable>
 			'in symfile: expected import block, function declaration '
@@ -904,7 +896,7 @@ AddCurModuleToSymTable {
 		);
 
 	t.Other t.LnNum e.ModuleName =
-		<Error
+		<MError::Error
 			'F' 'Error in symbol table -- can\'t insert current module name'
 		>;
 }
@@ -919,7 +911,7 @@ AddImportModuleToSymTable {
 		(CurModule t.LnNum e.ModName)
 		e.OtherInfo
 	) s.LineNumber e.ModuleName =
-		<Error
+		<MError::Error
 			s.LineNumber
 			(e.ModName)
 			e.ModuleName ' -- identifier redeclared'
@@ -944,7 +936,7 @@ AddFunctionToSymTable {
 		(CurModule t.LnNum e.ModName)
 		e.OtherInfo
 	) s.ScopeClass s.ErrorLine e.FnName =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.ModName)
 			e.FnName ' -- identifier redeclared'
@@ -988,7 +980,7 @@ PopSentenseSymTable {
 	( t.Idents t.CurModule t.Modules t.Functions
 		(Variables e.BrokenContent)
 	) =
-		<Error
+		<MError::Error
 			'F' 'Broken symbol table -- variable stack underflow'
 		>;
 }
@@ -1006,7 +998,7 @@ AddVariableToSymTable {
 	( t.Idents (CurModule t.LnNum e.Current) t.Modules t.Functions
 		(Variables e.Vars-B (s.OneVarType e.Index) e.Vars-E)
 	) s.OtherVarType (LineNumber s.ErrorLine) e.Index =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.Current)
 			'Two different variables has same index'
@@ -1035,7 +1027,7 @@ CheckVariableInSymTable {
 		t.Functions
 		(Variables e.OtherVariables)
 	) s.VarType (LineNumber s.ErrorLine) e.Index =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.CurName)
 			'Variable ' <TypeToChar s.VarType> e.Index ' not declared'
@@ -1055,17 +1047,17 @@ Compile {
 	t.Context
 	( t.Idents (CurModule t.LnNum e.ModuleName) e.OtherInfo )
 	t.Module =
-		<LastModule
+		<Context::LastModule
 			<Compile1
 				<CheckValidFileName
-					<Lower (e.FileName)>
-					<Lower (e.ModuleName '.mref')>
+					<Refal5::Lower (e.FileName)>
+					<Refal5::Lower (e.ModuleName '.mref')>
 					t.LnNum
 				>
 				(Module e.ModuleName)
 				(File e.FileName)
-				(Sym <SymName e.ModuleName>)
-				(Out <OutName e.ModuleName>)
+				(Sym <Modules::SymName e.ModuleName>)
+				(Out <Modules::OutName e.ModuleName>)
 				t.Context
 				( t.Idents (CurModule t.LnNum e.ModuleName) e.OtherInfo )
 				t.Module
@@ -1079,10 +1071,10 @@ CheckValidFileName {
 		Valid;
 
 	(e.LowFileName) (e.LowModName '.mref') (LineNumber s.ErrorLine) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			'Mismatch file name and module name: module '
-			<CanonicalModuleName e.LowModName> ' defined in file '
+			<Modules::CanonicalModuleName e.LowModName> ' defined in file '
 			e.LowFileName
 		>;
 }
@@ -1097,11 +1089,11 @@ Compile1 {
 	t.SymTable
 	t.Module =
 		<Generate
-			<FOpen 'w' e.OutName>
-			<FOpen 'w' e.SymName>
+			<FileIO::FOpen 'w' e.OutName>
+			<FileIO::FOpen 'w' e.SymName>
 			<CheckFnCalls
 				<LoadImportInfo
-					<UpdateModuleInfo
+					<Context::UpdateModuleInfo
 						t.Context
 						(e.ModuleName)
 						(Sym e.SymName)
@@ -1171,7 +1163,7 @@ LoadFromOneModule {
 	t.Context (e.ModuleName) =
 		<LoadFromOneModule-1
 			(e.ModuleName)
-			<ExtractOption t.Context Status e.ModuleName>
+			<Context::ExtractOption t.Context Status e.ModuleName>
 		>;
 }
 
@@ -1191,7 +1183,7 @@ LoadFromOneModule-1 {
 		>;
 
 	(e.ModuleName) t.Context Found InCompiling =
-		<Error
+		<MError::Error
 			'F' 'Cyclic dependencies in module ' e.ModuleName
 		>;
 }
@@ -1200,7 +1192,7 @@ CompileIfNeed {
 	t.Context e.ModuleName =
 		<SwCompileIfNeed
 			t.Context
-			<ExistFile <SrcName e.ModuleName>>
+			<Refal5::ExistFile <Modules::SrcName e.ModuleName>>
 			e.ModuleName
 		>;
 }
@@ -1210,11 +1202,11 @@ SwCompileIfNeed {
 		<CompileByModuleName t.Context e.ModuleName>;
 
 	t.Context False e.ModuleName =
-		<UpdateModuleInfo
+		<Context::UpdateModuleInfo
 			t.Context
 			(e.ModuleName)
-			(Sym <SymName e.ModuleName>)
-			(Out <OutName e.ModuleName>)
+			(Sym <Modules::SymName e.ModuleName>)
+			(Out <Modules::OutName e.ModuleName>)
 			(Src None)
 			(Status CompileComplete)
 		>;
@@ -1226,7 +1218,7 @@ ReadSym {
 			t.Context
 			<NewSymTable>
 			()
-			<NextToken <NewLexer <SymName e.ModuleName> > >
+			<Lexer::NextToken <Lexer::NewLexer <Modules::SymName e.ModuleName> > >
 		>;
 }
 
@@ -1245,7 +1237,7 @@ StartPointsFromSym {
 DoStartPointsFromSym {
 	t.Context (e.CurModule) (Entry 'Go') e.Tail =
 		<DoStartPointsFromSym
-			<UpdateModuleInfo
+			<Context::UpdateModuleInfo
 				t.Context
 				(e.CurModule)
 				(StartPoint e.CurModule '--Go--Entry')
@@ -1256,7 +1248,7 @@ DoStartPointsFromSym {
 
 	t.Context (e.CurModule) (Entry 'Init') e.Tail =
 		<DoStartPointsFromSym
-			<UpdateModuleInfo
+			<Context::UpdateModuleInfo
 				t.Context
 				(e.CurModule)
 				(InitPoint e.CurModule '--Init--Entry')
@@ -1390,7 +1382,7 @@ CheckCallee {
 		t.Functions
 		t.Qualified
 	) (Local (Function (LineNumber s.ErrorLine) e.FnName)) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.ModName)
 			'Undefined function ' e.FnName ' at module ' e.ModName
@@ -1420,7 +1412,7 @@ CheckQualified {
 		t.Qualified
 	) (Module t.LnNum1 e.ModuleName)
 	(Function (LineNumber s.ErrorLine) e.FnName) =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.Current)
 			'Module ' e.ModuleName ' not contain entry function ' e.FnName
@@ -1430,7 +1422,7 @@ CheckQualified {
 		(CurModule t.LnNum e.Current)
 		t.Modules t.Functions t.Qualified
 	) (Module (LineNumber s.ErrorLine) e.ModuleName) t.FunInfo =
-		<Error
+		<MError::Error
 			s.ErrorLine
 			(e.Current)
 			'Undefined module ' e.ModuleName
@@ -1461,7 +1453,7 @@ Generate {
 *	== t.UpdatedContext
 UpdateContext {
 	t.Context (e.Module) =
-		<UpdateModuleInfo
+		<Context::UpdateModuleInfo
 			t.Context
 			(e.Module)
 			(Status CompileComplete)
@@ -1595,7 +1587,7 @@ RealAddStartPoints {
 AddInitFunc {
 	t.Context t.ModuleName () = t.Context;
 	t.Context t.ModuleName (e.InitName) =
-		<UpdateModuleInfo
+		<Context::UpdateModuleInfo
 			t.Context
 			t.ModuleName
 			(InitPoint e.InitName)
@@ -1605,7 +1597,7 @@ AddInitFunc {
 AddGoFunc {
 	t.Context t.ModuleName () = t.Context;
 	t.Context t.ModuleName (e.GoName) =
-		<UpdateModuleInfo
+		<Context::UpdateModuleInfo
 			t.Context
 			t.ModuleName
 			(StartPoint e.GoName)
@@ -1616,11 +1608,11 @@ WriteToSym {
 	t.FSym t.Context ( (Module e.ModuleName) e.Tail ) t.Module =
 		t.Context
 		t.Module
-		<FClose
-			<FWriteLine
+		<FileIO::FClose
+			<FileIO::FWriteLine
 				<DoWriteToSym
-					<FWriteLine
-						<FWriteLine
+					<FileIO::FWriteLine
+						<FileIO::FWriteLine
 							t.FSym
 							'$module ' e.ModuleName ';'
 						>	
@@ -1641,15 +1633,15 @@ DoWriteToSym {
 
 WriteElementToSym {
 	t.FSym (Function e.FunName) =
-		<FWriteLine
-			<FWriteLine
+		<FileIO::FWriteLine
+			<FileIO::FWriteLine
 				t.FSym '$entry ' e.FunName ';'
 			>
 		>;
 
 	t.FSym (Import e.FunName) =
-		<FWriteLine
-			<FWriteLine
+		<FileIO::FWriteLine
+			<FileIO::FWriteLine
 				t.FSym '$import ' e.FunName ';'
 			>
 		>;
@@ -1681,7 +1673,7 @@ GenerateElements {
 		>;
 
 	t.FOut (e.Prefix) =
-		<FClose t.FOut>
+		<FileIO::FClose t.FOut>
 		(e.Prefix);
 }
 
@@ -1702,7 +1694,7 @@ GenerateOneElement {
 
 GenerateFnHeader {
 	t.FOut (e.Prefix) s.ScopeClass (e.FnName) =
-		<FWriteLine
+		<FileIO::FWriteLine
 			t.FOut
 			e.Prefix '--' e.FnName <ScopeClassToSuffix s.ScopeClass>
 		> (e.Prefix);
@@ -1724,8 +1716,8 @@ GenerateFnBody {
 		>;
 
 	t.FOut t.Prefix =
-		<FWriteLine
-			<FWriteLine
+		<FileIO::FWriteLine
+			<FileIO::FWriteLine
 				t.FOut
 				'}'
 			>
@@ -1756,7 +1748,7 @@ GenerateResult {
 
 PrintExpr {
 	t.FOut (e.Begin) (e.End) e.Expr =
-		<FWriteLine
+		<FileIO::FWriteLine
 			t.FOut
 			e.Begin
 			<ExprToString e.Expr>
@@ -1785,7 +1777,7 @@ TermToString {
 
 	(DQWord e.Content) = '\"' <EscapeText e.Content> '\"';
 
-	(Macro s.Value) = <Symb s.Value>;
+	(Macro s.Value) = <Refal5::Symb s.Value>;
 
 	(Structure e.InBrackets) = '( ' <ExprToString e.InBrackets> ')';
 
@@ -1820,3 +1812,5 @@ CalleeToString {
 CallTypeToSuffix {
 	CallEntry = '--Entry '; CallLocal = '--Local ';
 }
+
+$END Compiler.

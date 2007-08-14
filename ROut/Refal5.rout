@@ -41,3 +41,21 @@ Refal5--FileExist-T--Entry {
 Refal5--FileExists-T--Entry {
 	e.FileName = <ExistFile e.FileName > e.FileName ;
 }
+
+Refal5--Upper--Entry { e.Expr = <Upper e.Expr >; }
+
+Refal5--Lower--Entry { e.Expr = <Lower e.Expr >; }
+
+Refal5--Add--Entry { e.Expr = <Add e.Expr >; }
+
+Refal5--Sub--Entry { e.Expr = <Sub e.Expr >; }
+
+Refal5--Lenw--Entry { e.Expr = <Lenw e.Expr >; }
+
+Refal5--Numb--Entry { e.Digits = <Numb e.Digits >; }
+
+Refal5--Compare--Entry { t.Left t.Rigth = <Compare t.Left t.Rigth >; }
+
+Refal5--Symb--Entry { s.Number = <Symb s.Number >; }
+
+Refal5--System--Entry { e.Command = <System e.Command >; }

@@ -3,12 +3,15 @@ $module Refal5;
 $entry Prout;
 $entry Print;
 $entry Card;
+
 $entry Br;
 $entry Dg;
+
 $entry Open;
 $entry Get;
 $entry Put;
 $entry Putout;
+
 $entry Arg;
 $entry Exit;
 $entry FileExist;
@@ -17,5 +20,16 @@ $entry FileExists;
 $entry FileExist-T;
 $entry ExistFile-T;
 $entry FileExists-T;
+$entry System;
+
+$entry Upper;
+$entry Lower;
+$entry Lenw;
+$entry Numb;
+$entry Symb;
+
+$entry Add;
+$entry Sub;
+$entry Compare;
 
 $end Refal5.

@@ -1,0 +1,37 @@
+$MODULE MError;
+
+$IMPORT InOut;
+$IMPORT Refal5;
+
+$ENTRY Error {
+	'F' e.Text =
+		<InOut::WriteLine 'FATAL ERROR: ' e.Text>
+		<Refal5::Exit 120>;
+	'L' e.Text =
+		<InOut::WriteLine 'LINKER ERROR: ' e.Text>
+		<Refal5::Exit 80>;
+	'S' e.Text =
+		<InOut::WriteLine 'SYNTAX ERROR: ' e.Text>
+		<Refal5::Exit 80>;
+	s.LineNumber (e.ModuleName) e.Text =
+		<InOut::WriteLine
+			'ERROR in line ' s.LineNumber
+			 'in module ' e.ModuleName ': '
+			e.Text
+		> <Refal5::Exit 11>;
+	(e.FileName) s.LineNumber e.Text =
+		<InOut::WriteLine
+			'SYNTAX ERROR in file ' e.FileName
+			' in line ' s.LineNumber ': ' e.Text
+		> <Refal5::Exit 33>;
+	s.LineNumber e.Text =
+		<InOut::WriteLine 'ERROR in line ' s.LineNumber ': ' e.Text>
+		<Refal5::Exit 10>;
+}
+
+$ENTRY Warning {
+	s.LineNumber e.Text =
+		<InOut::WriteLine 'WARNING in line ' s.LineNumber ': ' e.Text>;
+}
+
+$END MError.

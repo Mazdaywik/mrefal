@@ -1,15 +1,15 @@
-*$FROM Error
-$EXTERN Error;
+$MODULE Context;
 
-*$FROM Modules
-$EXTERN SymName, OutName;
+$IMPORT MError;
+
+$IMPORT Modules;
 
 $ENTRY CreateContext {
 	= (
 		(ModulesList
 			/* ( (Name 'Refal5')
-				(Sym <SymName 'Refal5'>)
-				(Out <OutName 'Refal5'>)
+				(Sym <Modules::SymName 'Refal5'>)
+				(Out <Modules::OutName 'Refal5'>)
 				(Src None)
 				(StartPoint None)
 				(InitPoint None)
@@ -80,7 +80,7 @@ UpdateOptions {
 	() = ;
 
 	() e.NewOptions =
-		<Error
+		<MError::Error
 			'F' 'Unknown options in function Context::UpdateOptions: '
 			e.NewOptions
 		>;
@@ -119,7 +119,7 @@ $ENTRY GetProgName {
 		( (ModulesList
 			e.Modules
 			( (Name e.LastModule) e.Info )
-		) ) e.LastModule
+		) ) e.LastModule;
 }
 
 * <ExtractModuleList t.Context>
@@ -145,3 +145,5 @@ DoExtractModulesList {
 
 	( (e.ModulesList) ) = ( (e.ModulesList) );
 }
+
+$END Context.

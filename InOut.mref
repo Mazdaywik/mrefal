@@ -1,0 +1,17 @@
+$MODULE InOut;
+
+$IMPORT Refal5;
+
+$ENTRY WriteLine {
+	e.Line = <Refal5::Prout e.Line>;
+}
+
+$ENTRY WriteLine-T {
+	e.Line = <Refal5::Print e.Line>;
+}
+
+$ENTRY ReadLine {
+	= <Refal5::Card>;
+}
+
+$END InOut.

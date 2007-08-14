@@ -1,19 +1,17 @@
-*$FROM Context
-$EXTERN GetProgName, ExtractModulesList, ExtractOption;
+$MODULE Linker;
 
-*$FROM FileIO
-$EXTERN FOpen, FReadLine, FWriteLine, FClose;
-
-*$FROM Error
-$EXTERN Error;
-
-*$FROM Modules
-$EXTERN OutName;
+$IMPORT Context;
+$IMPORT FileIO;
+$IMPORT MError;
+$IMPORT Modules;
+$IMPORT InOut;
+$IMPORT Refal5;
 
 $ENTRY Link {
 	t.Context =
+		<InOut::WriteLine 'Linking...'>
 		<RealLink
-			<GetProgName t.Context>
+			<Context::GetProgName t.Context>
 		>;
 }
 
@@ -23,12 +21,12 @@ RealLink {
 	t.Context e.ProgName =
 		<PutStartCaller
 			<PutModules
-				<FOpen 'w' e.ProgName '.ref'>
+				<FileIO::FOpen 'w' e.ProgName '.ref'>
 				<NewAliasesTable>
 				<NewStartInfo>
-				<ExtractModulesList t.Context>
+				<Context::ExtractModulesList t.Context>
 			>
-		> <Nil <System 'refc ' e.ProgName '.ref'>>;
+		> <Nil <Refal5::System 'refc ' e.ProgName '.ref'>>;
 }
 
 PutModules {
@@ -43,7 +41,7 @@ PutModules {
 		>;
 
 	t.FOut t.Aliases t.StartInfo t.Context =
-		t.FOut t.Aliases t.StartInfo t.Context
+		t.FOut t.Aliases t.StartInfo t.Context;
 }
 
 PutModule {
@@ -51,7 +49,7 @@ PutModule {
 		<TypeContent
 			t.FOut
 			t.Aliases
-			<FOpen 'r' <OutName e.ModuleName>>
+			<FileIO::FOpen 'r' <Modules::OutName e.ModuleName>>
 		> <UpdateStartInfo
 			t.StartInfo
 			t.Context
@@ -81,7 +79,7 @@ PutStartCaller {
 TypeContent {
 	t.FOut t.Aliases t.FIn =
 		<DoTypeContent
-			t.Aliases (<DefLim> t.FOut) ( <FReadLine t.FIn> )
+			t.Aliases (<DefLim> t.FOut) ( <FileIO::FReadLine t.FIn> )
 		>;
 }
 
@@ -89,7 +87,7 @@ Dec {
 	Limit = Limit;
 	0 = Limit;
 	1 = Limit;
-	s.Num = <Sub s.Num 1>;
+	s.Num = <Refal5::Sub s.Num 1>;
 }
 
 DefLim { = 65; }
@@ -98,12 +96,13 @@ DoTypeContent {
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn) =
 		<DoTypeContent
 			t.Aliases
-			( <DefLim> <FWriteLine t.FOut e.Converted> )
-			( <HideQuotes <FReadLine t.FIn>> )
+			( <DefLim> <FileIO::FWriteLine t.FOut e.Converted> )
+			( <HideQuotes <FileIO::FReadLine t.FIn>> )
 		>;
 
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn 0) =
-		<FWriteLine t.FOut e.Converted> t.Aliases <FClose t.FIn>;
+		<FileIO::FWriteLine t.FOut e.Converted>
+		t.Aliases <FileIO::FClose t.FIn>;
 
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
 		<DoTypeContent
@@ -138,7 +137,7 @@ StartHidingQuote {
 		<StartHidingQuote (s.Quote e.Hidden s.Other) e.Tail>;
 
 	(s.Quote e.Hidden) =
-		<Error
+		<MError::Error
 			'L' 'May be unballanced quote in StartHidingQoute'
 		>;
 }
@@ -178,7 +177,7 @@ SwTypeContent {
 
 	t.Aliases (Limit t.FOut e.Converted) (t.FIn ' ' e.Raw) =
 		t.Aliases
-		( <DefLim> <FWriteLine t.FOut e.Converted> )
+		( <DefLim> <FileIO::FWriteLine t.FOut e.Converted> )
 		(t.FIn e.Raw);
 
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn ' =' e.Raw) =
@@ -208,7 +207,7 @@ TypeFnHeader {
 TypeIndex {
 	t.Aliases e.IndexAliase (Limit t.FOut e.Converted) (t.FIn e.Raw) =
 		t.Aliases
-		( <DefLim> <FWriteLine t.FOut e.Converted e.IndexAliase> )
+		( <DefLim> <FileIO::FWriteLine t.FOut e.Converted e.IndexAliase> )
 		(t.FIn e.Raw);
 
 	t.Aliases e.IndexAliase (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
@@ -220,7 +219,7 @@ TypeIndex {
 TypeFnCall {
 	t.Aliases e.FnAliase (Limit t.FOut e.Converted) (t.FIn e.Raw) =
 		t.Aliases
-		( <DefLim> <FWriteLine t.FOut e.Converted '<' e.FnAliase> )
+		( <DefLim> <FileIO::FWriteLine t.FOut e.Converted '<' e.FnAliase> )
 		(t.FIn e.Raw);
 
 	t.Aliases e.FnAliase (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
@@ -239,33 +238,33 @@ TypeQuoted {
 	/* Извращаемся, чтобы разрезать текст в кавычках и не оставить на
 	отдельной строке '' или "" */
 	(Limit t.FOut e.Converted '\\' s.Quote) (s.Quote) =
-		( <DefLim> <FWriteLine t.FOut e.Converted '\\' s.Quote s.Quote> );
+		( <DefLim> <FileIO::FWriteLine t.FOut e.Converted '\\' s.Quote s.Quote> );
 
 	(Limit t.FOut e.Converted '\\' s.Quote) (s.Quote e.Tail) =
 		<TypeQuoted
 			(<DefLim>
-				<FWriteLine t.FOut e.Converted '\\' s.Quote s.Quote>
+				<FileIO::FWriteLine t.FOut e.Converted '\\' s.Quote s.Quote>
 				s.Quote
 			) (s.Quote e.Tail)
 		>;
 
 	(Limit t.FOut e.Converted s.Quote) (s.Quote) =
-		<Error
+		<MError::Error
 			'L' 'Unexpected quote position ??? `' e.Converted s.Quote '`'
 		>;
 
 	(Limit t.FOut e.Converted s.Quote) (s.Quote e.Tail) =
 		<TypeQuoted
-			(<DefLim> <FWriteLine t.FOut e.Converted> s.Quote)
+			(<DefLim> <FileIO::FWriteLine t.FOut e.Converted> s.Quote)
 			(s.Quote e.Tail)
 		>;
 
 	(Limit t.FOut e.Converted) (s.Quote) =
-		(<DefLim> <FWriteLine t.FOut e.Converted s.Quote>);
+		(<DefLim> <FileIO::FWriteLine t.FOut e.Converted s.Quote>);
 
 	(Limit t.FOut e.Converted) (s.Quote e.Tail) =
 		<TypeQuoted
-			(<DefLim> <FWriteLine t.FOut e.Converted s.Quote> s.Quote)
+			(<DefLim> <FileIO::FWriteLine t.FOut e.Converted s.Quote> s.Quote)
 			(s.Quote e.Tail)
 		>;
 
@@ -292,7 +291,7 @@ UpdateStartInfo {
 		<UpdateInitList
 			t.StartInfo
 			(e.ModuleName)
-			<ExtractOption t.Context InitPoint e.ModuleName>
+			<Context::ExtractOption t.Context InitPoint e.ModuleName>
 		>;
 }
 
@@ -300,7 +299,7 @@ UpdateInitList {
 	t.StartInfo ( e.ModuleName ) t.Context Found None =
 		<UpdateGoInfo
 			t.StartInfo
-			<ExtractOption t.Context StartPoint e.ModuleName>
+			<Context::ExtractOption t.Context StartPoint e.ModuleName>
 		>;
 
 	( (e.Inits) t.GoInfo )
@@ -308,7 +307,7 @@ UpdateInitList {
 	t.Context Found e.InitName =
 		<UpdateGoInfo
 			( (e.Inits (e.InitName)) t.GoInfo )
-			<ExtractOption t.Context StartPoint e.ModuleName>
+			<Context::ExtractOption t.Context StartPoint e.ModuleName>
 		>;
 }
 
@@ -320,7 +319,7 @@ UpdateGoInfo {
 		( t.Inits (e.GoName) ) t.Context;
 
 	( t.Inits (e.OtherGo) ) t.Context Found e.GoName =
-		<Error
+		<MError::Error
 			'L' 'Found two startfunctions: '
 			e.OtherGo ' and ' e.GoName
 		>;
@@ -328,7 +327,7 @@ UpdateGoInfo {
 
 TypeStart {
 	( t.InitFuncs () ) t.FOut t.Aliases =
-		<Error
+		<MError::Error
 			'L' 'Startfunction not found'
 		>;
 
@@ -349,7 +348,7 @@ TypeCallSeq {
 }
 
 TypeOpenBlock {
-	t.FOut = <FWriteLine <FWriteLine t.FOut> '$ENTRY Go { = '>;
+	t.FOut = <FileIO::FWriteLine <FileIO::FWriteLine t.FOut> '$ENTRY Go { = '>;
 }
 
 DoTypeCallSeq {
@@ -361,12 +360,12 @@ DoTypeCallSeq {
 
 	t.FOut t.Aliases =
 		<CloseAliases t.Aliases>
-		<FClose <FWriteLine t.FOut ';}'>>;
+		<FileIO::FClose <FileIO::FWriteLine t.FOut ';}'>>;
 }
 
 TypeOneCall {
 	t.FOut t.Aliases e.FnAliase =
-		<FWriteLine t.FOut '\t<' e.FnAliase '>'>
+		<FileIO::FWriteLine t.FOut '\t<' e.FnAliase '>'>
 		t.Aliases;
 }
 
@@ -388,24 +387,7 @@ NewAliasesTable {
 	= ( (1) );
 }
 
-QGuard {
-	e.Begin '\'' e.End =
-		<Error
-			'L' 'Quote in function name: `' e.Begin '\'' e.End '`'
-		>;
-
-	e.Begin '\"' e.End =
-		<Error
-			'L' 'Double quote in function name: `' e.Begin '\"' e.End '`'
-		>;
-	e.Other = e.Other;
-}
-
 LookupAliase {
-	t.Table e.Name = <LookupAliase1 t.Table <QGuard e.Name>>;
-}
-
-LookupAliase1 {
 	( (s.Num) e.Aliases-B ( e.Name (e.Aliase) ) e.Aliases-E )
 	e.Name =
 		( (s.Num) ( e.Name (e.Aliase) ) e.Aliases-B e.Aliases-E )
@@ -413,7 +395,7 @@ LookupAliase1 {
 
 	( (s.Num) e.Aliases ) e.Name =
 		<LookupAliase
-			( (<Add s.Num 1>)
+			( (<Refal5::Add s.Num 1>)
 				<NewAliase s.Num e.Name> e.Aliases
 			) e.Name
 		>;
@@ -422,14 +404,14 @@ LookupAliase1 {
 NewAliase {
 	/* Индекс */
 	s.Num '.' e.Name =
-		( '.' e.Name ( '.i' <Symb s.Num> ) );
+		( '.' e.Name ( '.i' <Refal5::Symb s.Num> ) );
 
 	/* Пользовательские имена функций */
 	s.Num e.Name '--Local' =
-		( e.Name '--Local' ( 'F' <Symb s.Num> ) );
+		( e.Name '--Local' ( 'F' <Refal5::Symb s.Num> ) );
 
 	s.Num e.Name '--Entry' =
-		( e.Name '--Entry' ( 'F' <Symb s.Num> ) );
+		( e.Name '--Entry' ( 'F' <Refal5::Symb s.Num> ) );
 
 	/* Встроенные в язык функции */
 	s.Num e.Name =
@@ -440,21 +422,23 @@ OutAliases {
 	( t.Num e.Aliases ) =
 		( t.Num e.Aliases )
 		<UserTypeAliases
-			<FOpen 'w' 'Aliases.als'> e.Aliases
+			<FileIO::FOpen 'w' 'Aliases.als'> e.Aliases
 		>;
 }
 
 UserTypeAliases {
 	t.FAli (e.Name (e.Aliase)) e.Tail =
 		<UserTypeAliases
-			<FWriteLine t.FAli e.Aliase ' --> ' e.Name>
+			<FileIO::FWriteLine t.FAli e.Aliase ' --> ' e.Name>
 			e.Tail
 		>;
 
 	t.FAli =
-		<FClose t.FAli>;
+		<FileIO::FClose t.FAli>;
 }
 
 CloseAliases {
 	( (s.Num) e.Aliases ) = ;
 }
+
+$END Linker.

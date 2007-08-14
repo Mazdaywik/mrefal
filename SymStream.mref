@@ -1,3 +1,5 @@
+$MODULE SymStream;
+
 /*
 	** Описание абстрактного типа данных "Символьный поток" SymStream **
 	Определены операции:
@@ -40,25 +42,24 @@
 	Символы e.BufferedChars в порядке чтения располагаются слева направо.
 */
 
-*$FROM Error
-$EXTERN Error;
+$IMPORT MError;
+$IMPORT FileIO;
+$IMPORT Refal5;
 
-*$FROM FileIO
-$EXTERN FOpen, FClose, FReadLine, FExtractFileName;
 
 $ENTRY ExtractFileName {
 	(s.LineNumber t.FInput e.BufferedChars) =
-		(<FExtractFileName t.FInput>);
+		(<FileIO::FExtractFileName t.FInput>);
 }
 
 $ENTRY NewSymStream {
 	e.FileName =
-		<SwNewSymStream <FOpen 'r' e.FileName>  e.FileName>;
+		<SwNewSymStream <FileIO::FOpen 'r' e.FileName>  e.FileName>;
 }
 
 SwNewSymStream {
 	t.FInput e.FileName =
-		(1 t.FInput <CheckEnd-and-Uncomment <FReadLine t.FInput>>);
+		(1 t.FInput <CheckEnd-and-Uncomment <FileIO::FReadLine t.FInput>>);
 }
 
 CheckEnd-and-Uncomment {
@@ -83,21 +84,21 @@ $ENTRY NextChar {
 	(s.LineNumber t.FInput) =
 		<NextChar
 			(s.LineNumber t.FInput CrLf
-				<CheckEnd-and-Uncomment <FReadLine t.FInput>>
+				<CheckEnd-and-Uncomment <FileIO::FReadLine t.FInput>>
 			)
 		>;
 	(s.LineNumber t.FInput CrLf e.Buffered) =
 		(s.LineNumber t.FInput AfterCrLf e.Buffered) CrLf;
 	(s.LineNumber t.FInput EOF) = (s.LineNumber t.FInput EOF) EOF;
 	(s.LineNumber t.FInput AfterCrLf e.Buffered) =
-		<NextChar (<Add s.LineNumber 1> t.FInput e.Buffered)>;
+		<NextChar (<Refal5::Add s.LineNumber 1> t.FInput e.Buffered)>;
 	(s.LineNumber t.FInput s.Char e.Other)
 		= (s.LineNumber t.FInput e.Other) s.Char;
 }
 
 $ENTRY CloseStream {
 	(s.LineNumber t.FInput e.Buffered) =
-		<FClose t.FInput>;
+		<FileIO::FClose t.FInput>;
 }
 
 $ENTRY LineNumber {
@@ -109,9 +110,9 @@ $ENTRY UnGetChar {
 	(s.LineNumber t.FInput EOF) EOF =
 		(s.LineNumber t.FInput EOF);
 	(s.LineNumber t.FInput e.Buffered) EOF =
-		<Error 'F' 'Can\'t return EOF to not finalized stream'>;
+		<MError::Error 'F' 'Can\'t return EOF to not finalized stream'>;
 	(s.LineNumber t.FInput e.Buffered) CrLf =
-		(<Sub s.LineNumber 1> t.FInput CrLf e.Buffered);
+		(<Refal5::Sub s.LineNumber 1> t.FInput CrLf e.Buffered);
 	(s.LineNumber t.FInput e.Buffered) s.Char =
 		(s.LineNumber t.FInput s.Char e.Buffered);
 }
@@ -145,3 +146,5 @@ DoExtractsFromSet {
 	(e.Line) (e.Set) t.SymStream s.Char =
 		<UnGetChar t.SymStream s.Char> e.Line;
 }
+
+$END SymStream.

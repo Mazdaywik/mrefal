@@ -1,6 +1,10 @@
+$MODULE Modules;
+
+$IMPORT Refal5;
+
 $ENTRY CanonicalModuleName {
 	s.Initial e.Tail =
-		<Upper s.Initial> <Lower e.Tail>;
+		<Refal5::Upper s.Initial> <Refal5::Lower e.Tail>;
 }
 
 $ENTRY SymName {
@@ -14,3 +18,5 @@ $ENTRY OutName {
 $ENTRY SrcName {
 	e.ModName = e.ModName '.mref';
 }
+
+$END Modules.

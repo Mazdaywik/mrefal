@@ -1,3 +1,5 @@
+$MODULE Types;
+
 $ENTRY OneOf {
 	t.X (e.1 t.X e.2) = T;
 	t.X (e.1) = F;
@@ -20,29 +22,21 @@ $ENTRY Digits {
 	= '01234567890';
 }
 
-/*$ENTRY CharType {
-	s.Char e.Tail = <SwCharType s.Char 'U' <OneOf (<UpAlph>)> e.Tail>;
+$ENTRY CharType {
+	s.Char e.Tail = <SwCharType s.Char 'U' <OneOf s.Char (<UpAlph>)> e.Tail>;
 	= '*';
 }
 
 SwCharType {
 	s.Char s.Type T e.Tail = s.Type s.Char e.Tail;
-	s.Char 'U' F e.Tail = <SwCharType s.Char 'l' <OneOf (<UpAlph>)>>;
-	s.Char 'l' F e.Tail = <SwCharType s.Char 'D' <OneOf (<UpAlph>)>>;
-	s.Char 'D' F e.Tail = 'O';
-}*/
 
-$ENTRY CharType {
-	s.Char e.Tail = <SwCharType s.Char 'U' <OneOf s.Char (<UpAlph>)> e.Tail>;
-	= '*';
-};
-
-SwCharType {
-	s.Char s.Type T e.Tail
-		= s.Type s.Char e.Tail;
 	s.Char 'U' F e.Tail
 		= <SwCharType s.Char 'l' <OneOf s.Char (<UpAlph>)> e.Tail>;
+
 	s.Char 'l' F e.Tail
 		= <SwCharType s.Char 'D' <OneOf s.Char (<UpAlph>)> e.Tail>;
+
 	s.Char 'D' F e.Tail = 'O';
-};
+}
+
+$END Types.

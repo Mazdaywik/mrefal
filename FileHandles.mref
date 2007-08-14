@@ -1,0 +1,25 @@
+$MODULE FileHandles;
+
+$IMPORT Refal5;
+
+$ENTRY GetHandle {
+	= <SwGetHandle <Refal5::Dg FileHandles>>;
+}
+
+SwGetHandle {
+	= 1 <Refal5::Br
+		FileHandles '=' Handles 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+	>;
+	Handles s.Handle e.OtherHandles =
+		s.Handle
+		<Refal5::Br FileHandles '=' Handles e.OtherHandles>;
+	Handles =
+		None;
+}
+
+$ENTRY ReleaseHandle {
+	s.Handle =
+		<Refal5::Br FileHandles '=' <Refal5::Dg FileHandles> s.Handle>;
+}
+
+$END FileHandles.

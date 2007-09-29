@@ -4,9 +4,6 @@ $entry Prout;
 $entry Print;
 $entry Card;
 
-$entry Br;
-$entry Dg;
-
 $entry Open;
 $entry Get;
 $entry Put;

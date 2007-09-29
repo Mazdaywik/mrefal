@@ -271,6 +271,17 @@ NModuleBody {
 		>;
 
 	t.ErrorList t.SymTable ( e.Elements )
+	t.Lexer (Directive t.SrcPos Swap) =
+		<NModuleBody
+			<NSwapBlock
+				t.ErrorList
+				t.SymTable
+				( e.Elements )
+				<MLexer::NextToken t.Lexer>
+			>
+		>;
+
+	t.ErrorList t.SymTable ( e.Elements )
 	t.Lexer (Directive t.SrcPos Entry) =
 		<NModuleBody
 			<NFunctionDefinition
@@ -405,6 +416,54 @@ NImportBlock-ModuleRenaming {
 			t.ErrorList t.OtherToken 'module name'
 		> t.SymTable
 		( e.ParentStack )
+		t.Lexer t.OtherToken;
+}
+
+/*
+	SwapBlock = '$swap' SwapBlock-Chain .
+	Swap-Chain = IDENTIFIER Swap-AfterName .
+	Swap-AfterName = ';' | ',' Swap-Chain .
+*/
+NSwapBlock {
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer (Identifier t.SrcPos e.Ident) =
+		<NSwapBlock-AfterName
+			<MSymTable::AddFunction
+				t.ErrorList t.SymTable
+				Swap t.SrcPos e.Ident
+			>
+			( e.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer t.OtherToken =
+		<MError::AddUnexpected
+			t.ErrorList t.OtherToken 'swap name'
+		> t.SymTable
+		( e.ParentStack )
+		t.Lexer t.OtherToken;
+}
+
+NSwapBlock-AfterName {
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer (Comma t.SrcPos) =
+		<NSwapBlock
+			t.ErrorList t.SymTable
+			( e.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer (EndSent t.SrcPos) =
+		t.ErrorList t.SymTable ( e.ParentStack )
+		<MLexer::NextToken t.Lexer>;
+
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer t.OtherToken =
+		<MError::AddUnexpected
+			t.ErrorList t.OtherToken 'comma or semicolon'
+		> t.SymTable ( e.ParentStack )
 		t.Lexer t.OtherToken;
 }
 

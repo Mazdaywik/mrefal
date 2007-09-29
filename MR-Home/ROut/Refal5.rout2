@@ -4,12 +4,6 @@ Refal5::Print::Entry { e.Arg = <Print e.Arg >; }
 
 Refal5::Card::Entry { = <Card >; }
 
-Refal5::Br::Entry {
-	e.Key '=' e.Value = <Br e.Key '=' e.Value >;
-}
-
-Refal5::Dg::Entry { e.Key = <Dg e.Key >; }
-
 Refal5::Open::Entry {
 	s.Mode s.Channel e.FName = <Open s.Mode s.Channel e.FName >;
 }

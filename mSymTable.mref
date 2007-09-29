@@ -192,6 +192,9 @@ SwDoExtractEntries {
 
 	(Functions e.FnList) (e.EntriesList) (Local e.FnName) =
 		(Functions e.FnList (Local e.FnName)) (e.EntriesList);
+
+	(Functions e.FnList) (e.EntriesList) (Swap e.FnName) =
+		(Functions e.FnList (Swap e.FnName)) (e.EntriesList);
 }
 
 ReturnFunctions

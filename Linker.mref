@@ -428,7 +428,7 @@ TypeOneCall {
 ------------------------------------------------------------------------------*/
 
 NewAliasesTable {
-	= ( (1 1 1) );
+	= ( (1 1 1 1) );
 }
 
 LookupAlias {
@@ -446,26 +446,30 @@ LookupAlias {
 
 NewAlias {
 	/* Индекс */
-	(s.ENum s.LNum s.INum) '.' e.Name =
-		(s.ENum s.LNum <Math::Inc s.INum>)
+	(s.ENum s.LNum s.INum s.SNum) '.' e.Name =
+		(s.ENum s.LNum <Math::Inc s.INum> s.SNum)
 		( '.' e.Name ( '.i' <MStrings::Symb s.INum> ) );
 
 	/* Пользовательские имена функций */
-	(s.ENum s.LNum s.INum) e.Name '::Local' =
-		(s.ENum <Math::Inc s.LNum> s.INum)
+	(s.ENum s.LNum s.INum s.SNum) e.Name '::Local' =
+		(s.ENum <Math::Inc s.LNum> s.INum s.SNum)
 		( e.Name '::Local' ( 'L' <MStrings::Symb s.LNum> ) );
 
-	(s.ENum s.LNum s.INum) e.Name '::Entry' =
-		(<Math::Inc s.ENum> s.LNum s.INum)
+	(s.ENum s.LNum s.INum s.SNum) e.Name '::Entry' =
+		(<Math::Inc s.ENum> s.LNum s.INum s.SNum)
 		( e.Name '::Entry' ( 'E' <MStrings::Symb s.ENum> ) );
 
+	(s.ENum s.LNum s.INum s.SNum) e.Name '::Swap' =
+		(s.ENum s.LNum s.INum <Math::Inc s.SNum>)
+		( e.Name '::Swap' ( 'S' <MStrings::Symb s.SNum> ) );
+
 	/* Пользовательские имена функций */
-	(s.ENum s.LNum s.INum) e.Name '--Local' =
-		(s.ENum <Math::Inc s.LNum> s.INum)
+	(s.ENum s.LNum s.INum s.SNum) e.Name '--Local' =
+		(s.ENum <Math::Inc s.LNum> s.INum s.SNum)
 		( e.Name '--Local' ( 'L' <MStrings::Symb s.LNum> ) );
 
-	(s.ENum s.LNum s.INum) e.Name '--Entry' =
-		(<Math::Inc s.ENum> s.LNum s.INum)
+	(s.ENum s.LNum s.INum s.SNum) e.Name '--Entry' =
+		(<Math::Inc s.ENum> s.LNum s.INum s.SNum)
 		( e.Name '--Entry' ( 'E' <MStrings::Symb s.ENum> ) );
 
 	/* Встроенные в язык функции */
@@ -500,6 +504,8 @@ Code {
 
 	( e.Name ( 'L' e.FnName ) ) = ( ('L' <MStrings::Numb e.FnName>) e.Name );
 
+	( e.Name ( 'S' e.FnName ) ) = ( ('S' <MStrings::Numb e.FnName>) e.Name );
+
 	// Builtin-функция
 	( e.Name ( e.Builtin ) ) = ( ('B' e.Builtin) e.Name );
 }
@@ -515,6 +521,8 @@ Decode {
 	( ( 'E' s.FnAlias ) e.Name ) = ( e.Name ('E' <MStrings::Symb s.FnAlias>) );
 
 	( ( 'L' s.FnAlias ) e.Name ) = ( e.Name ('L' <MStrings::Symb s.FnAlias>) );
+
+	( ( 'S' s.FnAlias ) e.Name ) = ( e.Name ('S' <MStrings::Symb s.FnAlias>) );
 
 	( ( '.i' s.IndAlias ) e.Name ) = ( e.Name ('.i' <MStrings::Symb s.IndAlias>) );
 
@@ -537,7 +545,7 @@ UserTypeAliases {
 }
 
 CloseAliases {
-	( (s.ENum s.LNum s.INum) e.Aliases ) = ;
+	( (s.ENum s.LNum s.INum s.SNum) e.Aliases ) = ;
 }
 
 $END Linker.

@@ -4,29 +4,24 @@ $MODULE FileIO;
 $IMPORT MSelfDiag;
 $IMPORT Refal5;
 
+$SWAP G_Handles;
+
+$ENTRY Init = <G_Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18>;
+
 GetHandle {
-	= <SwGetHandle <Refal5::Dg FileHandles>>;
+	= <SwGetHandle <G_Handles> >;
 }
 
 SwGetHandle {
-	= 1 <Refal5::Br
-		FileHandles '=' Handles 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-	>;
-	Handles s.Handle e.OtherHandles =
-		s.Handle
-		<Refal5::Br FileHandles '=' Handles e.OtherHandles>;
-	Handles =
-		None
-		<Refal5::Br FileHandles '=' Handles>;
+	= None;
+
+	s.Handle e.OtherHandles =
+		s.Handle <G_Handles e.OtherHandles>;
 }
 
 ReleaseHandle {
 	s.Handle =
-		<Refal5::Br
-			FileHandles '='
-			<Refal5::Dg FileHandles>
-			s.Handle
-		>;
+		<G_Handles <G_Handles> s.Handle>;
 }
 
 $ENTRY Open {

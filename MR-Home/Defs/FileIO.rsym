@@ -4,6 +4,7 @@ $module FileIO;
 $import MSelfDiag;
 $import Refal5;
 
+$entry Init;
 $entry Open;
 $entry Close;
 $entry NulClose;

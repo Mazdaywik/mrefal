@@ -19,8 +19,41 @@ $ENTRY Generate
 
 GenerateContent
 	(t.SymTable e.Elements) =
-		<MSymTable::Destroy t.SymTable>
+		<GenerateSwaps <MSymTable::ExtractCurrentModule t.SymTable> >
 		<GenerateElements e.Elements>;
+
+GenerateSwaps
+	t.SymTable e.ModuleName =
+		<DoGenerateSwaps
+			(e.ModuleName)
+			<MSymTable::ExtractLocalInfo t.SymTable>
+		>;
+
+DoGenerateSwaps {
+/*
+	ModuleName::SomeHolder::Swap {
+		e.NewValue =
+			<Dg ('ModuleName::SomeHolder')>
+			<Br ('ModuleName::SomeHolder') '=' e.NewValue >;
+	}
+
+*/
+
+	(e.ModuleName) t.SymTable
+	e.Functions-B (Swap e.SwapName) e.Functions-E =
+		(e.ModuleName '::' e.SwapName '::Swap {')
+		('\te.NewValue =')
+		('\t\t<Dg (\'' e.ModuleName '::' e.SwapName '\')>')
+		('\t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' e.NewValue >;')
+		('}') ()
+		<DoGenerateSwaps
+			(e.ModuleName) t.SymTable e.Functions-E
+		>;
+
+	// Не осталось ящиков
+	(e.ModuleName) t.SymTable e.FunctionsWithOutSwaps =
+		<MSymTable::Destroy t.SymTable>;
+}
 
 GenerateElements {
 	(e.Element) e.Tail =
@@ -46,7 +79,7 @@ GenerateFnHeader
 			' {'
 		);
 
-ScopeClassToSuffix { Entry = 'Entry'; Local = 'Local'; }
+ScopeClassToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 
 GenerateFnBody {
 	// Обработка пустой функции
@@ -130,6 +163,6 @@ GenerateCallable
 		e.Name '::' e.FnName '::'
 		<CallTypeToSuffix s.CallType>;
 
-CallTypeToSuffix { Entry = 'Entry'; Local = 'Local'; }
+CallTypeToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 
 $END MBackEnd.

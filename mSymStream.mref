@@ -1,0 +1,171 @@
+$MODULE MSymStream;
+
+/**
+	** Описание абстрактного типа данных "Символьный поток" SymStream **
+	Определены операции:
+
+	<Create e.FileName> == t.SymStream
+	создаёт новый поток;
+
+	<NextChar t.SymStream> == t.SymStream s.Char
+	возвращает следующий символ из потока, CrLf в случае перехода на новую
+строку, EOF в случае конца файла;
+
+	<Destroy t.SymStream> == empty
+	закрывает поток;
+	
+	<UnGetChar t.SymStream s.Char> == t.SymStream
+	возвращает символ обратно в поток, при необходимости корректируется номер
+строки;
+
+	<ExtractFromSet (e.Set) t.SymStream>
+		== s.Char t.SymStream //Если символ из набора.
+		== t.SymStream //Если символ не из набора.
+	извлекает из потока символ из заданного набора; во втором случае символ
+возвращается в поток;
+
+	<ExtractsFromSet (e.Set) t.SymStream>
+		== t.SymStream e.Chars
+	аналогично ExtractFromSet, но возвращает последовательность символов из
+заданного набора (которая может быть и пустой).
+
+	<ExtractsFromSet-N (e.Set) t.SymStream s.NChars>
+		== t.SymStream e.Chars
+	аналогично ExtractsFromSet, но возвращает последовательность символов из
+заданного набора (которая может быть и пустой), причём её длина не может быть
+более s.NChars символов.
+*/
+
+/*
+	Внутреннее устройство:
+	(s.LineNumber t.FInput e.BufferedChars)
+	Символы e.BufferedChars в порядке чтения располагаются слева направо.
+*/
+
+$IMPORT FileIO;
+$IMPORT Math;
+$IMPORT MSelfDiag;
+$IMPORT MStrings;
+
+
+$ENTRY Create {
+	e.FileName =
+		(1 <FileIO::Open 'r' e.FileName>);
+}
+
+$ENTRY NextChar {
+	(s.LineNumber t.FInput) =
+		<NextChar
+			(s.LineNumber
+				<CheckEnd <FileIO::ReadLine t.FInput>>
+			)
+		>;
+
+	(s.LineNumber t.FInput CrLf e.Buffered) =
+		(s.LineNumber t.FInput AfterCrLf e.Buffered) CrLf;
+
+	(s.LineNumber t.FInput AfterCrLf e.Buffered) =
+		<NextChar
+			( <Math::Inc s.LineNumber> t.FInput e.Buffered)
+		>;
+
+	(s.LineNumber t.FInput EOF) = (s.LineNumber t.FInput EOF) EOF;
+	(s.LineNumber t.FInput s.Next e.Buffered) =
+		(s.LineNumber t.FInput e.Buffered) s.Next;
+}
+
+CheckEnd {
+	t.FInput e.Line 0 = t.FInput e.Line EOF;
+	t.FInput e.Line = t.FInput e.Line CrLf;
+}
+
+
+$ENTRY Destroy
+	(s.LineNumber t.FInput e.Buffered) =
+		<FileIO::Close t.FInput>;
+
+$ENTRY GetSrcPos
+	(s.LineNumber t.FInput e.Buffered) =
+		<GetSrcPos-AddFileName
+			(s.LineNumber e.Buffered)
+			<FileIO::ExtractFileName t.FInput>
+		>;
+
+GetSrcPos-AddFileName
+	(s.LineNumber e.Buffered)
+	t.FInput e.FileName =
+		(s.LineNumber t.FInput e.Buffered)
+		(SrcPos s.LineNumber e.FileName);
+
+$ENTRY SrcPosToString
+	(SrcPos s.LineNumber e.FileName) =
+		'\'' e.FileName '\', '
+		<MStrings::Symb s.LineNumber>;
+
+$ENTRY ReturnChar {
+	(s.LineNumber t.FInput EOF) EOF =
+		(s.LineNumber t.FInput EOF);
+
+	(s.LineNumber t.FInput e.Buffered) EOF =
+		<MSelfDiag::Error 'Can\'t return EOF to not finalized stream'>;
+
+	(s.LineNumber t.FInput AfterCrLf e.Buffered) CrLf =
+		(s.LineNumber t.FInput CrLf e.Buffered);
+
+	(s.LineNumber t.FInput e.Buffered) CrLf =
+		(<Math::Dec s.LineNumber> t.FInput CrLf e.Buffered);
+
+	(s.LineNumber t.FInput e.Buffered) s.Char =
+		(s.LineNumber t.FInput s.Char e.Buffered);
+}
+
+$ENTRY ExtractFromSet {
+	t.SymStream (e.Set) =
+		<SwExtractFromSet
+			(e.Set) <NextChar t.SymStream>
+		>;
+}
+
+SwExtractFromSet {
+	(e.Set-B s.Char e.Set-E) t.SymStream s.Char =
+		t.SymStream s.Char;
+	(e.Set) t.SymStream s.Char =
+		<ReturnChar t.SymStream s.Char>;
+}
+
+$ENTRY ExtractsFromSet
+	t.SymStream (e.Set) =
+		<ExtractsFromSet-N t.SymStream (e.Set) Unlim>;
+
+$ENTRY ExtractsFromSet-N {
+	t.SymStream (e.Set) 0 = t.SymStream;
+
+	t.SymStream (e.Set) s.NChars =
+		<DoExtractsFromSet-N
+			( /*Extracted*/ ) (e.Set) s.NChars <NextChar t.SymStream>
+		>;
+}
+
+DoExtractsFromSet-N {
+	(e.Extracted) (e.Set-B s.Char e.Set-E)
+	1 t.SymStream s.Char =
+		t.SymStream e.Extracted;
+
+	(e.Extracted) (e.Set-B s.Char e.Set-E)
+	s.NChars t.SymStream s.Char =
+		<DoExtractsFromSet-N
+			(e.Extracted s.Char)
+			(e.Set-B s.Char e.Set-E)
+			<Dec s.NChars>
+			<NextChar t.SymStream>
+		>;
+
+	(e.Extracted) (e.Set) s.NChars t.SymStream s.OtherChar =
+		<ReturnChar t.SymStream s.OtherChar> e.Extracted;
+}
+
+Dec {
+	Unlim = Unlim; s.Num = <Math::Dec s.Num>;
+}
+
+$END MSymStream.

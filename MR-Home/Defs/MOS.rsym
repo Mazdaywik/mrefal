@@ -1,0 +1,13 @@
+/* Automatically generated file, don't edit! */
+$module MOS;
+
+$import Refal5;
+$import FileIO;
+
+$entry System;
+$entry Arg;
+$entry Exit;
+$entry EnvList;
+$entry Env;
+
+$end MOS.

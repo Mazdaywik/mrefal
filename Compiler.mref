@@ -3,1094 +3,172 @@ $MODULE Compiler;
 /*******************************************************************************
 	Модуль реализует трансляцию отдельных модулей исходного текста Модульного
 Рефала. Точки входа в модуль -- функции CompileByModuleName и CompileByFileName
-выполняют компилляцию указанного модуля по заданному имени файла (имя в файло-
+выполняют компиляцию указанного модуля по заданному имени файла (имя в файло-
 вой системе) или модуля (указанного после директивы $MODULE). Сигнатуры этих
 функций следующие:
 	<CompileBy***Name t.Context e.***Name> == t.UpdatedContext
 	В процессе компиляции функции возвращают контекст с обновлённой информацией
 о скомпилированных модулях или завершают выполнение программы аварийно вызовом
-функции Error::Error. Функции также при необходимости рекурсивно перекомпилиру-
-ют модули указанные в директивах $IMPORT указанных модулей.
+функции из модуля Error. Функции также при необходимости рекурсивно перекомпи-
+лируют модули указанные в директивах $IMPORT указанных модулей.
 	Для простоты потребуем в данной версии, чтобы имя модуля совпадало с именем
-файла, и все исходные файлы находились в одной директрии. В дальнейшем, если я
-буду переделывать заново этот проект, то я уделю данному вопросу большее внима-
-ние.
+файла. Поиск исходных файлов осуществляется в текущей директории, поиск библио-
+течных файлов осуществляется сначала в текущей директории, затем по алгоритму,
+находящемуся в модуле Modules вызовом Modules::LookupLibrary.
 *******************************************************************************/
 
-$IMPORT Lexer;
 $IMPORT Context;
-$IMPORT MError;
-$IMPORT Modules;
-$IMPORT FileIO;
 $IMPORT InOut;
-$IMPORT Refal5;
+$IMPORT MBackEnd;
+$IMPORT MError;
+$IMPORT MFrontEnd;
+$IMPORT MLocation;
+$IMPORT Modules;
+$IMPORT MSelfDiag;
+$IMPORT MSymModule;
 
-$ENTRY CompileByModuleName {
+
+$ENTRY CompileByModuleName
 	t.Context e.ModuleName =
-		<ParseAndCompile t.Context <Modules::SrcName e.ModuleName> >;
-}
+		<Lookup-Dummy t.Context e.ModuleName>;
 
 $ENTRY CompileByFileName {
-	t.Context e.FileName =
-		<ParseAndCompile t.Context e.FileName >;
+	t.Context e.FileName s.Dot s.M s.R s.E s.F =
+		<Lookup-Dummy t.Context e.FileName >;
 }
+
+// Функция-затычка
+Lookup-Dummy
+	t.Context e.ModuleName =
+		<ParseAndCompile
+			<MLocation::LookupModule-T
+				t.Context () e.ModuleName
+			>
+		>;
 
 ParseAndCompile {
-	t.Context e.FileName =
-		<InOut::WriteLine 'Compiling file ' e.FileName '...'>
+	t.Context NotKnown ModuleNotFound
+	t.SymName t.OutName t.SrcName (e.Directory) e.ModuleName =
+		<MError::Fatal 'Module `' e.ModuleName '` not found'>;
+
+	t.Context
+	s.Known s.Status
+	(Sym e.SymName) (Out e.OutName) (Src e.SrcName)
+	(e.Directory) e.Name =
+		<InOut::WriteLine 'Compiling file `' e.SrcName '`...'>
 		<Compile
-			(File e.FileName)
-			<NModule
-				t.Context
-				<NewSymTable>
-				()
-				<Lexer::NextToken <Lexer::NewLexer e.FileName>>
+			(File e.SrcName)
+			t.Context
+			<MFrontEnd::LoadModule
+				e.SrcName
 			>
-		> <InOut::WriteLine 'File ' e.FileName ' compiled'>;
-}
-
-*-------------------------------------------------------------------------------
-* Синтаксический анализ модуля
-*-------------------------------------------------------------------------------
-
-NModule {
-	t.Cntx t.SymTable () t.Lexer (Directive t.LnNum Module) =
-		<NModule
-			t.Cntx
-			t.SymTable
-			( (Directive t.LnNum Module) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable () t.Lexer
-	( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<MError::Error
-			s.ErrorLine
-			'Expected \'$MODULE\', got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( (Directive t.LnNum Module) )
-	t.Lexer (Identifier t.LnNum2 e.Ident) =
-		<NModule
-			t.Cntx t.SymTable
-			( ExpectEndSent (StartModule t.LnNum e.Ident) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( (Directive t.LnNum Module) )
-	t.Lexer ( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<MError::Error
-			s.ErrorLine
-			'Expected module name, got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( ExpectEndSent (StartModule t.LnNum e.ModName) )
-	t.Lexer (EndSent t.LnNum2) =
-		<NModule
-			<NModuleBody
-				t.Cntx
-				<AddCurModuleToSymTable t.SymTable t.LnNum2 e.ModName>
-				( ((StartModule e.ModName)) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable
-	( ExpectEndSent (StartModule t.LnNum1 e.ModName) )
-	t.Lexer (s.Other (LineNumber s.ErrorLine) e.OtherInfo) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected semicolon after modult name, got '
-			s.Other '(' e.OtherInfo ')'
-		>;
-
-	t.Cntx t.SymTable ( (Directive t.LnNum Module) )
-	t.Lexer (s.Other (LineNumber s.ErrorNumber) e.OtherInfo) =
-		<MError::Error
-			s.ErrorNumber
-			<ExtractCurrentModule t.SymTable>
-			'Expected module name, got ' s.Other '(' e.OtherInfo ')'
-		>;
-
-	t.Cntx t.SymTable ( (e.ModuleBody) (StartModule e.ModName) )
-	t.Lexer (Directive t.LnNum End) =
-		<NModule
-			t.Cntx t.SymTable ( Ending (e.ModuleBody) (StartModule e.ModName) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( Ending (e.ModuleBody) (StartModule e.NameOfCurModule) )
-	t.Lexer (Identifier t.LnNum e.NameOfCurModule) =
-		<NModule
-			t.Cntx t.SymTable
-			( ExpectEndDot (Module e.NameOfCurModule) e.ModuleBody)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( ExpectEndDot (Module e.ModuleName) e.ModuleBody )
-	t.Lexer (Dot t.LnNum) =
-		<NModule
-			t.Cntx t.SymTable
-			( ExpectEOF (Module e.ModuleName) e.ModuleBody )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( ExpectEndDot (Module e.ModuleName) e.ModuleBody )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			(e.ModuleName)
-			'Unexpected ' s.Unknown '(' e.Info '), expected \'.\''
-		>;
-	
-	t.Cntx t.SymTable ( ExpectEOF (Module e.ModuleName) e.ModuleBody )
-	t.Lexer (EndOfText t.LnNum) =
-		t.Cntx t.SymTable ( (Module e.ModuleName) e.ModuleBody )
-		<Lexer::CloseLexer t.Lexer>;
-
-	t.Cntx t.SymTable ( ExpectEOF (Module e.ModuleName) e.ModuleBody )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			(e.ModuleName)
-			'Expected end of file, got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( Ending (e.ModuleBody) (StartModule e.NameOfCurModule) )
-	t.Lexer (Identifier (LineNumber s.ErrorLine) e.NameOfCurModule2) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Mismatch module name in begin and end of module'
-		>;
-}
-
-NModuleBody {
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (Directive t.LnNum Import) =
-		<NModuleBody
-			<NImportBlock
-				t.Cntx
-				t.SymTable
-				( (e.Elements t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (Directive t.LnNum Entry) =
-		<NModuleBody
-			<NFunctionDefinion
-				t.Cntx t.SymTable
-				( Entry (e.Elements t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (Identifier t.LnNum e.Ident) =
-		<NModuleBody
-			<NFunctionDefinion
-				t.Cntx t.SymTable
-				( (e.Elements t.ParentStack) )
-				t.Lexer (Identifier t.LnNum e.Ident)
-			>
-		>;
-
-	t.Cntx t.SymTable ( e.Elements (e.ParentStack) )
-	t.Lexer (Directive t.LnNum End) =
-		t.Cntx t.SymTable ( (e.Elements) e.ParentStack )
-		t.Lexer (Directive t.LnNum End);
-
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected import block, function definion or end of module, got '
-			s.Unknown '(' e.Info ')'
-		>;
-}
-
-NImportBlock {
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (Identifier (LineNumber s.LineNumber) e.ModuleName) =
-		<NImportBlock
-			t.Cntx
-			<AddImportModuleToSymTable t.SymTable s.LineNumber e.ModuleName>
-			( (Import e.ModuleName) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected identifier, got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( (Import e.ModuleName) (e.ParentStack) )
-	t.Lexer (EndSent t.LnNum) =
-		t.Cntx t.SymTable ( (Import e.ModuleName) e.ParentStack )
-		<Lexer::NextToken t.Lexer>;
-
-	t.Cntx t.SymTable ( (Import e.ModuleName) t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected \';\', got ' s.Unknown '(' e.Info ')'
-		>;
-}
-
-NFunctionDefinion {
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (Identifier t.LnNum e.Ident) =
-		<NFunctionDefinion
-			t.Cntx t.SymTable ( Local t.ParentStack )
-			t.Lexer (Identifier t.LnNum e.Ident)
-		>;
-
-	/* На ошибки при стеке ( t.ParentStack ) не проверяем -- такой вызов
-	осуществляется из NModuleBody только при следующей лексеме --
-	идентификаторе */
-
-	t.Cntx t.SymTable ( s.ScopeClass t.ParentStack )
-	t.Lexer (Identifier (LineNumber s.LineNumber) e.Ident) =
-		<NFunctionDefinion
-			<NFunctionBody
-				t.Cntx
-				<AddFunctionToSymTable
-					t.SymTable s.ScopeClass s.LineNumber e.Ident
-				> ( ((Function s.ScopeClass (e.Ident)) t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable ( s.ScopeClass t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected function body, got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable
-	( t.FunctionBody (Function s.ScopeClass t.Ident) (e.ParentStack) )
-	t.Lexer t.NextToken =
-		t.Cntx t.SymTable
-		( (Function s.ScopeClass t.Ident t.FunctionBody) e.ParentStack )
-		t.Lexer t.NextToken;
-}
-
-NFunctionBody {
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (OpenBlock t.LnNumber) =
-		<NBlock
-			t.Cntx t.SymTable ( t.ParentStack )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer t.StartSentense =
-		<NFunctionBody
-			<NSentense
-				t.Cntx t.SymTable ( (OneSentense t.ParentStack) )
-				t.Lexer t.StartSentense
-			>
-		>;
-
-	t.Cntx t.SymTable ( e.Sentense OneSentense (e.ParentStack) )
-	t.Lexer t.NextToken =
-		t.Cntx t.SymTable ( (e.Sentense) e.ParentStack )
-		t.Lexer t.NextToken;
-}
-
-ReverseSentenses {
-	= ;
-	t.Sent e.Rest = <ReverseSentenses e.Rest> t.Sent;
-}
-
-NBlock {
-	t.Cntx t.SymTable ( e.Sentenses (e.ParentStack) )
-	t.Lexer (CloseBlock t.LnNum) =
-		t.Cntx t.SymTable
-		( (<ReverseSentenses e.Sentenses>) e.ParentStack )
-		<Lexer::NextToken t.Lexer>;
-
-	t.Cntx t.SymTable ( e.Sentenses t.ParentStack )
-	t.Lexer t.StartSentense =
-		<NBlock
-			<NSentense
-				t.Cntx t.SymTable
-				( (e.Sentenses t.ParentStack) )
-				t.Lexer t.StartSentense
-			>
-		>;
-}
-
-NSentense {
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (s.StartOfPattern t.LnNum e.Info) =
-		<NSentense
-			<NPatternExpr
-				t.Cntx
-				<PushSentenseSymTable t.SymTable>
-				( t.LnNum '$' (t.ParentStack) )
-				t.Lexer (s.StartOfPattern t.LnNum e.Info)
-			>
-		>;
-
-	t.Cntx t.SymTable ( t.Pattern t.ParentStack )
-	t.Lexer (Replaces t.LnNum) =
-		<NSentense
-			<NResultExpr
-				t.Cntx t.SymTable
-				( t.LnNum '$' (Replaces t.Pattern t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable ( t.Pattern t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected \'=\', got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( t.Result Replaces t.Pattern (e.ParentStack) )
-	t.Lexer (EndSent t.LnNumber) =
-		t.Cntx <PopSentenseSymTable t.SymTable>
-		( (t.Pattern t.Result) e.ParentStack )
-		<Lexer::NextToken t.Lexer>;
-
-	t.Cntx t.SymTable ( t.Result Replaces t.Pattern t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected \';\', got ' s.Unknown '(' e.Info ')'
-		>;
-}
-
-NPatternExpr {
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (Identifier t.LnNum e.Identifier) =
-		<NPatternExpr
-			t.Cntx t.SymTable
-			( t.LnNum
-				e.PatternExpr
-				(Identifier e.Identifier)
-				t.ParentStack
-			) <Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (EVar t.LnNum e.Index) =
-		<NPatternExpr
-			t.Cntx
-			<AddVariableToSymTable t.SymTable EVar t.LnNum e.Index>
-			( t.LnNum e.PatternExpr (EVar e.Index) t.ParentStack )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (SVar t.LnNum e.Index) =
-		<NPatternExpr
-			t.Cntx
-			<AddVariableToSymTable t.SymTable SVar t.LnNum e.Index>
-			( t.LnNum e.PatternExpr (SVar e.Index) t.ParentStack )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (TVar t.LnNum e.Index) =
-		<NPatternExpr
-			t.Cntx
-			<AddVariableToSymTable t.SymTable TVar t.LnNum e.Index>
-			( t.LnNum e.PatternExpr (TVar e.Index) t.ParentStack )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (Literal t.LnNum e.Content) =
-		<NPatternExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.PatternExpr (Literal e.Content) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (DQWord t.LnNum e.Content) =
-		<NPatternExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.PatternExpr (DQWord e.Content) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (Macro t.LnNum s.Value) =
-		<NPatternExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.PatternExpr (Macro s.Value) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.PatternExpr t.ParentStack )
-	t.Lexer (LeftBrac t.LnNum) =
-		<NPatternExpr
-			t.Cntx t.SymTable
-			(t.LnNum (e.PatternExpr) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable
-	( t.OldLnNum (e.MultiBracket) e.InBracket t.ParentStack)
-	t.Lexer (RigthBrac t.LnNum) =
-		<NPatternExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.MultiBracket (Structure e.InBracket) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum '$' e.PatternExpr t.ParentStack)
-	t.Lexer (RigthBrac (LineNumber s.ErrorLine)) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Unballanced structure brackets ( found \')\', but not found '
-			'\'(\''
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum '$' e.PatternExpr (e.ParentStack))
-	t.Lexer (Replaces t.LnNum) =
-		t.Cntx t.SymTable ( (e.PatternExpr) e.ParentStack )
-		t.Lexer (Replaces t.LnNum);
-
-	t.Cntx t.SymTable
-	( (LineNumber s.ErrorLine) (e.MultiBracket) e.InBracket t.ParentStack )
-	t.Lexer (Replaces t.LnNum) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Unballanced structure brackets, expected \')\''
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.PatternExpr t.ParentStack)
-	t.Lexer ( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected pattern expression or \'=\', got '
-			s.Unknown '(' e.Info ')'
-		>;
-}
-
-NResultExpr {
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (Identifier t.LnNum e.Ident) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.ResultExpr (Identifier e.Ident) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (EVar t.LnNum e.Index) =
-		<NResultExpr
-			t.Cntx
-			<CheckVariableInSymTable t.SymTable EVar t.LnNum e.Index>
-			(t.LnNum e.ResultExpr (EVar e.Index) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (SVar t.LnNum e.Index) =
-		<NResultExpr
-			t.Cntx
-			<CheckVariableInSymTable t.SymTable SVar t.LnNum e.Index>
-			(t.LnNum e.ResultExpr (SVar e.Index) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (TVar t.LnNum e.Index) =
-		<NResultExpr
-			t.Cntx
-			<CheckVariableInSymTable t.SymTable TVar t.LnNum e.Index>
-			(t.LnNum e.ResultExpr (TVar e.Index) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (Literal t.LnNum e.Content) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.ResultExpr (Literal e.Content) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (DQWord t.LnNum e.Content) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.ResultExpr (DQWord e.Content) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (Macro t.LnNum s.Value) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.ResultExpr (Macro s.Value) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (LeftBrac t.LnNum) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum ( ')' e.ResultExpr ) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (OpenFnCall t.LnNum) =
-		<NResultExpr
-			<NCallee
-				t.Cntx t.SymTable
-				( (t.LnNum ( '>' e.ResultExpr ) t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable
-	(t.OldLnNum ( ')' e.MultiBracket ) e.InBrackets t.ParentStack )
-	t.Lexer (RigthBrac t.LnNum) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum e.MultiBracket (Structure e.InBrackets) t.ParentStack)
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer ( RigthBrac (LineNumber s.ErrorLine) ) =
-		<MError::Error
-			s.ErrorLine 
-			<ExtractCurrentModule t.SymTable>
-			'Unballanced structure brackets ( found '
-			'\')\', but not found \'(\')'
-		>;
-
-	t.Cntx t.SymTable
-	(t.OldLnNum ('>' e.MultiBracket)
-		t.Callee e.ResultExprFnArgument t.ParentStack
-	) t.Lexer ( CloseFnCall t.LnNum ) =
-		<NResultExpr
-			t.Cntx t.SymTable
-			(t.LnNum
-				e.MultiBracket
-				(Function t.Callee e.ResultExprFnArgument)
-				t.ParentStack
-			) <Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum e.ResultExpr t.ParentStack)
-	t.Lexer (CloseFnCall (LineNumber s.ErrorLine)) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Unballanced function call brackets '
-			'(found \'>\', but not found \'<\') '
-		>;
-
-	t.Cntx t.SymTable (t.OldLnNum '$' e.ResultExpr (e.ParentStack))
-	t.Lexer (EndSent t.LnNumber) =
-		t.Cntx t.SymTable ( (e.ResultExpr) e.ParentStack )
-		t.Lexer (EndSent t.LnNumber);
-
-	t.Cntx t.SymTable
-	( (LineNumber s.ErrorLine)
-		( s.BracketType e.MultiBracket ) e.InBrackets
-		t.ParentStack
-	) t.Lexer (EndSent s.LnNumber) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Not closed \'' s.BracketType '\'. Expected close bracket '
-			'for it'
-		>;
-
-	t.Cntx t.SymTable ( t.OldLnNum e.ResultExpr t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Unexpected \'' s.Unknown '\'(' e.Info '), '
-			'expected result expression or \';\'.'
-		>;
-}
-
-NCallee {
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (Identifier t.LnNum e.Name) =
-		<NCallee
-			t.Cntx t.SymTable
-			( (Name t.LnNum e.Name) t.ParentStack )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable (t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected function or module name, got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( (Name t.LnNumName e.Name) t.ParentStack )
-	t.Lexer (DoubleColon t.LnNum) =
-		<NCallee
-			t.Cntx t.SymTable
-			( (Module t.LnNumName e.Name) t.ParentStack )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable
-	( (Module t.LnNumModName e.ModName)
-		(t.OldLnNum e.ResultExpr t.UpParentStack)
-	)
-	t.Lexer (Identifier t.LnNumFnName e.FnName) =
-		t.Cntx t.SymTable
-		( t.OldLnNum
-			e.ResultExpr
-			(Qualified
-				(Module t.LnNumModName e.ModName)
-				(Function t.LnNumFnName e.FnName)
-			) t.UpParentStack
-		) <Lexer::NextToken t.Lexer>;
-
-	t.Cntx t.SymTable
-	( (Module t.LnNumModName e.ModName) t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'Expected function name, got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable
-	( (Name t.LnNumFnName e.FnName)
-		(t.OldLnNum e.ResultExpr t.UpParentStack)
-	) t.Lexer t.NextToken =
-		t.Cntx t.SymTable
-		(t.OldLnNum
-			e.ResultExpr
-			(Local (Function t.LnNumFnName e.FnName))
-			t.UpParentStack
-		) t.Lexer t.NextToken;
-}
-
-*-------------------------------------------------------------------------------
-* Синтаксический анализ sym-модуля
-*-------------------------------------------------------------------------------
-
-NSymModule {
-	t.Cntx t.SymTable () t.Lexer (Directive t.LnNum Module) =
-		<NSymModule
-			t.Cntx t.SymTable
-			( (Directive t.LnNum Module) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable () t.Lexer
-	(s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected \'$MODULE\', got '
-			s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( (Directive t.LnNum1 Module) )
-	t.Lexer ( Identifier t.LnNum2 e.ModName ) =
-		<NSymModule
-			t.Cntx t.SymTable
-			( ExpectEndSent (StartSym t.LnNum2 e.ModName) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( (Directive t.LnNum1 Module) )
-	t.Lexer ( s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected module name, got '
-			s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( ExpectEndSent (StartSym t.LnNum1 e.ModName) )
-	t.Lexer ( EndSent t.LnNum2 ) =
-		<NSymModule
-			<NSymModuleBody
-				t.Cntx
-				<AddCurModuleToSymTable t.SymTable t.LnNum1 e.ModName>
-				( ((StartSym e.ModName)) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable ( ExpectEndSent (StartSym t.LnNum1 e.ModName) )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info ) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected \';\', got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( t.ModuleBody (StartSym e.ModName) )
-	t.Lexer (Directive t.LnNum End) =
-		<NSymModule
-			t.Cntx t.SymTable
-			( ExpectEndModuleName t.ModuleBody (StartSym e.ModName) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable
-	( ExpectEndModuleName t.ModuleBody (StartSym e.ModName) )
-	t.Lexer (Identifier t.LnNum e.ModName) =
-		<NSymModule
-			t.Cntx t.SymTable
-			( ExpectDot t.ModuleBody (StartSym e.ModName) )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable
-	(ExpectEndModuleName t.ModuleBody (StartSym e.Modname) )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected module name, got ' s.ErrorLine '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( ExpectDot t.ModuleBody (StartSym e.ModName) )
-	t.Lexer (Dot t.LnNum) =
-		<NSymModule
-			t.Cntx t.SymTable
-			( ExpectEOF (SymModule e.ModName) t.ModuleBody )
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( ExpectDot t.ModuleBody (StartSym e.ModName) )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected \'.\', got ' s.Unknown '(' e.Info ')'
-		>;
-
-	t.Cntx t.SymTable ( ExpectEOF (SymModule e.ModName) t.ModuleBody )
-	t.Lexer (EndOfText t.LnNum) =
-		t.Cntx t.SymTable
-		( (SymModule e.ModName) t.ModuleBody )
-		<Lexer::CloseLexer t.Lexer>;
-	
-	t.Cntx t.SymTable ( ExpectEOF (SymModule e.ModName) t.ModuleBody )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected end of file, got '
-			s.Unknown '(' e.Info ')'
-		>;
-}
-
-NFunctionDeclaration {
-	t.Cntx t.SymTable ( (e.ParentStack) )
-	t.Lexer (Identifier (LineNumber s.LineNumber) e.FnName) =
-		t.Cntx
-		<AddFunctionToSymTable
-			t.SymTable Entry s.LineNumber e.FnName
 		>
-		( (Function e.FnName) e.ParentStack )
-		<ExpectEndSent
-			<ExtractCurrentModule t.SymTable>
-			<Lexer::NextToken t.Lexer>
-		>;
-
-	t.Cntx t.SymTable ( t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected function name, got '
-			s.Unknown '(' e.Info ')'
-		>;
+ 		<InOut::WriteLine '... compiled file `' e.SrcName '`'>
+		;
 }
 
-ExpectEndSent {
-	t.CurModule t.Lexer (EndSent t.LnNum) =
-		<Lexer::NextToken t.Lexer>;
-
-	t.CurModule t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine t.CurModule
-			'in symfile: expected \';\', got ' s.Unknown '(' e.Info ')'
-		>;
-}
-
-NSymModuleBody {
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (Directive t.LnNum Import) =
-		<NSymModuleBody
-			<NImportBlock
-				t.Cntx t.SymTable
-				( (e.Elements t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
+/**
+	<CompileModule
+		t.Context
+		(e.Directory)
+		e.ModuleName
+	> == t.UpdatedContext
+*/
+$ENTRY CompileModule {
+	t.Context (e.Directory) e.ModuleName =
+		<CheckCompileIfNeed
+			<MLocation::LookupModule-T
+				t.Context (e.Directory) e.ModuleName
 			>
 		>;
-
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (Directive t.LnNum Entry) =
-		<NSymModuleBody
-			<NFunctionDeclaration
-				t.Cntx t.SymTable
-				( (e.Elements t.ParentStack) )
-				<Lexer::NextToken t.Lexer>
-			>
-		>;
-
-	t.Cntx t.SymTable ( e.Elements (e.ParentStack) )
-	t.Lexer (Directive t.LnNum End) =
-		t.Cntx t.SymTable ( (e.Elements) e.ParentStack )
-		t.Lexer (Directive t.LnNum End);
-
-	t.Cntx t.SymTable ( e.Elements t.ParentStack )
-	t.Lexer (s.Unknown (LineNumber s.ErrorLine) e.Info) =
-		<MError::Error
-			s.ErrorLine
-			<ExtractCurrentModule t.SymTable>
-			'in symfile: expected import block, function declaration '
-			'or end of symfile, got ' s.Unknown '(' e.Info ')'
-		>;
 }
 
-*-------------------------------------------------------------------------------
-* Функции для работы с таблицей символов
-*-------------------------------------------------------------------------------
-
-NewSymTable {
-	= ( (Idents) (CurModule) (Modules) (Functions) (Variables) );
+CheckCompileIfNeed {
+	t.Context s.Known s.Status
+	(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+	(e.Directory) e.Module =
+		;
 }
-
-AddCurModuleToSymTable {
-	( (Idents) (CurModule) t.Modules t.Functions t.Variables
-	) t.LnNum e.ModuleName =
-		( (Idents (e.ModuleName) )
-			(CurModule t.LnNum e.ModuleName)
-			t.Modules t.Functions t.Variables
-		);
-
-	t.Other t.LnNum e.ModuleName =
-		<MError::Error
-			'F' 'Error in symbol table -- can\'t insert current module name'
-		>;
-}
-
-ExtractCurrentModule {
-	( t.Idents (CurModule t.LnNum e.ModuleName) e.OtherInfo ) =
-		(e.ModuleName);
-}
-
-AddImportModuleToSymTable {
-	( (Idents e.Idents-B (e.ModuleName) e.Idents-E)
-		(CurModule t.LnNum e.ModName)
-		e.OtherInfo
-	) s.LineNumber e.ModuleName =
-		<MError::Error
-			s.LineNumber
-			(e.ModName)
-			e.ModuleName ' -- identifier redeclared'
-		>;
-
-	( (Idents e.Idents)
-		t.CurModule
-		(Modules e.Modules)
-		t.Functions
-		t.Variables
-	) s.LineNumber e.ModuleName =
-		( (Idents e.Idents (e.ModuleName) ) 
-			t.CurModule
-			(Modules e.Modules (e.ModuleName))
-			t.Functions
-			t.Variables
-		);
-}
-
-AddFunctionToSymTable {
-	( (Idents e.Idents-B (e.FnName) e.Idents-E)
-		(CurModule t.LnNum e.ModName)
-		e.OtherInfo
-	) s.ScopeClass s.ErrorLine e.FnName =
-		<MError::Error
-			s.ErrorLine
-			(e.ModName)
-			e.FnName ' -- identifier redeclared'
-		>;
-
-	( (Idents e.Idents)
-		t.CurModule
-		t.Modules
-		(Functions e.Functions)
-		t.Variables
-	) s.ScopeClass s.LineNumber e.FnName =
-		( (Idents e.Idents (e.FnName))
-			t.CurModule
-			t.Modules
-			(Functions e.Functions (s.ScopeClass e.FnName))
-			t.Variables
-		);
-}
-
-FunctionListFromSymTable {
-	( t.Idents t.CurModule t.Modules (Functions e.FnList) t.Variables ) =
-		e.FnList;
-}
-
-PushSentenseSymTable {
-	( t.Idents t.CurModule t.Modules t.Functions (Variables e.Variables) ) =
-		( t.Idents t.CurModule t.Modules t.Functions
-			(Variables (Delim e.Variables))
-		);
-}
-
-PopSentenseSymTable {
-	( t.Idents
-		t.CurModule
-		t.Modules
-		t.Functions
-		(Variables e.VarsCurSentense (Delim e.OtherVars))
-	) =
-		( t.Idents t.CurModule t.Modules t.Functions (Variables e.OtherVars) );
-
-	( t.Idents t.CurModule t.Modules t.Functions
-		(Variables e.BrokenContent)
-	) =
-		<MError::Error
-			'F' 'Broken symbol table -- variable stack underflow'
-		>;
-}
-
-AddVariableToSymTable {
-	/* Повторное вхождение переменной -- ничего не добавляем */
-	( t.Idents t.CurModule t.Modules t.Functions
-		(Variables e.Vars-B (s.VarType e.Index) e.Vars-E)
-	) s.VarType t.LnNum e.Index =
-		( t.Idents t.CurModule t.Modules t.Functions
-			(Variables e.Vars-B (s.VarType e.Index) e.Vars-E)
-		);
-
-	/* Две разные переменные не могут иметь один индекс */
-	( t.Idents (CurModule t.LnNum e.Current) t.Modules t.Functions
-		(Variables e.Vars-B (s.OneVarType e.Index) e.Vars-E)
-	) s.OtherVarType (LineNumber s.ErrorLine) e.Index =
-		<MError::Error
-			s.ErrorLine
-			(e.Current)
-			'Two different variables has same index'
-		>;
-
-	/* Просто добавляем переменную */
-	( t.Idents t.CurModule t.Modules t.Functions
-		(Variables e.Variables)
-	) s.VarType t.LnNum e.Index =
-		( t.Idents t.CurModule t.Modules t.Functions
-			(Variables (s.VarType e.Index) e.Variables)
-		);
-}
-
-CheckVariableInSymTable {
-	( t.Idents t.CurModule t.Modules t.Functions
-		(Variables e.Vars-B (s.VarType e.Index) e.Vars-E)
-	) s.VarType t.LnNum e.Index =
-		( t.Idents t.CurModule t.Modules t.Functions
-			(Variables e.Vars-B (s.VarType e.Index) e.Vars-E)
-		);
-
-	( t.Idents
-		(CurModule t.LnNum e.CurName)
-		t.Modules
-		t.Functions
-		(Variables e.OtherVariables)
-	) s.VarType (LineNumber s.ErrorLine) e.Index =
-		<MError::Error
-			s.ErrorLine
-			(e.CurName)
-			'Variable ' <TypeToChar s.VarType> e.Index ' not declared'
-		>;
-}
-
-TypeToChar {
-	EVar = 'e'; SVar = 's'; TVar = 't';
-}
-
-*-------------------------------------------------------------------------------
-* Выполняет семантический анализ модуля
-*-------------------------------------------------------------------------------
 
 Compile {
+	t.FileName t.Context t.Module Success t.ErrorList =
+		<MError::DestroyErrList t.ErrorList>
+		<Compile0 t.FileName t.Context t.Module>;
+
+	t.FileName t.Context t.Module Warnings t.ErrorList =
+		<MError::PrintErrors t.ErrorList>
+		<Compile0 t.FileName t.Context t.Module>;
+
+	t.FileName t.Context t.Module Errors t.ErrorList =
+		<MError::PrintErrorsAndStop t.ErrorList>;
+}
+
+Compile0 {
 	(File e.FileName)
 	t.Context
-	( t.Idents (CurModule t.LnNum e.ModuleName) e.OtherInfo )
 	t.Module =
+		<Compile1
+			(File e.FileName)
+			t.Context
+			<MFrontEnd::SymInfo t.Module>
+		>;
+}
+
+Compile1 {
+	(File e.FileName)
+	t.Context
+	t.Module
+	( Module () e.ModuleName ) t.Functions t.Imports =
 		<Context::LastModule
-			<Compile1
-				<CheckValidFileName
-					<Refal5::Lower (e.FileName)>
-					<Refal5::Lower (e.ModuleName '.mref')>
-					t.LnNum
-				>
+			<Compile2
 				(Module e.ModuleName)
 				(File e.FileName)
 				(Sym <Modules::SymName e.ModuleName>)
 				(Out <Modules::OutName e.ModuleName>)
 				t.Context
-				( t.Idents (CurModule t.LnNum e.ModuleName) e.OtherInfo )
 				t.Module
+				( Module () e.ModuleName ) t.Functions t.Imports
 			>
 			e.ModuleName
 		>;
 }
 
-CheckValidFileName {
-	(e.LowName) (e.LowName) t.LnNum =
-		Valid;
-
-	(e.LowFileName) (e.LowModName '.mref') (LineNumber s.ErrorLine) =
-		<MError::Error
-			s.ErrorLine
-			'Mismatch file name and module name: module '
-			<Modules::CanonicalModuleName e.LowModName> ' defined in file '
-			e.LowFileName
-		>;
+ImportInfoToOldSymTable {
+	( Module () e.ModuleName )
+	( Functions e.FnList )
+	( Imports e.ImportList ) =
+		( ( CurModule e.ModuleName )
+			( Modules <ImportToModule e.ImportList> )
+			( Functions <AddEntry e.FnList> )
+		);
 }
 
-Compile1 {
-	Valid
+ImportToModule {
+	( () e.Name ) e.Tail =
+		( e.Name ) <ImportToModule e.Tail>;
+
+	= ;
+}
+
+AddEntry {
+	( e.FnName ) e.Tail =
+		( Entry e.FnName ) <AddEntry e.Tail>;
+
+	= ;
+}
+
+Compile2 {
 	(Module e.ModuleName)
 	(File e.FileName) 
 	(Sym e.SymName)
 	(Out e.OutName)
 	t.Context
-	t.SymTable
-	t.Module =
+	t.Module
+	e.SymInfo =
 		<Generate
-			<FileIO::FOpen 'w' e.OutName>
-			<FileIO::FOpen 'w' e.SymName>
+			(e.ModuleName)
+			(Out e.OutName)
+			(Sym e.SymName)
 			<CheckFnCalls
 				<LoadImportInfo
 					<Context::UpdateModuleInfo
@@ -1101,19 +179,21 @@ Compile1 {
 						(Src e.FileName)
 						(Status InCompiling)
 					>
-					t.SymTable
+					<ImportInfoToOldSymTable
+						e.SymInfo
+					>
 				>
 				t.Module
 			>
 		>;
 }
 
-* <LoadImportInfo t.Context t.SymTable>
-*	== t.UpdatedContext t.UpdatedSymTable
+* <LoadImportInfo t.Context t.SymTable-Old>
+*	== t.UpdatedContext t.UpdatedSymTable-Old'
 LoadImportInfo {
-	t.Context ( t.Idents t.CurModule t.Modules t.Functions t.Variables ) =
+	t.Context ( t.CurModule t.Modules t.Functions ) =
 		<LoadImportInfo-SwapArgs
-			( t.Idents t.CurModule t.Modules t.Functions )
+			( t.CurModule t.Modules t.Functions )
 			<LoadQualifiedFunctions
 				t.Context t.Modules
 			>
@@ -1121,10 +201,10 @@ LoadImportInfo {
 }
 
 LoadImportInfo-SwapArgs {
-	(t.Idents t.CurModule t.Modules t.Functions)
+	(t.CurModule t.Modules t.Functions)
 	t.Context e.QualifiedList =
 		t.Context
-		(t.Idents t.CurModule t.Modules t.Functions
+		((Idents) t.CurModule t.Modules t.Functions
 			(Qualified e.QualifiedList)
 		);
 }
@@ -1157,660 +237,376 @@ DoLoadQFunc-SwapArgs {
 		>;
 }
 
+/*
+	Функция LoadFromOneModule подгружает из модуля список экспортируемых функций
+в виде квалифицированного списка (для удобства дальнейшей работы). Если модуль необходимо
+перекомпилировать, то модуль перекомпилируется перед загрузкой. Перекомпиляцию при необ-
+ходимости осуществляет функция <CompileIfNeed>. В результате перекомпиляции функция
+устанавливает в контексте статус модуля в одно из: Recompiled, Updated, Library.
+Первое устанавливается в том случае, если исходный файл обновлён относительно выходных
+файлов или обновлены модули, от которых он зависит, и в итоге был перекомпилирован.
+Второе устанавливается, если файл перекомпилирован не был, поскольку выходные файлы
+были изменены позже _и_ не были перекомпилированы зависимые модули. Последнее устанавли-
+вается, если исходный файл не найден, но найдены выходные файлы. В том случае, если
+модуль, который должен быть при необходимости перекомпилирован внутри CompileIfNeed
+не найден, то программа завершается выдачей сообщения об ошибке.
+	Функции LoadFromOneModule глубоко пофиг, что устанавливает CompileIfNeed, поскольку
+все три результата говорят о том, что файл перекомпилирован, т.е. можно подгружать
+информацию из sym-файла и связывать out-файл.
+	Проверка на необходимость перекомпиляции осуществляется только если информация
+о модуле отсутствует в контексте.
+	^ Комментарий кривой, при первой же необходимости переписать.
+*/
+
 * <LoadFromOneModule t.Context (e.ModuleName)>
 *	== t.Context (e.QualifiedList)
-LoadFromOneModule {
+LoadFromOneModule
 	t.Context (e.ModuleName) =
-		<LoadFromOneModule-1
+		<SwLoadFromOneModule
 			(e.ModuleName)
 			<Context::ExtractOption t.Context Status e.ModuleName>
 		>;
-}
 
-LoadFromOneModule-1 {
-	(e.ModuleName) t.Context Found CompileComplete =
-		<FunctionsFromSym
-			<StartPointsFromSym
-				<ReadSym t.Context e.ModuleName>
-			>
-		>;
-
-	(e.ModuleName) t.Context ModuleNotFound =
+SwLoadFromOneModule {
+	(e.ModuleName) t.Context ModuleInfoNotFound =
 		/* Перекомпиляция модуля и повторная попытка загрузки информации */
 		<LoadFromOneModule
-			<CompileIfNeed t.Context e.ModuleName>
+			<CompileIfNeed-Old t.Context e.ModuleName>
 			(e.ModuleName)
 		>;
 
+	(e.ModuleName) t.Context Found Recompiled =
+		<FunctionsFromSym
+			<ReadSym t.Context e.ModuleName>
+		>;
+
+	(e.ModuleName) t.Context Found Library =
+		<FunctionsFromSym
+			<ReadSym t.Context e.ModuleName>
+		>;
+
+	(e.ModuleName) t.Context Found Updated =
+		<FunctionsFromSym
+			<ReadSym t.Context e.ModuleName>
+		>;
+
 	(e.ModuleName) t.Context Found InCompiling =
-		<MError::Error
-			'F' 'Cyclic dependencies in module ' e.ModuleName
+		<MError::Fatal
+			'Cyclic dependencies in module ' e.ModuleName
 		>;
 }
 
-CompileIfNeed {
+* <CompileIfNeed t.Context e.ModuleName>
+*	== t.UpdatedContext
+CompileIfNeed-Old {
 	t.Context e.ModuleName =
-		<SwCompileIfNeed
+		<SwCompileIfNeed-Old
 			t.Context
-			<Refal5::ExistFile <Modules::SrcName e.ModuleName>>
+			<Modules::LookupModule-T
+				e.ModuleName
+			>
+		>;
+}
+
+SwCompileIfNeed-Old {
+	t.Context ModuleNotFound
+	(Sym None) (Out None) (Src None)
+	e.ModuleName =
+		<MError::Fatal
+			'Module ' e.ModuleName ' not found'
+		>;
+
+	t.Context Library
+	(Sym e.SymFile) (Out e.OutFile) (Src None)
+	e.ModuleName =
+		<InOut::WriteLine 'Library \'' e.ModuleName '\''>
+		<CheckCompileIfNeed-Old
+			<Context::UpdateModuleInfo
+				t.Context
+				(e.ModuleName)
+				(Sym e.SymFile) (Out e.OutFile) (Src None)
+				(Status Library)
+			> e.ModuleName
+		>;
+
+	t.Context SystemLibrary
+	(Sym e.SymFile) (Out e.OutFile) (Src None)
+	e.ModuleName =
+		<InOut::WriteLine 'System library \'' e.ModuleName '\''>
+		<CheckCompileIfNeed-Old
+			<Context::UpdateModuleInfo
+				t.Context
+				(e.ModuleName)
+				(Sym e.SymFile) (Out e.OutFile) (Src None)
+				(Status Library)
+			> e.ModuleName
+		>;
+
+	t.Context NeedRecompile
+	(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+	e.ModuleName =
+		<Context::UpdateModuleInfo
+			<CompileByModuleName t.Context e.ModuleName>
+			(e.ModuleName)
+			(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+			(Status Recompiled)
+		>;
+
+
+	t.Context SrcNotUpdated
+	(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+	e.ModuleName =
+		<CheckCompileIfNeed-Old
+			<Context::UpdateModuleInfo
+				t.Context
+				(e.ModuleName)
+				(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+				(Status Updated)
+			>
 			e.ModuleName
 		>;
 }
 
-SwCompileIfNeed {
-	t.Context True e.ModuleName =
-		<CompileByModuleName t.Context e.ModuleName>;
+* <CheckCompileIfNeed t.Context e.ModuleName>
+*	== t.UpdatedContext
+CheckCompileIfNeed-Old {
+	t.Context e.ModuleName =
+		<SwCheckCompileIfNeed-Old
+			(e.ModuleName)
+			<Context::ExtractOption
+				t.Context
+				Status
+				e.ModuleName
+			>
+		>;
+}
 
-	t.Context False e.ModuleName =
+SwCheckCompileIfNeed-Old {
+	(e.ModuleName) t.Context Found s.Status =
+		<DoCheckCompileIfNeed-Old
+			(e.ModuleName)
+			s.Status
+			<ImportsFromSym
+				<ReadSym t.Context e.ModuleName>
+			>
+		>;
+
+	(e.ModuleName) t.Context ModuleInfoNotFound =
+		<DoCheckCompileIfNeed-Old
+			(e.ModuleName)
+			Updated
+			<ImportsFromSym
+				<ReadSym t.Context e.ModuleName>
+			>
+		>;
+}
+
+DoCheckCompileIfNeed-Old {
+	t.ModuleName s.Status t.Context (e.NextName) e.Tail =
+		<DoCheckCompileIfNeed-Old
+			<SwDoCheckCompileIfNeed-Old
+				t.ModuleName
+				s.Status
+				<Context::ExtractOption
+					t.Context
+					Status
+					e.NextName
+				>
+				(e.NextName)
+			>
+			e.Tail
+		>;
+
+	(e.ModuleName) Updated t.Context =
+		<InOut::WriteLine 'Updated `' e.ModuleName '`'>
 		<Context::UpdateModuleInfo
 			t.Context
 			(e.ModuleName)
 			(Sym <Modules::SymName e.ModuleName>)
 			(Out <Modules::OutName e.ModuleName>)
-			(Src None)
-			(Status CompileComplete)
-		>;
-}
-
-ReadSym {
-	t.Context e.ModuleName =
-		<NSymModule
-			t.Context
-			<NewSymTable>
-			()
-			<Lexer::NextToken <Lexer::NewLexer <Modules::SymName e.ModuleName> > >
-		>;
-}
-
-* <StartPointsFromSym t.Context t.SymSymTable t.SymModule>
-*	== t.UpdatedContext t.SysSymTable t.SymModule
-StartPointsFromSym {
-	t.Context t.SymSymTable t.SymModule =
-		<DoStartPointsFromSym
-			t.Context
-			<ExtractCurrentModule t.SymSymTable>
-			<FunctionListFromSymTable t.SymSymTable>
-		> t.SymSymTable
-		t.SymModule;
-}
-
-DoStartPointsFromSym {
-	t.Context (e.CurModule) (Entry 'Go') e.Tail =
-		<DoStartPointsFromSym
-			<Context::UpdateModuleInfo
-				t.Context
-				(e.CurModule)
-				(StartPoint e.CurModule '--Go--Entry')
-			>
-			(e.CurModule)
-			e.Tail
+			(Status Updated)
 		>;
 
-	t.Context (e.CurModule) (Entry 'Init') e.Tail =
-		<DoStartPointsFromSym
-			<Context::UpdateModuleInfo
-				t.Context
-				(e.CurModule)
-				(InitPoint e.CurModule '--Init--Entry')
-			>
-			(e.CurModule)
-			e.Tail
+	(e.ModuleName) Recompiled t.Context =
+		<Context::UpdateModuleInfo
+			<CompileByModuleName t.Context e.ModuleName>
+			(e.ModuleName)
+			(Sym <Modules::SymName e.ModuleName>)
+			(Out <Modules::OutName e.ModuleName>)
+			(Status Recompiled)
 		>;
 
-	t.Context t.CurModule t.OtherFunc e.Tail =
-		<DoStartPointsFromSym
-			t.Context
-			t.CurModule
-			e.Tail
-		>;
-
-	t.Context t.CurModule =
+	(e.ModuleName) Library t.Context =
 		t.Context;
 }
 
-* <FunctionsFromSym t.Context t.SymSymTable t.SymModule>
-*	== t.Context (e.QualifiedList)
+SwDoCheckCompileIfNeed-Old {
+	t.ModuleName s.Status t.Context ModuleInfoNotFound (e.NextName) =
+		<SwDoCheckCompileIfNeed-Old
+			t.ModuleName s.Status
+			<Context::ExtractOption
+				<CompileIfNeed-Old t.Context e.NextName>
+				Status
+				e.NextName
+			>
+			(e.NextName)
+		>;
+
+	t.ModuleName Library t.Context Found Library (e.NextName) =
+		t.ModuleName Library t.Context;
+
+	t.ModuleName Library t.Context Found s.Other (e.NextName) =
+		<MError::Fatal
+			'Modules, dependeds from library, must be library modules '
+			'(library module may be redefined)'
+		>;
+
+	t.ModuleName s.Status t.Context Found Recompiled (e.NextName) =
+		t.ModuleName Recompiled t.Context;
+
+	t.ModuleName s.Status t.Context Found Library (e.NextName) =
+		t.ModuleName s.Status t.Context;
+
+	t.ModuleName s.Status t.Context Found Updated (e.NextName) =
+		t.ModuleName s.Status t.Context;
+}
+
+ReadSym
+	t.Context e.ModuleName =
+		<MSymModule::LoadInfo1 t.Context e.ModuleName>;
+
+FunctionList {
+	( t.Idents t.CurModule t.Modules (Functions e.FnList) t.Variables ) =
+		e.FnList;
+}
+
+* <FunctionsFromSym t.Context t.FnList t.ImportList>
+*	== t.Context ( ((e.Module) (e.FnName))* )
 FunctionsFromSym {
-	t.Context t.SymTable t.SymModule =
-		/* Содержимое символьного модуля нам не нужно,
-		вся необходимая информация имеется в таблице символов */
+	t.Context (Functions e.QualifiedList) t.ImportList =
+		t.Context (e.QualifiedList);
+}
+
+
+* <ImportsFromSym t.Context t.FnList t.ImportList>
+*	== t.Context (e.ImportName)*
+ImportsFromSym {
+	t.Context t.FnList (Imports e.ImportList) =
+		t.Context e.ImportList;
+}
+
+/* Разрешает вызовы функций. */
+
+* <CheckFnCalls t.Context t.SymTable-Old t.Module>
+*	== t.Context t.ConvertedModule
+CheckFnCalls
+	t.Context t.SymTable-Old t.Module =
 		t.Context
-		( <FunctionsFromSymSymTable t.SymTable> );
-}
-
-FunctionsFromSymSymTable {
-	( t.Idents
-		(CurModule t.LnNum e.ModuleName)
-		t.Modules
-		(Functions e.FnList)
-		t.Variables
-	) = <DoFnFromSST (e.ModuleName) e.FnList>;
-}
-
-DoFnFromSST {
-	(e.Prefix) (Entry e.FnName) e.Tail =
-		((e.Prefix) e.FnName) <DoFnFromSST (e.Prefix) e.Tail>;
-
-	(e.Prefix) = ;
-}
-
-/* Все последующие Check-функции принимают таблицу символов и проверяемую
-структуру, которую же и возвращают. Завершаются эти функции или успешно,
-или завершают программу вызовом Error::Error. */
-
-* <CheckFnCalls t.Context t.SymTable t.Module>
-*	== t.Context t.Module
-CheckFnCalls {
-	t.Context
-	t.SymTable
-	( (Module e.ModuleName) e.ModuleElements ) =
-		t.Context
-		( (Module e.ModuleName)
-			<DoCheckFnCalls
-				t.SymTable
-				e.ModuleElements
+		<PrintUnresolved
+			<MFrontEnd::Resolve
+				t.Module
+				<MError::CreateErrList>
+				<OldSymTableToQualifiedList t.SymTable-Old>
 			>
-		);
-}
-
-DoCheckFnCalls {
-	t.SymTable e.ModuleElements
-	(Import e.ModuleName) =
-		(Import e.ModuleName)
-		<DoCheckFnCalls t.SymTable e.ModuleElements>;
-
-	t.SymTable e.ModuleElements
-	(Function s.ScopeClass (e.FnName) (e.FunctionBody)) =
-		(Function
-			s.ScopeClass
-			(e.FnName)
-			( <CheckFunctionBody t.SymTable e.FunctionBody> )
-		)
-		<DoCheckFnCalls t.SymTable e.ModuleElements>;
-
-	t.SymTable = ;
-}
-
-CheckFunctionBody {
-	t.SymTable ( t.Pattern (e.Result) ) e.Sentenses =
-		( t.Pattern
-			( <CheckResultExpression t.SymTable e.Result> )
-		) <CheckFunctionBody t.SymTable e.Sentenses>;
-
-	t.SymTable = ;
-}
-
-CheckResultExpression {
-	t.SymTable (Structure e.InBrackets) e.Tail =
-		(Structure
-			<CheckResultExpression
-				t.SymTable
-				e.InBrackets
-			>
-		) <CheckResultExpression t.SymTable e.Tail>;
-
-	t.SymTable (Function t.Callee e.Argument) e.Tail =
-		(Function
-			<CheckCallee t.SymTable t.Callee>
-			<CheckResultExpression t.SymTable e.Argument>
-		) <CheckResultExpression t.SymTable e.Tail>;
-
-	t.SymTable t.Other e.Tail =
-		t.Other <CheckResultExpression t.SymTable e.Tail>;
-
-	t.SymTable = ;
-}
-
-CheckCallee {
-	t.SymTable (Qualified t.Module t.Function) =
-		<CheckQualified t.SymTable t.Module t.Function>;
-
-	(t.Idents
-		(CurModule t.LnNum1 e.CurModuleName)
-		t.Modules
-		(Functions e.Functions-B (s.ScopeClass e.FnName) e.Functions-E)
-		t.Qualified
-	) (Local (Function t.LnNum e.FnName)) =
-		( <ScopeClassToCallType s.ScopeClass>
-			(Module t.LnNum e.CurModuleName)
-			(Function t.LnNum e.FnName)
-		);
-
-	(t.Idents
-		(CurModule t.LnNum1 e.ModName)
-		t.Modules
-		t.Functions
-		t.Qualified
-	) (Local (Function (LineNumber s.ErrorLine) e.FnName)) =
-		<MError::Error
-			s.ErrorLine
-			(e.ModName)
-			'Undefined function ' e.FnName ' at module ' e.ModName
-		>;
-}
-
-ScopeClassToCallType {
-	Entry = CallEntry; Local = CallLocal;
-}
-
-CheckQualified {
-	( t.Idents
-		t.CurModule
-		(Modules e.Modules-B (e.ModuleName) e.Modules-E)
-		t.Functions
-		(Qualified e.Qualified-B ((e.ModuleName) e.FnName) e.Qualified-E)
-	) (Module t.LnNum1 e.ModuleName) (Function t.LnNum2 e.FnName) =
-		(CallEntry
-			(Module t.LnNum1 e.ModuleName)
-			(Function t.LnNum2 e.FnName)
-		);
-
-	( t.Idents
-		(CurModule t.LnNum e.Current)
-		(Modules e.Modules-B (e.ModuleName) e.Modules-E)
-		t.Functions
-		t.Qualified
-	) (Module t.LnNum1 e.ModuleName)
-	(Function (LineNumber s.ErrorLine) e.FnName) =
-		<MError::Error
-			s.ErrorLine
-			(e.Current)
-			'Module ' e.ModuleName ' not contain entry function ' e.FnName
 		>;
 
-	( t.Idents
-		(CurModule t.LnNum e.Current)
-		t.Modules t.Functions t.Qualified
-	) (Module (LineNumber s.ErrorLine) e.ModuleName) t.FunInfo =
-		<MError::Error
-			s.ErrorLine
-			(e.Current)
-			'Undefined module ' e.ModuleName
-		>;
+OldSymTableToQualifiedList
+	( t.Idents t.CurModule t.Imports t.Functions
+		(Qualified e.QualifiedList-Old)
+	) = <ConvertQualified e.QualifiedList-Old>;
+
+ConvertQualified {
+	((e.ModuleName) (e.FnName)) e.Tail =
+		( (() e.ModuleName) (e.FnName) )
+		<ConvertQualified e.Tail>;
+
+	= ;
 }
+
+PrintUnresolved {
+	t.ResolvedModule Success t.ErrorList =
+		<MError::DestroyErrList t.ErrorList>
+		t.ResolvedModule;
+
+	t.ResolvedModule Warnings t.ErrorList =
+		<MError::PrintErrors t.ErrorList>
+		t.ResolvedModule;
+
+	t.ResolvedModule Errors t.ErrorList =
+		<MError::PrintErrorsAndStop t.ErrorList>;
+}
+
 
 *-------------------------------------------------------------------------------
-* Выполняет генерацию выходного файла
+* Выполняет генерацию выходного и символического файлов
 *-------------------------------------------------------------------------------
 
-* <Generate t.FOut t.FSym t.Context t.Module>
+* <Generate (e.ModuleName) t.OutName t.FSym t.Context t.Module>
 *	== t.UpdatedContext
 Generate {
-	t.FOut t.FSym t.Context t.Module =
+	(e.ModuleName) (Out e.OutName) (Sym e.SymName)
+	t.Context (t.SymTable t.ModuleContent) =
 		<UpdateContext
 			<GenerateOut
-				t.FOut
+				(Out e.OutName)
 				<GenerateSym
-					t.FSym
 					t.Context
-					t.Module
+					t.SymTable
 				>
+				t.ModuleContent
 			>
+			e.ModuleName
 		>;
 }
 
 * <UpdateContext t.Context t.ModuleName>
 *	== t.UpdatedContext
 UpdateContext {
-	t.Context (e.Module) =
+	t.Context e.ModuleName =
 		<Context::UpdateModuleInfo
 			t.Context
-			(e.Module)
-			(Status CompileComplete)
+			(e.ModuleName)
+			(Status Recompiled)
 		>;
 }
 
-* <GenerateSym t.FSym t.Context t.Module>
-*	== t.UpdatedContext t.Module
+* <GenerateSym t.Context t.SymTable>
+*	== t.UpdatedContext t.SymTable
 GenerateSym {
-	t.FSym t.Context
-	( t.ModuleHeader e.Elements ) =
-		<WriteToSym
-			t.FSym
-			<AddStartPoints
-				t.Context
-				<ExtractSymInfo
-					t.ModuleHeader e.Elements
-				>
-			>
+	t.Context t.SymTable =
+		<GuardResult
+			<MSymModule::SaveInfo-T1 t.Context t.SymTable>
 		>;
 }
 
-ExtractSymInfo {
-	(Module e.ModuleName) e.Elements =
-		<DoExtractSymInfo
-			( (Module e.ModuleName) )
-			( (Module e.ModuleName) )
-			e.Elements
-		>;
-}
-
-DoExtractSymInfo {
-	(e.Extracted) (e.Module)
-	(Import e.ImportModule) e.Tail =
-		<DoExtractSymInfo
-			(e.Extracted (Import e.ImportModule))
-			(e.Module (Import e.ImportModule))
-			e.Tail
+GuardResult
+	t.Context t.SymTable s.Result =
+		t.Context t.SymTable
+		<MSelfDiag::Assert-Eq
+			(s.Result) (Success)
+			'MSymModule::SaveInfo-T1 fails'
 		>;
 
-	(e.Extracted) (e.Module)
-	(Function Entry (e.FunctionName) t.FunctionBody) e.Tail =
-		<DoExtractSymInfo
-			(e.Extracted (Function e.FunctionName))
-			( e.Module
-				(Function Entry (e.FunctionName) t.FunctionBody)
-			)
-			e.Tail
-		>;
-
-	t.Extracted (e.Module)
-	(Function Local t.FnName t.FnBody) e.Tail =
-		<DoExtractSymInfo
-			t.Extracted
-			(e.Module (Function Local t.FnName t.FnBody))
-			e.Tail
-		>;
-
-	(e.Extracted) (e.Module) = (e.Extracted) (e.Module);
-}
-
-AddStartPoints {
-	t.Context t.Exported t.Module =
-		<RealAddStartPoints
-			t.Context
-			<FindStartPoints t.Exported>
-		>
-		t.Module;
-}
-
-FindStartPoints {
-	( (Module e.ModuleName) e.Elements ) =
-		<DoFindStartPoints
-			(e.ModuleName)
-			(/*Go*/) (/*Init*/)
-			( (Module e.ModuleName) )
-			e.Elements
-		>;
-}
-
-DoFindStartPoints {
-	(e.ModuleName) (e.GoName) (e.InitName)
-	( e.ScannedEntries ) (Function 'Go') e.Tail =
-		<DoFindStartPoints
-			(e.ModuleName)
-			(e.ModuleName '--Go--Entry')
-			(e.InitName)
-			( e.ScannedEntries (Function 'Go') )
-			e.Tail
-		>;
-
-	(e.ModuleName) (e.GoName) (e.InitName)
-	( e.ScannedEntries ) (Function 'Init') e.Tail =
-		<DoFindStartPoints
-			(e.ModuleName)
-			(e.GoName)
-			(e.ModuleName '--Init--Entry')
-			( e.ScannedEntries (Function 'Init') )
-			e.Tail
-		>;
-
-	(e.ModuleName) (e.GoName) (e.InitName)
-	( e.ScannedEntries ) t.OtherElement e.Tail =
-		<DoFindStartPoints
-			(e.ModuleName)
-			(e.GoName)
-			(e.InitName)
-			( e.ScannedEntries t.OtherElement )
-			e.Tail
-		>;
-
-	(e.ModuleName) (e.GoName) (e.InitName)
-	( e.ScannedEntries ) =
-		(e.ModuleName)
-		(e.GoName) (e.InitName) (e.ScannedEntries);
-}
-
-RealAddStartPoints {
-	t.Context t.ModuleName t.GoName t.InitName t.ExportedInfo =
-		<AddGoFunc
-			<AddInitFunc
-				t.Context
-				t.ModuleName
-				t.InitName
-			>
-			t.ModuleName
-			t.GoName
-		> t.ExportedInfo;
-}
-
-AddInitFunc {
-	t.Context t.ModuleName () = t.Context;
-	t.Context t.ModuleName (e.InitName) =
-		<Context::UpdateModuleInfo
-			t.Context
-			t.ModuleName
-			(InitPoint e.InitName)
-		>;
-}
-
-AddGoFunc {
-	t.Context t.ModuleName () = t.Context;
-	t.Context t.ModuleName (e.GoName) =
-		<Context::UpdateModuleInfo
-			t.Context
-			t.ModuleName
-			(StartPoint e.GoName)
-		>;
-}
-
-WriteToSym {
-	t.FSym t.Context ( (Module e.ModuleName) e.Tail ) t.Module =
-		t.Context
-		t.Module
-		<FileIO::FClose
-			<FileIO::FWriteLine
-				<DoWriteToSym
-					<FileIO::FWriteLine
-						<FileIO::FWriteLine
-							t.FSym
-							'$module ' e.ModuleName ';'
-						>	
-					>
-					e.Tail
-				>
-				'$end ' e.ModuleName '.'
-			>
-		>;
-}
-
-DoWriteToSym {
-	t.FSym t.Element e.Tail =
-		<DoWriteToSym <WriteElementToSym t.FSym t.Element> e.Tail>;
-
-	t.FSym = t.FSym;
-}
-
-WriteElementToSym {
-	t.FSym (Function e.FunName) =
-		<FileIO::FWriteLine
-			<FileIO::FWriteLine
-				t.FSym '$entry ' e.FunName ';'
-			>
-		>;
-
-	t.FSym (Import e.FunName) =
-		<FileIO::FWriteLine
-			<FileIO::FWriteLine
-				t.FSym '$import ' e.FunName ';'
-			>
-		>;
-}
-
-* <GenerateOut t.FOut t.Context t.Module>
-*	== t.UpdatedContext (e.ModuleName)
-GenerateOut {
-	t.FOut t.Context
+* <GenerateOut (Out e.OutName) t.Context t.SymTable t.Module>
+*	== t.UpdatedContext
+GenerateOut
+	(Out e.OutName) t.Context t.SymTable
 	( (Module e.ModuleName) e.Elements ) =
 		t.Context
-		<GenerateElements
-			t.FOut
-			(e.ModuleName)
-			e.Elements
-		>;
-		
-}
-
-GenerateElements {
-	t.FOut (e.Prefix) t.NextElement e.Tail =
-		<GenerateElements
-			<GenerateOneElement
-				t.FOut
-				(e.Prefix)
-				t.NextElement
+		<CheckGenerateResult
+			<MBackEnd::Generate
+				(t.SymTable ((Module e.ModuleName) e.Elements))
+				<MError::CreateErrList>
+				e.OutName
 			>
-			e.Tail
 		>;
 
-	t.FOut (e.Prefix) =
-		<FileIO::FClose t.FOut>
-		(e.Prefix);
-}
+CheckGenerateResult {
+	Success t.ErrorList =
+		<MError::DestroyErrList t.ErrorList>;
 
-GenerateOneElement {
-	t.FOut (e.Prefix) (Import e.ModName) =
-		t.FOut (e.Prefix);
-
-	t.FOut (e.Prefix) (Function e.FnOptions (e.FnBody)) =
-		<GenerateFnBody
-			<GenerateFnHeader
-				t.FOut
-				(e.Prefix)
-				e.FnOptions
-			>
-			e.FnBody
-		>;
-}
-
-GenerateFnHeader {
-	t.FOut (e.Prefix) s.ScopeClass (e.FnName) =
-		<FileIO::FWriteLine
-			t.FOut
-			e.Prefix '--' e.FnName <ScopeClassToSuffix s.ScopeClass>
-		> (e.Prefix);
-}
-
-ScopeClassToSuffix {
-	Entry = '--Entry {'; Local = '--Local {';
-}
-
-GenerateFnBody {
-	t.FOut t.Prefix t.Sentense e.Tail =
-		<GenerateFnBody
-			<GenerateSentense
-				t.FOut
-				t.Sentense
-			>
-			t.Prefix
-			e.Tail
-		>;
-
-	t.FOut t.Prefix =
-		<FileIO::FWriteLine
-			<FileIO::FWriteLine
-				t.FOut
-				'}'
-			>
-		>
-		t.Prefix;
-}
-
-GenerateSentense {
-	t.FOut (t.Pattern t.Result) =
-		<GenerateResult
-			<GeneratePattern
-				t.FOut
-				t.Pattern
-			>
-			t.Result
-		>;
-}
-
-GeneratePattern {
-	t.FOut ( e.PatExpr ) =
-		<PrintExpr t.FOut ('\t')('=') e.PatExpr>;
-}
-
-GenerateResult {
-	t.FOut ( e.ResExpr ) =
-		<PrintExpr t.FOut ('\t\t') (';') e.ResExpr>;
-}
-
-PrintExpr {
-	t.FOut (e.Begin) (e.End) e.Expr =
-		<FileIO::FWriteLine
-			t.FOut
-			e.Begin
-			<ExprToString e.Expr>
-			e.End
-		>;
-}
-
-ExprToString {
-	t.Next e.Tail =
-		<TermToString t.Next> ' '
-		<ExprToString e.Tail>;
-
-	= ;
-}
-
-TermToString {
-	(Identifier e.Name) = e.Name;
-
-	(EVar e.Index) = 'e' e.Index;
-
-	(SVar e.Index) = 's' e.Index;
-
-	(TVar e.Index) = 't' e.Index;
-	
-	(Literal e.Content) = '\'' <EscapeText e.Content> '\'';
-
-	(DQWord e.Content) = '\"' <EscapeText e.Content> '\"';
-
-	(Macro s.Value) = <Refal5::Symb s.Value>;
-
-	(Structure e.InBrackets) = '( ' <ExprToString e.InBrackets> ')';
-
-	(Function t.Callee e.Argument) =
-		'<'
-		<CalleeToString t.Callee>
-		<ExprToString e.Argument>
-		'>';
-}
-
-EscapeText {
-	s.Char e.Tail =
-		<EscapeChar s.Char> <EscapeText e.Tail>;
-
-	= ;
-}
-
-EscapeChar {
-	'\t' = '\\t';
-	'\n' = '\\n';
-	'\\' = '\\\\';
-	'\"' = '\\\"';
-	'\'' = '\\\'';
-	s.X = s.X;
-}
-
-CalleeToString {
-	(s.CallType (Module t.LnNum e.ModName) (Function t.LnNum e.FnName)) =
-		e.ModName '--' e.FnName <CallTypeToSuffix s.CallType>;
-}
-
-CallTypeToSuffix {
-	CallEntry = '--Entry '; CallLocal = '--Local ';
+	s.Other t.ErrorList =
+		<MError::PrintErrorsAndStop t.ErrorList>;
 }
 
 $END Compiler.

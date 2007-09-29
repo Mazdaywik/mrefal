@@ -1,0 +1,74 @@
+$MODULE MSelfDiag;
+
+$IMPORT Refal5;
+
+$ENTRY Error
+	e.Message =
+		<Refal5::Prout 'INTERNAL ERROR: ' e.Message>
+		<Log 'INTERNAL ERROR: ' e.Message>
+		<Refal5::Exit 1>;
+
+$ENTRY Log
+	e.Message =
+		<Refal5::Putout 19 e.Message>;
+
+AssertAux {
+	t.ResultAndExpected t.ResultAndExpected =
+		('=') t.ResultAndExpected t.ResultAndExpected;
+
+	t.Result t.Expected = ('!=') t.Result t.Expected;
+}
+
+* <Assert-?? (e.Result) (e.Expected) [e.Message]>
+*	== e.Result
+*	fail down
+
+* <Assert-??-T (e.Result) (e.Expected) [e.Message]>
+*	== empty
+*	fail down
+
+$ENTRY Assert-Eq-T
+	t.Result t.Expected e.Message =
+		<SwAssert ('=') <AssertAux t.Result t.Expected> e.Message>;
+
+$ENTRY Assert-NE-T
+	t.Result t.Expected e.Message =
+		<SwAssert ('!=') <AssertAux t.Result t.Expected> e.Message>;
+
+$ENTRY Assert-Eq
+	t.Result t.Expected e.Message =
+		<Nil <Assert-Eq-T t.Result t.Expected e.Message>>;
+
+$ENTRY Assert-NE
+	t.Result t.Expected e.Message =
+		<Nil <Assert-NE-T t.Result t.Expected e.Message>>;
+
+SwAssert {
+	t.Sign t.Sign (e.Result) t.Expected e.Message =
+		e.Result;
+
+	t.SignExpected t.SignFact t.Result t.Expected e.Message =
+		<PrintAssert
+			t.SignFact t.Result t.Expected e.Message
+		>;
+}
+
+PrintAssert {
+	(e.SignFact) t.Result t.Expected =
+		<Error 'ASSERT VIOLATION: ' t.Result ' ' e.SignFact ' ' t.Expected>;
+
+	(e.SignFact) t.Result t.Expected e.Message =
+		<Error
+			'ASSERT VIOLATION: '
+			t.Result ' ' e.SignFact ' ' t.Expected
+			'(' e.Message ')'
+		>;
+}
+
+Nil e.X = ;
+
+$ENTRY Init =
+	<Nil <Refal5::System 'md Info>nul 2>nul'> >
+	<Refal5::Open 'w' 19 'Info/Log.txt'>;
+
+$END MSelfDiag.

@@ -1,0 +1,114 @@
+MOrder::SwMerge::Local {
+	'>' ( e.Series1 ) ( t.First2 e.Series2 ) =
+		t.First2 <MOrder::Merge::Local ( e.Series1 ) ( e.Series2 ) > ;
+	s.Other ( t.First1 e.Series1 ) ( e.Series2 ) =
+		t.First1 <MOrder::Merge::Local ( e.Series1 ) ( e.Series2 ) > ;
+}
+
+MOrder::Merge::Local {
+	( t.First1 e.Series1 ) ( t.First2 e.Series2 ) =
+		<MOrder::SwMerge::Local <MOrder::Compare::Entry t.First1 t.First2 > ( t.First1 e.Series1 ) ( t.First2 e.Series2 ) > ;
+	( e.Series1 ) ( e.Series2 ) =
+		e.Series1 e.Series2 ;
+}
+
+MOrder::MergeAdjacentPairs::Local {
+	( e.Series1 ) ( e.Series2 ) e.Tail =
+		( <MOrder::Merge::Local ( e.Series1 ) ( e.Series2 ) > ) <MOrder::MergeAdjacentPairs::Local e.Tail > ;
+	( e.Series ) =
+		( e.Series ) ;
+	=
+		;
+}
+
+MOrder::MergePairs::Local {
+	( e.Series ) =
+		e.Series ;
+	e.Series =
+		<MOrder::MergePairs::Local <MOrder::MergeAdjacentPairs::Local e.Series > > ;
+}
+
+MOrder::CreateSeries::Local {
+	t.Elem e.Tail =
+		( t.Elem ) <MOrder::CreateSeries::Local e.Tail > ;
+	=
+		;
+}
+
+MOrder::Sort::Entry {
+	e.Sequence =
+		<MOrder::MergePairs::Local <MOrder::CreateSeries::Local e.Sequence > > ;
+}
+
+MOrder::Lexicon::Local {
+	( t.First e.Expr1 ) ( t.First e.Expr2 ) =
+		<MOrder::Lexicon::Local ( e.Expr1 ) ( e.Expr2 ) > ;
+	( t.First1 e.Expr1 ) ( t.First2 e.Expr2 ) =
+		<MOrder::Compare::Entry t.First1 t.First2 > ;
+	( ) ( t.First2 e.Expr2 ) =
+		'<' ;
+	( t.First1 e.Expr1 ) ( ) =
+		'>' ;
+	( ) ( ) =
+		'=' ;
+}
+
+MOrder::SwSymbCompare::Local {
+	( Char s.Chr1 s.Ord1 ) ( Char s.Chr2 s.Ord2 ) =
+		<Math::Compare::Entry s.Ord1 s.Ord2 > ;
+	( Macro s.Num1 ) ( Macro s.Num2 ) =
+		<Math::Compare::Entry s.Num1 s.Num2 > ;
+	( Other s.Symb1 ) ( Other s.Symb2 ) =
+		'=' ;
+	( Macro s.Val ) t.Other =
+		'>' ;
+	t.Other ( Macro s.Val ) =
+		'<' ;
+	( Char s.Chr s.Ord ) t.Other =
+		'>' ;
+	t.Other ( Char s.Chr s.Ord ) =
+		'<' ;
+}
+
+MOrder::CheckMacro::Local {
+	s.Symb s.Symb =
+		( Other s.Symb ) ;
+	s.Symb s.Value =
+		( Macro s.Symb ) ;
+}
+
+MOrder::CheckChar::Local {
+	s.Symb s.Symb =
+		<MOrder::CheckMacro::Local s.Symb <Refal5::Chr::Entry s.Symb > > ;
+	s.Symb s.Numb =
+		( Char s.Symb s.Numb ) ;
+}
+
+MOrder::Type-T::Local {
+	s.Symb =
+		<MOrder::CheckChar::Local s.Symb <Refal5::Ord::Entry s.Symb > > ;
+}
+
+MOrder::SymbCompare::Local {
+	s.Left s.Right =
+		<MOrder::SwSymbCompare::Local <MOrder::Type-T::Local s.Left > <MOrder::Type-T::Local s.Right > > ;
+}
+
+MOrder::Compare::Entry {
+	t.Val t.Val =
+		'=' ;
+	s.Left s.Right =
+		<MOrder::SymbCompare::Local s.Left s.Right > ;
+	( e.Left ) s.Right =
+		'>' ;
+	s.Left ( e.Right ) =
+		'<' ;
+	( e.Left ) ( e.Right ) =
+		<MOrder::Lexicon::Local ( e.Left ) ( e.Right ) > ;
+}
+
+MOrder::Compare-T::Entry {
+	t.Left t.Right =
+		<MOrder::Compare::Entry t.Left t.Right > t.Left t.Right ;
+}
+

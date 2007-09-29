@@ -1,0 +1,137 @@
+$MODULE MBackEnd;
+
+$IMPORT FileIO;
+$IMPORT MSymTable;
+$IMPORT MStrings;
+
+/**
+	<Generate t.Module t.ErrorList e.OutName>
+		== s.Result t.UpdatedErrorList
+	s.Result ::= Success | Waringns | Errors
+*/
+$ENTRY Generate
+	t.Module t.ErrorList e.OutName =
+		Success t.ErrorList
+		<FileIO::Save
+			(e.OutName)
+			<GenerateContent t.Module>
+		>;
+
+GenerateContent
+	(t.SymTable
+		( t.ModuleName e.Elements )
+	) =
+		<MSymTable::Destroy t.SymTable>
+		<GenerateElements e.Elements>;
+
+GenerateElements {
+	(e.Element) e.Tail =
+		<GenerateOneElement e.Element>
+		<GenerateElements e.Tail>;
+
+	= ;
+}
+
+GenerateOneElement {
+	Function s.ScopeClass (e.Prefix) (e.Name) (e.Content) =
+		<GenerateFnHeader
+			s.ScopeClass (e.Prefix) (e.Name)
+		> <GenerateFnBody e.Content>;
+
+	// Здесь будет располагаться код для реализации статических ящиков
+}
+
+GenerateFnHeader
+	s.ScopeClass (() e.Prefix) (e.Name) =
+		( e.Prefix '::' e.Name '::'
+			<ScopeClassToSuffix s.ScopeClass>
+			' {'
+		);
+
+ScopeClassToSuffix { Entry = 'Entry'; Local = 'Local'; }
+
+GenerateFnBody {
+	// Обработка пустой функции
+	= (' = ; }') ();
+
+	e.Sentences =
+		<GenerateSentences e.Sentences>
+		('}') ();
+}
+
+GenerateSentences {
+	(e.NextSentence) e.Tail =
+		<GenerateOneSentence
+			e.NextSentence
+		> <GenerateSentences e.Tail>;
+
+	= ;
+}
+
+GenerateOneSentence
+	(e.Pattern) (e.Result) =
+		( '\t' <GenerateExpression e.Pattern> '=' )
+		( '\t\t' <GenerateExpression e.Result> ';' );
+
+GenerateExpression {
+	t.Term e.Tail =
+		<GenerateTerm t.Term> ' '
+		<GenerateExpression e.Tail>;
+
+	= ;
+}
+
+GenerateTerm {
+	(Identifier e.Name) =
+		e.Name;
+
+	(EVar e.Name) =
+		'e' e.Name;
+
+	(SVar e.Name) =
+		's' e.Name;
+
+	(TVar e.Name) =
+		't' e.Name;
+
+	(Literal e.Content) =
+		'\'' <EscapeText e.Content> '\'';
+
+	(DQWord e.Content) =
+		'\"' <EscapeText e.Content> '\"';
+
+	(Macro s.Value) =
+		<MStrings::Symb s.Value>;
+
+	(Structure e.InBrackets) =
+		'( ' <GenerateExpression e.InBrackets> ')';
+
+	(Function (e.Callable) e.Argument) =
+		'<' <GenerateCallable e.Callable> ' '
+		<GenerateExpression e.Argument> '>';
+}
+
+EscapeText {
+	s.Char e.Tail =
+		<EscapeChar s.Char> <EscapeText e.Tail>;
+
+	= ;
+}
+
+EscapeChar {
+	'\t' = '\\t';
+	'\n' = '\\n';
+	'\\' = '\\\\';
+	'\"' = '\\\"';
+	'\'' = '\\\'';
+	s.X = s.X;
+}
+
+GenerateCallable
+	s.CallType (Module () e.Name) (Function e.FnName) =
+		e.Name '::' e.FnName '::'
+		<CallTypeToSuffix s.CallType>;
+
+CallTypeToSuffix { Entry = 'Entry'; Local = 'Local'; }
+
+$END MBackEnd.

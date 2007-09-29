@@ -1,0 +1,17 @@
+/* Automatically generated file, don't edit! */
+$module FileIO;
+
+$import MSelfDiag;
+$import Refal5;
+
+$entry Open;
+$entry Close;
+$entry NulClose;
+$entry ReadLine;
+$entry WriteLine;
+$entry WriteLine-T;
+$entry ExtractFileName;
+$entry Load;
+$entry Save;
+
+$end FileIO.

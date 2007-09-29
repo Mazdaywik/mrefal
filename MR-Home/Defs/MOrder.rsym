@@ -1,0 +1,11 @@
+/* Automatically generated file, don't edit! */
+$module MOrder;
+
+$import Refal5;
+$import Math;
+
+$entry Compare-T;
+$entry Compare;
+$entry Sort;
+
+$end MOrder.

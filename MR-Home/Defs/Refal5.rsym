@@ -27,6 +27,8 @@ $entry Lower;
 $entry Lenw;
 $entry Numb;
 $entry Symb;
+$entry Ord;
+$entry Chr;
 
 $entry Add;
 $entry Sub;

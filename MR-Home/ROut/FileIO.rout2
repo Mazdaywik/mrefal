@@ -1,0 +1,98 @@
+FileIO::DoSave::Local {
+	t.File ( e.NextLine ) e.Tail =
+		<FileIO::DoSave::Local <FileIO::WriteLine::Entry t.File e.NextLine > e.Tail > ;
+	t.File =
+		<FileIO::NulClose::Entry t.File > ;
+}
+
+FileIO::Save::Entry {
+	( e.FileName ) e.Content =
+		<FileIO::DoSave::Local <FileIO::Open::Entry 'w' e.FileName > e.Content > ;
+}
+
+FileIO::DoLoad::Local {
+	t.File 0 =
+		<FileIO::NulClose::Entry t.File > ;
+	t.File e.Line 0 =
+		( e.Line ) <FileIO::NulClose::Entry t.File > ;
+	t.File e.Line =
+		( e.Line ) <FileIO::DoLoad::Local <FileIO::ReadLine::Entry t.File > > ;
+}
+
+FileIO::Load::Entry {
+	e.FileName =
+		<FileIO::DoLoad::Local <FileIO::ReadLine::Entry <FileIO::Open::Entry 'r' e.FileName > > > ;
+}
+
+FileIO::ExtractFileName::Entry {
+	( s.Handle e.FileName ) =
+		( s.Handle e.FileName ) e.FileName ;
+}
+
+FileIO::WriteLine-T::Entry {
+	( s.Handle e.FileName ) e.Line =
+		( s.Handle e.FileName ) <Refal5::Put::Entry s.Handle e.Line > ;
+}
+
+FileIO::WriteLine::Entry {
+	( s.Handle e.FileName ) e.Line =
+		( s.Handle e.FileName ) <Refal5::Putout::Entry s.Handle e.Line > ;
+}
+
+FileIO::ReadLine::Entry {
+	( s.Handle e.FileName ) =
+		( s.Handle e.FileName ) <Refal5::Get::Entry s.Handle > ;
+}
+
+FileIO::NulClose::Entry {
+	( s.Handle e.FileName ) =
+		<Refal5::Open::Entry 'r' s.Handle 'nul' > <FileIO::ReleaseHandle::Local s.Handle > ;
+}
+
+FileIO::Close::Entry {
+	( s.Handle e.FileName ) =
+		<Refal5::Open::Entry 'r' s.Handle e.FileName > <FileIO::ReleaseHandle::Local s.Handle > ;
+}
+
+FileIO::SwOpen::Local {
+	None s.Mode e.FileName =
+		<MSelfDiag::Error::Entry 'Can\'t open file ' e.FileName ': no free handles' > ;
+	s.Handle s.Mode e.FileName =
+		( s.Handle e.FileName ) <Refal5::Open::Entry s.Mode s.Handle e.FileName > ;
+}
+
+FileIO::CheckExistAndOpenForRead::Local {
+	True e.FileName =
+		<FileIO::SwOpen::Local <FileIO::GetHandle::Local > 'r' e.FileName > ;
+	False e.FileName =
+		<MSelfDiag::Error::Entry 'Can\'t open file \'' e.FileName '\' for reading' > ;
+}
+
+FileIO::Open::Entry {
+	'r' e.FileName =
+		<FileIO::CheckExistAndOpenForRead::Local <Refal5::ExistFile::Entry e.FileName > e.FileName > ;
+	'w' e.FileName =
+		<FileIO::SwOpen::Local <FileIO::GetHandle::Local > 'w' e.FileName > ;
+	s.OtherMode e.FileName =
+		<MSelfDiag::Error::Entry s.OtherMode ' -- unknown open file mode (' 'file \'' e.FileName '\')' > ;
+}
+
+FileIO::ReleaseHandle::Local {
+	s.Handle =
+		<Refal5::Br::Entry FileHandles '=' <Refal5::Dg::Entry FileHandles > s.Handle > ;
+}
+
+FileIO::SwGetHandle::Local {
+	=
+		1 <Refal5::Br::Entry FileHandles '=' Handles 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 > ;
+	Handles s.Handle e.OtherHandles =
+		s.Handle <Refal5::Br::Entry FileHandles '=' Handles e.OtherHandles > ;
+	Handles =
+		None <Refal5::Br::Entry FileHandles '=' Handles > ;
+}
+
+FileIO::GetHandle::Local {
+	=
+		<FileIO::SwGetHandle::Local <Refal5::Dg::Entry FileHandles > > ;
+}
+

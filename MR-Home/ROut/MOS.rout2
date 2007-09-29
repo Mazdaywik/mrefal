@@ -1,0 +1,44 @@
+MOS::LookupEnv::Local {
+	( e.Name ) e.Begin ( ( e.Name ) e.Value ) e.End =
+		e.Value ;
+	( e.Name ) e.Other =
+		None ;
+}
+
+MOS::Env::Entry {
+	e.Name =
+		<MOS::LookupEnv::Local ( e.Name ) <MOS::EnvList::Entry > > ;
+}
+
+MOS::DoEnvList::Local {
+	t.FList 0 =
+		<FileIO::NulClose::Entry t.FList > <MOS::System::Entry 'del ~setlst.tmp' > ;
+	t.FList e.Name '=' e.Value =
+		( ( e.Name ) e.Value ) <MOS::DoEnvList::Local <FileIO::ReadLine::Entry t.FList > > ;
+}
+
+MOS::EnvList::Entry {
+	=
+		<MOS::System::Entry 'set > ~setlst.tmp' > <MOS::DoEnvList::Local <FileIO::ReadLine::Entry <FileIO::Open::Entry 'r' '~setlst.tmp' > > > ;
+}
+
+MOS::Exit::Entry {
+	s.RetCode =
+		<Refal5::Exit::Entry s.RetCode > ;
+}
+
+MOS::Arg::Entry {
+	s.Num =
+		<Refal5::Arg::Entry s.Num > ;
+}
+
+MOS::Nil::Local {
+	e.Arg =
+		;
+}
+
+MOS::System::Entry {
+	e.Command =
+		<MOS::Nil::Local <Refal5::System::Entry e.Command > > ;
+}
+

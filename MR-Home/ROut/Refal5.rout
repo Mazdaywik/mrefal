@@ -59,3 +59,8 @@ Refal5--Compare--Entry { t.Left t.Rigth = <Compare t.Left t.Rigth >; }
 Refal5--Symb--Entry { s.Number = <Symb s.Number >; }
 
 Refal5--System--Entry { e.Command = <System e.Command >; }
+
+Refal5--Ord--Entry { e.Expr = <Ord e.Expr >; }
+
+Refal5--Chr--Entry { e.Expr = <Chr e.Expr >; }
+

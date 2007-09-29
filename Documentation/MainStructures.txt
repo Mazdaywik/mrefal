@@ -1,0 +1,88 @@
+--------------------------------------------------------------------------------
+	Структура "Модуль -- промежуточное представление"
+--------------------------------------------------------------------------------
+
+t.Module ::=
+	(t.SymTable t.ModuleContent)
+
+t.ModuleContent ::=
+	( (Module e.ModuleName)
+		t.ModuleElement*
+	)
+
+t.ModuleElement ::=
+	(Function s.ScopeClass (e.FnName) t.FunctionBody)
+
+s.ScopeClass ::=
+	Entry
+	Local
+
+t.FunctionBody ::=
+	t.Sentence*
+
+t.Sentence ::=
+	t.PatternExpr t.ResultExpr
+
+t.PatternExpr ::=
+	t.PatternTerm*
+
+t.ResultExpr ::=
+	t.ResultTerm*
+
+t.PatternTerm ::=
+	(Identifier e.Name)
+	(EVar e.Index)
+	(SVar e.Index)
+	(TVar e.Index)
+	(Literal e.Content)
+	(DQWord e.Content)
+	(Macro s.Value)
+	(Structure e.InBrackets)
+
+t.ResultTerm ::=
+	t.PatternTerm
+	(Function t.Callee e.Argument)
+
+t.Callable ::=
+	(Qualified
+		(Module t.SrcPosModule e.ModName)
+		(Function t.SrcPosFunction e.FnName)
+	)
+	(Local
+		(Function t.SrcPosFunction e.FnName)
+	)
+
+После проверки t.ModuleElement и t.Callable меняются:
+
+t.ModuleElement ::=
+	(Function
+		s.ScopeClass
+		( (e.Directory) e.ModuleName )
+		( e.FnName )
+		t.FunctionBody
+	)
+
+t.Callable ::=
+	(s.CallType
+		( Module (e.Directory) e.ModName )
+		( Function e.FunctionName )
+	)
+
+s.CallType ::=
+	Entry
+	Local
+
+--------------------------------------------------------------------------------
+	Структура "Символическая информация"
+--------------------------------------------------------------------------------
+
+e.SymInfo ::=
+	( Module e.ModuleLocation) \
+	( Functions (e.FnName)* ) \
+	( Imports t.ImportLocation* )
+
+e.ModuleLocation ::=
+	(e.Directory) e.ModuleName
+
+t.ImportLocation ::=
+	( e.ModuleLocation )

@@ -1,10 +1,13 @@
 $MODULE Modules;
 
-$IMPORT Refal5;
+$IMPORT MStrings;
+$IMPORT MFileSystem;
+$IMPORT MOS;
+$IMPORT MError;
 
 $ENTRY CanonicalModuleName {
 	s.Initial e.Tail =
-		<Refal5::Upper s.Initial> <Refal5::Lower e.Tail>;
+		<MStrings::Upper s.Initial> <MStrings::Lower e.Tail>;
 }
 
 $ENTRY SymName {
@@ -12,11 +15,146 @@ $ENTRY SymName {
 }
 
 $ENTRY OutName {
-	e.ModName = 'ROut\\' e.ModName '.rout';
+	e.ModName = 'ROut\\' e.ModName '.rout2';
 }
 
 $ENTRY SrcName {
 	e.ModName = e.ModName '.mref';
+}
+
+GetTime {
+	e.FileName = <MFileSystem::FileAttribute DateTime e.FileName>;
+}
+
+$ENTRY SourceState-T
+	e.ModName = <SourceState e.ModName> e.ModName;
+
+* <SourceState e.ModName>
+*	== ModuleNotFound
+*	== Library
+*	== NeedRecompile
+*	== SrcNotUpdated
+$ENTRY SourceState
+	e.ModName =
+		<ThreeFilesState
+			( <SymName e.ModName> )
+			( <OutName e.ModName> )
+			( <SrcName e.ModName> )
+		>;
+
+ThreeFilesState
+	(e.SymName) (e.OutName) (e.SrcName) =
+		<CompareMTimes
+			<GetTime e.SymName>
+			<GetTime e.OutName>
+			<GetTime e.SrcName>
+		>;
+
+CompareMTimes {
+	// Отсутствует исходный текст и хотя бы один из выходных файлов
+	e.Times-B FileNotFound e.Times-E FileNotFound =
+		ModuleNotFound;
+
+	// Отсутствует исходный текст -- библиотечный модуль, подключается как есть
+	t.SymTime t.OutTime FileNotFound =
+		Library;
+
+	// Отсутствует один из выходных файлов -- необходима перекомпиляция
+	e.Times-B FileNotFound e.Times-E t.SrcTime =
+		NeedRecompile;
+
+	t.SymTime t.OutTime t.SrcTime =
+		<SwCompareMTimes
+			<MFileSystem::CompareFileTime t.SymTime t.SrcTime>
+			<MFileSystem::CompareFileTime t.OutTime t.SrcTime>
+		>;
+}
+
+SwCompareMTimes {
+	'>' '>' = SrcNotUpdated;
+	e.Other = NeedRecompile;
+}
+
+$ENTRY LookupLibrary-T
+	e.ModuleName = <LookupLibrary e.ModuleName> e.ModuleName;
+
+* <LookupLibrary e.ModuleName>
+*	== ModuleNotFound
+*	== Library (Sym e.SymName) (Out e.OutName)
+$ENTRY LookupLibrary
+	e.ModuleName =
+		<SwLookupLibrary
+			( <MFileSystem::ExistFile-T <HomeDir> '\\Defs\\' e.ModuleName '.rsym'> )
+			( <MFileSystem::ExistFile-T <HomeDir> '\\ROut\\' e.ModuleName '.rout2'> )
+		>;
+
+SwLookupLibrary {
+	(True e.SymName) (True e.OutName) =
+		Library (Sym e.SymName) (Out e.OutName);
+
+	e.Other1 t.Other2 =
+		ModuleNotFound;
+}
+
+$ENTRY LookupModule
+	e.ModuleName = <UnName <LookupModule-T e.ModuleName>>;
+
+UnName s.Status t.Sym t.Out t.Src e.ModuleName =
+	s.Status t.Sym t.Out t.Src;
+
+* <LookupModule-T e.ModuleName>
+*	== s.Status
+*		(Sym e.SymName)
+*		(Out e.OutName)
+*		(Src e.SrcName)
+*		e.ModuleName
+*	s.Status ::= one of
+*		ModuleNotFound NeedRecompile Library SrcNotUpdated SystemLibrary
+*	e.*Name may be None
+$ENTRY LookupModule-T
+	e.ModuleName =
+		<SwLookupModule
+			<SourceState-T e.ModuleName>
+		>;
+
+SwLookupModule {
+	ModuleNotFound e.ModuleName =
+		<SwLookupAsSystemLibrary
+			<LookupLibrary-T e.ModuleName>
+		>;
+
+	s.OtherStatus e.ModuleName =
+		s.OtherStatus
+		(Sym <SymName e.ModuleName>)
+		(Out <OutName e.ModuleName>)
+		(Src <SrcName-SwLibrary
+			s.OtherStatus e.ModuleName
+		>) e.ModuleName;
+}
+
+SrcName-SwLibrary {
+	Library e.ModuleName = None;
+	s.Other e.ModuleName = <SrcName e.ModuleName>;
+}
+
+SwLookupAsSystemLibrary {
+	ModuleNotFound e.ModuleName =
+		ModuleNotFound (Sym None) (Out None) (Src None) e.ModuleName;
+
+	Library (Sym e.SymName) (Out e.OutName) e.ModuleName =
+		SystemLibrary (Sym e.SymName) (Out e.OutName) (Src None) e.ModuleName;
+}
+
+HomeDir = <MOS::Env 'MR_Home'>;
+
+$ENTRY Init =
+	<CheckDefinedMRHome <HomeDir>>
+	<MOS::System 'md Defs>nul 2>nul'>
+	<MOS::System 'md ROut>nul 2>nul'>;
+
+CheckDefinedMRHome {
+	None = <MError::Fatal 'MR_Home not defined'>;
+	e.Path = ;
 }
 
 $END Modules.

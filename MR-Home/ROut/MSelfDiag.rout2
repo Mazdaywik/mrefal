@@ -1,0 +1,61 @@
+MSelfDiag::Init::Entry {
+	=
+		<MSelfDiag::Nil::Local <Refal5::System::Entry 'md Info>nul 2>nul' > > <Refal5::Open::Entry 'w' 19 'Info/Log.txt' > ;
+}
+
+MSelfDiag::Nil::Local {
+	e.X =
+		;
+}
+
+MSelfDiag::PrintAssert::Local {
+	( e.SignFact ) t.Result t.Expected =
+		<MSelfDiag::Error::Entry 'ASSERT VIOLATION: ' t.Result ' ' e.SignFact ' ' t.Expected > ;
+	( e.SignFact ) t.Result t.Expected e.Message =
+		<MSelfDiag::Error::Entry 'ASSERT VIOLATION: ' t.Result ' ' e.SignFact ' ' t.Expected '(' e.Message ')' > ;
+}
+
+MSelfDiag::SwAssert::Local {
+	t.Sign t.Sign ( e.Result ) t.Expected e.Message =
+		e.Result ;
+	t.SignExpected t.SignFact t.Result t.Expected e.Message =
+		<MSelfDiag::PrintAssert::Local t.SignFact t.Result t.Expected e.Message > ;
+}
+
+MSelfDiag::Assert-NE::Entry {
+	t.Result t.Expected e.Message =
+		<MSelfDiag::Nil::Local <MSelfDiag::Assert-NE-T::Entry t.Result t.Expected e.Message > > ;
+}
+
+MSelfDiag::Assert-Eq::Entry {
+	t.Result t.Expected e.Message =
+		<MSelfDiag::Nil::Local <MSelfDiag::Assert-Eq-T::Entry t.Result t.Expected e.Message > > ;
+}
+
+MSelfDiag::Assert-NE-T::Entry {
+	t.Result t.Expected e.Message =
+		<MSelfDiag::SwAssert::Local ( '!=' ) <MSelfDiag::AssertAux::Local t.Result t.Expected > e.Message > ;
+}
+
+MSelfDiag::Assert-Eq-T::Entry {
+	t.Result t.Expected e.Message =
+		<MSelfDiag::SwAssert::Local ( '=' ) <MSelfDiag::AssertAux::Local t.Result t.Expected > e.Message > ;
+}
+
+MSelfDiag::AssertAux::Local {
+	t.ResultAndExpected t.ResultAndExpected =
+		( '=' ) t.ResultAndExpected t.ResultAndExpected ;
+	t.Result t.Expected =
+		( '!=' ) t.Result t.Expected ;
+}
+
+MSelfDiag::Log::Entry {
+	e.Message =
+		<Refal5::Putout::Entry 19 e.Message > ;
+}
+
+MSelfDiag::Error::Entry {
+	e.Message =
+		<Refal5::Prout::Entry 'INTERNAL ERROR: ' e.Message > <MSelfDiag::Log::Entry 'INTERNAL ERROR: ' e.Message > <Refal5::Exit::Entry 1 > ;
+}
+

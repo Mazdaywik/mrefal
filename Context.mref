@@ -1,149 +1,90 @@
 $MODULE Context;
 
-$IMPORT MError;
+$IMPORT MModulesList;
 
-$IMPORT Modules;
-
-$ENTRY CreateContext {
+$ENTRY Create {
 	= (
-		(ModulesList
-			/* ( (Name 'Refal5')
-				(Sym <Modules::SymName 'Refal5'>)
-				(Out <Modules::OutName 'Refal5'>)
-				(Src None)
-				(StartPoint None)
-				(InitPoint None)
-				(Status CompileComplete)
-			) */
-		)
+		( ModulesList )
+		( CachedSyms )
+		( ErrorList )
 	);
 }
 
-$ENTRY UpdateModuleInfo {
-	(
-		(ModulesList
-			e.OtherModules-B
-			( (Name e.ModName) e.Options )
-			e.OtherModules-E
-		)
-	) (e.ModName) e.NewOptions =
-		(
-			(ModulesList
-				e.OtherModules-B
-				( (Name e.ModName) <UpdateOptions (e.Options) e.NewOptions> )
-				e.OtherModules-E
-			)
+* <UpdateModuleInfo t.Context (e.ModName) e.NewOptionsList>
+*	== t.UpdatedContext
+$ENTRY UpdateModuleInfo
+	( t.ModulesList t.CachedSyms t.ErrorList ) (e.ModName) e.NewOptions =
+		( <MModulesList::UpdateModuleInfo
+				t.ModulesList
+				(e.ModName)
+				e.NewOptions
+			> t.CachedSyms t.ErrorList
 		);
 
-	( (ModulesList e.OtherModules) )
-	(e.ModName) e.NewOptions =
-		( (ModulesList e.OtherModules
-			( (Name e.ModName)
-				<UpdateOptions
-					( (Sym None)
-						(Out None)
-						(Src None)
-						(StartPoint None)
-						(InitPoint None)
-						(Status Unknown)
-					) e.NewOptions
-				>
-			)
-		) );
-}
+$ENTRY LastModule
+	( t.ModulesList t.CachedSyms t.ErrorList )
+	e.ModName =
+		( <MModulesList::LastModule t.ModulesList e.ModName>
+			t.CachedSyms t.ErrorList
+		);
 
-$ENTRY LastModule {
-	( (ModulesList
-		e.Modules-B
-		( (Name e.ModName) e.Info )
-		e.Modules-E
-	) ) e.ModName =
-		( (ModulesList
-			e.Modules-B e.Modules-E
-			( (Name e.ModName) e.Info )
-		) );
-}
-
-UpdateOptions {
-	( (s.Option e.OldVal) e.OldOptions )
-	e.NewOptions-B (s.Option e.NewVal) e.NewOptions-E =
-		(s.Option e.NewVal)
-		<UpdateOptions
-			( e.OldOptions )
-			e.NewOptions-B
-			e.NewOptions-E
-		>;
-
-	( t.Option e.OldOptions ) e.NewOptions =
-		t.Option <UpdateOptions (e.OldOptions) e.NewOptions>;
-
-	() = ;
-
-	() e.NewOptions =
-		<MError::Error
-			'F' 'Unknown options in function Context::UpdateOptions: '
-			e.NewOptions
-		>;
-}
-
-$ENTRY DeleteContext {
-	t.Context = ;
+$ENTRY Destroy {
+	( t.ModulesList t.CachedSyms t.ErrorList ) = ;
 }
 
 * <ExtractOption t.Context s.Option e.ModName>
 *	== t.Context Found e.Option
-*	== t.Context ModuleNotFound
+*	== t.Context ModuleInfoNotFound
 *	!fail abort!
-$ENTRY ExtractOption {
-	( (ModulesList e.Modules-B ( (Name e.ModName) e.Options ) e.Modules-E) )
+$ENTRY ExtractOption
+	( t.ModulesList t.CachedSyms t.ErrorList )
 	s.Option e.ModName =
-		( (ModulesList e.Modules-B
-				( (Name e.ModName) e.Options )
-				e.Modules-E
-			)
-		) Found <FindOption s.Option e.Options>;
-
-	t.Context s.Option e.ModName = t.Context ModuleNotFound;
-}
-
-FindOption {
-	s.Option e.Options-B (s.Option e.Value) e.Options-E =
-		e.Value;
-}
-
-$ENTRY GetProgName {
-	( (ModulesList
-		e.Modules
-		( (Name e.LastModule) e.Info )
-	) ) =
-		( (ModulesList
-			e.Modules
-			( (Name e.LastModule) e.Info )
-		) ) e.LastModule;
-}
-
-* <ExtractModuleList t.Context>
-*	== t.Context (e.ModuleName)*
-$ENTRY ExtractModulesList {
-	( (ModulesList e.Modules) ) =
-		<DoExtractModulesList
-			( (ModulesList) )
-			e.Modules
+		( t.ModulesList t.CachedSyms t.ErrorList )
+		<MModulesList::ExtractOption
+			t.ModulesList
+			s.Option
+			e.ModName
 		>;
-}
 
-DoExtractModulesList {
-	( (e.ModulesList) )
-	e.Modules
-	( (Name e.LastName) e.LastInfo ) =
-		<DoExtractModulesList
-			( (e.ModulesList
-				( (Name e.LastName) e.LastInfo )
-			) )
-			e.Modules
-		> (e.LastName);
+$ENTRY GetProgName
+	( t.ModulesList t.CachedSyms t.ErrorList ) =
+		( t.ModulesList t.CachedSyms t.ErrorList )
+		<MModulesList::GetProgName t.ModulesList>;
 
-	( (e.ModulesList) ) = ( (e.ModulesList) );
-}
+* <ExtractModulesList t.Context>
+*	== t.Context (e.ModuleName)*
+$ENTRY ExtractModulesList
+	( t.ModulesList t.CachedSyms t.ErrorList ) =
+		( t.ModulesList t.CachedSyms t.ErrorList )
+		<MModulesList::ExtractModulesList
+			t.ModulesList
+		>;
+
+* <GetErrorList t.Context>
+*	== t.Context t.ErrorInfo*
+$ENTRY GetErrorList
+	( t.ModulesList t.CachedSyms ( ErrorList e.Errors ) ) =
+		( t.ModulesList t.CachedSyms ( ErrorList e.Errors ) )
+		e.Errors;
+
+* <PutErrorList t.Context t.ErrorInfo*>
+*	== t.UpdatedContext
+$ENTRY PutErrorList
+	( t.ModulesList t.CachedSyms ( ErrorList e.OldErrors ) )
+	e.NewErrors =
+		( t.ModulesList
+			t.CachedSyms
+			( ErrorList e.OldErrors )
+		);
+
+* <AppendError t.Context t.ErrorInfo>
+*	== t.UpdatedContext
+$ENTRY AppendError
+	( t.ModulesList t.CachedSyms ( ErrorList e.Errors ) )
+	t.ErrorInfo =
+		( t.ModulesList
+			t.CachedSyms
+			( ErrorList e.Errors t.ErrorInfo )
+		);
 
 $END Context.

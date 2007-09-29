@@ -1,0 +1,93 @@
+$MODULE MBuildNumber;
+
+$IMPORT FileIO;
+$IMPORT Math;
+$IMPORT MFileSystem;
+$IMPORT MStrings;
+
+$ENTRY Update =
+	<SwExist
+		<MFileSystem::ExistFile-T <FileName> >
+	>;
+
+FileName = 'Info/Version.txt';
+
+SwExist {
+	True e.FileName =
+		<UpdateNumber <FileIO::Load e.FileName>>;
+
+	False e.FileName =
+		<SaveDefault>;
+}
+
+UpdateNumber {
+	(e.FirstLine) () =
+		<UpdateNumber
+			(e.FirstLine)
+		>;
+
+	(e.Major '.' e.Minor '.' e.Build) =
+		<CheckLoaded
+			(<IsNumber e.Major>)
+			(<IsNumber e.Minor>)
+			(<IsNumber e.Build>)
+		>;
+
+	e.Other = <SaveDefault>;
+}
+
+CheckLoaded {
+	(Number s.Major) (Number s.Minor) (Number s.Build) =
+		<SaveNumber s.Major s.Minor <Math::Inc s.Build>>;
+
+	e.Other =
+		<SaveDefault>;
+}
+
+Numbers = '0123456789';
+
+IsNumber e.Digits = <DoIsNumber (<Numbers>) () e.Digits>;
+
+DoIsNumber {
+	(e.Digits-B s.NextDigit e.Digits-E)
+	(e.ScannedDigits) s.NextDigit e.NotYetScanned =
+		<DoIsNumber
+			(e.Digits-B s.NextDigit e.Digits-E)
+			(e.ScannedDigits s.NextDigit) e.NotYetScanned
+		>;
+
+	(e.Digits) (e.DigitLine) =
+		<ValidConvertion
+			(<MStrings::Numb e.DigitLine>)
+			e.DigitLine
+		>;
+
+	(e.Digits) (e.ScannedDigits) e.Tail =
+		String e.ScannedDigits e.Tail;
+}
+
+ValidConvertion {
+	(s.OneMacroNumber) e.DigitLine =
+		Number s.OneMacroNumber;
+
+	(e.MacroNumbers) e.DigitLine =
+		String e.DigitLine;
+}
+
+SaveDefault = <SaveNumber 0 0 1>;
+
+SaveNumber {
+	s.Minor s.Major s.Build =
+		<FileIO::Save
+			(<FileName>) (
+				<MStrings::Symb s.Minor> '.'
+				<MStrings::Symb s.Major> '.'
+				<MStrings::Symb s.Build>
+			)
+		>;
+		
+	s.Minor s.Major s.BuildHi s.BuildLo =
+		<SaveDefault>;
+}
+
+$END MBuildNumber.

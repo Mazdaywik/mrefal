@@ -1,0 +1,255 @@
+$MODULE MSymTable;
+
+$IMPORT MError;
+$IMPORT MSelfDiag;
+$IMPORT MStrings;
+
+*-------------------------------------------------------------------------------
+* Функции для работы с таблицей символов
+*-------------------------------------------------------------------------------
+
+/* Внутренний формат: 
+	( ( Idents (e.Ident)* )
+		( CurModule e.CurModule )
+		( Modules (e.ModuleName)* )
+		( Functions (s.ScopeClass e.FnName)* )
+	)
+*/
+
+$ENTRY Create {
+	Current e.ModuleName =
+		( (Idents) (CurModule e.ModuleName) (Modules) (Functions) );
+}
+
+$ENTRY Destroy
+	( t.Idents t.CurModule t.Modules t.Functions ) = ;
+
+$ENTRY AddCurrentModule {
+	t.ErrorList
+	( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
+	t.SrcPos e.ModuleName-InSrc =
+		<AddCurrentModule-CheckIdent
+			t.ErrorList
+			( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
+			t.SrcPos e.ModuleName-InSrc
+			( <MStrings::Lower e.ModuleName-InFS> )
+			( <MStrings::Lower e.ModuleName-InSrc> )
+		>;
+
+	t.ErrorList
+	t.Other t.SrcPos e.ModuleName =
+		<MSelfDiag::Error
+			'Error in symbol table -- can\'t insert current module name'
+		>;
+}
+
+AddCurrentModule-CheckIdent {
+	t.ErrorList
+	( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
+	t.SrcPos e.ModuleName-InSrc
+	( e.ModuleName-Lower ) ( e.ModuleName-Lower ) =
+		t.ErrorList
+		( (Idents (e.ModuleName-InSrc))
+			(CurModule t.SrcPos e.ModuleName-InSrc)
+			t.Modules t.Functions
+		);
+
+	t.ErrorList
+	( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
+	t.SrcPos e.ModuleName-InSrc
+	( e.InFS-Lower ) (e.InSrc-Lower) =
+		<MError::AddMismatchModuleAndFile
+			t.ErrorList t.SrcPos (e.ModuleName-InFS) (e.ModuleName-InSrc)
+		> ( (Idents (e.ModuleName-InSrc))
+			(CurModule t.SrcPos e.ModuleName-InSrc)
+			t.Modules t.Functions
+		);
+}
+
+$ENTRY ExtractCurrentModule
+	( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions ) =
+		( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions )
+		e.ModuleName;
+
+* <CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
+*	== t.ErrorList t.SymTable
+*	== t.UpdatedErrorList t.SymTable
+$ENTRY CheckCurrentModule {
+	t.ErrorList
+	( t.Idents (CurModule t.SrcPos1 e.ModuleName) e.OtherInfo )
+	t.SrcPos2 e.ModuleName =
+		t.ErrorList
+		( t.Idents (CurModule t.SrcPos1 e.ModuleName) e.OtherInfo );
+
+	t.ErrorList
+	( t.Idents (CurModule t.SrcPos1 e.ModuleNameInHeader) e.OtherInfo )
+	t.SrcPos2 e.ModuleNameInTailer =
+		<MError::AddNamesMismatch
+			t.ErrorList
+			( t.SrcPos1 e.ModuleNameInHeader )
+			( t.SrcPos2 e.ModuleNameInTailer )
+		>
+		( t.Idents (CurModule t.SrcPos1 e.ModuleNameInHeader) e.OtherInfo);
+}
+
+$ENTRY AddImportModule {
+	t.ErrorList
+	( (Idents e.Idents-B (e.ModuleName) e.Idents-E)
+		e.OtherInfo
+	)
+	t.SrcPos e.ModuleName =
+		<MError::AddRedeclaredIdentifier
+			t.ErrorList t.SrcPos e.ModuleName
+		> ( (Idents e.Idents-B (e.ModuleName) e.Idents-E)
+			e.OtherInfo
+		);
+
+	t.ErrorList
+	( (Idents e.Idents)
+		t.CurModule
+		(Modules e.Modules)
+		t.Functions
+	) t.SrcPos e.ModuleName =
+		t.ErrorList
+		( (Idents e.Idents (e.ModuleName) ) 
+			t.CurModule
+			(Modules e.Modules (e.ModuleName))
+			t.Functions
+		);
+}
+
+* <ExtractImportList t.SymTable>
+*	== t.SymTable (e.ImportName)*
+$ENTRY ExtractImportList
+	( t.Idents t.CurModule (Modules e.ModulesList) t.Functions ) =
+		( t.Idents t.CurModule (Modules e.ModulesList) t.Functions )
+		e.ModulesList;
+
+$ENTRY AddFunction {
+	t.ErrorList
+	( (Idents e.Idents-B (e.FnName) e.Idents-E)
+		e.OtherInfo
+	) s.ScopeClass t.SrcPos e.FnName =
+		<MError::AddRedeclaredIdentifier
+			t.ErrorList t.SrcPos e.FnName
+		> ( (Idents e.Idents-B (e.FnName) e.Idents-E)
+			e.OtherInfo
+		);
+
+	t.ErrorList
+	( (Idents e.Idents)
+		t.CurModule
+		t.Modules
+		(Functions e.Functions)
+	) s.ScopeClass t.SrcPos e.FnName =
+		t.ErrorList
+		( (Idents e.Idents (e.FnName))
+			t.CurModule
+			t.Modules
+			(Functions e.Functions (s.ScopeClass e.FnName))
+		);
+}
+
+/**
+	<ExtractLocalInfo t.SymTable>
+		== t.SymTable (s.ScopeClass e.FnName)*
+	s.ScopeClass ::= Entry | Local
+*/
+$ENTRY ExtractLocalInfo
+	( t.Idents t.CurModule t.Modules (Functions e.Functions) ) =
+		( t.Idents t.CurModule t.Modules (Functions e.Functions) )
+		e.Functions;
+
+* <ExtractEntryFunctions t.SymTable>
+*	== t.SymTable (e.FnName)*
+$ENTRY ExtractEntryFunctions
+	( t.Idents t.CurModule t.Modules t.Functions ) =
+		<ReturnFunctions
+			( t.Idents t.CurModule t.Modules )
+			<ExtractEntries t.Functions>
+		>;
+
+ExtractEntries
+	(Functions e.FnList) =
+		<DoExtractEntries (Functions) (/* entries */) e.FnList >;
+
+DoExtractEntries {
+	t.FnList t.EntriesList
+	t.Function e.Tail =
+		<DoExtractEntries
+			<SwDoExtractEntries
+				t.FnList t.EntriesList t.Function
+			>
+			e.Tail
+		>;
+
+	t.FnList (e.EntriesList) = t.FnList e.EntriesList;
+}
+
+SwDoExtractEntries {
+	(Functions e.FnList) (e.EntriesList) (Entry e.FnName) =
+		(Functions e.FnList (Entry e.FnName)) (e.EntriesList (e.FnName));
+
+	(Functions e.FnList) (e.EntriesList) (Local e.FnName) =
+		(Functions e.FnList (Local e.FnName)) (e.EntriesList);
+}
+
+ReturnFunctions
+	( t.Idents t.CurModule t.Modules )
+	t.Functions e.Entries =
+		( t.Idents t.CurModule t.Modules t.Functions )
+		e.Entries;
+
+*-------------------------------------------------------------------------------
+* Работа с переменными
+*-------------------------------------------------------------------------------
+
+$ENTRY CreateVarTable
+	= (VarTable);
+
+$ENTRY DestroyVarTable
+	(VarTable e.Vars) = ;
+
+$ENTRY AddVariable {
+	/* Повторное вхождение переменной -- ничего не добавляем */
+	t.ErrorList
+	( VarTable e.Vars-B (s.VarType e.Index) e.Vars-E )
+	t.SrcPos s.VarType e.Index =
+		t.ErrorList
+		( VarTable e.Vars-B (s.VarType e.Index) e.Vars-E )
+		Success;
+
+	/* Две разные переменные не могут иметь один индекс */
+	t.ErrorList
+	( VarTable e.Vars-B (s.OneVarType e.Index) e.Vars-E)
+	t.SrcPos s.OtherVarType e.Index =
+		<MError::AddVarTypeMismatch
+			t.ErrorList t.SrcPos e.Index
+		> ( VarTable e.Vars-B (s.OneVarType e.Index) e.Vars-E )
+		Fail;
+
+	/* Просто добавляем переменную */
+	t.ErrorList
+	( VarTable e.Variables)
+	t.SrcPos s.VarType e.Index =
+		t.ErrorList (VarTable e.Variables (s.VarType e.Index)) Success;
+}
+
+$ENTRY CheckVariable {
+	t.ErrorList
+	(VarTable e.Vars-B (s.VarType e.Index) e.Vars-E)
+	t.SrcPos s.VarType e.Index =
+		t.ErrorList
+		(VarTable e.Vars-B (s.VarType e.Index) e.Vars-E)
+		Success;
+
+	t.ErrorList
+	(VarTable e.OtherVariables)
+	t.SrcPos s.VarType e.Index =
+		<MError::AddUndeclaredVariable
+			t.ErrorList t.SrcPos s.VarType e.Index
+		> (VarTable e.OtherVariables)
+		Fail;
+}
+
+$END MSymTable.

@@ -1,37 +1,207 @@
 $MODULE MError;
 
 $IMPORT InOut;
-$IMPORT Refal5;
+$IMPORT MOS;
+$IMPORT MLexer;
+$IMPORT MOrder;
+$IMPORT MSymStream;
 
-$ENTRY Error {
-	'F' e.Text =
-		<InOut::WriteLine 'FATAL ERROR: ' e.Text>
-		<Refal5::Exit 120>;
-	'L' e.Text =
-		<InOut::WriteLine 'LINKER ERROR: ' e.Text>
-		<Refal5::Exit 80>;
-	'S' e.Text =
-		<InOut::WriteLine 'SYNTAX ERROR: ' e.Text>
-		<Refal5::Exit 80>;
-	s.LineNumber (e.ModuleName) e.Text =
+$ENTRY Fatal
+	e.Message =
+		<InOut::WriteLine 'FATAL ERROR: ' e.Message>
+		<MOS::Exit 1>;
+
+$ENTRY LinkError
+	e.Message =
+		<InOut::WriteLine 'LINKER ERROR: ' e.Message>
+		<MOS::Exit 1>;
+
+PrintError {
+	LexerError t.SrcPos e.Message =
+		<OutError t.SrcPos ('LEXER') e.Message>;
+
+	LexerUndefined t.SrcPos e.Text =
+		<OutError t.SrcPos ('LEXER') 'undefined text ' e.Text>;
+
+	Unexpected (s.Type t.SrcPos e.Info) e.Expected =
+		<OutError
+			t.SrcPos ('SYNTAX') 'Expected ' e.Expected ', got '
+			<MLexer::TokenToString (s.Type e.Info)>
+		>;
+
+	Semantics t.SrcPos e.Message =
+		<OutError t.SrcPos ('SEMANTICS') e.Message>;
+}
+
+OutError {
+	t.SrcPos (e.Kind) e.Message =
 		<InOut::WriteLine
-			'ERROR in line ' s.LineNumber
-			 'in module ' e.ModuleName ': '
-			e.Text
-		> <Refal5::Exit 11>;
-	(e.FileName) s.LineNumber e.Text =
-		<InOut::WriteLine
-			'SYNTAX ERROR in file ' e.FileName
-			' in line ' s.LineNumber ': ' e.Text
-		> <Refal5::Exit 33>;
-	s.LineNumber e.Text =
-		<InOut::WriteLine 'ERROR in line ' s.LineNumber ': ' e.Text>
-		<Refal5::Exit 10>;
+			e.Kind ' ERROR ('
+			<MSymStream::SrcPosToString t.SrcPos>
+			'): ' e.Message
+		>;
 }
 
 $ENTRY Warning {
 	s.LineNumber e.Text =
 		<InOut::WriteLine 'WARNING in line ' s.LineNumber ': ' e.Text>;
+}
+
+$ENTRY CreateErrList = ( ErrorList );
+
+$ENTRY DestroyErrList
+	( ErrorList e.Errors ) = ;
+
+* <EmptyList t.ErrorList>
+*	== t.ErrorList Empty
+*	== t.ErrorList NotEmpty
+$ENTRY EmptyList {
+	( ErrorList ) = ( ErrorList ) Empty;
+
+	( ErrorList e.Errors ) =
+		( ErrorList e.Errors ) NotEmpty;
+}
+
+AddToList {
+	( ErrorList e.Errors-B t.Error e.Errors-E )
+	t.Error =
+		( ErrorList e.Errors-B t.Error e.Errors-E );
+
+	( ErrorList e.Errors ) t.Error =
+		( ErrorList e.Errors t.Error );
+}
+
+* <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
+*	== t.UpdatedErrorList
+$ENTRY AddUnexpected {
+	t.ErrorList
+	(Error t.SrcPos e.Message) e.ExpectedText =
+		<AddToList
+			t.ErrorList (LexerError t.SrcPos e.Message )
+		>;
+
+	t.ErrorList
+	(Undefined t.SrcPos e.Text) e.ExpectedText =
+		<AddToList
+			t.ErrorList (LexerUndefined t.SrcPos e.Text )
+		>;
+
+	t.ErrorList
+	t.Unexpected e.ExpectedText =
+		<AddToList
+			t.ErrorList (Unexpected t.Unexpected e.ExpectedText)
+		>;
+}
+
+* <AddNamesMismatch t.ErrorList (t.Pos1 e.InHead) (t.Pos2 e.InTail)>
+*	== t.ErrorList
+$ENTRY AddNamesMismatch
+	t.ErrorList
+	( t.Pos1 e.InHead ) ( t.Pos2 e.InTail ) =
+		<AddToList
+			t.ErrorList
+			( Semantics t.Pos1
+				'Mismatch module names in head `' e.InHead
+				'` and in tail `' e.InTail '`'
+			)
+		>;
+
+$ENTRY AddMismatchModuleAndFile
+	t.ErrorList
+	t.SrcPos (e.InFS) (e.InSrc) =
+		<AddToList
+			t.ErrorList
+			( Semantics t.SrcPos
+				'Mismatch module name \'' e.InSrc '\' and file name \'' e.InFS '\''
+			)
+		>;
+
+* <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
+*	== t.UpdatedErrorList
+$ENTRY AddRedeclaredIdentifier
+	t.ErrorList t.SrcPos e.Identifier =
+		<AddToList
+			t.ErrorList
+			( Semantics t.SrcPos 'Identifier redeclared ' e.Identifier )
+		>;
+
+$ENTRY AddVarTypeMismatch
+	t.ErrorList t.SrcPos e.VarName =
+		<AddToList
+			t.ErrorList
+			( Semantics
+				t.SrcPos 'Two different variables has same index ' e.VarName
+			)
+		>;
+
+$ENTRY AddUndeclaredVariable
+	t.ErrorList t.SrcPos s.VarType e.Index =
+		<AddToList
+			t.ErrorList
+			( Semantics
+				t.SrcPos 'Undeclared variable ' <TypeToChar s.VarType> e.Index
+			)
+		>;
+
+TypeToChar {
+	EVar = 'e'; SVar = 's'; TVar = 't';
+}
+
+$ENTRY AddUnresolvedFunction {
+	t.ErrorList
+	t.SrcPos Local e.FnName =
+		<AddToList
+			t.ErrorList
+			( Semantics
+				t.SrcPos 'Undeclared local function \'' e.FnName '\''
+			)
+		>;
+
+	t.ErrorList
+	t.SrcPos QualifiedModule (e.ModName) e.FnName =
+		<AddToList
+			t.ErrorList
+			( Semantics
+				t.SrcPos
+				'Undeclared module in <' e.ModName '::' e.FnName ' ... >'
+			)
+		>;
+
+	t.ErrorList
+	t.SrcPos QualifiedFunction (e.Module) e.FnName =
+		<AddToList
+			t.ErrorList
+			( Semantics
+				t.SrcPos
+				'Module \'' e.Module '\' not contain entry function \'' e.FnName '\''
+			)
+		>;
+}
+
+$ENTRY PrintErrorsAndStop
+	t.ErrorList =
+		<PrintErrors t.ErrorList>
+		<MOS::Exit 1>;
+
+$ENTRY PrintErrors
+	( ErrorList e.Errors ) =
+		<DoPrintErrors
+			<MOrder::Sort e.Errors>
+		>;
+
+DoPrintErrors {
+	(e.Error) e.Errors =
+		<PrintError e.Error>
+		<DoPrintErrors e.Errors>;
+
+	= ;
+}
+
+TokenToLine {
+	( s.Type t.Pos ) =
+		s.Type ' at ' t.Pos;
+	( s.Type t.Pos e.Info ) =
+		s.Type '(' e.Info ') at ' t.Pos;
 }
 
 $END MError.

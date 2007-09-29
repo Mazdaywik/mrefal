@@ -1,0 +1,136 @@
+$MODULE MOrder;
+
+$IMPORT Refal5;
+$IMPORT Math;
+
+/* Сравнение по типам:
+	() > Macro > Character > Other
+	Скобочные термы сравниваются в лексиконографическом порядке.
+	Макроцифры сравниваются по арифметическим правилам.
+	Characters сравниваются по ASCII-значениям.
+	Остальные символы считаются равными.
+*/
+
+$ENTRY Compare-T
+	t.Left t.Right = <Compare t.Left t.Right> t.Left t.Right;
+
+$ENTRY Compare {
+	t.Val t.Val = '=';
+
+	s.Left s.Right = <SymbCompare s.Left s.Right>;
+
+	(e.Left) s.Right = '>';
+
+	s.Left (e.Right) = '<';
+
+	(e.Left) (e.Right) = <Lexicon (e.Left) (e.Right)>;
+}
+
+SymbCompare
+	s.Left s.Right =
+		<SwSymbCompare <Type-T s.Left> <Type-T s.Right>>;
+
+Type-T
+	s.Symb = <CheckChar s.Symb <Refal5::Ord s.Symb>>;
+
+CheckChar {
+	s.Symb s.Symb =
+		// Не char, т.к. функция <Refal5::Ord> заменяет
+		// characters на соотвествующие макроцифры
+		<CheckMacro s.Symb <Refal5::Chr s.Symb>>;
+
+	s.Symb s.Numb =
+		(Char s.Symb s.Numb);
+}
+
+CheckMacro {
+	s.Symb s.Symb =
+		// Не макроцифра (см. выше)
+		(Other s.Symb);
+
+	s.Symb s.Value =
+		(Macro s.Symb);
+}
+
+SwSymbCompare {
+	(Char s.Chr1 s.Ord1) (Char s.Chr2 s.Ord2) =
+		<Math::Compare s.Ord1 s.Ord2>;
+
+	(Macro s.Num1) (Macro s.Num2) =
+		<Math::Compare s.Num1 s.Num2>;
+
+	(Other s.Symb1) (Other s.Symb2) =
+		'=';
+
+	(Macro s.Val) t.Other = '>';
+	t.Other (Macro s.Val) = '<';
+
+	(Char s.Chr s.Ord) t.Other = '>';
+	t.Other (Char s.Chr s.Ord) = '<';
+}
+
+/* $ENTRY */ Lexicon {
+	( t.First e.Expr1 ) ( t.First e.Expr2 ) =
+		<Lexicon ( e.Expr1 ) ( e.Expr2 )>;
+
+	( t.First1 e.Expr1 ) ( t.First2 e.Expr2 ) =
+		<Compare t.First1 t.First2>;
+
+	() (t.First2 e.Expr2) = '<';
+
+	(t.First1 e.Expr1) () = '>';
+
+	() () = '=';
+}
+
+$ENTRY Sort
+	e.Sequence = <MergePairs <CreateSeries e.Sequence> >;
+
+CreateSeries {
+	t.Elem e.Tail = ( t.Elem ) <CreateSeries e.Tail>;
+	= ;
+}
+
+// Сливает соседние пары до тех пор, пока не останется одна серия
+MergePairs {
+	( e.Series ) = e.Series;
+	e.Series =
+		<MergePairs
+			<MergeAdjacentPairs
+				e.Series
+			>
+		>;
+}
+
+// Сливает соседние пары
+MergeAdjacentPairs {
+	( e.Series1 ) ( e.Series2 ) e.Tail =
+		( <Merge (e.Series1) (e.Series2)> )
+		<MergeAdjacentPairs e.Tail>;
+
+	( e.Series ) = ( e.Series );
+
+	= ;
+}
+
+Merge {
+	( t.First1 e.Series1 ) ( t.First2 e.Series2 ) =
+		<SwMerge
+			<Compare t.First1 t.First2>
+			( t.First1 e.Series1 )
+			( t.First2 e.Series2 )
+		>;
+
+	// Одна из серий пустая
+	( e.Series1 ) ( e.Series2 ) = e.Series1 e.Series2;
+}
+
+SwMerge {
+	'>' ( e.Series1 ) ( t.First2 e.Series2 ) =
+		t.First2 <Merge ( e.Series1 ) ( e.Series2 )>;
+
+	s.Other ( t.First1 e.Series1 ) ( e.Series2 ) =
+		t.First1 <Merge ( e.Series1 ) ( e.Series2 )>;
+}
+
+$END MOrder.

@@ -1,0 +1,10 @@
+/* Automatically generated file, don't edit! */
+$module InOut;
+
+$import Refal5;
+
+$entry WriteLine;
+$entry WriteLine-T;
+$entry ReadLine;
+
+$end InOut.

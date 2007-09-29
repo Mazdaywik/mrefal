@@ -1,0 +1,15 @@
+/* Automatically generated file, don't edit! */
+$module MStrings;
+
+$import Refal5;
+$import Math;
+
+$entry Numb;
+$entry Symb;
+$entry Length;
+$entry Length-T;
+$entry Upper;
+$entry Lower;
+$entry First;
+
+$end MStrings.

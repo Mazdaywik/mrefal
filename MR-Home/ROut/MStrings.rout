@@ -1,0 +1,49 @@
+MStrings--Numb--Entry {
+	e.Digits =
+		<Refal5--Numb--Entry e.Digits > ;
+}
+
+MStrings--Symb--Entry {
+	s.Num =
+		<Refal5--Symb--Entry s.Num > ;
+}
+
+MStrings--Length--Entry {
+	e.Expr =
+		<MStrings--UnLen--Local <Refal5--Lenw--Entry e.Expr > > ;
+}
+
+MStrings--UnLen--Local {
+	s.Length e.Expr =
+		s.Length ;
+}
+
+MStrings--Length-T--Entry {
+	e.Expr =
+		<Refal5--Lenw--Entry e.Expr > ;
+}
+
+MStrings--Upper--Entry {
+	e.Expr =
+		<Refal5--Upper--Entry e.Expr > ;
+}
+
+MStrings--Lower--Entry {
+	e.Expr =
+		<Refal5--Lower--Entry e.Expr > ;
+}
+
+MStrings--First--Entry {
+	s.Count e.Expr =
+		<MStrings--DoFirst--Local s.Count ( ) e.Expr > ;
+}
+
+MStrings--DoFirst--Local {
+	0 ( e.First ) e.Last =
+		( e.First ) e.Last ;
+	s.Num ( e.First ) =
+		e.First ;
+	s.Num ( e.First ) t.Next e.Last =
+		<MStrings--DoFirst--Local <Math--Dec--Entry s.Num > ( e.First t.Next ) e.Last > ;
+}
+

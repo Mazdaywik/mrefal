@@ -1,0 +1,14 @@
+/* Automatically generated file, don't edit! */
+$module MSelfDiag;
+
+$import Refal5;
+
+$entry Error;
+$entry Log;
+$entry Assert-Eq-T;
+$entry Assert-NE-T;
+$entry Assert-Eq;
+$entry Assert-NE;
+$entry Init;
+
+$end MSelfDiag.

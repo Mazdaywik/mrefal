@@ -1,0 +1,29 @@
+$MODULE MStrings;
+
+$IMPORT Refal5;
+$IMPORT Math;
+
+$ENTRY Numb e.Digits = <Refal5::Numb e.Digits>;
+
+$ENTRY Symb s.Num = <Refal5::Symb s.Num>;
+
+$ENTRY Length e.Expr = <UnLen <Refal5::Lenw e.Expr> >;
+
+UnLen s.Length e.Expr = s.Length;
+
+$ENTRY Length-T e.Expr = <Refal5::Lenw e.Expr>;
+
+$ENTRY Upper e.Expr = <Refal5::Upper e.Expr>;
+
+$ENTRY Lower e.Expr = <Refal5::Lower e.Expr>;
+
+$ENTRY First s.Count e.Expr = <DoFirst s.Count () e.Expr>;
+
+DoFirst {
+	0 (e.First) e.Last = (e.First) e.Last;
+	s.Num (e.First) = e.First;
+	s.Num (e.First) t.Next e.Last =
+		<DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
+}
+
+$END MStrings.

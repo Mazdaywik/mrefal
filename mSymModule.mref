@@ -1,0 +1,351 @@
+$MODULE MSymModule;
+
+/**
+	Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
+на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
+линковщик.
+*/
+
+$IMPORT Context;
+$IMPORT FileIO;
+$IMPORT MLocation;
+$IMPORT Modules;
+$IMPORT MParser;
+$IMPORT MSymTable;
+
+*-------------------------------------------------------------------------------
+* Загрузка символической информации
+*-------------------------------------------------------------------------------
+
+/**
+	<LoadInfo t.Context (e.Directory) e.ModuleName>
+		== t.UpdatedContext
+			( Module (e.Directory) e.ModuleName )
+			( Functions (e.FnName)* )
+			( Imports ((e.ImportDirectory) e.ImportName)* )
+		== t.Context SymInfoNotFound
+*/
+$ENTRY LoadInfo
+	t.Context (e.Directory) e.ModuleName =
+		<CheckActual
+			<MLocation::LookupModule-T
+				t.Context (e.Directory) e.ModuleName
+			>
+		>;
+
+CheckActual {
+	t.Context s.Known s.Status
+	(Sym e.SymFileName) t.OutFile t.SrcFile
+	(e.Directory) e.ModuleName =
+		<SwCheckActual
+			t.Context
+			<ActualStatus s.Known s.Status>
+			e.SymFileName
+		>;
+}
+
+ActualStatus {
+	Known s.Status = Actual;
+
+	NotKnown ModuleNotFound = NotActual;
+	NotKnown NeedRecompile = NotActual;
+	NotKnown Library = Actual;
+	NotKnown SrcNotUpdated = Actual;
+	NotKnown SystemLibrary = Actual;
+}
+
+SwCheckActual {
+	t.Context Actual e.SymFileName =
+		<ExtractSymInfo
+			<MParser::SymModule t.Context e.SymFileName>
+		>;
+
+	t.Context NotActual = t.Context SymInfoNotFound;
+}
+
+* <LoadInfo1 t.Context e.ModuleName>
+*	== t.UpdatedContext
+*		( Functions ((e.Qualifier)(e.FnName))* )
+*		( Imports (e.ModName)* )
+*	== t.Context SymInfoNotFound
+$ENTRY LoadInfo1
+	t.Context e.ModuleName =
+		<CheckActual-Old
+			<LookupSym t.Context e.ModuleName>
+		>;
+
+/* В тех случаях, когда информация в sym-файле отсутствует
+или не актуальна, возвращаем SymInfoNotFound */
+
+CheckActual-Old {
+	(e.ModuleName) t.Context Known s.Status e.SymFName =
+		<SymInfo-ToOld
+			<ExtractSymInfo
+				<MParser::SymModule t.Context e.SymFName>
+			>
+		>;
+
+	(e.ModuleName) t.Context NotKnown s.Status e.SymFName =
+		<SwCheckActual-Old
+			t.Context <ActualState-Old s.Status> e.SymFName
+		>;
+}
+
+SwCheckActual-Old {
+	t.Context Actual e.SymFName =
+		<SymInfo-ToOld
+			<ExtractSymInfo
+				<MParser::SymModule t.Context e.SymFName>
+			>
+		>;
+
+	t.Context NotActual e.SymName =
+		t.Context SymInfoNotFound;
+}
+
+ActualState-Old {
+	ModuleNotFound = NotActual;
+	NeedRecompile = NotActual;
+	Library = Actual;
+	SrcNotUpdated = Actual;
+	SystemLibrary = Actual;
+}
+
+ExtractSymInfo
+	/* В перспективе MParser::SymModule должна возвращать в качестве
+	тела sym-модуля пустой скобочный терм, т.к. вся необходимая информация
+	содержится в таблице символов. Поэтому в будущем t.SymModule необходимо
+	заменить на пустой скобочный терм. */
+	t.Context t.SymTable t.SymModule =
+		<ExtractSymInfo--CreateResult
+			t.Context
+			<SymTableToSymInfo-T t.SymTable>
+		>;
+
+ExtractSymInfo--CreateResult
+	t.Context t.SymTable (CurModule e.CurModule)
+	(Functions e.FnList) (Imports e.Imports) =
+		t.Context
+		<MSymTable::Destroy t.SymTable>
+		( Module () e.CurModule )
+		( Functions e.FnList )
+		( Imports <AddEmptyDirectory e.Imports> );
+
+AddEmptyDirectory {
+	(e.ImportName) e.Tail =
+		(() e.ImportName)
+		<AddEmptyDirectory e.Tail>;
+
+	= ;
+}
+
+SymInfo-ToOld
+	t.Context
+	( Module () e.CurModule )
+	( Functions e.FnList )
+	( Imports e.Imports ) =
+		t.Context
+		( Functions <ToQualified (e.CurModule) e.FnList> )
+		( Imports <RemoveEmptyDirectory e.Imports> );
+
+RemoveEmptyDirectory {
+	(() e.ImportName) e.Tail =
+		(e.ImportName) <RemoveEmptyDirectory e.Tail>;
+
+	= ;
+}
+
+
+ToQualified (e.Prefix) e.Functions =
+	<DoToQualified () (e.Prefix) e.Functions>;
+
+DoToQualified {
+	(e.Qualified) (e.Prefix) (e.NextName) e.Tail =
+		<DoToQualified
+			( e.Qualified ((e.Prefix) (e.NextName)) )
+			(e.Prefix)
+			e.Tail
+		>;
+
+	(e.Qualified) (e.Prefix) = e.Qualified;
+}
+
+*-------------------------------------------------------------------------------
+* Сохранение символической информации
+*-------------------------------------------------------------------------------
+
+* <SaveInfo-T1 t.Context t.SymTable>
+*	== t.UpdatedContext t.SymTable Success
+*	== t.Context t.SymTable Fail
+$ENTRY SaveInfo-T1
+	t.Context t.SymTable =
+		<RealSaveInfo
+			t.Context
+			<SymTableToSymInfo-T t.SymTable>
+		>;
+
+$ENTRY SaveInfo1
+	t.Context t.SymTable =
+		<CloseSymTable
+			<SaveInfo-T1 t.Context t.SymTable>
+		>;
+
+CloseSymTable
+	t.Context t.SymTable s.Result =
+		t.Context
+		<MSymTable::Destroy t.SymTable>
+		s.Result;
+
+RealSaveInfo
+	t.Context t.SymTable (CurModule e.ModuleName) t.FnList t.ImportList =
+		<CheckDestination
+			<LookupSym t.Context e.ModuleName>
+			t.SymTable t.FnList t.ImportList
+		>;
+
+CheckDestination
+	(e.ModuleName) t.Context s.Known s.Status e.SymName
+	t.SymTable t.FnList t.ImportList =
+		<SwCheckDestination
+			(e.ModuleName) t.Context
+			<DestStatus s.Known s.Status> e.SymName
+			t.SymTable t.FnList t.ImportList
+		>;
+
+DestStatus {
+	Known Library = NotAvail;
+	// Recompiled, Updated, InCompiling
+	Known s.Other = Avail;
+
+	NotKnown ModuleNotFound = NotAvail;
+	NotKnown Library = NotAvail;
+	NotKnown SystemLibrary = NotAvail;
+	// NeedRecompile, SrcNotUpdated
+	NotKnown s.Other = Avail;
+}
+
+SwCheckDestination {
+	(e.ModuleName) t.Context NotAvail e.SymName
+	t.SymTable t.FnList t.ImportList =
+		t.Context t.SymTable Fail;
+
+	(e.ModuleName) t.Context Avail e.SymName
+	t.SymTable t.FnList t.ImportList =
+		t.Context t.SymTable Success
+		<FileIO::Save
+			(e.SymName)
+			<GenerateSym
+				(e.ModuleName)
+				t.FnList t.ImportList
+			>
+		>;
+}
+
+GenerateSym
+	(e.ModuleName) (Functions e.FnList) (Imports e.ImportList) =
+		('/* Automatically generated file, don\'t edit! */')
+		('$module ' e.ModuleName ';')
+		()
+		<GenImports e.ImportList>
+		<GenFuncDecl e.FnList>
+		('$end ' e.ModuleName '.');
+
+GenFuncDecl {
+	= ;
+	e.Funcs = <DoGenFuncDecl e.Funcs> ();
+}
+
+DoGenFuncDecl {
+	(e.FuncName) e.Tail =
+		('$entry ' e.FuncName ';')
+		<DoGenFuncDecl e.Tail>;
+
+	= ;
+}
+
+GenImports {
+	= ;
+	e.ImportList = <DoGenImports e.ImportList> ();
+}
+
+DoGenImports {
+	(e.ModuleName) e.Tail =
+		('$import ' e.ModuleName ';')
+		<DoGenImports e.Tail>;
+
+	= ;
+}
+
+*-------------------------------------------------------------------------------
+* Извлечение информации из таблицы символов
+*-------------------------------------------------------------------------------
+
+* <SymTableToSymInfo-T t.SymTable>
+*	== t.SymTable
+*		( CurModule e.ModName )
+*		( Functions (e.FnName)* )
+*		( Imports (e.ModName)* )
+SymTableToSymInfo-T
+	t.SymTable =
+		<SymTableToSymInfo--Imports
+			<MSymTable::ExtractImportList t.SymTable>
+		>;
+
+SymTableToSymInfo--Imports
+	t.SymTable e.Imports =
+		<SymTableToSymInfo--Functions
+			<MSymTable::ExtractEntryFunctions t.SymTable>
+		> ( Imports e.Imports );
+
+SymTableToSymInfo--Functions
+	t.SymTable e.Functions =
+		<SymTableToSymInfo--CurModule
+			<MSymTable::ExtractCurrentModule t.SymTable>
+		> ( Functions e.Functions );
+
+SymTableToSymInfo--CurModule
+	t.SymTable e.CurModule =
+		t.SymTable (CurModule e.CurModule);
+
+*-------------------------------------------------------------------------------
+* Ищет имя sym-файла, а также возвращает его статус
+*-------------------------------------------------------------------------------
+
+* <LookupSym t.Context e.ModuleName>
+*	== (e.ModuleName) t.Context Known s.Status e.SymName
+*	== (e.ModuleName) t.Context NotKnown s.Status e.SymName
+LookupSym
+	t.Context e.ModuleName =
+		<SwKnownModule
+			(e.ModuleName)
+			<Context::ExtractOption
+				t.Context Sym e.ModuleName
+			>
+		>;
+
+SwKnownModule {
+	(e.ModuleName) t.Context Found e.SymFile =
+		<OnKnown--CreateResult
+			(e.ModuleName)
+			<Context::ExtractOption
+				t.Context Status e.ModuleName
+			>
+			e.SymFile
+		>;
+
+	(e.ModuleName) t.Context ModuleInfoNotFound =
+		<OnUnknown--CreateResult
+			t.Context
+			<Modules::LookupModule-T e.ModuleName>
+		>;
+}
+
+OnKnown--CreateResult
+	(e.ModuleName) t.Context Found s.Status e.SymName =
+		(e.ModuleName) t.Context Known s.Status e.SymName;
+
+OnUnknown--CreateResult
+	t.Context s.State (Sym e.SymName) t.Out t.Src e.ModuleName =
+		(e.ModuleName) t.Context NotKnown s.State e.SymName;
+
+$END MSymModule.

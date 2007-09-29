@@ -1,0 +1,39 @@
+Math::Compare-T::Entry {
+	s.Left s.Rigth =
+		<Math::Compare::Entry s.Left s.Rigth > s.Left s.Rigth ;
+}
+
+Math::R5-to-MRef::Local {
+	'-' =
+		'<' ;
+	'0' =
+		'=' ;
+	'+' =
+		'>' ;
+}
+
+Math::Compare::Entry {
+	s.Left s.Rigth =
+		<Math::R5-to-MRef::Local <Refal5::Compare::Entry s.Left s.Rigth > > ;
+}
+
+Math::Dec::Entry {
+	s.Num =
+		<Math::Sub::Entry s.Num 1 > ;
+}
+
+Math::Inc::Entry {
+	s.Num =
+		<Math::Add::Entry s.Num 1 > ;
+}
+
+Math::Sub::Entry {
+	e.Arg =
+		<Refal5::Sub::Entry e.Arg > ;
+}
+
+Math::Add::Entry {
+	e.Arg =
+		<Refal5::Add::Entry e.Arg > ;
+}
+

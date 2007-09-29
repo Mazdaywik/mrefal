@@ -1,0 +1,15 @@
+InOut--WriteLine--Entry {
+	e.Line =
+		<Refal5--Prout--Entry e.Line > ;
+}
+
+InOut--WriteLine-T--Entry {
+	e.Line =
+		<Refal5--Print--Entry e.Line > ;
+}
+
+InOut--ReadLine--Entry {
+	=
+		<Refal5--Card--Entry > ;
+}
+

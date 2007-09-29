@@ -1,0 +1,43 @@
+
+.mref:
+
+Module = ModuleHeader ModuleBody ModuleTailer .
+ModuleHeader = '$module' ModuleName ';' .
+ModuleTailer = '$end' ModuleName '.' .
+ModuleName = IDENTIFIER .
+ModuleBody = ModuleElement* .
+
+ModuleElement = ImportBlock | FunctionDefinition | SwapDefinition | ';' .
+
+ImportBlock =
+	'$import' ModuleImport { ',' ModuleImport } ';' .
+ModuleImport = [ ModuleAlias '=' ] ModuleName .
+ModuleAlias = IDENTIFIER .
+
+SwapDefinition = '$swap' SwapName ';'
+SwapName = IDENTIFIER '.'
+
+FunctionDefinition = [ '$entry' ] FunctionName FunctionBody .
+FunctionName = IDENTIFIER .
+FunctionBody = Block | Sentence .
+Block = '{' Sentence* '}' .
+
+Sentence = PatternExpr '=' ResultExpr ';' .
+PatternExpr = PatternTerm* .
+PatternTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
+	| '(' PatternExpr ')' | DQWORD .
+ResultExpr = ResultTerm* .
+ResultTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
+	| '(' ResultExpr ')' | DQWORD | FunctionCall .
+FunctionCall = '<' Callable ResultExpr '>' .
+Callable = FunctionName | Qualifier '::' FunctionName
+	| SwapName .
+
+Qualifier = ModuleName | ModuleAlias .
+
+.msym:
+
+SymModule = ModuleHeader SymModuleBody ModuleTailer .
+SymModuleBody = SymModuleElement* .
+SymModuleElement = FunctionDeclaration | ImportBlock .
+FunctionDeclaration = '$entry' FunctionName ';' .

@@ -3,31 +3,39 @@ $MODULE MRefal;
 $IMPORT Context;
 $IMPORT Compiler;
 $IMPORT Linker;
+$IMPORT MBuildNumber;
 $IMPORT MError;
 $IMPORT Modules;
-$IMPORT Refal5;
+$IMPORT MOS;
+$IMPORT Math;
+$IMPORT MStrings;
 
-$ENTRY Go { = <StartCompiling>; }
+$IMPORT MSelfDiag;
+
+$ENTRY Go =
+	<StartCompiling>;
 
 StartCompiling {
 	= <Results
 		<Linker::Link
-			<CompileList <Context::CreateContext> <LoadModuleList> >
+			<CompileList <Context::Create> <LoadModuleList> >
 		>
 	>;
 }
 
 Results {
-	t.Context = <Context::DeleteContext t.Context>;
+	t.Context =
+		<MBuildNumber::Update>
+		<Context::Destroy t.Context>;
 }
 
 LoadModuleList {
-	= <DoLoadModuleList () 2 <Refal5::Arg 1>>;
+	= <DoLoadModuleList () 2 <MOS::Arg 1>>;
 }
 
 DoLoadModuleList {
 	(e.Modules) 2 =
-		<MError::Error 'F' 'Command line error: use MRefal module1 module2'>;
+		<MError::Fatal 'Command line error: use MRefal module1 module2'>;
 
 	(e.Modules) s.NextNumArg =
 		e.Modules;
@@ -35,18 +43,19 @@ DoLoadModuleList {
 	(e.Modules) s.NextNumArg e.ModuleOrFile =
 		<DoLoadModuleList
 			(e.Modules <ModuleOrFile e.ModuleOrFile>)
-			<Refal5::Add s.NextNumArg 1>
-			<Refal5::Arg s.NextNumArg>
+			<Math::Add s.NextNumArg 1>
+			<MOS::Arg s.NextNumArg>
 		>;
 }
 
 ModuleOrFile {
-	e.Name = <SwModuleOrFile (<Refal5::Lower e.Name>) e.Name>;
+	e.Name = <SwModuleOrFile (<MStrings::Lower e.Name>) e.Name>;
 }
 
 SwModuleOrFile {
 	( e.FnameName '.mref' ) e.FnameNameExtCase =
 		(File e.FnameNameExtCase);
+
 	( e.ModNameLower ) e.ModNameCase =
 		(Module <Modules::CanonicalModuleName e.ModNameCase>);
 }

@@ -18,9 +18,7 @@ $ENTRY Generate
 		>;
 
 GenerateContent
-	(t.SymTable
-		( t.ModuleName e.Elements )
-	) =
+	(t.SymTable e.Elements) =
 		<MSymTable::Destroy t.SymTable>
 		<GenerateElements e.Elements>;
 

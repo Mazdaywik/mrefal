@@ -41,28 +41,28 @@ StartParsing-ExtractFileName
 		>;
 
 PrintErrors
-	t.ErrorList t.SymTable t.Module =
+	t.ErrorList t.SymTable () =
 		<SwPrintErrors
 			<MError::EmptyList t.ErrorList>
-			t.SymTable t.Module
+			t.SymTable
 		>;
 
 SwPrintErrors {
-	t.ErrorList Empty t.SymTable t.Module =
+	t.ErrorList Empty t.SymTable =
 		<MError::DestroyErrList t.ErrorList>
-		t.SymTable t.Module;
+		t.SymTable;
 
-	t.ErrorList NotEmpty t.SymTable t.Module =
+	t.ErrorList NotEmpty t.SymTable =
 		<MError::PrintErrorsAndStop t.ErrorList>
 		<MSymTable::Destroy t.SymTable>
 		Error Error;
 }
 
 ErrorResult
-	t.ErrorList t.SymTable t.ModuleContent =
+	t.ErrorList t.SymTable (e.ModuleContent) =
 		<SwErrorResult
 			<MError::EmptyList t.ErrorList>
-			( t.SymTable t.ModuleContent )
+			( t.SymTable e.ModuleContent )
 		>;
 
 SwErrorResult {
@@ -186,7 +186,7 @@ NModuleTailer-ModuleName {
 			<MSymTable::CheckCurrentModule
 				t.ErrorList t.SymTable t.SrcPos e.ModuleName
 			>
-			( (Module e.ModuleName) e.ModuleBody )
+			( e.ModuleBody )
 			<MLexer::NextToken t.Lexer>
 		>;
 
@@ -213,42 +213,42 @@ NModuleTailer-ModuleName {
 
 // ModuleTailer-Dot --> { ModuleTailer-EOF --> _|_ }
 NModuleTailer-Dot {
-	t.ErrorList t.SymTable ( t.ModuleName e.ModuleBody )
+	t.ErrorList t.SymTable ( e.ModuleBody )
 	t.Lexer (Dot t.SrcPos) =
 		<NModuleTailer-EOF
-			t.ErrorList t.SymTable ( t.ModuleName e.ModuleBody )
+			t.ErrorList t.SymTable ( e.ModuleBody )
 			<MLexer::NextToken t.Lexer>
 		>;
 
 	/* Считаем, что точка была */
-	t.ErrorList t.SymTable ( t.ModuleName e.ModuleBody )
+	t.ErrorList t.SymTable ( e.ModuleBody )
 	t.Lexer t.OtherToken =
 		<NModuleTailer-EOF
 			<MError::AddUnexpected
 				t.ErrorList t.OtherToken 'end dot'
 			>
-			t.SymTable ( t.ModuleName e.ModuleBody )
+			t.SymTable ( e.ModuleBody )
 			t.Lexer t.OtherToken
 		>;
 }
 
 // ModuleTailer-EOF --> _|_
 NModuleTailer-EOF {
-	t.ErrorList t.SymTable ( t.ModuleName e.ModuleBody )
+	t.ErrorList t.SymTable ( e.ModuleBody )
 	t.Lexer (EndOfText t.SrcPos) =
 		t.ErrorList
 		t.SymTable
-		( t.ModuleName e.ModuleBody )
+		( e.ModuleBody )
 		<MLexer::Destroy t.Lexer>;
 
 	/* Пропускаем все другие лексемы до тех пор, пока не доберёмся до конца файла */
-	t.ErrorList t.SymTable ( t.ModuleName e.ModuleBody )
+	t.ErrorList t.SymTable ( e.ModuleBody )
 	t.Lexer t.OtherToken =
 		<NModuleTailer-EOF
 			<MError::AddUnexpected
 				t.ErrorList t.OtherToken 'end of file'
 			>
-			t.SymTable ( t.ModuleName e.ModuleBody )
+			t.SymTable ( e.ModuleBody )
 			<MLexer::NextToken t.Lexer>
 		>;
 }

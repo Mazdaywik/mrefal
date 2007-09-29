@@ -21,29 +21,29 @@ $ENTRY LoadModule
 		( Imports ((e.ImportDirectory) e.ImportName)* )
 */
 $ENTRY SymInfo
-	(t.SymTable t.ModuleContent) =
+	(t.SymTable e.ModuleContent) =
 		<SymInfo-Imports
 			<MSymTable::ExtractImportList t.SymTable>
-			t.ModuleContent
+			(e.ModuleContent)
 		>;
 
 SymInfo-Imports
-	t.SymTable e.Imports t.ModuleContent =
+	t.SymTable e.Imports (e.ModuleContent) =
 		<SymInfo-Functions
 			<MSymTable::ExtractEntryFunctions t.SymTable>
-			t.ModuleContent
+			(e.ModuleContent)
 		> (Imports <AddEmptyDirectory e.Imports>);
 
 SymInfo-Functions
-	t.SymTable e.Functions t.ModuleContent =
+	t.SymTable e.Functions (e.ModuleContent) =
 		<SymInfo-CurrentModule
 			<MSymTable::ExtractCurrentModule t.SymTable>
-			t.ModuleContent
+			(e.ModuleContent)
 		> (Functions e.Functions);
 
 SymInfo-CurrentModule
-	t.SymTable e.ModuleName t.ModuleContent =
-		(t.SymTable t.ModuleContent)
+	t.SymTable e.ModuleName (e.ModuleContent) =
+		(t.SymTable e.ModuleContent)
 		(Module () e.ModuleName);
 
 AddEmptyDirectory {
@@ -61,48 +61,48 @@ AddEmptyDirectory {
 	t.ModuleLocation ::= ((e.Directory) e.ModuleName)
 */
 $ENTRY Resolve
-	( t.SymTable t.ModuleContent ) t.ErrorList e.QualifiedList =
+	( t.SymTable e.ModuleContent ) t.ErrorList e.QualifiedList =
 		<StartResolving
 			( <MSymTable::ExtractLocalInfo t.SymTable> )
-			t.ModuleContent t.ErrorList e.QualifiedList
+			(e.ModuleContent) t.ErrorList e.QualifiedList
 		>;
 
 StartResolving
 	( t.SymTable e.LocalScope )
-	t.ModuleContent
+	( e.ModuleContent )
 	t.ErrorList e.QualifiedList =
 		<ResolvingElements
 			( <MSymTable::ExtractCurrentModule t.SymTable> )
-			t.ModuleContent t.ErrorList
+			(e.ModuleContent) t.ErrorList
 			(e.LocalScope) e.QualifiedList
 		>;
 
 ResolvingElements
 	( t.SymTable e.CurModuleName )
-	( t.ModuleName e.Elements ) t.ErrorList
+	( e.Elements ) t.ErrorList
 	(e.LocalScope) e.QualifiedList =
 		<DoResolvingElements
-			( t.SymTable )
-			( t.ModuleName )
+			t.SymTable
+			( )
 			t.ErrorList
 			(e.CurModuleName) (e.LocalScope) (e.QualifiedList)
 			e.Elements
 		>;
 
 DoResolvingElements {
-	( t.SymTable ) ( t.ModuleName e.ResolvedElements )
+	t.SymTable ( e.ResolvedElements )
 	t.ErrorList
 	(e.CurModuleName) (e.LocalScope) (e.QualifiedList) =
-		( t.SymTable (t.ModuleName e.ResolvedElements) )
+		( t.SymTable e.ResolvedElements )
 		<CheckErrors t.ErrorList>;
 
-	( t.SymTable ) ( t.ModuleName e.ResolvedElements )
+	t.SymTable ( e.ResolvedElements )
 	t.ErrorList
 	(e.CurModuleName) (e.LocalScope) (e.QualifiedList)
 	t.NextElement e.Elements =
 		<DoResolvingElements
 			<AddElement
-				( t.SymTable ) ( t.ModuleName e.ResolvedElements )
+				t.SymTable ( e.ResolvedElements )
 				<ResolvingOneElement
 					t.NextElement
 					t.ErrorList
@@ -124,11 +124,11 @@ SwCheckErrors {
 }
 
 AddElement
-	( t.SymTable ) ( t.Module e.ResolvedElements )
+	t.SymTable ( e.ResolvedElements )
 	t.Resolved t.ErrorList
 	(e.ModuleName) (e.LocalScope) (e.QualifiedList) =
-		( t.SymTable )
-		( t.Module e.ResolvedElements t.Resolved )
+		t.SymTable
+		( e.ResolvedElements t.Resolved )
 		t.ErrorList
 		(e.ModuleName) (e.LocalScope) (e.QualifiedList);
 

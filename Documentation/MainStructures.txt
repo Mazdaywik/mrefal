@@ -3,12 +3,9 @@
 --------------------------------------------------------------------------------
 
 t.Module ::=
-	(t.SymTable t.ModuleContent)
+	(t.SymTable e.ModuleContent)
 
-t.ModuleContent ::=
-	( (Module e.ModuleName)
-		t.ModuleElement*
-	)
+e.ModuleContent ::= t.ModuleElement*
 
 t.ModuleElement ::=
 	(Function s.ScopeClass (e.FnName) t.FunctionBody)

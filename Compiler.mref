@@ -545,7 +545,7 @@ PrintUnresolved {
 *	== t.UpdatedContext
 Generate {
 	(e.ModuleName) (Out e.OutName) (Sym e.SymName)
-	t.Context (t.SymTable t.ModuleContent) =
+	t.Context (t.SymTable e.ModuleContent) =
 		<UpdateContext
 			<GenerateOut
 				(Out e.OutName)
@@ -553,7 +553,7 @@ Generate {
 					t.Context
 					t.SymTable
 				>
-				t.ModuleContent
+				e.ModuleContent
 			>
 			e.ModuleName
 		>;
@@ -590,12 +590,11 @@ GuardResult
 * <GenerateOut (Out e.OutName) t.Context t.SymTable t.Module>
 *	== t.UpdatedContext
 GenerateOut
-	(Out e.OutName) t.Context t.SymTable
-	( (Module e.ModuleName) e.Elements ) =
+	(Out e.OutName) t.Context t.SymTable e.Elements =
 		t.Context
 		<CheckGenerateResult
 			<MBackEnd::Generate
-				(t.SymTable ((Module e.ModuleName) e.Elements))
+				(t.SymTable e.Elements)
 				<MError::CreateErrList>
 				e.OutName
 			>

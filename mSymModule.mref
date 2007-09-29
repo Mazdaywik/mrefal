@@ -112,11 +112,7 @@ ActualState-Old {
 }
 
 ExtractSymInfo
-	/* В перспективе MParser::SymModule должна возвращать в качестве
-	тела sym-модуля пустой скобочный терм, т.к. вся необходимая информация
-	содержится в таблице символов. Поэтому в будущем t.SymModule необходимо
-	заменить на пустой скобочный терм. */
-	t.Context t.SymTable t.SymModule =
+	t.Context t.SymTable =
 		<ExtractSymInfo--CreateResult
 			t.Context
 			<SymTableToSymInfo-T t.SymTable>

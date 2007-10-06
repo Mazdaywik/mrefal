@@ -9,14 +9,14 @@ MSelfDiag::Nil::Local {
 }
 
 MSelfDiag::PrintAssert::Local {
-	( e.SignFact ) t.Result t.Expected =
+	( Structure e.SignFact ) t.Result t.Expected =
 		<MSelfDiag::Error::Entry 'ASSERT VIOLATION: ' t.Result ' ' e.SignFact ' ' t.Expected > ;
-	( e.SignFact ) t.Result t.Expected e.Message =
+	( Structure e.SignFact ) t.Result t.Expected e.Message =
 		<MSelfDiag::Error::Entry 'ASSERT VIOLATION: ' t.Result ' ' e.SignFact ' ' t.Expected '(' e.Message ')' > ;
 }
 
 MSelfDiag::SwAssert::Local {
-	t.Sign t.Sign ( e.Result ) t.Expected e.Message =
+	t.Sign t.Sign ( Structure e.Result ) t.Expected e.Message =
 		e.Result ;
 	t.SignExpected t.SignFact t.Result t.Expected e.Message =
 		<MSelfDiag::PrintAssert::Local t.SignFact t.Result t.Expected e.Message > ;
@@ -34,19 +34,19 @@ MSelfDiag::Assert-Eq::Entry {
 
 MSelfDiag::Assert-NE-T::Entry {
 	t.Result t.Expected e.Message =
-		<MSelfDiag::SwAssert::Local ( '!=' ) <MSelfDiag::AssertAux::Local t.Result t.Expected > e.Message > ;
+		<MSelfDiag::SwAssert::Local ( Structure '!=' ) <MSelfDiag::AssertAux::Local t.Result t.Expected > e.Message > ;
 }
 
 MSelfDiag::Assert-Eq-T::Entry {
 	t.Result t.Expected e.Message =
-		<MSelfDiag::SwAssert::Local ( '=' ) <MSelfDiag::AssertAux::Local t.Result t.Expected > e.Message > ;
+		<MSelfDiag::SwAssert::Local ( Structure '=' ) <MSelfDiag::AssertAux::Local t.Result t.Expected > e.Message > ;
 }
 
 MSelfDiag::AssertAux::Local {
 	t.ResultAndExpected t.ResultAndExpected =
-		( '=' ) t.ResultAndExpected t.ResultAndExpected ;
+		( Structure '=' ) t.ResultAndExpected t.ResultAndExpected ;
 	t.Result t.Expected =
-		( '!=' ) t.Result t.Expected ;
+		( Structure '!=' ) t.Result t.Expected ;
 }
 
 MSelfDiag::Log::Entry {

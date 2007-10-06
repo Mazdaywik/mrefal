@@ -1,28 +1,28 @@
 MOrder::SwMerge::Local {
-	'>' ( e.Series1 ) ( t.First2 e.Series2 ) =
-		t.First2 <MOrder::Merge::Local ( e.Series1 ) ( e.Series2 ) > ;
-	s.Other ( t.First1 e.Series1 ) ( e.Series2 ) =
-		t.First1 <MOrder::Merge::Local ( e.Series1 ) ( e.Series2 ) > ;
+	'>' ( Structure e.Series1 ) ( Structure t.First2 e.Series2 ) =
+		t.First2 <MOrder::Merge::Local ( Structure e.Series1 ) ( Structure e.Series2 ) > ;
+	s.Other ( Structure t.First1 e.Series1 ) ( Structure e.Series2 ) =
+		t.First1 <MOrder::Merge::Local ( Structure e.Series1 ) ( Structure e.Series2 ) > ;
 }
 
 MOrder::Merge::Local {
-	( t.First1 e.Series1 ) ( t.First2 e.Series2 ) =
-		<MOrder::SwMerge::Local <MOrder::Compare::Entry t.First1 t.First2 > ( t.First1 e.Series1 ) ( t.First2 e.Series2 ) > ;
-	( e.Series1 ) ( e.Series2 ) =
+	( Structure t.First1 e.Series1 ) ( Structure t.First2 e.Series2 ) =
+		<MOrder::SwMerge::Local <MOrder::Compare::Entry t.First1 t.First2 > ( Structure t.First1 e.Series1 ) ( Structure t.First2 e.Series2 ) > ;
+	( Structure e.Series1 ) ( Structure e.Series2 ) =
 		e.Series1 e.Series2 ;
 }
 
 MOrder::MergeAdjacentPairs::Local {
-	( e.Series1 ) ( e.Series2 ) e.Tail =
-		( <MOrder::Merge::Local ( e.Series1 ) ( e.Series2 ) > ) <MOrder::MergeAdjacentPairs::Local e.Tail > ;
-	( e.Series ) =
-		( e.Series ) ;
+	( Structure e.Series1 ) ( Structure e.Series2 ) e.Tail =
+		( Structure <MOrder::Merge::Local ( Structure e.Series1 ) ( Structure e.Series2 ) > ) <MOrder::MergeAdjacentPairs::Local e.Tail > ;
+	( Structure e.Series ) =
+		( Structure e.Series ) ;
 	=
 		;
 }
 
 MOrder::MergePairs::Local {
-	( e.Series ) =
+	( Structure e.Series ) =
 		e.Series ;
 	e.Series =
 		<MOrder::MergePairs::Local <MOrder::MergeAdjacentPairs::Local e.Series > > ;
@@ -30,7 +30,7 @@ MOrder::MergePairs::Local {
 
 MOrder::CreateSeries::Local {
 	t.Elem e.Tail =
-		( t.Elem ) <MOrder::CreateSeries::Local e.Tail > ;
+		( Structure t.Elem ) <MOrder::CreateSeries::Local e.Tail > ;
 	=
 		;
 }
@@ -41,47 +41,47 @@ MOrder::Sort::Entry {
 }
 
 MOrder::Lexicon::Local {
-	( t.First e.Expr1 ) ( t.First e.Expr2 ) =
-		<MOrder::Lexicon::Local ( e.Expr1 ) ( e.Expr2 ) > ;
-	( t.First1 e.Expr1 ) ( t.First2 e.Expr2 ) =
+	( Structure t.First e.Expr1 ) ( Structure t.First e.Expr2 ) =
+		<MOrder::Lexicon::Local ( Structure e.Expr1 ) ( Structure e.Expr2 ) > ;
+	( Structure t.First1 e.Expr1 ) ( Structure t.First2 e.Expr2 ) =
 		<MOrder::Compare::Entry t.First1 t.First2 > ;
-	( ) ( t.First2 e.Expr2 ) =
+	( Structure ) ( Structure t.First2 e.Expr2 ) =
 		'<' ;
-	( t.First1 e.Expr1 ) ( ) =
+	( Structure t.First1 e.Expr1 ) ( Structure ) =
 		'>' ;
-	( ) ( ) =
+	( Structure ) ( Structure ) =
 		'=' ;
 }
 
 MOrder::SwSymbCompare::Local {
-	( Char s.Chr1 s.Ord1 ) ( Char s.Chr2 s.Ord2 ) =
+	( Structure Char s.Chr1 s.Ord1 ) ( Structure Char s.Chr2 s.Ord2 ) =
 		<Math::Compare::Entry s.Ord1 s.Ord2 > ;
-	( Macro s.Num1 ) ( Macro s.Num2 ) =
+	( Structure Macro s.Num1 ) ( Structure Macro s.Num2 ) =
 		<Math::Compare::Entry s.Num1 s.Num2 > ;
-	( Other s.Symb1 ) ( Other s.Symb2 ) =
+	( Structure Other s.Symb1 ) ( Structure Other s.Symb2 ) =
 		'=' ;
-	( Macro s.Val ) t.Other =
+	( Structure Macro s.Val ) t.Other =
 		'>' ;
-	t.Other ( Macro s.Val ) =
+	t.Other ( Structure Macro s.Val ) =
 		'<' ;
-	( Char s.Chr s.Ord ) t.Other =
+	( Structure Char s.Chr s.Ord ) t.Other =
 		'>' ;
-	t.Other ( Char s.Chr s.Ord ) =
+	t.Other ( Structure Char s.Chr s.Ord ) =
 		'<' ;
 }
 
 MOrder::CheckMacro::Local {
 	s.Symb s.Symb =
-		( Other s.Symb ) ;
+		( Structure Other s.Symb ) ;
 	s.Symb s.Value =
-		( Macro s.Symb ) ;
+		( Structure Macro s.Symb ) ;
 }
 
 MOrder::CheckChar::Local {
 	s.Symb s.Symb =
 		<MOrder::CheckMacro::Local s.Symb <Refal5::Chr::Entry s.Symb > > ;
 	s.Symb s.Numb =
-		( Char s.Symb s.Numb ) ;
+		( Structure Char s.Symb s.Numb ) ;
 }
 
 MOrder::Type-T::Local {
@@ -99,12 +99,12 @@ MOrder::Compare::Entry {
 		'=' ;
 	s.Left s.Right =
 		<MOrder::SymbCompare::Local s.Left s.Right > ;
-	( e.Left ) s.Right =
+	( Structure e.Left ) s.Right =
 		'>' ;
-	s.Left ( e.Right ) =
+	s.Left ( Structure e.Right ) =
 		'<' ;
-	( e.Left ) ( e.Right ) =
-		<MOrder::Lexicon::Local ( e.Left ) ( e.Right ) > ;
+	( Structure e.Left ) ( Structure e.Right ) =
+		<MOrder::Lexicon::Local ( Structure e.Left ) ( Structure e.Right ) > ;
 }
 
 MOrder::Compare-T::Entry {

@@ -135,11 +135,18 @@ GenerateTerm {
 		<MStrings::Symb s.Value>;
 
 	(Structure e.InBrackets) =
-		'( ' <GenerateExpression e.InBrackets> ')';
+		'( Structure ' <GenerateExpression e.InBrackets> ')';
 
 	(Function (e.Callable) e.Argument) =
 		'<' <GenerateCallable e.Callable> ' '
 		<GenerateExpression e.Argument> '>';
+
+	(IndirectCall (SVar e.Index) e.Argument) =
+		'<Mu s' e.Index ' '
+		<GenerateExpression e.Argument> '>';
+
+	(FnPtr (e.Callable)) =
+		'$' <GenerateCallable e.Callable> '$';
 }
 
 EscapeText {
@@ -155,6 +162,7 @@ EscapeChar {
 	'\\' = '\\\\';
 	'\"' = '\\\"';
 	'\'' = '\\\'';
+	'$' = '$$';
 	s.X = s.X;
 }
 

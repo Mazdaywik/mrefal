@@ -1,15 +1,15 @@
 MStrings::DoFirst::Local {
-	0 ( e.First ) e.Last =
-		( e.First ) e.Last ;
-	s.Num ( e.First ) =
+	0 ( Structure e.First ) e.Last =
+		( Structure e.First ) e.Last ;
+	s.Num ( Structure e.First ) =
 		e.First ;
-	s.Num ( e.First ) t.Next e.Last =
-		<MStrings::DoFirst::Local <Math::Dec::Entry s.Num > ( e.First t.Next ) e.Last > ;
+	s.Num ( Structure e.First ) t.Next e.Last =
+		<MStrings::DoFirst::Local <Math::Dec::Entry s.Num > ( Structure e.First t.Next ) e.Last > ;
 }
 
 MStrings::First::Entry {
 	s.Count e.Expr =
-		<MStrings::DoFirst::Local s.Count ( ) e.Expr > ;
+		<MStrings::DoFirst::Local s.Count ( Structure ) e.Expr > ;
 }
 
 MStrings::Lower::Entry {

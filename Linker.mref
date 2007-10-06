@@ -3,7 +3,6 @@ $MODULE Linker;
 $IMPORT Context;
 $IMPORT FileIO;
 $IMPORT MError;
-$IMPORT Modules;
 $IMPORT InOut;
 $IMPORT MOS;
 $IMPORT Math;
@@ -153,7 +152,7 @@ StartHidingQuote {
 
 SwTypeContent {
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '\t' e.Raw) =
-		t.Aliases (<Dec s.Size> t.FOut e.Converted) (t.FIn e.Raw);
+		t.Aliases (s.Size t.FOut e.Converted) (t.FIn e.Raw);
 
 	t.Aliases (s.Size t.FOut e.Converted)
 	(t.FIn (s.Quote e.HiddenQuote) e.Raw) =
@@ -179,6 +178,16 @@ SwTypeContent {
 
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '<' e.FnName ' ' e.Raw) =
 		<TypeFnCall
+			<LookupAlias t.Aliases e.FnName>
+			(<Dec s.Size> t.FOut e.Converted)
+			(t.FIn ' ' e.Raw)
+		>;
+
+	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '$$' e.Raw) =
+		t.Aliases (<Dec s.Size> t.FOut e.Converted '$') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '$' e.FnName '$' e.Raw) =
+		<TypeFnPtr
 			<LookupAlias t.Aliases e.FnName>
 			(<Dec s.Size> t.FOut e.Converted)
 			(t.FIn ' ' e.Raw)
@@ -237,6 +246,18 @@ TypeFnCall {
 		(t.FIn e.Raw);
 }
 
+TypeFnPtr {
+	t.Aliases e.FnAlias (Limit t.FOut e.Converted) (t.FIn e.Raw) =
+		t.Aliases
+		( <DefLim> <FileIO::WriteLine t.FOut e.Converted ' ' e.FnAlias ' '> )
+		( t.FIn e.Raw );
+
+	t.Aliases e.FnAlias (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
+		t.Aliases
+		( <Dec s.Size> t.FOut e.Converted ' ' e.FnAlias ' ' )
+		( t.FIn e.Raw );
+}
+
 TypeQuoted {
 	/* Не рассматриваем символ за бэкслешем, а сразу же его переносим */
 	(s.Size t.FOut e.Converted) (s.Quote '\\' s.Escaped e.Tail) =
@@ -244,6 +265,15 @@ TypeQuoted {
 			(<Dec s.Size> t.FOut e.Converted '\\' s.Escaped)
 			(s.Quote e.Tail)
 		>;
+
+	/* Заменяем $$ на $ */
+	(s.Size t.FOut e.Converted) (s.Quote '$$' e.Tail) =
+		<TypeQuoted
+			(<Dec s.Size> t.FOut e.Converted '$')
+			(s.Quote e.Tail)
+		>;
+
+
 	/* Извращаемся, чтобы разрезать текст в кавычках и не оставить на
 	отдельной строке '' или "" */
 	(Limit t.FOut e.Converted '\\' s.Quote) (s.Quote) =

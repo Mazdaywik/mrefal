@@ -2,16 +2,16 @@ Types::SwCharType::Local {
 	s.Char s.Type T e.Tail =
 		s.Type s.Char e.Tail ;
 	s.Char UpAlph F e.Tail =
-		<Types::SwCharType::Local s.Char LoAlph <Types::OneOf::Entry s.Char ( <Types::LoAlph::Entry > ) > e.Tail > ;
+		<Types::SwCharType::Local s.Char LoAlph <Types::OneOf::Entry s.Char ( Structure <Types::LoAlph::Entry > ) > e.Tail > ;
 	s.Char LoAlph F e.Tail =
-		<Types::SwCharType::Local s.Char Digit <Types::OneOf::Entry s.Char ( <Types::Digits::Entry > ) > e.Tail > ;
+		<Types::SwCharType::Local s.Char Digit <Types::OneOf::Entry s.Char ( Structure <Types::Digits::Entry > ) > e.Tail > ;
 	s.Char Digit F e.Tail =
 		Other s.Char e.Tail ;
 }
 
 Types::CharType::Entry {
 	s.Char e.Tail =
-		<Types::SwCharType::Local s.Char UpAlph <Types::OneOf::Entry s.Char ( <Types::UpAlph::Entry > ) > e.Tail > ;
+		<Types::SwCharType::Local s.Char UpAlph <Types::OneOf::Entry s.Char ( Structure <Types::UpAlph::Entry > ) > e.Tail > ;
 	=
 		'*' ;
 }
@@ -32,14 +32,14 @@ Types::UpAlph::Entry {
 }
 
 Types::FirstOneOf::Entry {
-	( e.Pat ) t.First e.Tail =
-		<Types::OneOf::Entry t.First ( e.Pat ) > t.First e.Tail ;
+	( Structure e.Pat ) t.First e.Tail =
+		<Types::OneOf::Entry t.First ( Structure e.Pat ) > t.First e.Tail ;
 }
 
 Types::OneOf::Entry {
-	t.X ( e.1 t.X e.2 ) =
+	t.X ( Structure e.1 t.X e.2 ) =
 		T ;
-	t.X ( e.1 ) =
+	t.X ( Structure e.1 ) =
 		F ;
 }
 

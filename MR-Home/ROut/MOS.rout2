@@ -1,20 +1,20 @@
 MOS::LookupEnv::Local {
-	( e.Name ) e.Begin ( ( e.Name ) e.Value ) e.End =
+	( Structure e.Name ) e.Begin ( Structure ( Structure e.Name ) e.Value ) e.End =
 		e.Value ;
-	( e.Name ) e.Other =
+	( Structure e.Name ) e.Other =
 		None ;
 }
 
 MOS::Env::Entry {
 	e.Name =
-		<MOS::LookupEnv::Local ( e.Name ) <MOS::EnvList::Entry > > ;
+		<MOS::LookupEnv::Local ( Structure e.Name ) <MOS::EnvList::Entry > > ;
 }
 
 MOS::DoEnvList::Local {
 	t.FList 0 =
 		<FileIO::NulClose::Entry t.FList > <MOS::System::Entry 'del ~setlst.tmp' > ;
 	t.FList e.Name '=' e.Value =
-		( ( e.Name ) e.Value ) <MOS::DoEnvList::Local <FileIO::ReadLine::Entry t.FList > > ;
+		( Structure ( Structure e.Name ) e.Value ) <MOS::DoEnvList::Local <FileIO::ReadLine::Entry t.FList > > ;
 }
 
 MOS::EnvList::Entry {

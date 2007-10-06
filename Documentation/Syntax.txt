@@ -31,7 +31,7 @@ ResultTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
 	| '(' ResultExpr ')' | DQWORD | FunctionCall .
 FunctionCall = '<' Callable ResultExpr '>' .
 Callable = FunctionName | Qualifier '::' FunctionName
-	| SwapName .
+	| SwapName | S-VARIABLE .
 
 Qualifier = ModuleName | ModuleAlias .
 

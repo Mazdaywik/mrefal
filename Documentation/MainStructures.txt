@@ -21,10 +21,10 @@ t.Sentence ::=
 	t.PatternExpr t.ResultExpr
 
 t.PatternExpr ::=
-	t.PatternTerm*
+	( t.PatternTerm* )
 
 t.ResultExpr ::=
-	t.ResultTerm*
+	( t.ResultTerm* )
 
 t.PatternTerm ::=
 	(Identifier e.Name)
@@ -35,10 +35,14 @@ t.PatternTerm ::=
 	(DQWord e.Content)
 	(Macro s.Value)
 	(Structure e.InBrackets)
+	(FnPtr t.Callable) [1]
+
+[1] (FnPtr t.Callable) добавляется после проверки и t.Callable имеет формат после проверки.
 
 t.ResultTerm ::=
 	t.PatternTerm
 	(Function t.Callee e.Argument)
+	(IndirectCall (SVar e.Index) e.Argument)
 
 t.Callable ::=
 	(Qualified

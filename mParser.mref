@@ -875,7 +875,7 @@ NResultExpr {
 				t.ErrorList t.SymTable t.VarTable
 				( ( ('>' e.ResultExpr) t.ParentStack ) )
 				<MLexer::NextToken t.Lexer>
-			>
+			>                        
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
@@ -900,7 +900,7 @@ NResultExpr {
 		>;
 
 	/* В случае ошибочного callable функциональные скобки
-	интерпретируем как функциональные. */
+	интерпретируем как структурные. */
 	t.ErrorList t.SymTable t.VarTable
 	( ('>' e.MultiBracket) InvalidCallable e.ResultExprFnArgument t.ParentStack )
 	t.Lexer ( CloseFnCall t.SrcPos ) =
@@ -913,12 +913,23 @@ NResultExpr {
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
-	( ('>' e.MultiBracket) t.Callable e.ResultExprFnArgument t.ParentStack )
+	( ('>' e.MultiBracket) (FnCall t.Callable) e.ResultExprFnArgument t.ParentStack )
 	t.Lexer ( CloseFnCall t.SrcPos ) =
 		<NResultExpr
 			t.ErrorList t.SymTable t.VarTable
 			( e.MultiBracket
 				(Function t.Callable e.ResultExprFnArgument)
+				t.ParentStack
+			) <MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( ('>' e.MultiBracket) (IndirectCall (SVar e.Index)) e.ResultExprFnArgument t.ParentStack )
+	t.Lexer ( CloseFnCall t.SrcPos ) =
+		<NResultExpr
+			t.ErrorList t.SymTable t.VarTable
+			( e.MultiBracket
+				(IndirectCall (SVar e.Index) e.ResultExprFnArgument)
 				t.ParentStack
 			) <MLexer::NextToken t.Lexer>
 		>;
@@ -974,6 +985,16 @@ NCallable {
 			<MLexer::NextToken t.Lexer>
 		>;
 
+	t.ErrorList t.SymTable t.VarTable ( t.ParentStack )
+	t.Lexer (Var t.SrcPos SVar e.Index) =
+		<CheckCallableVariable
+			t.SymTable
+			<MSymTable::CheckVariable
+				t.ErrorList t.VarTable t.SrcPos SVar e.Index
+			> ( t.ParentStack )
+			t.Lexer (Var t.SrcPos SVar e.Index)
+		>;
+
 	t.ErrorList t.SymTable t.VarTable ( (e.ParentStack) )
 	t.Lexer t.OtherToken =
 		<MError::AddUnexpected
@@ -981,6 +1002,18 @@ NCallable {
 		> t.SymTable t.VarTable
 		( e.ParentStack )
 		t.Lexer t.OtherToken;
+}
+
+CheckCallableVariable {
+	t.SymTable t.ErrorList t.VarTable Success
+	( (e.ResultExpr t.UpParentStack) )
+	t.Lexer (Var t.SrcPos SVar e.Index) =
+		t.ErrorList t.SymTable t.VarTable (
+			e.ResultExpr
+			( IndirectCall (SVar e.Index))
+			t.UpParentStack
+		)
+		<MLexer::NextToken t.Lexer>;
 }
 
 NCallable-AfterName {
@@ -1000,7 +1033,7 @@ NCallable-AfterName {
 	t.Lexer t.NextToken =
 		t.ErrorList t.SymTable t.VarTable (
 			e.ResultExpr
-			(Local (Function t.NamePos e.Name))
+			( FnCall (Local (Function t.NamePos e.Name)) )
 			t.UpParentStack
 		) t.Lexer t.NextToken;
 }
@@ -1012,9 +1045,11 @@ NCallable-ReadQualified {
 	t.Lexer (Identifier t.SrcPos e.Function) =
 		t.ErrorList t.SymTable t.VarTable (
 			e.ResultExpr
-			(Qualified
-				(Module t.ModNamePos e.Name)
-				(Function t.SrcPos e.Function)
+			(FnCall
+				(Qualified
+					(Module t.ModNamePos e.Name)
+					(Function t.SrcPos e.Function)
+				)
 			) t.UpParentStack
 		) <MLexer::NextToken t.Lexer>;
 

@@ -5,14 +5,14 @@ FileIO::G_Handles::Swap {
 }
 
 FileIO::DoSave::Local {
-	t.File ( e.NextLine ) e.Tail =
+	t.File ( Structure e.NextLine ) e.Tail =
 		<FileIO::DoSave::Local <FileIO::WriteLine::Entry t.File e.NextLine > e.Tail > ;
 	t.File =
 		<FileIO::NulClose::Entry t.File > ;
 }
 
 FileIO::Save::Entry {
-	( e.FileName ) e.Content =
+	( Structure e.FileName ) e.Content =
 		<FileIO::DoSave::Local <FileIO::Open::Entry 'w' e.FileName > e.Content > ;
 }
 
@@ -20,9 +20,9 @@ FileIO::DoLoad::Local {
 	t.File 0 =
 		<FileIO::NulClose::Entry t.File > ;
 	t.File e.Line 0 =
-		( e.Line ) <FileIO::NulClose::Entry t.File > ;
+		( Structure e.Line ) <FileIO::NulClose::Entry t.File > ;
 	t.File e.Line =
-		( e.Line ) <FileIO::DoLoad::Local <FileIO::ReadLine::Entry t.File > > ;
+		( Structure e.Line ) <FileIO::DoLoad::Local <FileIO::ReadLine::Entry t.File > > ;
 }
 
 FileIO::Load::Entry {
@@ -31,32 +31,32 @@ FileIO::Load::Entry {
 }
 
 FileIO::ExtractFileName::Entry {
-	( s.Handle e.FileName ) =
-		( s.Handle e.FileName ) e.FileName ;
+	( Structure s.Handle e.FileName ) =
+		( Structure s.Handle e.FileName ) e.FileName ;
 }
 
 FileIO::WriteLine-T::Entry {
-	( s.Handle e.FileName ) e.Line =
-		( s.Handle e.FileName ) <Refal5::Put::Entry s.Handle e.Line > ;
+	( Structure s.Handle e.FileName ) e.Line =
+		( Structure s.Handle e.FileName ) <Refal5::Put::Entry s.Handle e.Line > ;
 }
 
 FileIO::WriteLine::Entry {
-	( s.Handle e.FileName ) e.Line =
-		( s.Handle e.FileName ) <Refal5::Putout::Entry s.Handle e.Line > ;
+	( Structure s.Handle e.FileName ) e.Line =
+		( Structure s.Handle e.FileName ) <Refal5::Putout::Entry s.Handle e.Line > ;
 }
 
 FileIO::ReadLine::Entry {
-	( s.Handle e.FileName ) =
-		( s.Handle e.FileName ) <Refal5::Get::Entry s.Handle > ;
+	( Structure s.Handle e.FileName ) =
+		( Structure s.Handle e.FileName ) <Refal5::Get::Entry s.Handle > ;
 }
 
 FileIO::NulClose::Entry {
-	( s.Handle e.FileName ) =
+	( Structure s.Handle e.FileName ) =
 		<Refal5::Open::Entry 'r' s.Handle 'nul' > <FileIO::ReleaseHandle::Local s.Handle > ;
 }
 
 FileIO::Close::Entry {
-	( s.Handle e.FileName ) =
+	( Structure s.Handle e.FileName ) =
 		<Refal5::Open::Entry 'r' s.Handle e.FileName > <FileIO::ReleaseHandle::Local s.Handle > ;
 }
 
@@ -64,7 +64,7 @@ FileIO::SwOpen::Local {
 	None s.Mode e.FileName =
 		<MSelfDiag::Error::Entry 'Can\'t open file ' e.FileName ': no free handles' > ;
 	s.Handle s.Mode e.FileName =
-		( s.Handle e.FileName ) <Refal5::Open::Entry s.Mode s.Handle e.FileName > ;
+		( Structure s.Handle e.FileName ) <Refal5::Open::Entry s.Mode s.Handle e.FileName > ;
 }
 
 FileIO::CheckExistAndOpenForRead::Local {

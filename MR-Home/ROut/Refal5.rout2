@@ -20,19 +20,7 @@ Refal5::Exit::Entry { s.RetCode = <Exit s.RetCode >; }
 
 Refal5::ExistFile::Entry { e.FileName = <ExistFile e.FileName >; }
 
-Refal5::FileExist::Entry { e.FileName = <ExistFile e.FileName >; }
-
-Refal5::FileExists::Entry { e.FileName = <ExistFile e.FileName >; }
-
 Refal5::ExistFile-T::Entry {
-	e.FileName = <ExistFile e.FileName > e.FileName ;
-}
-
-Refal5::FileExist-T::Entry {
-	e.FileName = <ExistFile e.FileName > e.FileName ;
-}
-
-Refal5::FileExists-T::Entry {
 	e.FileName = <ExistFile e.FileName > e.FileName ;
 }
 

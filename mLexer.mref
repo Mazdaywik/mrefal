@@ -225,9 +225,13 @@ RealExtract-SwFirst {
 	t.SymStream 's' = <Variable SVar t.SymStream>;
 	t.SymStream 't' = <Variable TVar t.SymStream>;
 
+	/* Пока не будет реализована замена идентификаторов на "номера", запретим знаки
+	? и ! в идетнификаторах */
+/*
 	// Разрешим идентификаторы начинать с '?' и '!'
 	t.SymStream '?' = <Identifier t.SymStream '?'>;
 	t.SymStream '!' = <Identifier t.SymStream '!'>;
+*/
 
 	t.SymStream s.First =
 		<SwFirstChar t.SymStream <Types::CharType s.First>>;
@@ -263,7 +267,11 @@ Identifier-Tail
 	s.First t.SymStream e.Tail =
 		t.SymStream (Identifier s.First e.Tail);
 
-ValidIdentSymbols = <Types::UpAlph> <Types::LoAlph> <Types::Digits> '?!-_';
+/* Пока не будет реализована замена идентификаторов на "номера", запретим знаки
+? и ! в идетнификаторах */
+
+// ValidIdentSymbols = <Types::UpAlph> <Types::LoAlph> <Types::Digits> '?!-_';
+ValidIdentSymbols = <Types::UpAlph> <Types::LoAlph> <Types::Digits> '-_';
 
 Quoted
 	t.SymStream s.Quote =

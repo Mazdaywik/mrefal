@@ -57,6 +57,7 @@ AddEmptyDirectory {
 /**
 	<Resolve t.Module t.ErrorList e.QualifiedList>
 		== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+
 	e.QualifiedList ::= ( t.ModuleLocation (e.EntryFnName)* )*
 	t.ModuleLocation ::= ((e.Directory) e.ModuleName)
 */
@@ -85,15 +86,62 @@ ResolvingElements
 			t.SymTable
 			( )
 			t.ErrorList
-			(e.CurModuleName) (e.LocalScope) (e.QualifiedList)
+			(e.CurModuleName) (e.LocalScope (Local 'FnPtr')) (e.QualifiedList)
 			e.Elements
 		>;
+
+AddFnPtrFunction
+	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
+		<DoAddFnPtrFunctions ()
+			(e.CurModule) (e.LocalScope) (e.QualifiedList)
+		>;
+
+DoAddFnPtrFunctions {
+	( e.Sentences ) ( e.CurModule )
+	( (s.ScopeClass e.FnName) e.OtherLocals )
+	( e.QualifiedList ) =
+		<DoAddFnPtrFunctions
+			( e.Sentences
+				(
+					( (Identifier e.FnName) )
+					( (FnPtr (s.ScopeClass (Module () e.CurModule) (Function e.FnName))) )
+				)
+			)
+			( e.CurModule ) ( e.OtherLocals ) ( e.QualifiedList )
+		>;
+
+	( e.Sentences ) ( e.CurModule ) ()
+	( ( (() e.ModuleName) (e.FnName) e.OtherFunctions) e.OtherModulesInfo ) =
+		<DoAddFnPtrFunctions
+			( e.Sentences
+				(
+					( (Identifier e.ModuleName) (Identifier e.FnName) )
+					( (FnPtr (Entry (Module () e.ModuleName) (Function e.FnName))) )
+				)
+			)
+			( e.CurModule ) ()
+			( ( (() e.ModuleName) e.OtherFunctions) e.OtherModulesInfo )
+		>;
+
+	( e.Sentences ) ( e.CurModule ) ()
+	( (t.ModuleLocation) e.OtherModulesInfo ) =
+		<DoAddFnPtrFunctions
+			( e.Sentences ) ( e.CurModule ) ()
+			( e.OtherModulesInfo )
+		>;
+
+	( e.Sentences ) (e.CurModule) () () =
+		( Function Local (() e.CurModule) ('FnPtr') (e.Sentences) );
+}
 
 DoResolvingElements {
 	t.SymTable ( e.ResolvedElements )
 	t.ErrorList
 	(e.CurModuleName) (e.LocalScope) (e.QualifiedList) =
-		( t.SymTable e.ResolvedElements )
+		( t.SymTable
+			e.ResolvedElements
+			<AddFnPtrFunction (e.CurModuleName) (e.LocalScope) (e.QualifiedList)>
+		)
 		<CheckErrors t.ErrorList>;
 
 	t.SymTable ( e.ResolvedElements )
@@ -142,8 +190,6 @@ ResolvingOneElement {
 			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
 			() e.Sentences
 		>;
-
-	// Сюда добавить обработку статических ящиков
 }
 
 DoResolvingFunction {
@@ -222,6 +268,20 @@ ResolvingResult {
 					( '!' Function (e.ScannedResult) )
 				) t.Callable e.Argument ( '!' Function e.Tail )
 			>
+		>;
+
+	t.ErrorList
+	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	(e.ResolvedSentences)
+	( (e.Pattern) ( e.ScannedResult ) )
+	( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
+		<ResolvingResult
+			t.ErrorList
+			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			(e.ResolvedSentences)
+			( (e.Pattern)
+				( '!' IndirectCall (e.ScannedResult) (SVar e.Index) )
+			) e.Argument ('!' IndirectCall e.Tail)
 		>;
 
 	t.ErrorList

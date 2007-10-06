@@ -1,0 +1,18 @@
+$MODULE MPtrs;
+
+$IMPORT InOut;
+
+Fn1 e.Arg = <InOut::WriteLine 'Fn1 => ' e.Arg>;
+Fn2 e.Arg = <InOut::WriteLine 'Fn2 => ' e.Arg>;
+
+$ENTRY GetPtr {
+	'One' = <FnPtr Fn1>;
+	'Two' = <FnPtr Fn2>;
+	'Three' = <FnPtr InOut WriteLine>;
+	e.Other =
+		<FnPtr InOut WriteLine-T>
+		<InOut::WriteLine 'Invalid argument'>;
+}
+
+
+$END MPtrs.

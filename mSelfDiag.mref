@@ -12,6 +12,10 @@ $ENTRY Log
 	e.Message =
 		<Refal5::Putout 19 e.Message>;
 
+$ENTRY Log-T
+	e.Message =
+		<Refal5::Put 19 e.Message>;
+
 AssertAux {
 	t.ResultAndExpected t.ResultAndExpected =
 		('=') t.ResultAndExpected t.ResultAndExpected;

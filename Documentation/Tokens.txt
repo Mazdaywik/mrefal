@@ -1,40 +1,39 @@
 Внутренний формат лексем.
 (s.Type t.PositionInSrc e.Info)
 
-Тип				Информация	Представление
+Тип				Информация			Представление
 =========================================
-OpenBlock		нет			'{'
-CloseBlock		нет			'}'
+OpenBlock		нет					'{'
+CloseBlock		нет					'}'
 
-OpenFnCall		нет			'<'
-CloseFnCall		нет			'>'
+OpenFnCall		нет					'<'
+CloseFnCall		нет					'>'
 
-LeftBrac		нет			'('
-RigthBrac		нет			')'
+LeftBrac		нет					'('
+RigthBrac		нет					')'
 
-Ampersand		нет			'&'
-Colon			нет			':'
-Comma			нет			','
-Dot				нет			'.'
-DoubleColon		нет			'::'
-EndSent			нет			';'
-Replaces		нет			'='
+Ampersand		нет					'&'
+Colon			нет					':'
+Comma			нет					','
+Dot				нет					'.'
+DoubleColon		нет					'::'
+EndSent			нет					';'
+Replaces		нет					'='
 
-Directive		End			'$END', '$end'
-				Entry		'$ENTRY', '$entry'
-				Import		'$IMPORT', '$import'
-				Module		'$MODULE', '$module'
-				Swap		'$SWAP', '$swap'
+Directive		End					'$END', '$end'
+				Entry				'$ENTRY', '$entry'
+				Import				'$IMPORT', '$import'
+				Module				'$MODULE', '$module'
+				Swap				'$SWAP', '$swap'
 
-DQWord			e.Content	'\"' e.EscapedContent '\"'
-Identifier		e.Name		e.Name
-Literal			e.Content	'\'' e.EscapedContent '\''
-Macro			s.Value		s.Digit*
+DQWord			e.Content			'\"' e.EscapedContent '\"'
+Identifier		e.Name				e.Name
+Literal			e.Content			'\'' e.EscapedContent '\''
+Macro			s.Value				s.Digit*
 
-EVar			e.Index		s.OneLitera | '.' { s.Letter s.UpLetter s.Digit }+
-SVar			"			"
-TVar			"			"
+Var				s.VarType e.Index	s.VarType ::= EVar | SVar | TVar
+									e.Index ::= s.OneLitera | '.' { s.Letter s.UpLetter s.Digit }+
 
-Undefined		e.ErrSeq	неверная последовательность символов
-Error			e.ErrorMessage -- ошибка при синтаксическом анализе
+Undefined		e.ErrSeq			неверная последовательность символов
+Error			e.ErrorMessage		-- ошибка при синтаксическом анализе
 EndOfText		нет

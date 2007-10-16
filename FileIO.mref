@@ -2,7 +2,7 @@ $MODULE FileIO;
 
 
 $IMPORT MSelfDiag;
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 
 $SWAP G_Handles;
 
@@ -27,12 +27,12 @@ ReleaseHandle {
 $ENTRY Open {
 	'r' e.FileName =
 		<CheckExistAndOpenForRead
-			<Refal5::ExistFile e.FileName>
+			<MRefalRTS::ExistFile e.FileName>
 			e.FileName
 		>;
 
 	'w' e.FileName =
-		* <Refal5::Putout 19 'w ' e.FileName>
+		* <MRefalRTS::Putout 19 'w ' e.FileName>
 		<SwOpen <GetHandle> 'w' e.FileName>;
 
 	s.OtherMode e.FileName =
@@ -59,33 +59,33 @@ SwOpen {
 		>;
 
 	s.Handle s.Mode e.FileName =
-		(s.Handle e.FileName) <Refal5::Open s.Mode s.Handle e.FileName>;
+		(s.Handle e.FileName) <MRefalRTS::Open s.Mode s.Handle e.FileName>;
 }
 
 $ENTRY Close {
 	(s.Handle e.FileName) =
-		<Refal5::Open 'r' s.Handle e.FileName>
+		<MRefalRTS::Open 'r' s.Handle e.FileName>
 		<ReleaseHandle s.Handle>;
 }
 
 $ENTRY NulClose
 	(s.Handle e.FileName) =
-		<Refal5::Open 'r' s.Handle 'nul'>
+		<MRefalRTS::Open 'r' s.Handle 'nul'>
 		<ReleaseHandle s.Handle>;
 
 $ENTRY ReadLine {
 	(s.Handle e.FileName) =
-		(s.Handle e.FileName) <Refal5::Get s.Handle>;
+		(s.Handle e.FileName) <MRefalRTS::Get s.Handle>;
 }
 
 $ENTRY WriteLine {
 	(s.Handle e.FileName) e.Line =
-		(s.Handle e.FileName) <Refal5::Putout s.Handle e.Line>;
+		(s.Handle e.FileName) <MRefalRTS::Putout s.Handle e.Line>;
 }
 
 $ENTRY WriteLine-T {
 	(s.Handle e.FileName) e.Line =
-		(s.Handle e.FileName) <Refal5::Put s.Handle e.Line>;
+		(s.Handle e.FileName) <MRefalRTS::Put s.Handle e.Line>;
 }
 
 $ENTRY ExtractFileName {

@@ -1,20 +1,20 @@
 $MODULE MSelfDiag;
 
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 
 $ENTRY Error
 	e.Message =
-		<Refal5::Prout 'INTERNAL ERROR: ' e.Message>
+		<MRefalRTS::Prout 'INTERNAL ERROR: ' e.Message>
 		<Log 'INTERNAL ERROR: ' e.Message>
-		<Refal5::Exit 1>;
+		<MRefalRTS::Exit 1>;
 
 $ENTRY Log
 	e.Message =
-		<Refal5::Putout 19 e.Message>;
+		<MRefalRTS::Putout 19 e.Message>;
 
 $ENTRY Log-T
 	e.Message =
-		<Refal5::Put 19 e.Message>;
+		<MRefalRTS::Put 19 e.Message>;
 
 AssertAux {
 	t.ResultAndExpected t.ResultAndExpected =
@@ -72,7 +72,7 @@ PrintAssert {
 Nil e.X = ;
 
 $ENTRY Init =
-	<Nil <Refal5::System 'md Info>nul 2>nul'> >
-	<Refal5::Open 'w' 19 'Info/Log.txt'>;
+	<Nil <MRefalRTS::System 'md Info>nul 2>nul'> >
+	<MRefalRTS::Open 'w' 19 'Info/Log.txt'>;
 
 $END MSelfDiag.

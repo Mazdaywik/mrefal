@@ -1,20 +1,13 @@
-MOS::LookupEnv::Local {
-	( Structure e.Name ) e.Begin ( Structure ( Structure e.Name ) e.Value ) e.End =
-		e.Value ;
-	( Structure e.Name ) e.Other =
-		None ;
-}
-
 MOS::Env::Entry {
 	e.Name =
-		<MOS::LookupEnv::Local ( Structure e.Name ) <MOS::EnvList::Entry > > ;
+		<MRefalRTS::Env::Entry e.Name > ;
 }
 
 MOS::DoEnvList::Local {
 	t.FList 0 =
 		<FileIO::NulClose::Entry t.FList > <MOS::System::Entry 'del ~setlst.tmp' > ;
 	t.FList e.Name '=' e.Value =
-		( Structure ( Structure e.Name ) e.Value ) <MOS::DoEnvList::Local <FileIO::ReadLine::Entry t.FList > > ;
+		( Structure ( Structure e.Name ) <MOS::Env::Entry e.Name > ) <MOS::DoEnvList::Local <FileIO::ReadLine::Entry t.FList > > ;
 }
 
 MOS::EnvList::Entry {
@@ -57,8 +50,6 @@ MOS::FnPtr::Local {
 		$MOS::DoEnvList::Local$ ;
 	Env =
 		$MOS::Env::Entry$ ;
-	LookupEnv =
-		$MOS::LookupEnv::Local$ ;
 	FnPtr =
 		$MOS::FnPtr::Local$ ;
 	MRefalRTS Prout =
@@ -85,6 +76,8 @@ MOS::FnPtr::Local {
 		$MRefalRTS::ExistFile-T::Entry$ ;
 	MRefalRTS System =
 		$MRefalRTS::System::Entry$ ;
+	MRefalRTS Env =
+		$MRefalRTS::Env::Entry$ ;
 	MRefalRTS Upper =
 		$MRefalRTS::Upper::Entry$ ;
 	MRefalRTS Lower =

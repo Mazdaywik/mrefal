@@ -1,7 +1,7 @@
 /* Automatically generated file, don't edit! */
 $module MOrder;
 
-$import Refal5;
+$import MRefalRTS;
 $import Math;
 
 $entry Compare-T;

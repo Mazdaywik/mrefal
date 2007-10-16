@@ -2,7 +2,7 @@
 $module FileIO;
 
 $import MSelfDiag;
-$import Refal5;
+$import MRefalRTS;
 
 $entry Init;
 $entry Open;

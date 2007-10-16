@@ -15,7 +15,7 @@ $ENTRY SymName {
 }
 
 $ENTRY OutName {
-	e.ModName = 'ROut\\' e.ModName '.rout2';
+	e.ModName = 'ROut2\\' e.ModName '.rout2';
 }
 
 $ENTRY SrcName {
@@ -85,7 +85,7 @@ $ENTRY LookupLibrary
 	e.ModuleName =
 		<SwLookupLibrary
 			( <MFileSystem::ExistFile-T <HomeDir> '\\Defs\\' e.ModuleName '.rsym'> )
-			( <MFileSystem::ExistFile-T <HomeDir> '\\ROut\\' e.ModuleName '.rout2'> )
+			( <MFileSystem::ExistFile-T <HomeDir> '\\ROut2\\' e.ModuleName '.rout2'> )
 		>;
 
 SwLookupLibrary {
@@ -150,7 +150,7 @@ HomeDir = <MOS::Env 'MR_Home'>;
 $ENTRY Init =
 	<CheckDefinedMRHome <HomeDir>>
 	<MOS::System 'md Defs>nul 2>nul'>
-	<MOS::System 'md ROut>nul 2>nul'>;
+	<MOS::System 'md ROut2>nul 2>nul'>;
 
 CheckDefinedMRHome {
 	None = <MError::Fatal 'MR_Home not defined'>;

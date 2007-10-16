@@ -1,59 +1,27 @@
-Math::Compare-T::Entry {
-	s.Left s.Rigth =
-		<Math::Compare::Entry s.Left s.Rigth > s.Left s.Rigth ;
+InOut::ReadLine::Entry {
+	=
+		<MRefalRTS::Card::Entry > ;
 }
 
-Math::R5-to-MRef::Local {
-	'-' =
-		'<' ;
-	'0' =
-		'=' ;
-	'+' =
-		'>' ;
+InOut::WriteLine-T::Entry {
+	e.Line =
+		<MRefalRTS::Print::Entry e.Line > ;
 }
 
-Math::Compare::Entry {
-	s.Left s.Rigth =
-		<Math::R5-to-MRef::Local <MRefalRTS::Compare::Entry s.Left s.Rigth > > ;
+InOut::WriteLine::Entry {
+	e.Line =
+		<MRefalRTS::Prout::Entry e.Line > ;
 }
 
-Math::Dec::Entry {
-	s.Num =
-		<Math::Sub::Entry s.Num 1 > ;
-}
-
-Math::Inc::Entry {
-	s.Num =
-		<Math::Add::Entry s.Num 1 > ;
-}
-
-Math::Sub::Entry {
-	e.Arg =
-		<MRefalRTS::Sub::Entry e.Arg > ;
-}
-
-Math::Add::Entry {
-	e.Arg =
-		<MRefalRTS::Add::Entry e.Arg > ;
-}
-
-Math::FnPtr::Local {
-	Add =
-		$Math::Add::Entry$ ;
-	Sub =
-		$Math::Sub::Entry$ ;
-	Inc =
-		$Math::Inc::Entry$ ;
-	Dec =
-		$Math::Dec::Entry$ ;
-	Compare =
-		$Math::Compare::Entry$ ;
-	R5-to-MRef =
-		$Math::R5-to-MRef::Local$ ;
-	Compare-T =
-		$Math::Compare-T::Entry$ ;
+InOut::FnPtr::Local {
+	WriteLine =
+		$InOut::WriteLine::Entry$ ;
+	WriteLine-T =
+		$InOut::WriteLine-T::Entry$ ;
+	ReadLine =
+		$InOut::ReadLine::Entry$ ;
 	FnPtr =
-		$Math::FnPtr::Local$ ;
+		$InOut::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
 	MRefalRTS Print =
@@ -78,6 +46,8 @@ Math::FnPtr::Local {
 		$MRefalRTS::ExistFile-T::Entry$ ;
 	MRefalRTS System =
 		$MRefalRTS::System::Entry$ ;
+	MRefalRTS Env =
+		$MRefalRTS::Env::Entry$ ;
 	MRefalRTS Upper =
 		$MRefalRTS::Upper::Entry$ ;
 	MRefalRTS Lower =

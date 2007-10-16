@@ -1,16 +1,16 @@
 $MODULE MFileSystem;
 
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 $IMPORT MOS;
 $IMPORT FileIO;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 $IMPORT Math;
 
-$ENTRY ExistFile e.FileName = <Refal5::ExistFile e.FileName>;
+$ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
 
 $ENTRY ExistFile-T
-	e.FileName = <Refal5::ExistFile e.FileName> e.FileName;
+	e.FileName = <MRefalRTS::ExistFile e.FileName> e.FileName;
 
 $ENTRY FilesInfo
 	e.Mask =

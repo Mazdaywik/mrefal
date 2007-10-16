@@ -1,7 +1,7 @@
 /* Automatically generated file, don't edit! */
 $module MStrings;
 
-$import Refal5;
+$import MRefalRTS;
 $import Math;
 
 $entry Numb;

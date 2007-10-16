@@ -92,6 +92,8 @@ MStrings::FnPtr::Local {
 		$MRefalRTS::ExistFile-T::Entry$ ;
 	MRefalRTS System =
 		$MRefalRTS::System::Entry$ ;
+	MRefalRTS Env =
+		$MRefalRTS::Env::Entry$ ;
 	MRefalRTS Upper =
 		$MRefalRTS::Upper::Entry$ ;
 	MRefalRTS Lower =

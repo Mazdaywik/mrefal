@@ -1,17 +1,17 @@
 $MODULE InOut;
 
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 
 $ENTRY WriteLine {
-	e.Line = <Refal5::Prout e.Line>;
+	e.Line = <MRefalRTS::Prout e.Line>;
 }
 
 $ENTRY WriteLine-T {
-	e.Line = <Refal5::Print e.Line>;
+	e.Line = <MRefalRTS::Print e.Line>;
 }
 
 $ENTRY ReadLine {
-	= <Refal5::Card>;
+	= <MRefalRTS::Card>;
 }
 
 $END InOut.

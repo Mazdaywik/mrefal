@@ -1,16 +1,16 @@
 $MODULE Math;
 
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 
-$ENTRY Add e.Arg = <Refal5::Add e.Arg>;
-$ENTRY Sub e.Arg = <Refal5::Sub e.Arg>;
+$ENTRY Add e.Arg = <MRefalRTS::Add e.Arg>;
+$ENTRY Sub e.Arg = <MRefalRTS::Sub e.Arg>;
 
 $ENTRY Inc s.Num = <Add s.Num 1>;
 $ENTRY Dec s.Num = <Sub s.Num 1>;
 
 $ENTRY Compare
 	s.Left s.Rigth =
-		<R5-to-MRef <Refal5::Compare s.Left s.Rigth> >;
+		<R5-to-MRef <MRefalRTS::Compare s.Left s.Rigth> >;
 
 R5-to-MRef {
 	'-' = '<'; '0' = '='; '+' = '>';

@@ -1,4 +1,4 @@
-$module Refal5;
+$module MRefalRTS;
 
 $entry Prout;
 $entry Print;
@@ -11,13 +11,10 @@ $entry Putout;
 
 $entry Arg;
 $entry Exit;
-$entry FileExist;
 $entry ExistFile;
-$entry FileExists;
-$entry FileExist-T;
 $entry ExistFile-T;
-$entry FileExists-T;
 $entry System;
+$entry Env;
 
 $entry Upper;
 $entry Lower;
@@ -31,4 +28,4 @@ $entry Add;
 $entry Sub;
 $entry Compare;
 
-$end Refal5.
+$end MRefalRTS.

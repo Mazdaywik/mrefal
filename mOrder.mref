@@ -1,6 +1,6 @@
 $MODULE MOrder;
 
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 $IMPORT Math;
 
 /* Сравнение по типам:
@@ -31,13 +31,13 @@ SymbCompare
 		<SwSymbCompare <Type-T s.Left> <Type-T s.Right>>;
 
 Type-T
-	s.Symb = <CheckChar s.Symb <Refal5::Ord s.Symb>>;
+	s.Symb = <CheckChar s.Symb <MRefalRTS::Ord s.Symb>>;
 
 CheckChar {
 	s.Symb s.Symb =
-		// Не char, т.к. функция <Refal5::Ord> заменяет
+		// Не char, т.к. функция <MRefalRTS::Ord> заменяет
 		// characters на соотвествующие макроцифры
-		<CheckMacro s.Symb <Refal5::Chr s.Symb>>;
+		<CheckMacro s.Symb <MRefalRTS::Chr s.Symb>>;
 
 	s.Symb s.Numb =
 		(Char s.Symb s.Numb);

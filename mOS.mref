@@ -1,16 +1,16 @@
 $MODULE MOS;
 
-$IMPORT Refal5;
+$IMPORT MRefalRTS;
 $IMPORT FileIO;
 
 $ENTRY System
-	e.Command = <Nil <Refal5::System e.Command> >;
+	e.Command = <Nil <MRefalRTS::System e.Command> >;
 
 Nil e.Arg = ;
 
-$ENTRY Arg s.Num = <Refal5::Arg s.Num>;
+$ENTRY Arg s.Num = <MRefalRTS::Arg s.Num>;
 
-$ENTRY Exit s.RetCode = <Refal5::Exit s.RetCode>;
+$ENTRY Exit s.RetCode = <MRefalRTS::Exit s.RetCode>;
 
 $ENTRY EnvList
 	= <System 'set > ~setlst.tmp'>
@@ -26,20 +26,13 @@ DoEnvList {
 		<System 'del ~setlst.tmp'>;
 
 	t.FList e.Name '=' e.Value =
-		((e.Name) e.Value)
+		((e.Name) <Env e.Name>)
 		<DoEnvList
 			<FileIO::ReadLine t.FList>
 		>;
 }
 
 $ENTRY Env
-	e.Name = <LookupEnv (e.Name) <EnvList>>;
-
-LookupEnv {
-	(e.Name) e.Begin ((e.Name) e.Value) e.End =
-		e.Value;
-
-	(e.Name) e.Other = None;
-}
+	e.Name = <MRefalRTS::Env e.Name>;
 
 $END MOS.

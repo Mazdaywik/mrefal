@@ -1,7 +1,7 @@
 /* Automatically generated file, don't edit! */
 $module Math;
 
-$import Refal5;
+$import MRefalRTS;
 
 $entry Add;
 $entry Sub;

@@ -1,7 +1,7 @@
 /* Automatically generated file, don't edit! */
 $module InOut;
 
-$import Refal5;
+$import MRefalRTS;
 
 $entry WriteLine;
 $entry WriteLine-T;

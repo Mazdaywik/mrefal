@@ -3,9 +3,12 @@ $module MOS;
 
 $import MRefalRTS;
 $import FileIO;
+$import Math;
 
 $entry System;
 $entry Arg;
+$entry ArgList;
+$entry ProgName;
 $entry Exit;
 $entry EnvList;
 $entry Env;

@@ -20,6 +20,23 @@ MOS::Exit::Entry {
 		<MRefalRTS::Exit::Entry s.RetCode > ;
 }
 
+MOS::ProgName::Entry {
+	=
+		<MOS::Arg::Entry 0 > ;
+}
+
+MOS::DoArgList::Local {
+	s.NextArg =
+		;
+	s.NextArg e.Argument =
+		( Structure e.Argument ) <MOS::DoArgList::Local <Math::Inc::Entry s.NextArg > <MOS::Arg::Entry s.NextArg > > ;
+}
+
+MOS::ArgList::Entry {
+	=
+		<MOS::DoArgList::Local 1 <MOS::Arg::Entry 0 > > ;
+}
+
 MOS::Arg::Entry {
 	s.Num =
 		<MRefalRTS::Arg::Entry s.Num > ;
@@ -42,6 +59,12 @@ MOS::FnPtr::Local {
 		$MOS::Nil::Local$ ;
 	Arg =
 		$MOS::Arg::Entry$ ;
+	ArgList =
+		$MOS::ArgList::Entry$ ;
+	DoArgList =
+		$MOS::DoArgList::Local$ ;
+	ProgName =
+		$MOS::ProgName::Entry$ ;
 	Exit =
 		$MOS::Exit::Entry$ ;
 	EnvList =
@@ -118,5 +141,17 @@ MOS::FnPtr::Local {
 		$FileIO::Load::Entry$ ;
 	FileIO Save =
 		$FileIO::Save::Entry$ ;
+	Math Add =
+		$Math::Add::Entry$ ;
+	Math Sub =
+		$Math::Sub::Entry$ ;
+	Math Inc =
+		$Math::Inc::Entry$ ;
+	Math Dec =
+		$Math::Dec::Entry$ ;
+	Math Compare =
+		$Math::Compare::Entry$ ;
+	Math Compare-T =
+		$Math::Compare-T::Entry$ ;
 }
 

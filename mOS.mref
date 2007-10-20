@@ -2,6 +2,7 @@ $MODULE MOS;
 
 $IMPORT MRefalRTS;
 $IMPORT FileIO;
+$IMPORT Math;
 
 $ENTRY System
 	e.Command = <Nil <MRefalRTS::System e.Command> >;
@@ -9,6 +10,17 @@ $ENTRY System
 Nil e.Arg = ;
 
 $ENTRY Arg s.Num = <MRefalRTS::Arg s.Num>;
+
+$ENTRY ArgList = <DoArgList 1 <Arg 0>>;
+
+DoArgList {
+	s.NextArg = ;
+	s.NextArg e.Argument =
+		(e.Argument)
+		<DoArgList <Math::Inc s.NextArg> <Arg s.NextArg>>;
+}
+
+$ENTRY ProgName = <Arg 0>;
 
 $ENTRY Exit s.RetCode = <MRefalRTS::Exit s.RetCode>;
 

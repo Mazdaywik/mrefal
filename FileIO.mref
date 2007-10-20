@@ -32,7 +32,6 @@ $ENTRY Open {
 		>;
 
 	'w' e.FileName =
-		* <MRefalRTS::Putout 19 'w ' e.FileName>
 		<SwOpen <GetHandle> 'w' e.FileName>;
 
 	s.OtherMode e.FileName =

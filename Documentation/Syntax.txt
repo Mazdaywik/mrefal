@@ -2,10 +2,12 @@
 .mref:
 
 Module = ModuleHeader ModuleBody ModuleTailer .
-ModuleHeader = '$module' ModuleName ';' .
+ModuleHeader = '$module' ModuleName ';' | '$program' ModuleName ';' .
 ModuleTailer = '$end' ModuleName '.' .
-ModuleName = IDENTIFIER .
+ModuleName = QualifiedName .
 ModuleBody = ModuleElement* .
+
+QualifiedName = IDENTIFIER | QualifiedName '::' IDENTIFIER .
 
 ModuleElement = ImportBlock | FunctionDefinition | SwapDefinition | ';' .
 
@@ -30,10 +32,7 @@ ResultExpr = ResultTerm* .
 ResultTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
 	| '(' ResultExpr ')' | DQWORD | FunctionCall .
 FunctionCall = '<' Callable ResultExpr '>' .
-Callable = FunctionName | Qualifier '::' FunctionName
-	| SwapName | S-VARIABLE .
-
-Qualifier = ModuleName | ModuleAlias .
+Callable = QualifiedName | SwapName | S-VARIABLE .
 
 .msym:
 

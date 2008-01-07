@@ -1,0 +1,68 @@
+$MODULE MQualifiedSupport;
+
+/*******************************************************************************
+	Тип данных -- квалифицированное имя.
+
+	Хотя в программе была попытка использовать имя с директорией:
+	e.FullName = (e.Directory) e.Name
+	e.Directory = (e.SubName)*
+*******************************************************************************/
+
+$IMPORT MSelfDiag;
+$IMPORT MQualifiedName;
+
+/**
+	<DirNameToQualifiedName (e.Directory) e.Name>
+		== t.QualifiedName
+*/
+$ENTRY DirNameToQualifiedName
+	(e.Directory) e.Name =
+		<DoDirNameToQualifiedName
+			<MQualifiedName::Create e.Name>
+			e.Directory
+		>;
+
+DoDirNameToQualifiedName {
+	t.QualifiedName = t.QualifiedName;
+
+	t.QualifiedName e.SuperNames (e.ParentName) =
+		<DoDirNameToQualifiedName
+			<MQualifiedName::AddSuperName
+				t.QualifiedName e.ParentName
+			>
+			e.SuperNames
+		>;
+}
+
+/**
+	<QualifiedNameToDirName-T t.QualifiedName>
+		== t.QualifiedName (e.Directory) e.Name
+*/
+$ENTRY QualifiedNameToDirName-T
+	t.QualifiedName =
+		<ToDirName
+			<MQualifiedName::Parse-T t.QualifiedName>
+		>;
+
+ToDirName
+	t.QualifiedName e.DirSegments (e.LastName) =
+		t.QualifiedName (e.DirSegments) e.LastName;
+
+/**
+	<UnQualify t.QualifiedName>
+		== e.Name
+	t.QualifiedName должен содержать один сегмент.
+*/
+$ENTRY UnQualify
+	t.QualifiedName =
+		<CheckUnQualify
+			<MQualifiedName::Parse t.QualifiedName>
+		>;
+
+CheckUnQualify
+	e.Qualifiers (e.LastName) =
+		<MSelfDiag::Assert-Eq (e.Qualifiers) ()
+			'Name for unqualify must haven\'t qualifiers'
+		> e.LastName;
+
+$END MQualifiedSupport.

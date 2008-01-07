@@ -66,10 +66,15 @@ AddCurrentModule-CheckIdent {
 		);
 }
 
-$ENTRY ExtractCurrentModule
+$ENTRY ExtractCurrentModule-NoQualified
 	( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions ) =
 		( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions )
 		e.ModuleName;
+
+$ENTRY ExtractCurrentModule-Qualified
+	( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions ) =
+		( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions )
+		(e.ModuleName);
 
 * <CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
 *	== t.ErrorList t.SymTable
@@ -152,8 +157,8 @@ $ENTRY AddFunction {
 
 /**
 	<ExtractLocalInfo t.SymTable>
-		== t.SymTable (s.ScopeClass e.FnName)*
-	s.ScopeClass ::= Entry | Local
+		== t.SymTable (s.ScopeClass e.EntityName)*
+	s.ScopeClass ::= Entry | Local | Swap
 */
 $ENTRY ExtractLocalInfo
 	( t.Idents t.CurModule t.Modules (Functions e.Functions) ) =

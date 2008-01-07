@@ -110,7 +110,7 @@ Compile0 {
 		<Compile1
 			(File e.FileName)
 			t.Context
-			<MFrontEnd::SymInfo t.Module>
+			<MFrontEnd::SymInfo-Old t.Module>
 		>;
 }
 

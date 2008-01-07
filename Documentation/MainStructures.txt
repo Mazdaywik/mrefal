@@ -41,7 +41,7 @@ t.PatternTerm ::=
 
 t.ResultTerm ::=
 	t.PatternTerm
-	(Function t.Callee e.Argument)
+	(Function t.Callable e.Argument)
 	(IndirectCall (SVar e.Index) e.Argument)
 
 t.Callable ::=
@@ -58,21 +58,25 @@ t.Callable ::=
 t.ModuleElement ::=
 	(Function
 		s.ScopeClass
-		( (e.Directory) e.ModuleName )
-		( e.FnName )
+		t.QualifiedFunctionName
 		t.FunctionBody
 	)
 
 t.Callable ::=
-	(s.CallType
-		( Module (e.Directory) e.ModName )
-		( Function e.FunctionName )
-	)
+	(s.CallType t.QualifiedFunctionName)
 
 s.CallType ::=
 	Entry
 	Local
 	Swap
+
+Здесь t.QualifiedFunctionName -- АТД типа t.QualifiedName из модуля MQualifiedName
+
+--------------------------------------------------------------------------------
+	Структура "Квалифицированное имя"
+--------------------------------------------------------------------------------
+
+e.QualifiedName = (e.PartName)*
 
 --------------------------------------------------------------------------------
 	Структура "Символическая информация"

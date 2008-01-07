@@ -1,0 +1,100 @@
+$MODULE MQualifiedName;
+
+/*******************************************************************************
+	Абстрактный тип данных -- квалифицированное имя.
+*******************************************************************************/
+
+$IMPORT MSelfDiag;
+
+/**
+	<Create> == t.EmptyQualifierName
+	<Create e.Name>
+		== t.QalifierName // только с одним сегментом
+*/
+$ENTRY Create {
+	= <CreateFromSegments>;
+
+	e.Name =
+		<CreateFromSegments (e.Name)>;
+}
+
+/**
+	<CreateFromSegments (e.Segment)*>
+		== t.QualifiedName
+*/
+$ENTRY CreateFromSegments
+	e.Segments =
+		(QName <CheckSegments e.Segments>);
+
+CheckSegments {
+	= ;
+
+	(e.Segment) e.Tail =
+		(<CheckSegment e.Segment>)
+		<CheckSegments e.Tail>;
+}
+
+/**
+	<AddSubName t.QualifiedName e.SubName>
+		== t.UpdatedQualifiedName
+*/
+$ENTRY AddSubName
+	(QName e.Qualifiers) e.SubName =
+		<MSelfDiag::Assert-NE (e.SubName) () 'SubName must be not empty'>
+		(QName
+			e.Qualifiers (<CheckSegment e.SubName>)
+		);
+
+/**
+	<AddSuperName t.QualifiedName e.SuperName>
+		== t.UpdatedQualifiedName
+*/
+$ENTRY AddSuperName
+	(QName e.Qualifiers) e.SuperName =
+		<MSelfDiag::Assert-NE (e.SuperName) () 'SuperName must be not empty'>
+		(QName
+			(<CheckSegment e.SuperName>) e.Qualifiers
+		);
+
+CheckSegment {
+	=
+		<MSelfDiag::Error
+			'Segment in qualified name must not be empty'
+		>;
+
+	e.Segment = e.Segment;
+}
+
+/**
+	<Parse t.QualifiedName>
+		== (e.SegmentName)*
+*/
+$ENTRY Parse
+	(QName e.Qualifiers) =
+		e.Qualifiers;
+
+/**
+	<Parse-T t.QualifiedName>
+		== t.QualifiedName (e.SegmentName)*
+*/
+$ENTRY Parse-T
+	(QName e.Qualifiers) =
+		(QName e.Qualifiers) e.Qualifiers;
+
+/**
+	<ToRelativeFSPath-T t.QualifiedName>
+		== t.QualifiedName
+			e.Segment '/' e.Segment '/' ... '/' e.Segment
+*/
+$ENTRY ToRelativeFSPath-T
+	(QName e.Segments) =
+		(QName e.Segments) <CreatePath e.Segments>;
+
+CreatePath {
+	(e.OneSegment) = e.OneSegment;
+
+	(e.NextSegment) e.Tail =
+		e.NextSegment '/' <CreatePath e.Tail>;
+}
+
+$END MQualifiedName.

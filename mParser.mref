@@ -99,6 +99,13 @@ NModuleHeader {
 			<MLexer::NextToken t.Lexer>
 		>;
 
+	t.ErrorList t.SymTable ()
+	t.Lexer (Directive t.SrcPos Program) =
+		<NModuleHeader-ModuleName
+			t.ErrorList t.SymTable ()
+			<MLexer::NextToken t.Lexer>
+		>;
+
 	/* Обработка ошибок в данном случае -- добавляем в список ошибок неожиданный
 	символ, считаем, что прочли текущую лексему как '$module' и продолжаем
 	дальнейший разбор.

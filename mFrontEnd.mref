@@ -1,6 +1,9 @@
 $MODULE MFrontEnd;
 
+$IMPORT MQualifiedName;
+$IMPORT MQualifiedSupport;
 $IMPORT MParser;
+$IMPORT MSymInfo;
 $IMPORT MSymTable;
 $IMPORT MError;
 
@@ -15,44 +18,37 @@ $ENTRY LoadModule
 
 /**
 	<SymInfo t.Module>
+		== t.Module t.SymInfo
+*/
+$ENTRY SymInfo
+	(t.SymTable e.ModuleContent) =
+		<RestoreModule
+			<MSymInfo::CreateFromSymTable t.SymTable>
+			e.ModuleContent
+		>;
+
+RestoreModule
+	t.SymTable t.SymInfo e.ModuleContent =
+		(t.SymTable e.ModuleContent) t.SymInfo;
+
+/**
+	<SymInfo-Old t.Module>
 		== t.Module
 		( Module (e.Directory) e.ModuleName )
 		( Functions (e.FnName)* )
 		( Imports ((e.ImportDirectory) e.ImportName)* )
 */
-$ENTRY SymInfo
-	(t.SymTable e.ModuleContent) =
-		<SymInfo-Imports
-			<MSymTable::ExtractImportList t.SymTable>
-			(e.ModuleContent)
+$ENTRY SymInfo-Old
+	t.Module =
+		<ToOldSymInfo
+			<SymInfo t.Module>
 		>;
 
-SymInfo-Imports
-	t.SymTable e.Imports (e.ModuleContent) =
-		<SymInfo-Functions
-			<MSymTable::ExtractEntryFunctions t.SymTable>
-			(e.ModuleContent)
-		> (Imports <AddEmptyDirectory e.Imports>);
+ToOldSymInfo
+	t.Module t.SymInfo =
+		t.Module
+		<MSymInfo::ToOldSymInfo t.SymInfo>;
 
-SymInfo-Functions
-	t.SymTable e.Functions (e.ModuleContent) =
-		<SymInfo-CurrentModule
-			<MSymTable::ExtractCurrentModule t.SymTable>
-			(e.ModuleContent)
-		> (Functions e.Functions);
-
-SymInfo-CurrentModule
-	t.SymTable e.ModuleName (e.ModuleContent) =
-		(t.SymTable e.ModuleContent)
-		(Module () e.ModuleName);
-
-AddEmptyDirectory {
-	(e.ImportName) e.Tail =
-		(() e.ImportName)
-		<AddEmptyDirectory e.Tail>;
-
-	= ;
-}
 
 /**
 	<Resolve t.Module t.ErrorList e.QualifiedList>
@@ -73,7 +69,7 @@ StartResolving
 	( e.ModuleContent )
 	t.ErrorList e.QualifiedList =
 		<ResolvingElements
-			( <MSymTable::ExtractCurrentModule t.SymTable> )
+			( <MSymTable::ExtractCurrentModule-NoQualified t.SymTable> )
 			(e.ModuleContent) t.ErrorList
 			(e.LocalScope) e.QualifiedList
 		>;
@@ -104,7 +100,15 @@ DoAddFnPtrFunctions {
 			( e.Sentences
 				(
 					( (Identifier e.FnName) )
-					( (FnPtr (s.ScopeClass (Module () e.CurModule) (Function e.FnName))) )
+					(
+						(FnPtr
+							(s.ScopeClass
+								<MQualifiedName::CreateFromSegments
+									(e.CurModule) (e.FnName)
+								>
+							)
+						)
+					)
 				)
 			)
 			( e.CurModule ) ( e.OtherLocals ) ( e.QualifiedList )
@@ -116,7 +120,15 @@ DoAddFnPtrFunctions {
 			( e.Sentences
 				(
 					( (Identifier e.ModuleName) (Identifier e.FnName) )
-					( (FnPtr (Entry (Module () e.ModuleName) (Function e.FnName))) )
+					(
+						(FnPtr
+							(Entry
+								<MQualifiedName::CreateFromSegments
+									(e.ModuleName) (e.FnName)
+								>
+							)
+						)
+					)
 				)
 			)
 			( e.CurModule ) ()
@@ -131,7 +143,12 @@ DoAddFnPtrFunctions {
 		>;
 
 	( e.Sentences ) (e.CurModule) () () =
-		( Function Local (() e.CurModule) ('FnPtr') (e.Sentences) );
+		( Function Local
+			<MQualifiedName::CreateFromSegments
+				(e.CurModule) ('FnPtr')
+			>
+			(e.Sentences)
+		);
 }
 
 DoResolvingElements {
@@ -180,12 +197,16 @@ AddElement
 		t.ErrorList
 		(e.ModuleName) (e.LocalScope) (e.QualifiedList);
 
+// Модуль состоит только из функций, swaps регистрируются в таблице символов
 ResolvingOneElement {
 	( Function s.ScopeClass (e.FnName) (e.Sentences) )
 	t.ErrorList
 	(e.ModuleName) (e.LocalScope) (e.QualifiedList) =
 		<DoResolvingFunction
-			( Function s.ScopeClass (() e.ModuleName) (e.FnName) )
+			( Function
+				s.ScopeClass
+				<MQualifiedName::CreateFromSegments (e.ModuleName) (e.FnName)>
+			)
 			t.ErrorList
 			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
 			() e.Sentences
@@ -193,20 +214,20 @@ ResolvingOneElement {
 }
 
 DoResolvingFunction {
-	( Function s.ScopeClass (() e.Prefix) (e.FnName) )
+	( Function s.ScopeClass t.QualifiedFNName )
 	t.ErrorList
 	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
 	(e.Resolved) =
-		( Function s.ScopeClass (() e.Prefix)(e.FnName) (e.Resolved) )
+		( Function s.ScopeClass t.QualifiedFNName (e.Resolved) )
 		t.ErrorList
 		(e.ModuleName) (e.LocalScope) (e.QualifiedList);
 
-	( Function s.ScopeClass (()e.Prefix)(e.FnName) )
+	( Function s.ScopeClass t.QualifiedFNName )
 	t.ErrorList
 	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
 	(e.Resolved) t.NextSentence e.Tail =
 		<DoResolvingFunction
-			(Function s.ScopeClass (() e.Prefix) (e.FnName) )
+			(Function s.ScopeClass t.QualifiedFNName )
 			<ResolvingSentence
 				t.ErrorList
 				(e.ModuleName) (e.LocalScope) (e.QualifiedList)
@@ -335,7 +356,7 @@ ResolvingCallable {
 		(e.ResolvedSentences)
 		( (e.Pattern)
 			('!' Function (e.LMultiBracket)
-				(s.ScopeClass (Module () e.ModuleName) (Function e.FnName))
+				(s.ScopeClass <MQualifiedName::CreateFromSegments (e.ModuleName) (e.FnName)>)
 			)
 		) e.Argument ('!' Function e.RMultiBracket);
 
@@ -375,7 +396,14 @@ ResolvingCallable {
 		(e.ResolvedSentences)
 		( (e.Pattern)
 			('!' Function (e.LMultiBracket)
-				(Entry (Module (e.Directory) e.Qualification) (Function e.Function))
+				(Entry
+					<MQualifiedName::AddSubName
+						<MQualifiedSupport::DirNameToQualifiedName
+							(e.Directory) e.Qualification
+						>
+						e.Function
+					>
+				)
 			)
 		) e.Argument ('!' Function e.RMultiBracket);
 

@@ -296,7 +296,7 @@ SymTableToSymInfo--Imports
 SymTableToSymInfo--Functions
 	t.SymTable e.Functions =
 		<SymTableToSymInfo--CurModule
-			<MSymTable::ExtractCurrentModule t.SymTable>
+			<MSymTable::ExtractCurrentModule-NoQualified t.SymTable>
 		> ( Functions e.Functions );
 
 SymTableToSymInfo--CurModule

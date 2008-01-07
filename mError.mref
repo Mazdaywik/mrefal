@@ -176,6 +176,24 @@ $ENTRY AddUnresolvedFunction {
 				'Module \'' e.Module '\' not contain entry function \'' e.FnName '\''
 			)
 		>;
+
+	t.ErrorList
+	t.SrcPos GenericQualified e.QualifiedName =
+		<AddToList
+			t.ErrorList
+			( Semantics
+				t.SrcPos
+				'Unresolved qualified name ' <TypeQualified e.QualifiedName>
+			)
+		>;
+}
+
+TypeQualified {
+	(e.Qualifed) (e.SubQualified) e.Rest =
+		e.Qualifed '::'
+		<TypeQualified (e.SubQualified) e.Rest>;
+
+	(e.Name) = e.Name;
 }
 
 $ENTRY PrintErrorsAndStop

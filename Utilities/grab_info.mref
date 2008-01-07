@@ -1,0 +1,121 @@
+$MODULE Grab_info;
+
+$IMPORT InOut, FileIO, MOS;
+
+$ENTRY Go = <Main <MOS::ArgList>>;
+
+Main {
+	(e.?ProgName) = <InOut::WriteLine 'usage grab_info filelist'>;
+
+	(e.?ProgName) ('@' e.FilesList) =
+		<ScanFiles
+			<FileIO::Load e.FilesList>
+		>;
+
+	(e.?ProgName) e.FilesList =
+		<ScanFiles e.FilesList>;
+}
+
+ScanFiles
+	e.FilesList =
+		<FileIO::Save
+			('interfaces.txt')
+			<UnDoubleEmptyLines
+				<DoScanFiles e.FilesList>
+			>
+		>;
+
+UnDoubleEmptyLines {
+	() () e.Rest =
+		<UnDoubleEmptyLines () e.Rest>;
+
+	(e.Line) e.Rest =
+		(e.Line)
+		<UnDoubleEmptyLines e.Rest>;
+
+	= ;
+}
+
+DoScanFiles {
+	(e.FileName) e.Rest =
+		<ExtractInfo e.FileName>
+		<DoScanFiles e.Rest>;
+
+	= ;
+}
+
+ExtractInfo
+	e.FileName =
+		<ModuleToInterface
+			<FileIO::Load e.FileName>
+		>;
+
+ModuleToInterface {
+	('$MODULE ' e.ModuleName)
+	e.ModuleContent =
+		('===============================')
+		('Module ' e.ModuleName)
+		<ModuleToInterface e.ModuleContent>;
+
+	('$END ' e.ModuleName)
+	e.ModuleContent =
+		// ('End of module ' e.ModuleName)
+		<ModuleToInterface e.ModuleContent>;
+
+	(e.?BeforeComment '/**' e.InComment)
+	e.ModuleContent =
+		<TypeDocComment
+			(e.InComment) e.ModuleContent
+		>;
+
+	('$ENTRY ' e.FuncName ' ' e.?Tail)
+	e.ModuleContent =
+		// ('Entry ' e.FuncName)
+		<ModuleToInterface e.ModuleContent>;
+
+	('$ENTRY ' e.FuncName)
+	e.ModuleContent =
+		// ('Entry ' e.FuncName)
+		<ModuleToInterface e.ModuleContent>;
+
+	('$IMPORT ' e.ModuleName)
+	e.ModuleContent =
+		// ('Import ' e.ModuleName)
+		<ModuleToInterface e.ModuleContent>;
+
+	(e.?OtherLine)
+	e.ModuleContent =
+		<ModuleToInterface e.ModuleContent>;
+
+	= ();
+}
+
+TypeDocComment {
+	e.ContentOfComment
+	(e.LastCommentLine '*/' e.AfterComment)
+	e.ModuleContent =
+		<UnTab
+			e.ContentOfComment
+			(e.LastCommentLine)
+		>
+		<ModuleToInterface
+			(e.AfterComment)
+			e.ModuleContent
+		>;
+
+	e.UnclosedComment =
+		('???Warning: Unclosed comment')
+		e.UnclosedComment;
+}
+
+UnTab {
+	('\t' e.Line) e.Rest =
+		(e.Line) <UnTab e.Rest>;
+
+	(e.Line) e.Rest =
+		(e.Line) <UnTab e.Rest>;
+
+	= ;
+}
+
+$END Grab_info.

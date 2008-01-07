@@ -1,6 +1,7 @@
 $MODULE MBackEnd;
 
 $IMPORT FileIO;
+$IMPORT MQualifiedName;
 $IMPORT MSymTable;
 $IMPORT MStrings;
 
@@ -19,7 +20,9 @@ $ENTRY Generate
 
 GenerateContent
 	(t.SymTable e.Elements) =
-		<GenerateSwaps <MSymTable::ExtractCurrentModule t.SymTable> >
+		<GenerateSwaps
+			<MSymTable::ExtractCurrentModule-NoQualified t.SymTable>
+		>
 		<GenerateElements e.Elements>;
 
 GenerateSwaps
@@ -64,20 +67,31 @@ GenerateElements {
 }
 
 GenerateOneElement {
-	Function s.ScopeClass (e.Prefix) (e.Name) (e.Content) =
+	Function s.ScopeClass t.QualifiedName (e.Content) =
 		<GenerateFnHeader
-			s.ScopeClass (e.Prefix) (e.Name)
+			s.ScopeClass t.QualifiedName
 		> <GenerateFnBody e.Content>;
-
-	// Здесь будет располагаться код для реализации статических ящиков
 }
 
 GenerateFnHeader
-	s.ScopeClass (() e.Prefix) (e.Name) =
-		( e.Prefix '::' e.Name '::'
+	s.ScopeClass t.QualifiedFnName =
+		( <QualifiedToLine t.QualifiedFnName>
 			<ScopeClassToSuffix s.ScopeClass>
 			' {'
 		);
+
+QualifiedToLine
+	t.QualifiedFnName =
+		<SegmentsToLine
+			<MQualifiedName::Parse t.QualifiedFnName>
+		>;
+
+SegmentsToLine {
+	(e.Segment) e.Tail =
+		e.Segment '::' <SegmentsToLine e.Tail>;
+
+	= ;
+}
 
 ScopeClassToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 
@@ -167,8 +181,8 @@ EscapeChar {
 }
 
 GenerateCallable
-	s.CallType (Module () e.Name) (Function e.FnName) =
-		e.Name '::' e.FnName '::'
+	s.CallType t.QualifiedFnName =
+		<QualifiedToLine t.QualifiedFnName>
 		<CallTypeToSuffix s.CallType>;
 
 CallTypeToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }

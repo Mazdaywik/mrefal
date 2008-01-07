@@ -23,11 +23,11 @@ AssertAux {
 	t.Result t.Expected = ('!=') t.Result t.Expected;
 }
 
-* <Assert-?? (e.Result) (e.Expected) [e.Message]>
+* <Assert-??-T (e.Result) (e.Expected) [e.Message]>
 *	== e.Result
 *	fail down
 
-* <Assert-??-T (e.Result) (e.Expected) [e.Message]>
+* <Assert-?? (e.Result) (e.Expected) [e.Message]>
 *	== empty
 *	fail down
 

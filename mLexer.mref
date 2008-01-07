@@ -357,6 +357,9 @@ SwDirective {
 	t.SymStream 'SWAP' = t.SymStream (Directive Swap);
 	t.SymStream 'swap' = t.SymStream (Directive Swap);
 
+	t.SymStream 'PROGRAM' = t.SymStream (Directive Program);
+	t.SymStream 'program' = t.SymStream (Directive Program);
+
 	t.SymStream e.Other = t.SymStream (Error 'unknown directive \'' e.Other '\'');
 }
 

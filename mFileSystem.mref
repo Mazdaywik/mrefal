@@ -120,7 +120,8 @@ $ENTRY CompareFileTime {
 		<Math::Compare s.DiffField1 s.DiffField2>;
 }
 
-/******Код для Win95
+/*
+*****Код для Win95
 
 ParseListing {
 	() t.Hdr1 t.Hdr2 (e.Text1 s.Disk ':' e.Path) () e.Tail =

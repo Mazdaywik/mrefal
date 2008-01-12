@@ -25,6 +25,7 @@ Directive		End					'$END', '$end'
 				Import				'$IMPORT', '$import'
 				Module				'$MODULE', '$module'
 				Swap				'$SWAP', '$swap'
+				Program				'$PROGRAM', '$program'
 
 DQWord			e.Content			'\"' e.EscapedContent '\"'
 Identifier		e.Name				e.Name

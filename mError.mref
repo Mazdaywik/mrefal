@@ -139,12 +139,13 @@ $ENTRY AddUndeclaredVariable
 		<AddToList
 			t.ErrorList
 			( Semantics
-				t.SrcPos 'Undeclared variable ' <TypeToChar s.VarType> e.Index
+				t.SrcPos
+				'Undeclared variable ' <VarTypeToPrefix s.VarType> e.Index
 			)
 		>;
 
-TypeToChar {
-	EVar = 'e'; SVar = 's'; TVar = 't';
+VarTypeToPrefix {
+	EVar = 'e.'; SVar = 's.'; TVar = 't.';
 }
 
 $ENTRY AddUnresolvedFunction {

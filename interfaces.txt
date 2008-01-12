@@ -1,0 +1,15 @@
+===============================
+Module MExeTyper;
+
+<Create s.Limit e.OutputName> == t.ExeTyper
+
+<Destroy t.ExeTyper> == empty
+
+<Flush t.ExeTyper> == t.ExeTyper
+
+<TypeChar t.ExeTyper s.Char> = t.ExeTyper
+
+<TypeQuoted t.ExeTyper s.Quote e.Text> == t.ExeTyper
+
+<TypeRenamed t.ExeTyper e.RenamedName> == t.ExeTyper
+

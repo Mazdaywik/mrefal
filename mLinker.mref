@@ -1,0 +1,434 @@
+$MODULE MLinker;
+
+$IMPORT Context;
+$IMPORT FileIO;
+$IMPORT MError;
+$IMPORT InOut;
+$IMPORT Math;
+$IMPORT MOS;
+$IMPORT MExeTyper;
+$IMPORT MStrings;
+$IMPORT MSymModule;
+$IMPORT MOrder;
+
+$ENTRY Link {
+	t.Context =
+		<InOut::WriteLine 'Linking...'>
+		<RealLink
+			<Context::GetProgName t.Context>
+		>;
+}
+
+RealLink {
+	t.Context e.ProgName =
+		<PutStartCaller
+			<PutModules
+				<MExeTyper::Create <DefLim> e.ProgName '.ref'>
+				<NewAliasesTable>
+				<NewStartInfo>
+				<Context::ExtractModulesList t.Context>
+			>
+		> <MOS::System 'refc ' e.ProgName '.ref'>;
+}
+
+DefLim = 64;
+
+PutModules {
+	t.ExeTyper t.Aliases t.StartInfo t.Context
+	(e.NextName) e.Tail =
+		<PutModules
+			<PutModule
+				t.ExeTyper t.Aliases t.StartInfo
+				(e.NextName)
+				<Context::ExtractOption
+					t.Context
+					Out
+					e.NextName
+				>
+			>
+			e.Tail
+		>;
+
+	t.ExeTyper t.Aliases t.StartInfo t.Context =
+		t.ExeTyper t.Aliases t.StartInfo t.Context;
+}
+
+PutModule {
+	t.ExeTyper t.Aliases t.StartInfo (e.ModuleName) t.Context Found e.OutName =
+		<TypeContent
+			t.ExeTyper
+			t.Aliases
+			<FileIO::Open 'r' e.OutName>
+		> <UpdateStartInfo
+			t.StartInfo
+			t.Context
+			e.ModuleName
+		>;
+}
+
+PutStartCaller {
+	t.ExeTyper t.Aliases t.StartInfo t.Context =
+		t.Context
+		<TypeStart
+			t.StartInfo
+			t.ExeTyper
+			<OutAliases t.Aliases>
+		>;
+}
+
+/*------------------------------------------------------------------------------
+ Построчное препроцессирование .rout-файлов с их добавлением в выходной файл.
+
+ Последующие Type-функции выполняют построчное препроцессирование .rout-файлов.
+ Поскольку содержимое этих файлов сгенерировано автоматически, то можно ожидать,
+ что вызовы функций и переменные написаны одноформатно, а вручную создаваемые
+ библиотечные файлы написаны с особым вниманием.
+------------------------------------------------------------------------------*/
+
+// <TypeContext t.ExeTyper t.Aliases t.FIn> ==  t.ExeTyper t.Aliases
+TypeContent {
+	t.ExeTyper t.Aliases t.FIn =
+		<DoTypeContent
+			t.Aliases t.ExeTyper <LoadLine t.FIn>
+		>;
+}
+
+DoTypeContent {
+	t.Aliases t.ExeTyper t.FIn =
+		<DoTypeContent
+			t.Aliases t.ExeTyper <LoadLine t.FIn>
+		>;
+	
+	t.Aliases t.ExeTyper t.FIn 0 =
+		<MExeTyper::Flush t.ExeTyper>
+		t.Aliases <FileIO::Close t.FIn>;
+
+	t.Aliases t.ExeTyper t.FIn e.Raw =
+		<DoTypeContent
+			<SwTypeContent t.Aliases t.ExeTyper t.FIn e.Raw>
+		>;
+}
+
+LoadLine
+	t.FIn = <AnalyseLine <FileIO::ReadLine t.FIn>>;
+
+AnalyseLine {
+	t.FIn 'b ' e.BannerLine = <LoadLine t.FIn>;
+
+	t.FIn 'c ' e.CodeLine =
+		t.FIn <HideQuotes e.CodeLine>;
+
+	t.FIn = <LoadLine t.FIn>;
+
+	t.FIn 0 = t.FIn 0;
+}
+
+HideQuotes {
+	'\'' e.Tail = <StartHidingQuote ('\'') e.Tail>;
+	'\"' e.Tail = <StartHidingQuote ('\"') e.Tail>;
+	s.Other e.Tail = s.Other <HideQuotes e.Tail>;
+	= ;
+}
+
+StartHidingQuote {
+	(s.Quote e.Hidden) '\\' s.Escaped e.Tail =
+		<StartHidingQuote (s.Quote e.Hidden '\\' s.Escaped) e.Tail>;
+
+	(s.Quote e.Hidden) s.Quote e.Tail =
+		(s.Quote e.Hidden) <HideQuotes e.Tail>;
+
+	(s.Quote e.Hidden) s.Other e.Tail =
+		<StartHidingQuote (s.Quote e.Hidden s.Other) e.Tail>;
+
+	(s.Quote e.Hidden) =
+		<MError::LinkError
+			'May be unballanced quote in StartHidingQoute'
+		>;
+}
+
+SwTypeContent {
+	t.Aliases t.ExeTyper t.FIn (s.Quote e.HiddenQuote) e.Raw =
+		t.Aliases
+		<MExeTyper::TypeQuoted
+			t.ExeTyper s.Quote e.HiddenQuote
+		> t.FIn e.Raw;
+
+	t.Aliases t.ExeTyper (t.FIn '$$' e.Raw) =
+		t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> t.FIn e.Raw;
+
+	t.Aliases t.ExeTyper t.FIn '$' e.FnName '$' e.Raw =
+		<TypeRenamed
+			( <LookupAlias t.Aliases e.FnName> )
+			t.ExeTyper t.FIn e.Raw
+		>;
+
+	t.Aliases t.ExeTyper t.FIn s.Char e.Raw =
+		t.Aliases
+		<MExeTyper::TypeChar t.ExeTyper s.Char>
+		t.FIn e.Raw;
+}
+
+TypeRenamed
+	(t.Aliases e.FnAlias) t.ExeTyper t.FIn e.Raw =
+		t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> t.FIn e.Raw;
+
+*-------------------------------------------------------------------------------
+* Хранилище информации о точках запуска модулей (функций Go, Init и Final)
+*-------------------------------------------------------------------------------
+
+NewStartInfo {
+	= ( (/* InitList */) (/* Go */) (/* FinalList */) );
+}
+
+/**
+	<UpdateStartInfo t.StartInfo t.Context>
+		== t.StartInfo t.Context
+*/
+UpdateStartInfo {
+	t.StartInfo t.Context e.ModuleName =
+		<UpdateInitList
+			t.StartInfo
+			<MSymModule::LoadInfo t.Context () e.ModuleName>
+		>;
+}
+
+UpdateInitList {
+	( (e.InitList) t.GoInfo t.FinalList )
+	t.Context
+	( Module () e.ModuleName )
+	( Functions e.Fn-B ('Init') e.Fn-E )
+	( Imports e.Imports ) =
+		<UpdateGoInfo
+			( (e.InitList ('Entry::' e.ModuleName '::Init')) t.GoInfo t.FinalList )
+			( e.ModuleName )
+			( Functions e.Fn-B e.Fn-E )
+		> t.Context;
+
+	t.StartInfo t.Context
+	( Module () e.ModuleName )
+	( Functions e.FnList )
+	( Imports e.Imports ) =
+		<UpdateGoInfo
+			t.StartInfo
+			( e.ModuleName )
+			( Functions e.FnList )
+		> t.Context;
+}
+
+UpdateGoInfo {
+	( t.Inits () t.Finals )
+	( e.ModuleName )
+	( Functions e.Fn-B ('Go') e.Fn-E ) =
+		<UpdateFinalList
+			( t.Inits ('Entry::' e.ModuleName '::Go') t.Finals )
+			( e.ModuleName )
+			( Functions e.Fn-B e.Fn-E )
+		>;
+
+	( t.Inits (e.OtherGo) t.Finals )
+	( e.ModuleName )
+	( Functions e.Fn-B ('Go') e.Fn-E ) =
+		<MError::LinkError
+			'Found two Go functions: ' e.OtherGo ' and Entry::' e.ModuleName '::Go'
+		>;
+
+	( t.Inits (e.GoInfo) t.Finals )
+	( e.ModuleName )
+	( Functions e.FnList ) =
+		<UpdateFinalList
+			( t.Inits (e.GoInfo) t.Finals )
+			( e.ModuleName )
+			( Functions e.FnList )
+		>;
+}
+
+UpdateFinalList {
+	( t.Inits t.GoInfo (e.Finals) )
+	( e.ModuleName )
+	( Functions e.Fn-B ('Final') e.Fn-E ) =
+		// Финализаторы выполняются в порядке, обратном инициализаторам
+		( t.Inits t.GoInfo (('Entry::' e.ModuleName '::Final') e.Finals) );
+
+	( t.Inits t.GoInfo t.Finals )
+	( e.ModuleName )
+	( Functions e.FnList ) =
+		( t.Inits t.GoInfo t.Finals );
+}
+
+TypeStart {
+	( t.InitFuncs () t.FinalFuncs ) t.ExeTyper t.Aliases =
+		<MError::LinkError 'Startfunction not found'>;
+
+	( (e.InitFuncs) t.GoFunction (e.FinalFuncs) ) t.ExeTyper t.Aliases =
+		<TypeCallSeq
+			t.ExeTyper
+			t.Aliases
+			e.InitFuncs t.GoFunction e.FinalFuncs
+		>;
+}
+
+TypeCallSeq {
+	t.ExeTyper t.Aliases e.FunList =
+		<DoTypeCallSeq
+			<TypeOpenBlock t.ExeTyper>
+			t.Aliases e.FunList
+		>;
+}
+
+TypeOpenBlock {
+	t.ExeTyper = <ExeTypeLine t.ExeTyper '$ENTRY Go { = '>;
+}
+
+ExeTypeLine {
+	t.ExeTyper = <MExeTyper::Flush t.ExeTyper>;
+
+	t.ExeTyper s.NextChar e.Tail =
+		<ExeTypeLine
+			<MExeTyper::TypeChar t.ExeTyper s.NextChar>
+			e.Tail
+		>;
+}
+
+DoTypeCallSeq {
+	t.ExeTyper t.Aliases (e.NextFunc) e.FunList =
+		<DoTypeCallSeq
+			<TypeOneCall t.ExeTyper <LookupAlias t.Aliases e.NextFunc>>
+			e.FunList
+		>;
+
+	t.ExeTyper t.Aliases =
+		<CloseAliases t.Aliases>
+		<MExeTyper::Destroy <ExeTypeLine t.ExeTyper ';}'>>;
+}
+
+TypeOneCall {
+	t.ExeTyper t.Aliases e.FnAlias =
+		<ExeTypeLine t.ExeTyper '\t<' e.FnAlias '>'>
+		t.Aliases;
+}
+
+/*------------------------------------------------------------------------------
+ Таблица псевдонимов для замены имён функций и индексов переменных на более
+ короткие (для индексов переменных это не особо актуально, а вот для имён
+ функций необходимо, т.к. Рефал-5 не переваривает строки длиннее 260 символов,
+ а квалифицированные имена функций достаточно длинны).
+ Формат таблицы псевдонимов ( (s.Num) (e.Name(e.Alias))* )
+	s.Num -- номер, преписываемый следующему псевдониму,
+	e.Name -- оригинальное имя (типа 'NextToken' или '.Context')
+	e.Alias -- псевдоним (для функций 'Fnnn', для индексов '.innn').
+ Поскольку все имена пользовательских функций оканчиваются на '--Local' и на
+ '--Entry' (системные функции самого Рефала нужно явно прописывать в .rout-фай-
+ лах), то их легко отличить от встроенных и не заменять их на псевдонимы.
+------------------------------------------------------------------------------*/
+
+NewAliasesTable {
+	= ( () );
+}
+
+LookupAlias {
+	( t.Num e.Aliases-B ( e.Name (e.Alias) ) e.Aliases-E )
+	e.Name =
+		( t.Num ( e.Name (e.Alias) ) e.Aliases-B e.Aliases-E )
+		e.Alias;
+
+	( t.Num e.Aliases ) e.Name =
+		<LookupAlias
+			( <NewAlias t.Num e.Name> e.Aliases )
+			e.Name
+		>;
+}
+
+CategChar {
+	'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E'; 'Swap' = 'S'; 'Ident' = 'W';
+}
+
+NewAlias {
+	/* Все */
+	t.Num e.CategStr '::' e.Name =
+		<NewAliasAux
+			<CategChar e.CategStr>
+			t.Num e.CategStr '::' e.Name
+		>;
+}
+
+NewAliasAux
+	s.CategChar t.Num e.NameInRout =
+		<NewAliasAuxWithNumber
+			s.CategChar
+			<IncCateg t.Num s.CategChar>
+			e.NameInRout
+		>;
+
+NewAliasAuxWithNumber
+	s.CategChar t.Num s.AliasNumber e.NameInRout =
+		t.Num
+		(e.NameInRout (s.CategChar <MStrings::Symb s.AliasNumber>));
+
+
+
+// <IncCateg t.Num s.Categ> == t.UpdatedNum s.CatNumber
+IncCateg {
+	(e.Nums-B (s.Categ s.Num) e.Nums-E) s.Categ =
+		(e.Nums-B (s.Categ <Math::Inc s.Num>) e.Nums-E) s.Num;
+
+	(e.Nums) s.Categ =
+		(e.Nums (s.Categ 2)) 1;
+}
+
+OutAliases {
+	( t.Num e.Aliases ) =
+		( t.Num e.Aliases )
+		<UserTypeAliases
+			<FileIO::Open 'w' 'Info/Aliases.als'>
+			<SortAliases e.Aliases>
+		>;
+}
+
+SortAliases
+	e.Aliases =
+		<DoDecode <MOrder::Sort <DoCode e.Aliases>>>;
+
+DoCode {
+	t.Next e.Tail =
+		<Code t.Next> <DoCode e.Tail>;
+
+	= ;
+}
+
+Code
+	( e.Name (s.Categ e.Index) ) =
+		( (s.Categ <MStrings::Numb e.Index>) e.Name );
+
+DoDecode {
+	t.Next e.Tail =
+		<Decode t.Next> <DoDecode e.Tail>;
+
+	= ;
+}
+
+Decode
+	( (s.Categ s.NameNumber) e.Name ) =
+		( e.Name (s.Categ <MStrings::Symb s.NameNumber>) );
+
+UserTypeAliases {
+	//Пропускаем индексы переменных.
+	t.FAli ('Index::' e.Name ('i' e.Alias)) e.Tail =
+		<UserTypeAliases
+			t.FAli e.Tail
+		>;
+
+	t.FAli (e.Categ '::' e.Name (e.Alias)) e.Tail =
+		<UserTypeAliases
+			<FileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
+			e.Tail
+		>;
+
+	t.FAli =
+		<FileIO::Close t.FAli>;
+}
+
+CloseAliases {
+	( t.Num e.Aliases ) = ;
+}
+
+$END MLinker.

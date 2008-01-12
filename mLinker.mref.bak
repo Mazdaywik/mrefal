@@ -1,11 +1,12 @@
-$MODULE Linker;
+$MODULE MLinker;
 
 $IMPORT Context;
 $IMPORT FileIO;
 $IMPORT MError;
 $IMPORT InOut;
-$IMPORT MOS;
 $IMPORT Math;
+$IMPORT MOS;
+$IMPORT MExeTyper;
 $IMPORT MStrings;
 $IMPORT MSymModule;
 $IMPORT MOrder;
@@ -87,7 +88,7 @@ PutStartCaller {
 TypeContent {
 	t.FOut t.Aliases t.FIn =
 		<DoTypeContent
-			t.Aliases (<DefLim> t.FOut) ( <FileIO::ReadLine t.FIn> )
+			t.Aliases (<DefLim> t.FOut) ( <LoadLine t.FIn> )
 		>;
 }
 
@@ -104,10 +105,10 @@ DoTypeContent {
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn) =
 		<DoTypeContent
 			t.Aliases
-			( <DefLim> <FileIO::WriteLine t.FOut e.Converted> )
-			( <HideQuotes <FileIO::ReadLine t.FIn>> )
+			( s.Size t.FOut e.Converted )
+			( <LoadLine t.FIn> )
 		>;
-
+	
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn 0) =
 		<FileIO::WriteLine t.FOut e.Converted>
 		t.Aliases <FileIO::Close t.FIn>;
@@ -122,15 +123,24 @@ DoTypeContent {
 		>;
 }
 
-HideQuotes {
-	t.FIn e.Line =
-		t.FIn <DoHideQuotes e.Line>;
+LoadLine
+	t.FIn = <AnalyseLine <FileIO::ReadLine t.FIn>>;
+
+AnalyseLine {
+	t.FIn 'b ' e.BannerLine = <LoadLine t.FIn>;
+
+	t.FIn 'c ' e.CodeLine =
+		t.FIn <HideQuotes e.CodeLine>;
+
+	t.FIn = <LoadLine t.FIn>;
+
+	t.FIn 0 = t.FIn 0;
 }
 
-DoHideQuotes {
+HideQuotes {
 	'\'' e.Tail = <StartHidingQuote ('\'') e.Tail>;
 	'\"' e.Tail = <StartHidingQuote ('\"') e.Tail>;
-	s.Other e.Tail = s.Other <DoHideQuotes e.Tail>;
+	s.Other e.Tail = s.Other <HideQuotes e.Tail>;
 	= ;
 }
 
@@ -139,7 +149,7 @@ StartHidingQuote {
 		<StartHidingQuote (s.Quote e.Hidden '\\' s.Escaped) e.Tail>;
 
 	(s.Quote e.Hidden) s.Quote e.Tail =
-		(s.Quote e.Hidden) <DoHideQuotes e.Tail>;
+		(s.Quote e.Hidden) <HideQuotes e.Tail>;
 
 	(s.Quote e.Hidden) s.Other e.Tail =
 		<StartHidingQuote (s.Quote e.Hidden s.Other) e.Tail>;
@@ -162,54 +172,66 @@ SwTypeContent {
 			(s.Quote e.HiddenQuote)
 		> (t.FIn e.Raw);
 
-	t.Aliases (s.Size t.FOut) (t.FIn e.FnName ' {' e.Raw) =
-		<TypeFnHeader
-			<LookupAlias t.Aliases e.FnName>
-			(s.Size t.FOut)
-			(t.FIn e.Raw)
-		>;
-
-	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '.' e.Index ' ' e.Raw) =
-		<TypeIndex
-			<LookupAlias t.Aliases '.' e.Index>
-			(<Dec s.Size> t.FOut e.Converted)
-			(t.FIn ' ' e.Raw)
-		>;
-
-	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '<' e.FnName ' ' e.Raw) =
-		<TypeFnCall
-			<LookupAlias t.Aliases e.FnName>
-			(<Dec s.Size> t.FOut e.Converted)
-			(t.FIn ' ' e.Raw)
-		>;
-
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '$$' e.Raw) =
 		t.Aliases (<Dec s.Size> t.FOut e.Converted '$') (t.FIn e.Raw);
 
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn '$' e.FnName '$' e.Raw) =
-		<TypeFnPtr
+		<TypeRenamed
 			<LookupAlias t.Aliases e.FnName>
 			(<Dec s.Size> t.FOut e.Converted)
-			(t.FIn ' ' e.Raw)
+			(t.FIn e.Raw)
 		>;
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn '='e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted) (t.FIn '=' e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted '=') (t.FIn ' ' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '=') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn '<'e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '<') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted '<') (t.FIn ' ' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '<') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn '>'e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '>') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted '>') (t.FIn ' ' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '>') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn ';' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted ';') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ';') (t.FIn ';' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted ';') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn '(' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '(') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn ' ' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted '(') (t.FIn ' ' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '(') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn '(' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted '(') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ')') (t.FIn ' ' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted ')') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut e.Converted ' ') (t.FIn ')' e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted ')') (t.FIn e.Raw);
+
+	t.Aliases (s.Size t.FOut ' ' e.Converted) (t.FIn e.Raw) =
+		t.Aliases (s.Size t.FOut e.Converted) (t.FIn e.Raw);
 
 	t.Aliases (Limit t.FOut e.Converted) (t.FIn ' ' e.Raw) =
 		t.Aliases
 		( <DefLim> <FileIO::WriteLine t.FOut e.Converted> )
 		(t.FIn e.Raw);
 
-	t.Aliases (s.Size t.FOut e.Converted) (t.FIn ' =' e.Raw) =
-		t.Aliases (<Dec s.Size> t.FOut e.Converted '=') (t.FIn e.Raw);
-
-	t.Aliases (s.Size t.FOut e.Converted) (t.FIn ' <' e.Raw) =
-		t.Aliases (s.Size t.FOut e.Converted) (t.FIn '<' e.Raw);
-
-	t.Aliases (s.Size t.FOut e.Converted) (t.FIn ' ;' e.Raw) =
-		t.Aliases (<Dec s.Size> t.FOut e.Converted ';') (t.FIn e.Raw);
-
-	t.Aliases (s.Size t.FOut e.Converted) (t.FIn ' (' e.Raw) =
-		t.Aliases (<Dec s.Size> t.FOut e.Converted '(') (t.FIn e.Raw);
-
 	t.Aliases (s.Size t.FOut e.Converted) (t.FIn s.Other e.Raw) =
 		t.Aliases (<Dec s.Size> t.FOut e.Converted s.Other) (t.FIn e.Raw);
 
@@ -217,44 +239,18 @@ SwTypeContent {
 		t.Aliases (<Dec s.Size> t.FOut e.Converted s.Other) (t.FIn e.Raw);
 }
 
-TypeFnHeader {
-	t.Aliases e.FnAlias (s.Size t.FOut) (t.FIn e.Raw) =
-		t.Aliases (<Dec s.Size> t.FOut e.FnAlias ' {') (t.FIn e.Raw);
-}
+// Средняя длина переименного элемента <= 4: X123
+Dec4 s.Size = <Dec <Dec <Dec <Dec s.Size>>>>;
 
-TypeIndex {
-	t.Aliases e.IndexAlias (Limit t.FOut e.Converted) (t.FIn e.Raw) =
-		t.Aliases
-		( <DefLim> <FileIO::WriteLine t.FOut e.Converted e.IndexAlias> )
-		(t.FIn e.Raw);
-
-	t.Aliases e.IndexAlias (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
-		t.Aliases
-		( <Dec s.Size> t.FOut e.Converted e.IndexAlias)
-		(t.FIn e.Raw);
-}
-
-TypeFnCall {
+TypeRenamed {
 	t.Aliases e.FnAlias (Limit t.FOut e.Converted) (t.FIn e.Raw) =
 		t.Aliases
-		( <DefLim> <FileIO::WriteLine t.FOut e.Converted '<' e.FnAlias> )
-		(t.FIn e.Raw);
-
-	t.Aliases e.FnAlias (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
-		t.Aliases
-		(<Dec s.Size> t.FOut e.Converted '<' e.FnAlias)
-		(t.FIn e.Raw);
-}
-
-TypeFnPtr {
-	t.Aliases e.FnAlias (Limit t.FOut e.Converted) (t.FIn e.Raw) =
-		t.Aliases
-		( <DefLim> <FileIO::WriteLine t.FOut e.Converted ' ' e.FnAlias ' '> )
+		( <DefLim> <FileIO::WriteLine t.FOut e.Converted e.FnAlias> )
 		( t.FIn e.Raw );
 
 	t.Aliases e.FnAlias (s.Size t.FOut e.Converted) (t.FIn e.Raw) =
 		t.Aliases
-		( <Dec s.Size> t.FOut e.Converted ' ' e.FnAlias ' ' )
+		( <Dec4 s.Size> t.FOut e.Converted e.FnAlias ' ' )
 		( t.FIn e.Raw );
 }
 
@@ -318,7 +314,7 @@ TypeQuoted {
 }
 
 *-------------------------------------------------------------------------------
-* Хранилще информации о точках запуска модулей (функций Go, Init и Final)
+* Хранилище информации о точках запуска модулей (функций Go, Init и Final)
 *-------------------------------------------------------------------------------
 
 NewStartInfo {
@@ -344,7 +340,7 @@ UpdateInitList {
 	( Functions e.Fn-B ('Init') e.Fn-E )
 	( Imports e.Imports ) =
 		<UpdateGoInfo
-			( (e.InitList (e.ModuleName '::Init::Entry')) t.GoInfo t.FinalList )
+			( (e.InitList ('Entry::' e.ModuleName '::Init')) t.GoInfo t.FinalList )
 			( e.ModuleName )
 			( Functions e.Fn-B e.Fn-E )
 		> t.Context;
@@ -365,7 +361,7 @@ UpdateGoInfo {
 	( e.ModuleName )
 	( Functions e.Fn-B ('Go') e.Fn-E ) =
 		<UpdateFinalList
-			( t.Inits (e.ModuleName '::Go::Entry') t.Finals )
+			( t.Inits ('Entry::' e.ModuleName '::Go') t.Finals )
 			( e.ModuleName )
 			( Functions e.Fn-B e.Fn-E )
 		>;
@@ -374,8 +370,7 @@ UpdateGoInfo {
 	( e.ModuleName )
 	( Functions e.Fn-B ('Go') e.Fn-E ) =
 		<MError::LinkError
-			'Found two Go functions: ' e.OtherGo ' and '
-			e.ModuleName '::Go::Entry'
+			'Found two Go functions: ' e.OtherGo ' and Entry::' e.ModuleName '::Go'
 		>;
 
 	( t.Inits (e.GoInfo) t.Finals )
@@ -393,7 +388,7 @@ UpdateFinalList {
 	( e.ModuleName )
 	( Functions e.Fn-B ('Final') e.Fn-E ) =
 		// Финализаторы выполняются в порядке, обратном инициализаторам
-		( t.Inits t.GoInfo ((e.ModuleName '::Final::Entry') e.Finals) );
+		( t.Inits t.GoInfo (('Entry::' e.ModuleName '::Final') e.Finals) );
 
 	( t.Inits t.GoInfo t.Finals )
 	( e.ModuleName )
@@ -458,7 +453,7 @@ TypeOneCall {
 ------------------------------------------------------------------------------*/
 
 NewAliasesTable {
-	= ( (1 1 1 1) );
+	= ( () );
 }
 
 LookupAlias {
@@ -474,37 +469,41 @@ LookupAlias {
 		>;
 }
 
+CategChar {
+	'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E'; 'Swap' = 'S'; 'Ident' = 'W';
+}
+
 NewAlias {
-	/* Индекс */
-	(s.ENum s.LNum s.INum s.SNum) '.' e.Name =
-		(s.ENum s.LNum <Math::Inc s.INum> s.SNum)
-		( '.' e.Name ( '.i' <MStrings::Symb s.INum> ) );
+	/* Все */
+	t.Num e.CategStr '::' e.Name =
+		<NewAliasAux
+			<CategChar e.CategStr>
+			t.Num e.CategStr '::' e.Name
+		>;
+}
 
-	/* Пользовательские имена функций */
-	(s.ENum s.LNum s.INum s.SNum) e.Name '::Local' =
-		(s.ENum <Math::Inc s.LNum> s.INum s.SNum)
-		( e.Name '::Local' ( 'L' <MStrings::Symb s.LNum> ) );
+NewAliasAux
+	s.CategChar t.Num e.NameInRout =
+		<NewAliasAuxWithNumber
+			s.CategChar
+			<IncCateg t.Num s.CategChar>
+			e.NameInRout
+		>;
 
-	(s.ENum s.LNum s.INum s.SNum) e.Name '::Entry' =
-		(<Math::Inc s.ENum> s.LNum s.INum s.SNum)
-		( e.Name '::Entry' ( 'E' <MStrings::Symb s.ENum> ) );
+NewAliasAuxWithNumber
+	s.CategChar t.Num s.AliasNumber e.NameInRout =
+		t.Num
+		(e.NameInRout (s.CategChar <MStrings::Symb s.AliasNumber>));
 
-	(s.ENum s.LNum s.INum s.SNum) e.Name '::Swap' =
-		(s.ENum s.LNum s.INum <Math::Inc s.SNum>)
-		( e.Name '::Swap' ( 'S' <MStrings::Symb s.SNum> ) );
 
-	/* Пользовательские имена функций */
-	(s.ENum s.LNum s.INum s.SNum) e.Name '--Local' =
-		(s.ENum <Math::Inc s.LNum> s.INum s.SNum)
-		( e.Name '--Local' ( 'L' <MStrings::Symb s.LNum> ) );
 
-	(s.ENum s.LNum s.INum s.SNum) e.Name '--Entry' =
-		(<Math::Inc s.ENum> s.LNum s.INum s.SNum)
-		( e.Name '--Entry' ( 'E' <MStrings::Symb s.ENum> ) );
+// <IncCateg t.Num s.Categ> == t.UpdatedNum s.CatNumber
+IncCateg {
+	(e.Nums-B (s.Categ s.Num) e.Nums-E) s.Categ =
+		(e.Nums-B (s.Categ <Math::Inc s.Num>) e.Nums-E) s.Num;
 
-	/* Встроенные в язык функции */
-	t.Num e.Name =
-		t.Num ( e.Name (e.Name) );
+	(e.Nums) s.Categ =
+		(e.Nums (s.Categ 2)) 1;
 }
 
 OutAliases {
@@ -527,18 +526,9 @@ DoCode {
 	= ;
 }
 
-Code {
-	( e.Name ( '.i' e.Index ) ) = ( ('.i' <MStrings::Numb e.Index>) e.Name );
-
-	( e.Name ( 'E' e.FnName ) ) = ( ('E' <MStrings::Numb e.FnName>) e.Name );
-
-	( e.Name ( 'L' e.FnName ) ) = ( ('L' <MStrings::Numb e.FnName>) e.Name );
-
-	( e.Name ( 'S' e.FnName ) ) = ( ('S' <MStrings::Numb e.FnName>) e.Name );
-
-	// Builtin-функция
-	( e.Name ( e.Builtin ) ) = ( ('B' e.Builtin) e.Name );
-}
+Code
+	( e.Name (s.Categ e.Index) ) =
+		( (s.Categ <MStrings::Numb e.Index>) e.Name );
 
 DoDecode {
 	t.Next e.Tail =
@@ -547,24 +537,18 @@ DoDecode {
 	= ;
 }
 
-Decode {
-	( ( 'E' s.FnAlias ) e.Name ) = ( e.Name ('E' <MStrings::Symb s.FnAlias>) );
-
-	( ( 'L' s.FnAlias ) e.Name ) = ( e.Name ('L' <MStrings::Symb s.FnAlias>) );
-
-	( ( 'S' s.FnAlias ) e.Name ) = ( e.Name ('S' <MStrings::Symb s.FnAlias>) );
-
-	( ( '.i' s.IndAlias ) e.Name ) = ( e.Name ('.i' <MStrings::Symb s.IndAlias>) );
-
-	( ( 'B' e.Builtin ) e.Name ) = ( e.Name (e.Builtin) );
-}
+Decode
+	( (s.Categ s.NameNumber) e.Name ) =
+		( e.Name (s.Categ <MStrings::Symb s.NameNumber>) );
 
 UserTypeAliases {
-	// Индексы не печатаем
-	t.FAli ('.' e.Name (e.Alias)) e.Tail =
-		<UserTypeAliases t.FAli e.Tail>;
+	//Пропускаем индексы переменных.
+	t.FAli ('Index::' e.Name ('i' e.Alias)) e.Tail =
+		<UserTypeAliases
+			t.FAli e.Tail
+		>;
 
-	t.FAli (e.Name (e.Alias)) e.Tail =
+	t.FAli (e.Categ '::' e.Name (e.Alias)) e.Tail =
 		<UserTypeAliases
 			<FileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
 			e.Tail
@@ -575,7 +559,7 @@ UserTypeAliases {
 }
 
 CloseAliases {
-	( (s.ENum s.LNum s.INum s.SNum) e.Aliases ) = ;
+	( t.Num e.Aliases ) = ;
 }
 
-$END Linker.
+$END MLinker.

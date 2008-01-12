@@ -4,6 +4,13 @@ $MODULE MQualifiedName;
 	Абстрактный тип данных -- квалифицированное имя.
 *******************************************************************************/
 
+/*------------------------------------------------------------------------------
+	Внутренний формат
+		t.QualifiedName = (QName t.Segment*)
+		t.Segment = (e.Name)
+		e.Name != empty
+------------------------------------------------------------------------------*/
+
 $IMPORT MSelfDiag;
 
 /**
@@ -17,6 +24,12 @@ $ENTRY Create {
 	e.Name =
 		<CreateFromSegments (e.Name)>;
 }
+
+/**
+	<Destroy t.QualifiedName> == empty
+*/
+$ENTRY Destroy
+	(QName e.Segments) = ;
 
 /**
 	<CreateFromSegments (e.Segment)*>
@@ -96,5 +109,21 @@ CreatePath {
 	(e.NextSegment) e.Tail =
 		e.NextSegment '/' <CreatePath e.Tail>;
 }
+
+/**
+	<Append t.QualifiedAcceptor t.QualifiedForAppend>
+		== t.UpdatedQualifierAcceptor
+*/
+$ENTRY Append
+	(QName e.AcceptorSegments) (QName e.ForAppendSegments) =
+		(QName e.AcceptorSegments e.ForAppendSegments);
+
+/**
+	<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
+		== t.UpdatedQualifierAcceptor t.QualifierForAppend
+*/
+$ENTRY Append-T
+	t.Acceptor t.ForAppend =
+		<Append t.Acceptor t.ForAppend> t.ForAppend;
 
 $END MQualifiedName.

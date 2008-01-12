@@ -1,0 +1,154 @@
+b Entry::MSelfDiag::Init
+c $Entry::MSelfDiag::Init$ {
+c 	=
+c 		<$Local::MSelfDiag::Nil$ <$Entry::MRefalRTS::System$ 'md Info>nul 2>nul' > > <$Entry::MRefalRTS::Open$ 'w' 19 'Info/Log.txt' > ;
+c }
+
+b Local::MSelfDiag::Nil
+c $Local::MSelfDiag::Nil$ {
+c 	e.$Index::X$ =
+c 		;
+c }
+
+b Local::MSelfDiag::PrintAssert
+c $Local::MSelfDiag::PrintAssert$ {
+c 	( Structure e.$Index::SignFact$ ) t.$Index::Result$ t.$Index::Expected$ =
+c 		<$Entry::MSelfDiag::Error$ 'ASSERT VIOLATION: ' t.$Index::Result$ ' ' e.$Index::SignFact$ ' ' t.$Index::Expected$ > ;
+c 	( Structure e.$Index::SignFact$ ) t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 		<$Entry::MSelfDiag::Error$ 'ASSERT VIOLATION: ' t.$Index::Result$ ' ' e.$Index::SignFact$ ' ' t.$Index::Expected$ '(' e.$Index::Message$ ')' > ;
+c }
+
+b Local::MSelfDiag::SwAssert
+c $Local::MSelfDiag::SwAssert$ {
+c 	t.$Index::Sign$ t.$Index::Sign$ ( Structure e.$Index::Result$ ) t.$Index::Expected$ e.$Index::Message$ =
+c 		e.$Index::Result$ ;
+c 	t.$Index::SignExpected$ t.$Index::SignFact$ t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 		<$Local::MSelfDiag::PrintAssert$ t.$Index::SignFact$ t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ > ;
+c }
+
+b Entry::MSelfDiag::Assert-NE
+c $Entry::MSelfDiag::Assert-NE$ {
+c 	t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 		<$Local::MSelfDiag::Nil$ <$Entry::MSelfDiag::Assert-NE-T$ t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ > > ;
+c }
+
+b Entry::MSelfDiag::Assert-Eq
+c $Entry::MSelfDiag::Assert-Eq$ {
+c 	t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 		<$Local::MSelfDiag::Nil$ <$Entry::MSelfDiag::Assert-Eq-T$ t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ > > ;
+c }
+
+b Entry::MSelfDiag::Assert-NE-T
+c $Entry::MSelfDiag::Assert-NE-T$ {
+c 	t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 		<$Local::MSelfDiag::SwAssert$ ( Structure '!=' ) <$Local::MSelfDiag::AssertAux$ t.$Index::Result$ t.$Index::Expected$ > e.$Index::Message$ > ;
+c }
+
+b Entry::MSelfDiag::Assert-Eq-T
+c $Entry::MSelfDiag::Assert-Eq-T$ {
+c 	t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 		<$Local::MSelfDiag::SwAssert$ ( Structure '=' ) <$Local::MSelfDiag::AssertAux$ t.$Index::Result$ t.$Index::Expected$ > e.$Index::Message$ > ;
+c }
+
+b Local::MSelfDiag::AssertAux
+c $Local::MSelfDiag::AssertAux$ {
+c 	t.$Index::ResultAndExpected$ t.$Index::ResultAndExpected$ =
+c 		( Structure '=' ) t.$Index::ResultAndExpected$ t.$Index::ResultAndExpected$ ;
+c 	t.$Index::Result$ t.$Index::Expected$ =
+c 		( Structure '!=' ) t.$Index::Result$ t.$Index::Expected$ ;
+c }
+
+b Entry::MSelfDiag::Log-T
+c $Entry::MSelfDiag::Log-T$ {
+c 	e.$Index::Message$ =
+c 		<$Entry::MRefalRTS::Put$ 19 e.$Index::Message$ > ;
+c }
+
+b Entry::MSelfDiag::Log
+c $Entry::MSelfDiag::Log$ {
+c 	e.$Index::Message$ =
+c 		<$Entry::MRefalRTS::Putout$ 19 e.$Index::Message$ > ;
+c }
+
+b Entry::MSelfDiag::Error
+c $Entry::MSelfDiag::Error$ {
+c 	e.$Index::Message$ =
+c 		<$Entry::MRefalRTS::Prout$ 'INTERNAL ERROR: ' e.$Index::Message$ > <$Entry::MSelfDiag::Log$ 'INTERNAL ERROR: ' e.$Index::Message$ > <$Entry::MRefalRTS::Exit$ 1 > ;
+c }
+
+b Local::MSelfDiag::FnPtr
+c $Local::MSelfDiag::FnPtr$ {
+c 	$Ident::Error$ =
+c 		$Entry::MSelfDiag::Error$ ;
+c 	$Ident::Log$ =
+c 		$Entry::MSelfDiag::Log$ ;
+c 	$Ident::Log-T$ =
+c 		$Entry::MSelfDiag::Log-T$ ;
+c 	$Ident::AssertAux$ =
+c 		$Local::MSelfDiag::AssertAux$ ;
+c 	$Ident::Assert-Eq-T$ =
+c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
+c 	$Ident::Assert-NE-T$ =
+c 		$Entry::MSelfDiag::Assert-NE-T$ ;
+c 	$Ident::Assert-Eq$ =
+c 		$Entry::MSelfDiag::Assert-Eq$ ;
+c 	$Ident::Assert-NE$ =
+c 		$Entry::MSelfDiag::Assert-NE$ ;
+c 	$Ident::SwAssert$ =
+c 		$Local::MSelfDiag::SwAssert$ ;
+c 	$Ident::PrintAssert$ =
+c 		$Local::MSelfDiag::PrintAssert$ ;
+c 	$Ident::Nil$ =
+c 		$Local::MSelfDiag::Nil$ ;
+c 	$Ident::Init$ =
+c 		$Entry::MSelfDiag::Init$ ;
+c 	$Ident::FnPtr$ =
+c 		$Local::MSelfDiag::FnPtr$ ;
+c 	$Ident::MRefalRTS$ $Ident::Prout$ =
+c 		$Entry::MRefalRTS::Prout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Print$ =
+c 		$Entry::MRefalRTS::Print$ ;
+c 	$Ident::MRefalRTS$ $Ident::Card$ =
+c 		$Entry::MRefalRTS::Card$ ;
+c 	$Ident::MRefalRTS$ $Ident::Open$ =
+c 		$Entry::MRefalRTS::Open$ ;
+c 	$Ident::MRefalRTS$ $Ident::Get$ =
+c 		$Entry::MRefalRTS::Get$ ;
+c 	$Ident::MRefalRTS$ $Ident::Put$ =
+c 		$Entry::MRefalRTS::Put$ ;
+c 	$Ident::MRefalRTS$ $Ident::Putout$ =
+c 		$Entry::MRefalRTS::Putout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Arg$ =
+c 		$Entry::MRefalRTS::Arg$ ;
+c 	$Ident::MRefalRTS$ $Ident::Exit$ =
+c 		$Entry::MRefalRTS::Exit$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile$ =
+c 		$Entry::MRefalRTS::ExistFile$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile-T$ =
+c 		$Entry::MRefalRTS::ExistFile-T$ ;
+c 	$Ident::MRefalRTS$ $Ident::System$ =
+c 		$Entry::MRefalRTS::System$ ;
+c 	$Ident::MRefalRTS$ $Ident::Env$ =
+c 		$Entry::MRefalRTS::Env$ ;
+c 	$Ident::MRefalRTS$ $Ident::Upper$ =
+c 		$Entry::MRefalRTS::Upper$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lower$ =
+c 		$Entry::MRefalRTS::Lower$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lenw$ =
+c 		$Entry::MRefalRTS::Lenw$ ;
+c 	$Ident::MRefalRTS$ $Ident::Numb$ =
+c 		$Entry::MRefalRTS::Numb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Symb$ =
+c 		$Entry::MRefalRTS::Symb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Ord$ =
+c 		$Entry::MRefalRTS::Ord$ ;
+c 	$Ident::MRefalRTS$ $Ident::Chr$ =
+c 		$Entry::MRefalRTS::Chr$ ;
+c 	$Ident::MRefalRTS$ $Ident::Add$ =
+c 		$Entry::MRefalRTS::Add$ ;
+c 	$Ident::MRefalRTS$ $Ident::Sub$ =
+c 		$Entry::MRefalRTS::Sub$ ;
+c 	$Ident::MRefalRTS$ $Ident::Compare$ =
+c 		$Entry::MRefalRTS::Compare$ ;
+c }
+

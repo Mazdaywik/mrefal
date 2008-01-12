@@ -37,7 +37,7 @@ t.PatternTerm ::=
 	(Structure e.InBrackets)
 	(FnPtr t.Callable) [1]
 
-[1] (FnPtr t.Callable) добавляется после проверки и t.Callable имеет формат после проверки.
+[1] (FnPtr t.Callable) добавляется после проверки.
 
 t.ResultTerm ::=
 	t.PatternTerm
@@ -58,19 +58,19 @@ t.Callable ::=
 t.ModuleElement ::=
 	(Function
 		s.ScopeClass
-		t.QualifiedFunctionName
+		t.QualifiedName
 		t.FunctionBody
 	)
 
 t.Callable ::=
-	(s.CallType t.QualifiedFunctionName)
+	(s.CallType t.QualifiedName)
 
 s.CallType ::=
 	Entry
 	Local
 	Swap
 
-Здесь t.QualifiedFunctionName -- АТД типа t.QualifiedName из модуля MQualifiedName
+Здесь t.QualifiedName -- АТД типа t.QualifiedName из модуля MQualifiedName
 
 --------------------------------------------------------------------------------
 	Структура "Квалифицированное имя"

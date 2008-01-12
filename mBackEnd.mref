@@ -44,11 +44,12 @@ DoGenerateSwaps {
 
 	(e.ModuleName) t.SymTable
 	e.Functions-B (Swap e.SwapName) e.Functions-E =
-		(e.ModuleName '::' e.SwapName '::Swap {')
-		('\te.NewValue =')
-		('\t\t<Dg (\'' e.ModuleName '::' e.SwapName '\')>')
-		('\t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' e.NewValue >;')
-		('}') ()
+		('b Swap::' e.ModuleName '::' e.SwapName)
+		('c $Swap::' e.ModuleName '::' e.SwapName '$ {')
+		('c \te.NewValue =')
+		('c \t\t<Dg (\'' e.ModuleName '::' e.SwapName '\')>')
+		('c \t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' e.NewValue >;')
+		('c }') ()
 		<DoGenerateSwaps
 			(e.ModuleName) t.SymTable e.Functions-E
 		>;
@@ -75,9 +76,14 @@ GenerateOneElement {
 
 GenerateFnHeader
 	s.ScopeClass t.QualifiedFnName =
-		( <QualifiedToLine t.QualifiedFnName>
+		( 'b '
 			<ScopeClassToSuffix s.ScopeClass>
-			' {'
+			<QualifiedToLine t.QualifiedFnName>
+		)
+		( 'c $'
+			<ScopeClassToSuffix s.ScopeClass>
+			<QualifiedToLine t.QualifiedFnName>
+			'$ {'
 		);
 
 QualifiedToLine
@@ -88,7 +94,7 @@ QualifiedToLine
 
 SegmentsToLine {
 	(e.Segment) e.Tail =
-		e.Segment '::' <SegmentsToLine e.Tail>;
+		'::' e.Segment <SegmentsToLine e.Tail>;
 
 	= ;
 }
@@ -97,11 +103,11 @@ ScopeClassToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 
 GenerateFnBody {
 	// Обработка пустой функции
-	= (' = ; }') ();
+	= ('c  = ; }') ();
 
 	e.Sentences =
 		<GenerateSentences e.Sentences>
-		('}') ();
+		('c }') ();
 }
 
 GenerateSentences {
@@ -115,8 +121,8 @@ GenerateSentences {
 
 GenerateOneSentence
 	(e.Pattern) (e.Result) =
-		( '\t' <GenerateExpression e.Pattern> '=' )
-		( '\t\t' <GenerateExpression e.Result> ';' );
+		( 'c \t' <GenerateExpression e.Pattern> '=' )
+		( 'c \t\t' <GenerateExpression e.Result> ';' );
 
 GenerateExpression {
 	t.Term e.Tail =
@@ -128,16 +134,16 @@ GenerateExpression {
 
 GenerateTerm {
 	(Identifier e.Name) =
-		e.Name;
+		'$Ident::' e.Name '$';
 
 	(EVar e.Name) =
-		'e' e.Name;
+		'e.$Index::' e.Name '$';
 
 	(SVar e.Name) =
-		's' e.Name;
+		's.$Index::' e.Name '$';
 
 	(TVar e.Name) =
-		't' e.Name;
+		't.$Index::' e.Name '$';
 
 	(Literal e.Content) =
 		'\'' <EscapeText e.Content> '\'';
@@ -156,11 +162,11 @@ GenerateTerm {
 		<GenerateExpression e.Argument> '>';
 
 	(IndirectCall (SVar e.Index) e.Argument) =
-		'<Mu s' e.Index ' '
+		'<Mu s.$Index::' e.Index '$ '
 		<GenerateExpression e.Argument> '>';
 
 	(FnPtr (e.Callable)) =
-		'$' <GenerateCallable e.Callable> '$';
+		<GenerateCallable e.Callable>;
 }
 
 EscapeText {
@@ -182,8 +188,10 @@ EscapeChar {
 
 GenerateCallable
 	s.CallType t.QualifiedFnName =
+		'$'
+		<CallTypeToSuffix s.CallType>
 		<QualifiedToLine t.QualifiedFnName>
-		<CallTypeToSuffix s.CallType>;
+		'$';
 
 CallTypeToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 

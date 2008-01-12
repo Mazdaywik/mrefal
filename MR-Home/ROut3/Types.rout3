@@ -1,0 +1,72 @@
+b Local::Types::SwCharType
+c $Local::Types::SwCharType$ {
+c 	s.$Index::Char$ s.$Index::Type$ $Ident::T$ e.$Index::Tail$ =
+c 		s.$Index::Type$ s.$Index::Char$ e.$Index::Tail$ ;
+c 	s.$Index::Char$ $Ident::UpAlph$ $Ident::F$ e.$Index::Tail$ =
+c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::LoAlph$ <$Entry::Types::OneOf$ s.$Index::Char$ ( Structure <$Entry::Types::LoAlph$ > ) > e.$Index::Tail$ > ;
+c 	s.$Index::Char$ $Ident::LoAlph$ $Ident::F$ e.$Index::Tail$ =
+c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::Digit$ <$Entry::Types::OneOf$ s.$Index::Char$ ( Structure <$Entry::Types::Digits$ > ) > e.$Index::Tail$ > ;
+c 	s.$Index::Char$ $Ident::Digit$ $Ident::F$ e.$Index::Tail$ =
+c 		$Ident::Other$ s.$Index::Char$ e.$Index::Tail$ ;
+c }
+
+b Entry::Types::CharType
+c $Entry::Types::CharType$ {
+c 	s.$Index::Char$ e.$Index::Tail$ =
+c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::UpAlph$ <$Entry::Types::OneOf$ s.$Index::Char$ ( Structure <$Entry::Types::UpAlph$ > ) > e.$Index::Tail$ > ;
+c 	=
+c 		'*' ;
+c }
+
+b Entry::Types::Digits
+c $Entry::Types::Digits$ {
+c 	=
+c 		'01234567890' ;
+c }
+
+b Entry::Types::LoAlph
+c $Entry::Types::LoAlph$ {
+c 	=
+c 		'abcdefghijklmnopqrstuvwxyz' ;
+c }
+
+b Entry::Types::UpAlph
+c $Entry::Types::UpAlph$ {
+c 	=
+c 		'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ;
+c }
+
+b Entry::Types::FirstOneOf
+c $Entry::Types::FirstOneOf$ {
+c 	( Structure e.$Index::Pat$ ) t.$Index::First$ e.$Index::Tail$ =
+c 		<$Entry::Types::OneOf$ t.$Index::First$ ( Structure e.$Index::Pat$ ) > t.$Index::First$ e.$Index::Tail$ ;
+c }
+
+b Entry::Types::OneOf
+c $Entry::Types::OneOf$ {
+c 	t.$Index::X$ ( Structure e.$Index::1$ t.$Index::X$ e.$Index::2$ ) =
+c 		$Ident::T$ ;
+c 	t.$Index::X$ ( Structure e.$Index::1$ ) =
+c 		$Ident::F$ ;
+c }
+
+b Local::Types::FnPtr
+c $Local::Types::FnPtr$ {
+c 	$Ident::OneOf$ =
+c 		$Entry::Types::OneOf$ ;
+c 	$Ident::FirstOneOf$ =
+c 		$Entry::Types::FirstOneOf$ ;
+c 	$Ident::UpAlph$ =
+c 		$Entry::Types::UpAlph$ ;
+c 	$Ident::LoAlph$ =
+c 		$Entry::Types::LoAlph$ ;
+c 	$Ident::Digits$ =
+c 		$Entry::Types::Digits$ ;
+c 	$Ident::CharType$ =
+c 		$Entry::Types::CharType$ ;
+c 	$Ident::SwCharType$ =
+c 		$Local::Types::SwCharType$ ;
+c 	$Ident::FnPtr$ =
+c 		$Local::Types::FnPtr$ ;
+c }
+

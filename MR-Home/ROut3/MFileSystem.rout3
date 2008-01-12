@@ -1,0 +1,340 @@
+b Local::MFileSystem::DoParseDirectory
+c $Local::MFileSystem::DoParseDirectory$ {
+c 	( Structure e.$Index::Directory$ '/' ) e.$Index::Name$ =
+c 		( Structure e.$Index::Directory$ '/' ) e.$Index::Name$ ;
+c 	( Structure e.$Index::Directory$ '\\' ) e.$Index::Name$ =
+c 		( Structure e.$Index::Directory$ '\\' ) e.$Index::Name$ ;
+c 	( Structure e.$Index::Directory$ ':' ) e.$Index::Name$ =
+c 		( Structure e.$Index::Directory$ ':' ) e.$Index::Name$ ;
+c 	( Structure ) e.$Index::Name$ =
+c 		( Structure ) e.$Index::Name$ ;
+c 	( Structure e.$Index::Directory$ s.$Index::Next$ ) e.$Index::Name$ =
+c 		<$Local::MFileSystem::DoParseDirectory$ ( Structure e.$Index::Directory$ ) s.$Index::Next$ e.$Index::Name$ > ;
+c }
+
+b Local::MFileSystem::DoParseExt
+c $Local::MFileSystem::DoParseExt$ {
+c 	e.$Index::FileName$ '.' ( Structure e.$Index::Ext$ ) =
+c 		<$Local::MFileSystem::DoParseDirectory$ ( Structure e.$Index::FileName$ ) > ( Structure e.$Index::Ext$ ) ;
+c 	e.$Index::FileName$ '/' ( Structure e.$Index::Ext$ ) =
+c 		( Structure e.$Index::FileName$ '/' ) e.$Index::Ext$ ( Structure ) ;
+c 	e.$Index::FileName$ '\\' ( Structure e.$Index::Ext$ ) =
+c 		( Structure e.$Index::FileName$ '\\' ) e.$Index::Ext$ ( Structure ) ;
+c 	e.$Index::FileName$ ':' ( Structure e.$Index::Ext$ ) =
+c 		( Structure e.$Index::FileName$ ':' ) e.$Index::Ext$ ( Structure ) ;
+c 	( Structure e.$Index::Ext$ ) =
+c 		( Structure ) e.$Index::Ext$ ( Structure ) ;
+c 	e.$Index::FileName$ s.$Index::Next$ ( Structure e.$Index::Ext$ ) =
+c 		<$Local::MFileSystem::DoParseExt$ e.$Index::FileName$ ( Structure s.$Index::Next$ e.$Index::Ext$ ) > ;
+c }
+
+b Entry::MFileSystem::ParseFileName
+c $Entry::MFileSystem::ParseFileName$ {
+c 	e.$Index::FileName$ =
+c 		<$Local::MFileSystem::DoParseExt$ e.$Index::FileName$ ( Structure ) > ;
+c }
+
+b Entry::MFileSystem::CompareFileTime
+c $Entry::MFileSystem::CompareFileTime$ {
+c 	( Structure s.$Index::SameField$ e.$Index::First$ ) ( Structure s.$Index::SameField$ e.$Index::Second$ ) =
+c 		<$Entry::MFileSystem::CompareFileTime$ ( Structure e.$Index::First$ ) ( Structure e.$Index::Second$ ) > ;
+c 	( Structure ) ( Structure ) =
+c 		'=' ;
+c 	( Structure s.$Index::DiffField1$ e.$Index::Tail1$ ) ( Structure s.$Index::DiffField2$ e.$Index::Tail2$ ) =
+c 		<$Entry::Math::Compare$ s.$Index::DiffField1$ s.$Index::DiffField2$ > ;
+c }
+
+b Local::MFileSystem::ExtractAttrib
+c $Local::MFileSystem::ExtractAttrib$ {
+c 	s.$Index::Attrib$ ( Structure t.$Index::Path$ e.$Index::Att-B$ ( Structure s.$Index::Attrib$ e.$Index::Value$ ) e.$Index::Att-E$ ) =
+c 		( Structure e.$Index::Value$ ) ;
+c 	s.$Index::Attrib$ ( Structure t.$Index::Path$ e.$Index::Attribs$ ) =
+c 		<$Entry::MSelfDiag::Error$ 'Unknown file attribute ' s.$Index::Attrib$ > ;
+c 	s.$Index::Attrib$ t.$Index::OneFile$ e.$Index::Tail$ =
+c 		<$Entry::MSelfDiag::Error$ 'Found many files in ExtractAttrib ' t.$Index::OneFile$ e.$Index::Tail$ > ;
+c }
+
+b Local::MFileSystem::CheckExistAndGetAttrib
+c $Local::MFileSystem::CheckExistAndGetAttrib$ {
+c 	s.$Index::Attribute$ $Ident::False$ e.$Index::FileName$ =
+c 		$Ident::FileNotFound$ ;
+c 	s.$Index::Attribute$ $Ident::True$ e.$Index::FileName$ =
+c 		<$Local::MFileSystem::ExtractAttrib$ s.$Index::Attribute$ <$Entry::MFileSystem::FilesInfo$ e.$Index::FileName$ > > ;
+c }
+
+b Entry::MFileSystem::FileAttribute
+c $Entry::MFileSystem::FileAttribute$ {
+c 	s.$Index::Attribute$ e.$Index::FileName$ =
+c 		<$Local::MFileSystem::CheckExistAndGetAttrib$ s.$Index::Attribute$ <$Entry::MFileSystem::ExistFile-T$ e.$Index::FileName$ > > ;
+c }
+
+b Local::MFileSystem::AppendPath
+c $Local::MFileSystem::AppendPath$ {
+c 	( Structure e.$Index::Path$ ) e.$Index::OtherInfo$ ( Structure $Ident::LongName$ e.$Index::Name$ ) =
+c 		( Structure ( Structure e.$Index::Path$ '\\' e.$Index::Name$ ) e.$Index::OtherInfo$ ( Structure $Ident::LongName$ e.$Index::Name$ ) ) ;
+c 	( Structure e.$Index::Path$ ) =
+c 		;
+c }
+
+b Local::MFileSystem::ParseTime
+c $Local::MFileSystem::ParseTime$ {
+c 	e.$Index::Hours$ ':' e.$Index::Minutes$ =
+c 		<$Entry::MStrings::Numb$ e.$Index::Hours$ > <$Entry::MStrings::Numb$ e.$Index::Minutes$ > ;
+c }
+
+b Local::MFileSystem::ParseDate
+c $Local::MFileSystem::ParseDate$ {
+c 	e.$Index::Day$ '.' e.$Index::Month$ '.' e.$Index::Year$ =
+c 		<$Entry::MStrings::Numb$ e.$Index::Year$ > <$Entry::MStrings::Numb$ e.$Index::Month$ > <$Entry::MStrings::Numb$ e.$Index::Day$ > ;
+c }
+
+b Local::MFileSystem::Trim
+c $Local::MFileSystem::Trim$ {
+c 	' ' e.$Index::Line$ =
+c 		<$Local::MFileSystem::Trim$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ ' ' =
+c 		<$Local::MFileSystem::Trim$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ =
+c 		e.$Index::Line$ ;
+c }
+
+b Local::MFileSystem::ParseSize
+c $Local::MFileSystem::ParseSize$ {
+c 	e.$Index::Begin$ ' ' e.$Index::End$ =
+c 		<$Local::MFileSystem::ParseSize$ e.$Index::Begin$ e.$Index::End$ > ;
+c 	'<' e.$Index::Catalog$ '>' =
+c 		$Ident::Directory$ ;
+c 	e.$Index::Digits$ =
+c 		<$Entry::MStrings::Numb$ e.$Index::Digits$ > ;
+c }
+
+b Local::MFileSystem::CutSize
+c $Local::MFileSystem::CutSize$ {
+c 	( Structure e.$Index::Size$ ) e.$Index::Name$ =
+c 		( Structure $Ident::Size$ <$Local::MFileSystem::ParseSize$ e.$Index::Size$ > ) ( Structure $Ident::LongName$ e.$Index::Name$ ) ;
+c }
+
+b Local::MFileSystem::ParseDateTime
+c $Local::MFileSystem::ParseDateTime$ {
+c 	( Structure e.$Index::Date$ ) e.$Index::Time$ =
+c 		<$Local::MFileSystem::ParseDate$ <$Local::MFileSystem::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Local::MFileSystem::Trim$ e.$Index::Time$ > > ;
+c }
+
+b Local::MFileSystem::CutDateTime
+c $Local::MFileSystem::CutDateTime$ {
+c 	( Structure e.$Index::DateTime$ ) e.$Index::SizeAndName$ =
+c 		( Structure $Ident::DateTime$ <$Local::MFileSystem::ParseDateTime$ <$Entry::MStrings::First$ 10 e.$Index::DateTime$ > > ) <$Local::MFileSystem::CutSize$ <$Entry::MStrings::First$ 19 e.$Index::SizeAndName$ > > ;
+c }
+
+b Local::MFileSystem::ParseLine
+c $Local::MFileSystem::ParseLine$ {
+c 	'   ' e.$Index::Tail$ =
+c 		;
+c 	e.$Index::Line$ =
+c 		<$Local::MFileSystem::CutDateTime$ <$Entry::MStrings::First$ 17 e.$Index::Line$ > > ;
+c }
+
+b Local::MFileSystem::ReadFileList
+c $Local::MFileSystem::ReadFileList$ {
+c 	( Structure e.$Index::Path$ ) ( Structure e.$Index::Line$ ) e.$Index::Tail$ =
+c 		<$Local::MFileSystem::AppendPath$ ( Structure e.$Index::Path$ ) <$Local::MFileSystem::ParseLine$ e.$Index::Line$ > > <$Local::MFileSystem::ReadFileList$ ( Structure e.$Index::Path$ ) e.$Index::Tail$ > ;
+c 	( Structure e.$Index::Path$ ) =
+c 		;
+c }
+
+b Local::MFileSystem::ParseListing
+c $Local::MFileSystem::ParseListing$ {
+c 	t.$Index::Hdr1$ t.$Index::Hdr2$ ( Structure ) ( Structure e.$Index::Text1$ s.$Index::Disk$ ':' e.$Index::Path$ ) ( Structure ) e.$Index::Tail$ =
+c 		<$Local::MFileSystem::ReadFileList$ ( Structure s.$Index::Disk$ ':' e.$Index::Path$ ) e.$Index::Tail$ > ;
+c 	e.$Index::Other$ =
+c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: ' e.$Index::Other$ > ;
+c }
+
+b Entry::MFileSystem::FilesInfo
+c $Entry::MFileSystem::FilesInfo$ {
+c 	e.$Index::Mask$ =
+c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp' > <$Local::MFileSystem::ParseListing$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
+c }
+
+b Entry::MFileSystem::ExistFile-T
+c $Entry::MFileSystem::ExistFile-T$ {
+c 	e.$Index::FileName$ =
+c 		<$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > e.$Index::FileName$ ;
+c }
+
+b Entry::MFileSystem::ExistFile
+c $Entry::MFileSystem::ExistFile$ {
+c 	e.$Index::FileName$ =
+c 		<$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > ;
+c }
+
+b Local::MFileSystem::FnPtr
+c $Local::MFileSystem::FnPtr$ {
+c 	$Ident::ExistFile$ =
+c 		$Entry::MFileSystem::ExistFile$ ;
+c 	$Ident::ExistFile-T$ =
+c 		$Entry::MFileSystem::ExistFile-T$ ;
+c 	$Ident::FilesInfo$ =
+c 		$Entry::MFileSystem::FilesInfo$ ;
+c 	$Ident::ParseListing$ =
+c 		$Local::MFileSystem::ParseListing$ ;
+c 	$Ident::ReadFileList$ =
+c 		$Local::MFileSystem::ReadFileList$ ;
+c 	$Ident::ParseLine$ =
+c 		$Local::MFileSystem::ParseLine$ ;
+c 	$Ident::CutDateTime$ =
+c 		$Local::MFileSystem::CutDateTime$ ;
+c 	$Ident::ParseDateTime$ =
+c 		$Local::MFileSystem::ParseDateTime$ ;
+c 	$Ident::CutSize$ =
+c 		$Local::MFileSystem::CutSize$ ;
+c 	$Ident::ParseSize$ =
+c 		$Local::MFileSystem::ParseSize$ ;
+c 	$Ident::Trim$ =
+c 		$Local::MFileSystem::Trim$ ;
+c 	$Ident::ParseDate$ =
+c 		$Local::MFileSystem::ParseDate$ ;
+c 	$Ident::ParseTime$ =
+c 		$Local::MFileSystem::ParseTime$ ;
+c 	$Ident::AppendPath$ =
+c 		$Local::MFileSystem::AppendPath$ ;
+c 	$Ident::FileAttribute$ =
+c 		$Entry::MFileSystem::FileAttribute$ ;
+c 	$Ident::CheckExistAndGetAttrib$ =
+c 		$Local::MFileSystem::CheckExistAndGetAttrib$ ;
+c 	$Ident::ExtractAttrib$ =
+c 		$Local::MFileSystem::ExtractAttrib$ ;
+c 	$Ident::CompareFileTime$ =
+c 		$Entry::MFileSystem::CompareFileTime$ ;
+c 	$Ident::ParseFileName$ =
+c 		$Entry::MFileSystem::ParseFileName$ ;
+c 	$Ident::DoParseExt$ =
+c 		$Local::MFileSystem::DoParseExt$ ;
+c 	$Ident::DoParseDirectory$ =
+c 		$Local::MFileSystem::DoParseDirectory$ ;
+c 	$Ident::FnPtr$ =
+c 		$Local::MFileSystem::FnPtr$ ;
+c 	$Ident::MRefalRTS$ $Ident::Prout$ =
+c 		$Entry::MRefalRTS::Prout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Print$ =
+c 		$Entry::MRefalRTS::Print$ ;
+c 	$Ident::MRefalRTS$ $Ident::Card$ =
+c 		$Entry::MRefalRTS::Card$ ;
+c 	$Ident::MRefalRTS$ $Ident::Open$ =
+c 		$Entry::MRefalRTS::Open$ ;
+c 	$Ident::MRefalRTS$ $Ident::Get$ =
+c 		$Entry::MRefalRTS::Get$ ;
+c 	$Ident::MRefalRTS$ $Ident::Put$ =
+c 		$Entry::MRefalRTS::Put$ ;
+c 	$Ident::MRefalRTS$ $Ident::Putout$ =
+c 		$Entry::MRefalRTS::Putout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Arg$ =
+c 		$Entry::MRefalRTS::Arg$ ;
+c 	$Ident::MRefalRTS$ $Ident::Exit$ =
+c 		$Entry::MRefalRTS::Exit$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile$ =
+c 		$Entry::MRefalRTS::ExistFile$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile-T$ =
+c 		$Entry::MRefalRTS::ExistFile-T$ ;
+c 	$Ident::MRefalRTS$ $Ident::System$ =
+c 		$Entry::MRefalRTS::System$ ;
+c 	$Ident::MRefalRTS$ $Ident::Env$ =
+c 		$Entry::MRefalRTS::Env$ ;
+c 	$Ident::MRefalRTS$ $Ident::Upper$ =
+c 		$Entry::MRefalRTS::Upper$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lower$ =
+c 		$Entry::MRefalRTS::Lower$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lenw$ =
+c 		$Entry::MRefalRTS::Lenw$ ;
+c 	$Ident::MRefalRTS$ $Ident::Numb$ =
+c 		$Entry::MRefalRTS::Numb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Symb$ =
+c 		$Entry::MRefalRTS::Symb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Ord$ =
+c 		$Entry::MRefalRTS::Ord$ ;
+c 	$Ident::MRefalRTS$ $Ident::Chr$ =
+c 		$Entry::MRefalRTS::Chr$ ;
+c 	$Ident::MRefalRTS$ $Ident::Add$ =
+c 		$Entry::MRefalRTS::Add$ ;
+c 	$Ident::MRefalRTS$ $Ident::Sub$ =
+c 		$Entry::MRefalRTS::Sub$ ;
+c 	$Ident::MRefalRTS$ $Ident::Compare$ =
+c 		$Entry::MRefalRTS::Compare$ ;
+c 	$Ident::MOS$ $Ident::System$ =
+c 		$Entry::MOS::System$ ;
+c 	$Ident::MOS$ $Ident::Arg$ =
+c 		$Entry::MOS::Arg$ ;
+c 	$Ident::MOS$ $Ident::ArgList$ =
+c 		$Entry::MOS::ArgList$ ;
+c 	$Ident::MOS$ $Ident::ProgName$ =
+c 		$Entry::MOS::ProgName$ ;
+c 	$Ident::MOS$ $Ident::Exit$ =
+c 		$Entry::MOS::Exit$ ;
+c 	$Ident::MOS$ $Ident::EnvList$ =
+c 		$Entry::MOS::EnvList$ ;
+c 	$Ident::MOS$ $Ident::Env$ =
+c 		$Entry::MOS::Env$ ;
+c 	$Ident::FileIO$ $Ident::Init$ =
+c 		$Entry::FileIO::Init$ ;
+c 	$Ident::FileIO$ $Ident::Open$ =
+c 		$Entry::FileIO::Open$ ;
+c 	$Ident::FileIO$ $Ident::Close$ =
+c 		$Entry::FileIO::Close$ ;
+c 	$Ident::FileIO$ $Ident::NulClose$ =
+c 		$Entry::FileIO::NulClose$ ;
+c 	$Ident::FileIO$ $Ident::ReadLine$ =
+c 		$Entry::FileIO::ReadLine$ ;
+c 	$Ident::FileIO$ $Ident::WriteLine$ =
+c 		$Entry::FileIO::WriteLine$ ;
+c 	$Ident::FileIO$ $Ident::WriteLine-T$ =
+c 		$Entry::FileIO::WriteLine-T$ ;
+c 	$Ident::FileIO$ $Ident::ExtractFileName$ =
+c 		$Entry::FileIO::ExtractFileName$ ;
+c 	$Ident::FileIO$ $Ident::Load$ =
+c 		$Entry::FileIO::Load$ ;
+c 	$Ident::FileIO$ $Ident::Save$ =
+c 		$Entry::FileIO::Save$ ;
+c 	$Ident::MSelfDiag$ $Ident::Error$ =
+c 		$Entry::MSelfDiag::Error$ ;
+c 	$Ident::MSelfDiag$ $Ident::Log$ =
+c 		$Entry::MSelfDiag::Log$ ;
+c 	$Ident::MSelfDiag$ $Ident::Log-T$ =
+c 		$Entry::MSelfDiag::Log-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq-T$ =
+c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE-T$ =
+c 		$Entry::MSelfDiag::Assert-NE-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
+c 		$Entry::MSelfDiag::Assert-Eq$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
+c 		$Entry::MSelfDiag::Assert-NE$ ;
+c 	$Ident::MSelfDiag$ $Ident::Init$ =
+c 		$Entry::MSelfDiag::Init$ ;
+c 	$Ident::MStrings$ $Ident::Numb$ =
+c 		$Entry::MStrings::Numb$ ;
+c 	$Ident::MStrings$ $Ident::Symb$ =
+c 		$Entry::MStrings::Symb$ ;
+c 	$Ident::MStrings$ $Ident::Length$ =
+c 		$Entry::MStrings::Length$ ;
+c 	$Ident::MStrings$ $Ident::Length-T$ =
+c 		$Entry::MStrings::Length-T$ ;
+c 	$Ident::MStrings$ $Ident::Upper$ =
+c 		$Entry::MStrings::Upper$ ;
+c 	$Ident::MStrings$ $Ident::Lower$ =
+c 		$Entry::MStrings::Lower$ ;
+c 	$Ident::MStrings$ $Ident::First$ =
+c 		$Entry::MStrings::First$ ;
+c 	$Ident::Math$ $Ident::Add$ =
+c 		$Entry::Math::Add$ ;
+c 	$Ident::Math$ $Ident::Sub$ =
+c 		$Entry::Math::Sub$ ;
+c 	$Ident::Math$ $Ident::Inc$ =
+c 		$Entry::Math::Inc$ ;
+c 	$Ident::Math$ $Ident::Dec$ =
+c 		$Entry::Math::Dec$ ;
+c 	$Ident::Math$ $Ident::Compare$ =
+c 		$Entry::Math::Compare$ ;
+c 	$Ident::Math$ $Ident::Compare-T$ =
+c 		$Entry::Math::Compare-T$ ;
+c }
+

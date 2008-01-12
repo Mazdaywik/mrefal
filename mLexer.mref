@@ -37,7 +37,7 @@ MakeLexer
 	UnBlank-Chain удаляет пробельные символы и комментарии. Дополнительная
 сложность обуславливается тем, что используется комментарий старого стиля
 (начинающийся со * в отдельной строке), который удобен при построчном
-синтаксическом анализе и неудобен при использовании свободного символа
+синтаксическом анализе и неудобен при использовании свободного стиля
 (когда перевод строки считается пробельным символом).
 	При успешном завершении разбора вызывает ExtractToken, предусловием
 которой является отсутствие пробелов и комментариев перед лексемой,
@@ -225,13 +225,9 @@ RealExtract-SwFirst {
 	t.SymStream 's' = <Variable SVar t.SymStream>;
 	t.SymStream 't' = <Variable TVar t.SymStream>;
 
-	/* Пока не будет реализована замена идентификаторов на "номера", запретим знаки
-	? и ! в идетнификаторах */
-/*
 	// Разрешим идентификаторы начинать с '?' и '!'
 	t.SymStream '?' = <Identifier t.SymStream '?'>;
 	t.SymStream '!' = <Identifier t.SymStream '!'>;
-*/
 
 	t.SymStream s.First =
 		<SwFirstChar t.SymStream <Types::CharType s.First>>;
@@ -267,11 +263,7 @@ Identifier-Tail
 	s.First t.SymStream e.Tail =
 		t.SymStream (Identifier s.First e.Tail);
 
-/* Пока не будет реализована замена идентификаторов на "номера", запретим знаки
-? и ! в идетнификаторах */
-
-// ValidIdentSymbols = <Types::UpAlph> <Types::LoAlph> <Types::Digits> '?!-_';
-ValidIdentSymbols = <Types::UpAlph> <Types::LoAlph> <Types::Digits> '-_';
+ValidIdentSymbols = <Types::UpAlph> <Types::LoAlph> <Types::Digits> '?!-_';
 
 Quoted
 	t.SymStream s.Quote =
@@ -390,7 +382,7 @@ SwVarIndex {
 
 LongIndex
 	s.VarType t.SymStream e.LongIndex =
-		t.SymStream (Var s.VarType '.' e.LongIndex);
+		t.SymStream (Var s.VarType e.LongIndex);
 
 // Максимальное значение макрочисла -- 4 294 968 295
 Macro

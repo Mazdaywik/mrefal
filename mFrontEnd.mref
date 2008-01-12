@@ -1,8 +1,9 @@
 $MODULE MFrontEnd;
 
+$IMPORT MParser;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
-$IMPORT MParser;
+$IMPORT MResolver;
 $IMPORT MSymInfo;
 $IMPORT MSymTable;
 $IMPORT MError;

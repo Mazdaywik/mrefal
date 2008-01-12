@@ -2,9 +2,9 @@ $MODULE MRefal;
 
 $IMPORT Context;
 $IMPORT Compiler;
-$IMPORT Linker;
 $IMPORT MBuildNumber;
 $IMPORT MError;
+$IMPORT MLinker;
 $IMPORT Modules;
 $IMPORT MOS;
 $IMPORT Math;
@@ -17,7 +17,7 @@ $ENTRY Go =
 
 StartCompiling {
 	= <Results
-		<Linker::Link
+		<MLinker::Link
 			<CompileList <Context::Create> <LoadModuleList> >
 		>
 	>;

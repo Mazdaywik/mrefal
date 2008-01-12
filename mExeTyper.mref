@@ -2,6 +2,7 @@ $MODULE MExeTyper;
 
 $IMPORT FileIO;
 $IMPORT Math;
+$IMPORT MError;
 
 /*------------------------------------------------------------------------------
 	Внутренний формат
@@ -63,6 +64,9 @@ SingleChars = '=<>;(){}';
 	<TypeChar t.ExeTyper s.Char> = t.ExeTyper
 */
 $ENTRY TypeChar {
+	(ExeTyper s.Limit s.Free t.FOut) ' ' =
+		(ExeTyper s.Limit s.Free t.FOut);
+
 	(ExeTyper s.Limit s.Free t.FOut e.Converted) '\t' =
 		<TypeChar
 			(ExeTyper s.Limit s.Free t.FOut e.Converted) ' '
@@ -84,11 +88,11 @@ $ENTRY TypeChar {
 	(ExeTyper s.Limit Limit t.FOut e.Converted) ' ' =
 		(ExeTyper s.Limit s.Limit <FileIO::WriteLine t.FOut e.Converted>);
 
-	// После символов из SingleChars пробелы не нужны
+	// После символов из SingleChars и кавычки пробелы не нужны
 	(ExeTyper s.Limit s.Free e.Converted s.Char) ' ' =
 		<TypeCharWithSpaceAfter
 			(ExeTyper s.Limit s.Free e.Converted)
-			s.Char <SingleChars>
+			s.Char '\'' <SingleChars>
 		>;
 	
 	(ExeTyper s.Limit s.Free t.FOut e.Converted) s.Char =
@@ -128,11 +132,17 @@ $ENTRY TypeQuoted {
 			s.Quote e.Text
 		>;
 
-	// Обрабатываем случай, когда на строке осталось место только для одно символа
-	(ExeTyper s.Limit 1 t.FOut e.Converted) s.Quote e.Text =
+	// Склеиваем две соседние строки в кавычках
+	(ExeTyper s.Limit s.Free t.FOut e.Converted  s.Quote ' ')
+	s.Quote e.Text =
+		<DoTypeQuoted
+			(ExeTyper s.Limit s.Free t.FOut e.Converted) s.Quote e.Text
+		>;
+
+	// Удаляем пробел перед кавычкой
+	(ExeTyper s.Limit s.Free t.FOut e.Converted ' ') s.Quote e.Text =
 		<TypeQuoted
-			(ExeTyper s.Limit s.Limit <FileIO::WriteLine t.FOut e.Converted>)
-			s.Quote e.Text
+			(ExeTyper s.Limit s.Free t.FOut e.Converted) s.Quote e.Text
 		>;
 
 	(ExeTyper s.Limit s.Free t.FOut e.Converted) s.Quote e.Text =
@@ -161,9 +171,7 @@ DoTypeQuoted {
 		>;
 
 	/* Необходимо разрезать текст в кавычках таким образом, чтобы на отдель-
-	ной строке не осталось '' или "".
-	При этом случай, когда на строке не осталось места для символа, не обраба-
-	тываем. Этот случай предотвращается в функции TypeQuoted */
+	ной строке не осталось '' или "". */
 
 	// Строка заканчивается на \', печатаемый текст закончился -- печатаем \''
 	(ExeTyper s.Limit Limit t.FOut e.Converted '\\' s.Quote) s.Quote =
@@ -182,6 +190,21 @@ DoTypeQuoted {
 			) s.Quote e.Text
 		>;
 
+	// Неожиданно закончилась строка
+	(ExeTyper s.Limit Limit t.FOut e.Converted s.Quote) s.Quote =
+		<MError::LinkError
+			'Unexpected quote position ??? `' e.Converted s.Quote '`'
+		>;
+
+	(ExeTyper s.Limit Limit t.FOut e.Converted s.Quote) s.Quote e.Text =
+		// ВНИМАНИЕ! DoTypeQuoted!
+		<TypeQuoted
+			(ExeTyper
+				s.Limit s.Limit
+				<FileIO::WriteLine t.FOut e.Converted>
+			) s.Quote e.Text
+		>;
+
 	// Закончилась строка и закончился текст в кавычках
 	(ExeTyper s.Limit Limit t.FOut e.Converted) s.Quote =
 		(ExeTyper
@@ -191,7 +214,7 @@ DoTypeQuoted {
 
 	// Закончилась строка, текст в кавычках остался
 	(ExeTyper s.Limit Limit t.FOut e.Converted) s.Quote e.Text =
-		// Не DoTypeQuoted!
+		// ВНИМАНИЕ! DoTypeQuoted!
 		<TypeQuoted
 			(ExeTyper s.Limit Limit t.FOut e.Converted s.Quote)
 			s.Quote e.Text
@@ -214,13 +237,12 @@ DoTypeQuoted {
 $ENTRY TypeRenamed {
 	(ExeTyper s.Limit Limit t.FOut e.Converted) e.Name =
 		(ExeTyper
-			s.Limit
-			<Dec4 s.Limit>
+			s.Limit s.Limit
 			<FileIO::WriteLine t.FOut e.Converted e.Name>
 		);
 
 	(ExeTyper s.Limit s.Free t.FOut e.Converted) e.Name =
-		(ExeTyper s.Limit <Dec4 s.Free> t.FOut e.Converted e.Name ' ');
+		(ExeTyper s.Limit <Dec4 <Dec s.Free>> t.FOut e.Converted e.Name ' ');
 }
 
 $END MExeTyper.

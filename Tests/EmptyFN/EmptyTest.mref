@@ -1,0 +1,7 @@
+$MODULE EmptyTest;
+
+EmptyFN { }
+
+$ENTRY Go = <EmptyFN>;
+
+$END EmptyTest.

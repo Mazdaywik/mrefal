@@ -77,11 +77,11 @@ GenerateOneElement {
 GenerateFnHeader
 	s.ScopeClass t.QualifiedFnName =
 		( 'b '
-			<ScopeClassToSuffix s.ScopeClass>
+			<ScopeClassToPrefix s.ScopeClass>
 			<QualifiedToLine t.QualifiedFnName>
 		)
 		( 'c $'
-			<ScopeClassToSuffix s.ScopeClass>
+			<ScopeClassToPrefix s.ScopeClass>
 			<QualifiedToLine t.QualifiedFnName>
 			'$ {'
 		);
@@ -99,11 +99,11 @@ SegmentsToLine {
 	= ;
 }
 
-ScopeClassToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
+ScopeClassToPrefix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 
 GenerateFnBody {
 	// Обработка пустой функции
-	= ('c  = ; }') ();
+	= ('c NF = NF ; }') ();
 
 	e.Sentences =
 		<GenerateSentences e.Sentences>
@@ -155,7 +155,9 @@ GenerateTerm {
 		<MStrings::Symb s.Value>;
 
 	(Structure e.InBrackets) =
-		'( Structure ' <GenerateExpression e.InBrackets> ')';
+		'( $ADT::__StructureBrackets$ '
+		<GenerateExpression e.InBrackets>
+		')';
 
 	(Function (e.Callable) e.Argument) =
 		'<' <GenerateCallable e.Callable> ' '
@@ -189,10 +191,10 @@ EscapeChar {
 GenerateCallable
 	s.CallType t.QualifiedFnName =
 		'$'
-		<CallTypeToSuffix s.CallType>
+		<CallTypeToPrefix s.CallType>
 		<QualifiedToLine t.QualifiedFnName>
 		'$';
 
-CallTypeToSuffix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
+CallTypeToPrefix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
 
 $END MBackEnd.

@@ -100,8 +100,7 @@ DoTypeContent {
 		>;
 	
 	t.Aliases t.ExeTyper t.FIn 0 =
-		<MExeTyper::Flush t.ExeTyper>
-		t.Aliases <FileIO::Close t.FIn>;
+		t.ExeTyper t.Aliases <FileIO::Close t.FIn>;
 
 	t.Aliases t.ExeTyper t.FIn e.Raw =
 		<DoTypeContent
@@ -339,7 +338,8 @@ LookupAlias {
 }
 
 CategChar {
-	'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E'; 'Swap' = 'S'; 'Ident' = 'W';
+	'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E';
+	'Swap' = 'S'; 'Ident' = 'W'; 'ADT' = 'T';
 }
 
 NewAlias {

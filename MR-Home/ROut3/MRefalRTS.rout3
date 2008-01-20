@@ -4,49 +4,49 @@ c $Entry::MRefalRTS::Prout$ { e.Arg = <Prout e.Arg >; }
 b Entry::MRefalRTS::Print
 c $Entry::MRefalRTS::Print$ { e.Arg = <Print e.Arg >; }
 
-b Entry::MRefalRTS::Card$
+b Entry::MRefalRTS::Card
 c $Entry::MRefalRTS::Card$ { = <Card >; }
 
-b Entry::MRefalRTS::Open$
+b Entry::MRefalRTS::Open
 c $Entry::MRefalRTS::Open$ {
 c 	s.Mode s.Channel e.FName = <Open s.Mode s.Channel e.FName >;
 c }
 
-b Entry::MRefalRTS::Get$ 
+b Entry::MRefalRTS::Get
 c $Entry::MRefalRTS::Get$ { s.Channel = <Get s.Channel >; }
 
-b Entry::MRefalRTS::Put$ 
+b Entry::MRefalRTS::Put
 c $Entry::MRefalRTS::Put$ { s.Channel e.Line = <Put s.Channel e.Line >; }
 
-b Entry::MRefalRTS::Putou
+b Entry::MRefalRTS::Putout
 c $Entry::MRefalRTS::Putout$ { s.Channel e.Line = <Putout s.Channel e.Line >; }
 
-b Entry::MRefalRTS::Arg$ 
+b Entry::MRefalRTS::Arg
 c $Entry::MRefalRTS::Arg$ { s.Num = <Arg s.Num >; }
 
-b Entry::MRefalRTS::Exit$
+b Entry::MRefalRTS::Exit
 c $Entry::MRefalRTS::Exit$ { s.RetCode = <Exit s.RetCode >; }
 
-b Entry::MRefalRTS::Exist
+b Entry::MRefalRTS::ExistFile
 c $Entry::MRefalRTS::ExistFile$ {
-c 	e.FileName = <$Local::MRefalRTS::ExistFile$ e.FileName >;
+c 	e.FileName = <$Local::MRefalRTS::ExistFileAux$ e.FileName >;
 c }
 
-b Entry::MRefalRTS::Exist
+b Entry::MRefalRTS::ExistFile-T
 c $Entry::MRefalRTS::ExistFile-T$ {
-c 	e.FileName = <$Local::MRefalRTS::ExistFile$ e.FileName > e.FileName ;
+c 	e.FileName = <$Local::MRefalRTS::ExistFileAux$ e.FileName > e.FileName ;
 c }
 
-b Local::MRefalRTS::Exist
-c $Local::MRefalRTS::ExistFile$ {
+b Local::MRefalRTS::ExistFileAux
+c $Local::MRefalRTS::ExistFileAux$ {
 c 	e.FileName =
-c 		<$Local::MRefalRTS::SwExistFile$
+c 		<$Local::MRefalRTS::SwExistFileAux$
 c 			<ExistFile e.FileName>
 c 		>;
 c }
 
-b Local::MRefalRTS::SwExi
-c $Local::MRefalRTS::SwExistFile$ {
+b Local::MRefalRTS::SwExistFileAux
+c $Local::MRefalRTS::SwExistFileAux$ {
 c 	True = $Ident::True$;
 c 	False = $Ident::False$;
 c }
@@ -57,33 +57,33 @@ c $Entry::MRefalRTS::Upper$ { e.Expr = <Upper e.Expr >; }
 b Entry::MRefalRTS::Lower
 c $Entry::MRefalRTS::Lower$ { e.Expr = <Lower e.Expr >; }
 
-b Entry::MRefalRTS::Add$ 
+b Entry::MRefalRTS::Add
 c $Entry::MRefalRTS::Add$ { e.Expr = <Add e.Expr >; }
 
-b Entry::MRefalRTS::Sub$ 
+b Entry::MRefalRTS::Sub
 c $Entry::MRefalRTS::Sub$ { e.Expr = <Sub e.Expr >; }
 
-b Entry::MRefalRTS::Lenw$
+b Entry::MRefalRTS::Lenw
 c $Entry::MRefalRTS::Lenw$ { e.Expr = <Lenw e.Expr >; }
 
-b Entry::MRefalRTS::Numb$
+b Entry::MRefalRTS::Numb
 c $Entry::MRefalRTS::Numb$ { e.Digits = <Numb e.Digits >; }
 
-b Entry::MRefalRTS::Compa
+b Entry::MRefalRTS::Compare
 c $Entry::MRefalRTS::Compare$ { t.Left t.Rigth = <Compare t.Left t.Rigth >; }
 
-b Entry::MRefalRTS::Symb$
+b Entry::MRefalRTS::Symb
 c $Entry::MRefalRTS::Symb$ { s.Number = <Symb s.Number >; }
 
-b Entry::MRefalRTS::Syste
+b Entry::MRefalRTS::System
 c $Entry::MRefalRTS::System$ { e.Command = <System e.Command >; }
 
-b Entry::MRefalRTS::Ord$ 
+b Entry::MRefalRTS::Ord
 c $Entry::MRefalRTS::Ord$ { e.Expr = <Ord e.Expr >; }
 
-b Entry::MRefalRTS::Chr$ 
+b Entry::MRefalRTS::Chr
 c $Entry::MRefalRTS::Chr$ { e.Expr = <Chr e.Expr >; }
 
-b Entry::MRefalRTS::Env$ 
+b Entry::MRefalRTS::Env
 c $Entry::MRefalRTS::Env$ { e.Name = <GetEnv e.Name >; }
 

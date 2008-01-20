@@ -4,7 +4,6 @@ $IMPORT Context;
 $IMPORT FileIO;
 $IMPORT MError;
 $IMPORT InOut;
-$IMPORT Math;
 $IMPORT MOS;
 $IMPORT MExeTyper;
 $IMPORT MStrings;
@@ -33,12 +32,22 @@ RealLink {
 
 DefLim = 64;
 
-PutModules {
-	t.ExeTyper t.Aliases t.StartInfo t.Context
+PutModules
+	t.ExeTyper t.Aliases t.StartInfo t.Context e.Modules =
+		<DoPutModules
+			t.ExeTyper
+			t.Aliases
+			<CreateStartInfo t.StartInfo t.Context e.Modules>
+			e.Modules
+		>;
+
+
+DoPutModules {
+	t.ExeTyper t.Aliases t.Context t.StartInfo
 	(e.NextName) e.Tail =
-		<PutModules
+		<DoPutModules
 			<PutModule
-				t.ExeTyper t.Aliases t.StartInfo
+				t.ExeTyper t.Aliases
 				(e.NextName)
 				<Context::ExtractOption
 					t.Context
@@ -46,28 +55,45 @@ PutModules {
 					e.NextName
 				>
 			>
-			e.Tail
+			t.StartInfo e.Tail
 		>;
 
-	t.ExeTyper t.Aliases t.StartInfo t.Context =
-		t.ExeTyper t.Aliases t.StartInfo t.Context;
+	t.ExeTyper t.Aliases t.Context t.StartInfo =
+		t.ExeTyper t.Aliases t.Context t.StartInfo;
 }
 
 PutModule {
-	t.ExeTyper t.Aliases t.StartInfo (e.ModuleName) t.Context Found e.OutName =
+	t.ExeTyper t.Aliases (e.ModuleName) t.Context Found e.OutName =
 		<TypeContent
 			t.ExeTyper
 			t.Aliases
 			<FileIO::Open 'r' e.OutName>
-		> <UpdateStartInfo
-			t.StartInfo
-			t.Context
-			e.ModuleName
+		>
+		t.Context;
+}
+
+/*
+	<CreateStartInfo
+		t.StartInfo t.Context e.Modules
+	> == t.Context t.StartInfo
+*/
+CreateStartInfo {
+	t.StartInfo t.Context (e.NextModuleName) e.Modules =
+		<CreateStartInfo
+			<UpdateStartInfo
+				t.StartInfo
+				t.Context
+				e.NextModuleName
+			>
+			e.Modules
 		>;
+
+	t.StartInfo t.Context =
+		t.Context t.StartInfo;
 }
 
 PutStartCaller {
-	t.ExeTyper t.Aliases t.StartInfo t.Context =
+	t.ExeTyper t.Aliases t.Context t.StartInfo =
 		t.Context
 		<TypeStart
 			t.StartInfo
@@ -113,6 +139,8 @@ LoadLine
 
 AnalyseLine {
 	t.FIn 'b ' e.BannerLine = <LoadLine t.FIn>;
+
+	t.FIn 'r ' e.BannerLine = <LoadLine t.FIn>;
 
 	t.FIn 'c ' e.CodeLine =
 		t.FIn <HideQuotes e.CodeLine>;
@@ -180,7 +208,7 @@ NewStartInfo {
 }
 
 /**
-	<UpdateStartInfo t.StartInfo t.Context>
+	<UpdateStartInfo t.StartInfo t.Context e.ModuleName>
 		== t.StartInfo t.Context
 */
 UpdateStartInfo {
@@ -311,13 +339,11 @@ TypeOneCall {
  короткие (для индексов переменных это не особо актуально, а вот для имён
  функций необходимо, т.к. Рефал-5 не переваривает строки длиннее 260 символов,
  а квалифицированные имена функций достаточно длинны).
- Формат таблицы псевдонимов ( (s.Num) (e.Name(e.Alias))* )
-	s.Num -- номер, преписываемый следующему псевдониму,
+ Формат таблицы псевдонимов ( (e.Nums) (e.Name(e.Alias))* )
+	e.Nums -- номера, преписываемые следующему псевдониму,
+		e.Nums := (s.Categ e.Num)*
 	e.Name -- оригинальное имя (типа 'NextToken' или '.Context')
-	e.Alias -- псевдоним (для функций 'Fnnn', для индексов '.innn').
- Поскольку все имена пользовательских функций оканчиваются на '--Local' и на
- '--Entry' (системные функции самого Рефала нужно явно прописывать в .rout-фай-
- лах), то их легко отличить от встроенных и не заменять их на псевдонимы.
+	e.Alias -- псевдоним
 ------------------------------------------------------------------------------*/
 
 NewAliasesTable {
@@ -356,23 +382,47 @@ NewAliasAux
 		<NewAliasAuxWithNumber
 			s.CategChar
 			<IncCateg t.Num s.CategChar>
-			e.NameInRout
+			(e.NameInRout)
 		>;
 
 NewAliasAuxWithNumber
-	s.CategChar t.Num s.AliasNumber e.NameInRout =
+	s.CategChar t.Num e.AliasNumber (e.NameInRout) =
 		t.Num
-		(e.NameInRout (s.CategChar <MStrings::Symb s.AliasNumber>));
-
-
+		(e.NameInRout (s.CategChar e.AliasNumber));
 
 // <IncCateg t.Num s.Categ> == t.UpdatedNum s.CatNumber
 IncCateg {
-	(e.Nums-B (s.Categ s.Num) e.Nums-E) s.Categ =
-		(e.Nums-B (s.Categ <Math::Inc s.Num>) e.Nums-E) s.Num;
+	(e.Nums-B (s.Categ e.Num) e.Nums-E) s.Categ =
+		((s.Categ <IncStringIndex e.Num>) e.Nums-B e.Nums-E) e.Num;
 
 	(e.Nums) s.Categ =
-		(e.Nums (s.Categ 2)) 1;
+		<IncCateg ((s.Categ) e.Nums) s.Categ>;
+}
+
+IncStringIndex
+	e.Num =
+		<IncStringIndexAux
+			(e.Num) <CharDigitsSeq>
+		>;
+
+CharDigitsSeq =
+	'0123456789'
+	'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	'abcdefghijklmnopqrstuvwxyz';
+
+IncStringIndexAux {
+	(s.Last) s.Zero s.First e.Seq s.Last =
+		s.First s.Zero;
+
+	(e.Num s.Last) s.Zero e.Seq s.Last =
+		<IncStringIndexAux
+			(e.Num) s.Zero e.Seq s.Last
+		> s.Zero;
+
+	(e.Num s.Last) e.Seq-B s.Last s.Next e.Seq-E =
+		e.Num s.Next;
+
+	() s.First e.Seq-E = s.First;
 }
 
 OutAliases {
@@ -397,7 +447,7 @@ DoCode {
 
 Code
 	( e.Name (s.Categ e.Index) ) =
-		( (s.Categ <MStrings::Numb e.Index>) e.Name );
+		( (s.Categ <MStrings::Length-T e.Index>) e.Name );
 
 DoDecode {
 	t.Next e.Tail =
@@ -407,8 +457,8 @@ DoDecode {
 }
 
 Decode
-	( (s.Categ s.NameNumber) e.Name ) =
-		( e.Name (s.Categ <MStrings::Symb s.NameNumber>) );
+	( (s.Categ s.Length e.Index) e.Name ) =
+		( e.Name (s.Categ e.Index) );
 
 UserTypeAliases {
 	//Пропускаем индексы переменных.

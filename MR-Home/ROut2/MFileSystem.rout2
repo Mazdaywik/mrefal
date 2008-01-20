@@ -292,6 +292,10 @@ MFileSystem::FnPtr::Local {
 		$MStrings::Numb::Entry$ ;
 	MStrings Symb =
 		$MStrings::Symb::Entry$ ;
+	MStrings Ord =
+		$MStrings::Ord::Entry$ ;
+	MStrings Chr =
+		$MStrings::Chr::Entry$ ;
 	MStrings Length =
 		$MStrings::Length::Entry$ ;
 	MStrings Length-T =

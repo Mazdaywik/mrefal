@@ -49,7 +49,9 @@ Dec {
 // Уменьшаем на 2 (при переносе экранированного символа в кавычках)
 Dec2 s.Size = <Dec <Dec s.Size>>;
 
-// Средняя длина переименного элемента <= 4: X123
+// Средняя длина переименного элемента <= 3: XA2
+Dec3 s.Size = <Dec <Dec2 s.Size>>;
+
 Dec4 s.Size = <Dec2 <Dec2 s.Size>>;
 
 Inc {
@@ -242,7 +244,7 @@ $ENTRY TypeRenamed {
 		);
 
 	(ExeTyper s.Limit s.Free t.FOut e.Converted) e.Name =
-		(ExeTyper s.Limit <Dec4 <Dec s.Free>> t.FOut e.Converted e.Name ' ');
+		(ExeTyper s.Limit <Dec3 <Dec s.Free>> t.FOut e.Converted e.Name ' ');
 }
 
 $END MExeTyper.

@@ -1,17 +1,17 @@
 b Local::MStrings::DoFirst
 c $Local::MStrings::DoFirst$ {
-c 	0 ( Structure e.$Index::First$ ) e.$Index::Last$ =
-c 		( Structure e.$Index::First$ ) e.$Index::Last$ ;
-c 	s.$Index::Num$ ( Structure e.$Index::First$ ) =
+c 	0 ( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Last$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Last$ ;
+c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) =
 c 		e.$Index::First$ ;
-c 	s.$Index::Num$ ( Structure e.$Index::First$ ) t.$Index::Next$ e.$Index::Last$ =
-c 		<$Local::MStrings::DoFirst$ <$Entry::Math::Dec$ s.$Index::Num$ > ( Structure e.$Index::First$ t.$Index::Next$ ) e.$Index::Last$ > ;
+c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) t.$Index::Next$ e.$Index::Last$ =
+c 		<$Local::MStrings::DoFirst$ <$Entry::Math::Dec$ s.$Index::Num$ > ( $ADT::__StructureBrackets$ e.$Index::First$ t.$Index::Next$ ) e.$Index::Last$ > ;
 c }
 
 b Entry::MStrings::First
 c $Entry::MStrings::First$ {
 c 	s.$Index::Count$ e.$Index::Expr$ =
-c 		<$Local::MStrings::DoFirst$ s.$Index::Count$ ( Structure ) e.$Index::Expr$ > ;
+c 		<$Local::MStrings::DoFirst$ s.$Index::Count$ ( $ADT::__StructureBrackets$ ) e.$Index::Expr$ > ;
 c }
 
 b Entry::MStrings::Lower
@@ -44,6 +44,18 @@ c 	e.$Index::Expr$ =
 c 		<$Local::MStrings::UnLen$ <$Entry::MRefalRTS::Lenw$ e.$Index::Expr$ > > ;
 c }
 
+b Entry::MStrings::Chr
+c $Entry::MStrings::Chr$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Chr$ e.$Index::Line$ > ;
+c }
+
+b Entry::MStrings::Ord
+c $Entry::MStrings::Ord$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Ord$ e.$Index::Line$ > ;
+c }
+
 b Entry::MStrings::Symb
 c $Entry::MStrings::Symb$ {
 c 	s.$Index::Num$ =
@@ -62,6 +74,10 @@ c 	$Ident::Numb$ =
 c 		$Entry::MStrings::Numb$ ;
 c 	$Ident::Symb$ =
 c 		$Entry::MStrings::Symb$ ;
+c 	$Ident::Ord$ =
+c 		$Entry::MStrings::Ord$ ;
+c 	$Ident::Chr$ =
+c 		$Entry::MStrings::Chr$ ;
 c 	$Ident::Length$ =
 c 		$Entry::MStrings::Length$ ;
 c 	$Ident::UnLen$ =

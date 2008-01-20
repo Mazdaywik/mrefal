@@ -3,9 +3,9 @@ c $Local::Types::SwCharType$ {
 c 	s.$Index::Char$ s.$Index::Type$ $Ident::T$ e.$Index::Tail$ =
 c 		s.$Index::Type$ s.$Index::Char$ e.$Index::Tail$ ;
 c 	s.$Index::Char$ $Ident::UpAlph$ $Ident::F$ e.$Index::Tail$ =
-c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::LoAlph$ <$Entry::Types::OneOf$ s.$Index::Char$ ( Structure <$Entry::Types::LoAlph$ > ) > e.$Index::Tail$ > ;
+c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::LoAlph$ <$Entry::Types::OneOf$ s.$Index::Char$ ( $ADT::__StructureBrackets$ <$Entry::Types::LoAlph$ > ) > e.$Index::Tail$ > ;
 c 	s.$Index::Char$ $Ident::LoAlph$ $Ident::F$ e.$Index::Tail$ =
-c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::Digit$ <$Entry::Types::OneOf$ s.$Index::Char$ ( Structure <$Entry::Types::Digits$ > ) > e.$Index::Tail$ > ;
+c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::Digit$ <$Entry::Types::OneOf$ s.$Index::Char$ ( $ADT::__StructureBrackets$ <$Entry::Types::Digits$ > ) > e.$Index::Tail$ > ;
 c 	s.$Index::Char$ $Ident::Digit$ $Ident::F$ e.$Index::Tail$ =
 c 		$Ident::Other$ s.$Index::Char$ e.$Index::Tail$ ;
 c }
@@ -13,7 +13,7 @@ c }
 b Entry::Types::CharType
 c $Entry::Types::CharType$ {
 c 	s.$Index::Char$ e.$Index::Tail$ =
-c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::UpAlph$ <$Entry::Types::OneOf$ s.$Index::Char$ ( Structure <$Entry::Types::UpAlph$ > ) > e.$Index::Tail$ > ;
+c 		<$Local::Types::SwCharType$ s.$Index::Char$ $Ident::UpAlph$ <$Entry::Types::OneOf$ s.$Index::Char$ ( $ADT::__StructureBrackets$ <$Entry::Types::UpAlph$ > ) > e.$Index::Tail$ > ;
 c 	=
 c 		'*' ;
 c }
@@ -38,15 +38,15 @@ c }
 
 b Entry::Types::FirstOneOf
 c $Entry::Types::FirstOneOf$ {
-c 	( Structure e.$Index::Pat$ ) t.$Index::First$ e.$Index::Tail$ =
-c 		<$Entry::Types::OneOf$ t.$Index::First$ ( Structure e.$Index::Pat$ ) > t.$Index::First$ e.$Index::Tail$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Pat$ ) t.$Index::First$ e.$Index::Tail$ =
+c 		<$Entry::Types::OneOf$ t.$Index::First$ ( $ADT::__StructureBrackets$ e.$Index::Pat$ ) > t.$Index::First$ e.$Index::Tail$ ;
 c }
 
 b Entry::Types::OneOf
 c $Entry::Types::OneOf$ {
-c 	t.$Index::X$ ( Structure e.$Index::1$ t.$Index::X$ e.$Index::2$ ) =
+c 	t.$Index::X$ ( $ADT::__StructureBrackets$ e.$Index::1$ t.$Index::X$ e.$Index::2$ ) =
 c 		$Ident::T$ ;
-c 	t.$Index::X$ ( Structure e.$Index::1$ ) =
+c 	t.$Index::X$ ( $ADT::__StructureBrackets$ e.$Index::1$ ) =
 c 		$Ident::F$ ;
 c }
 

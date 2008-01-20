@@ -7,6 +7,10 @@ $ENTRY Numb e.Digits = <MRefalRTS::Numb e.Digits>;
 
 $ENTRY Symb s.Num = <MRefalRTS::Symb s.Num>;
 
+$ENTRY Ord e.Line = <MRefalRTS::Ord e.Line>;
+
+$ENTRY Chr e.Line = <MRefalRTS::Chr e.Line>;
+
 $ENTRY Length e.Expr = <UnLen <MRefalRTS::Lenw e.Expr> >;
 
 UnLen s.Length e.Expr = s.Length;

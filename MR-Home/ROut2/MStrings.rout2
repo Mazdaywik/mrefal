@@ -37,6 +37,16 @@ MStrings::Length::Entry {
 		<MStrings::UnLen::Local <MRefalRTS::Lenw::Entry e.Expr > > ;
 }
 
+MStrings::Chr::Entry {
+	e.Line =
+		<MRefalRTS::Chr::Entry e.Line > ;
+}
+
+MStrings::Ord::Entry {
+	e.Line =
+		<MRefalRTS::Ord::Entry e.Line > ;
+}
+
 MStrings::Symb::Entry {
 	s.Num =
 		<MRefalRTS::Symb::Entry s.Num > ;
@@ -52,6 +62,10 @@ MStrings::FnPtr::Local {
 		$MStrings::Numb::Entry$ ;
 	Symb =
 		$MStrings::Symb::Entry$ ;
+	Ord =
+		$MStrings::Ord::Entry$ ;
+	Chr =
+		$MStrings::Chr::Entry$ ;
 	Length =
 		$MStrings::Length::Entry$ ;
 	UnLen =

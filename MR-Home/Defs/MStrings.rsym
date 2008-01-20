@@ -6,6 +6,8 @@ $import Math;
 
 $entry Numb;
 $entry Symb;
+$entry Ord;
+$entry Chr;
 $entry Length;
 $entry Length-T;
 $entry Upper;

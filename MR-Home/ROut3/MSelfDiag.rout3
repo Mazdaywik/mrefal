@@ -12,15 +12,15 @@ c }
 
 b Local::MSelfDiag::PrintAssert
 c $Local::MSelfDiag::PrintAssert$ {
-c 	( Structure e.$Index::SignFact$ ) t.$Index::Result$ t.$Index::Expected$ =
+c 	( $ADT::__StructureBrackets$ e.$Index::SignFact$ ) t.$Index::Result$ t.$Index::Expected$ =
 c 		<$Entry::MSelfDiag::Error$ 'ASSERT VIOLATION: ' t.$Index::Result$ ' ' e.$Index::SignFact$ ' ' t.$Index::Expected$ > ;
-c 	( Structure e.$Index::SignFact$ ) t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
+c 	( $ADT::__StructureBrackets$ e.$Index::SignFact$ ) t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
 c 		<$Entry::MSelfDiag::Error$ 'ASSERT VIOLATION: ' t.$Index::Result$ ' ' e.$Index::SignFact$ ' ' t.$Index::Expected$ '(' e.$Index::Message$ ')' > ;
 c }
 
 b Local::MSelfDiag::SwAssert
 c $Local::MSelfDiag::SwAssert$ {
-c 	t.$Index::Sign$ t.$Index::Sign$ ( Structure e.$Index::Result$ ) t.$Index::Expected$ e.$Index::Message$ =
+c 	t.$Index::Sign$ t.$Index::Sign$ ( $ADT::__StructureBrackets$ e.$Index::Result$ ) t.$Index::Expected$ e.$Index::Message$ =
 c 		e.$Index::Result$ ;
 c 	t.$Index::SignExpected$ t.$Index::SignFact$ t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
 c 		<$Local::MSelfDiag::PrintAssert$ t.$Index::SignFact$ t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ > ;
@@ -41,21 +41,21 @@ c }
 b Entry::MSelfDiag::Assert-NE-T
 c $Entry::MSelfDiag::Assert-NE-T$ {
 c 	t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
-c 		<$Local::MSelfDiag::SwAssert$ ( Structure '!=' ) <$Local::MSelfDiag::AssertAux$ t.$Index::Result$ t.$Index::Expected$ > e.$Index::Message$ > ;
+c 		<$Local::MSelfDiag::SwAssert$ ( $ADT::__StructureBrackets$ '!=' ) <$Local::MSelfDiag::AssertAux$ t.$Index::Result$ t.$Index::Expected$ > e.$Index::Message$ > ;
 c }
 
 b Entry::MSelfDiag::Assert-Eq-T
 c $Entry::MSelfDiag::Assert-Eq-T$ {
 c 	t.$Index::Result$ t.$Index::Expected$ e.$Index::Message$ =
-c 		<$Local::MSelfDiag::SwAssert$ ( Structure '=' ) <$Local::MSelfDiag::AssertAux$ t.$Index::Result$ t.$Index::Expected$ > e.$Index::Message$ > ;
+c 		<$Local::MSelfDiag::SwAssert$ ( $ADT::__StructureBrackets$ '=' ) <$Local::MSelfDiag::AssertAux$ t.$Index::Result$ t.$Index::Expected$ > e.$Index::Message$ > ;
 c }
 
 b Local::MSelfDiag::AssertAux
 c $Local::MSelfDiag::AssertAux$ {
 c 	t.$Index::ResultAndExpected$ t.$Index::ResultAndExpected$ =
-c 		( Structure '=' ) t.$Index::ResultAndExpected$ t.$Index::ResultAndExpected$ ;
+c 		( $ADT::__StructureBrackets$ '=' ) t.$Index::ResultAndExpected$ t.$Index::ResultAndExpected$ ;
 c 	t.$Index::Result$ t.$Index::Expected$ =
-c 		( Structure '!=' ) t.$Index::Result$ t.$Index::Expected$ ;
+c 		( $ADT::__StructureBrackets$ '!=' ) t.$Index::Result$ t.$Index::Expected$ ;
 c }
 
 b Entry::MSelfDiag::Log-T

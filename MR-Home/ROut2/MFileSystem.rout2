@@ -286,8 +286,6 @@ MFileSystem::FnPtr::Local {
 		$MSelfDiag::Assert-Eq::Entry$ ;
 	MSelfDiag Assert-NE =
 		$MSelfDiag::Assert-NE::Entry$ ;
-	MSelfDiag Init =
-		$MSelfDiag::Init::Entry$ ;
 	MStrings Numb =
 		$MStrings::Numb::Entry$ ;
 	MStrings Symb =

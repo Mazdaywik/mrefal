@@ -158,8 +158,6 @@ FileIO::FnPtr::Local {
 		$MSelfDiag::Assert-Eq::Entry$ ;
 	MSelfDiag Assert-NE =
 		$MSelfDiag::Assert-NE::Entry$ ;
-	MSelfDiag Init =
-		$MSelfDiag::Init::Entry$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
 	MRefalRTS Print =

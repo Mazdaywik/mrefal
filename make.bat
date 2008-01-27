@@ -1,1 +1,1 @@
-refgo -c128 mrefal MRefal.mref
+refgo -c128 mrefal MRefal.mref %1

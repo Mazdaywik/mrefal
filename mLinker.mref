@@ -2,8 +2,9 @@ $MODULE MLinker;
 
 $IMPORT Context;
 $IMPORT FileIO;
-$IMPORT MError;
 $IMPORT InOut;
+$IMPORT MCreateDirIfNeed;
+$IMPORT MError;
 $IMPORT MOS;
 $IMPORT MExeTyper;
 $IMPORT MStrings;
@@ -429,7 +430,7 @@ OutAliases {
 	( t.Num e.Aliases ) =
 		( t.Num e.Aliases )
 		<UserTypeAliases
-			<FileIO::Open 'w' 'Info/Aliases.als'>
+			<FileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
 			<SortAliases e.Aliases>
 		>;
 }

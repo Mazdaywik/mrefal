@@ -10,6 +10,5 @@ $entry Assert-Eq-T;
 $entry Assert-NE-T;
 $entry Assert-Eq;
 $entry Assert-NE;
-$entry Init;
 
 $end MSelfDiag.

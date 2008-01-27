@@ -10,11 +10,24 @@ $ENTRY Error
 
 $ENTRY Log
 	e.Message =
+		<OpenLog>
 		<MRefalRTS::Putout 19 e.Message>;
 
 $ENTRY Log-T
 	e.Message =
+		<OpenLog>
 		<MRefalRTS::Put 19 e.Message>;
+
+OpenLog = <SwOpenLog (<G_LogOpened Y>)>;
+
+$SWAP G_LogOpened;
+
+SwOpenLog {
+	(Y) = ;
+	() =
+		<Nil <MRefalRTS::System 'md Info>nul 2>nul'> >
+		<MRefalRTS::Open 'w' 19 'Info/Log.txt'>;
+}
 
 AssertAux {
 	t.ResultAndExpected t.ResultAndExpected =
@@ -70,9 +83,5 @@ PrintAssert {
 }
 
 Nil e.X = ;
-
-$ENTRY Init =
-	<Nil <MRefalRTS::System 'md Info>nul 2>nul'> >
-	<MRefalRTS::Open 'w' 19 'Info/Log.txt'>;
 
 $END MSelfDiag.

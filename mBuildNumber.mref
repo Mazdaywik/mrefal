@@ -2,6 +2,7 @@ $MODULE MBuildNumber;
 
 $IMPORT FileIO;
 $IMPORT Math;
+$IMPORT MCreateDirIfNeed;
 $IMPORT MFileSystem;
 $IMPORT MStrings;
 
@@ -10,7 +11,8 @@ $ENTRY Update =
 		<MFileSystem::ExistFile-T <FileName> >
 	>;
 
-FileName = 'Info/Version.txt';
+FileName =
+	<MCreateDirIfNeed::InfoDir> '/Version.txt';
 
 SwExist {
 	True e.FileName =

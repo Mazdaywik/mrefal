@@ -1,6 +1,7 @@
-MSelfDiag::Init::Entry {
-	=
-		<MSelfDiag::Nil::Local <MRefalRTS::System::Entry 'md Info>nul 2>nul' > > <MRefalRTS::Open::Entry 'w' 19 'Info/Log.txt' > ;
+MSelfDiag::G_LogOpened::Swap {
+	e.NewValue =
+		<Dg ('MSelfDiag::G_LogOpened')>
+		<Br ('MSelfDiag::G_LogOpened') '=' e.NewValue >;
 }
 
 MSelfDiag::Nil::Local {
@@ -49,14 +50,26 @@ MSelfDiag::AssertAux::Local {
 		( Structure '!=' ) t.Result t.Expected ;
 }
 
+MSelfDiag::SwOpenLog::Local {
+	( Structure Y ) =
+		;
+	( Structure ) =
+		<MSelfDiag::Nil::Local <MRefalRTS::System::Entry 'md Info>nul 2>nul' > > <MRefalRTS::Open::Entry 'w' 19 'Info/Log.txt' > ;
+}
+
+MSelfDiag::OpenLog::Local {
+	=
+		<MSelfDiag::SwOpenLog::Local ( Structure <MSelfDiag::G_LogOpened::Swap Y > ) > ;
+}
+
 MSelfDiag::Log-T::Entry {
 	e.Message =
-		<MRefalRTS::Put::Entry 19 e.Message > ;
+		<MSelfDiag::OpenLog::Local > <MRefalRTS::Put::Entry 19 e.Message > ;
 }
 
 MSelfDiag::Log::Entry {
 	e.Message =
-		<MRefalRTS::Putout::Entry 19 e.Message > ;
+		<MSelfDiag::OpenLog::Local > <MRefalRTS::Putout::Entry 19 e.Message > ;
 }
 
 MSelfDiag::Error::Entry {
@@ -71,6 +84,12 @@ MSelfDiag::FnPtr::Local {
 		$MSelfDiag::Log::Entry$ ;
 	Log-T =
 		$MSelfDiag::Log-T::Entry$ ;
+	OpenLog =
+		$MSelfDiag::OpenLog::Local$ ;
+	G_LogOpened =
+		$MSelfDiag::G_LogOpened::Swap$ ;
+	SwOpenLog =
+		$MSelfDiag::SwOpenLog::Local$ ;
 	AssertAux =
 		$MSelfDiag::AssertAux::Local$ ;
 	Assert-Eq-T =
@@ -87,8 +106,6 @@ MSelfDiag::FnPtr::Local {
 		$MSelfDiag::PrintAssert::Local$ ;
 	Nil =
 		$MSelfDiag::Nil::Local$ ;
-	Init =
-		$MSelfDiag::Init::Entry$ ;
 	FnPtr =
 		$MSelfDiag::FnPtr::Local$ ;
 	MRefalRTS Prout =

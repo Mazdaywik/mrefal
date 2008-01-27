@@ -1,0 +1,33 @@
+$MODULE MCreateDirIfNeed;
+
+$IMPORT MOS;
+
+/**
+	<Create e.DirName> == e.DirName
+*/
+$ENTRY Create
+	e.DirName =
+		<CheckCreated
+			(<G_Dirs>) e.DirName
+		>;
+
+/**
+	<InfoDir> == 'Info'
+*/
+$ENTRY InfoDir =
+	<Create 'Info'>;
+
+$SWAP G_Dirs;
+
+CheckCreated {
+	(e.Dirs-B (e.DirName) e.Dirs-E) e.DirName =
+		<G_Dirs e.Dirs-B (e.DirName) e.Dirs-E>
+		e.DirName;
+
+	(e.Dirs) e.DirName =
+		<G_Dirs e.Dirs (e.DirName)>
+		<MOS::System 'md ' e.DirName '>nul 2>nul'>
+		e.DirName;
+}
+
+$END MCreateDirIfNeed.

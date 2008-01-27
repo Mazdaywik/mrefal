@@ -177,8 +177,6 @@ c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
 c 		$Entry::MSelfDiag::Assert-Eq$ ;
 c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
 c 		$Entry::MSelfDiag::Assert-NE$ ;
-c 	$Ident::MSelfDiag$ $Ident::Init$ =
-c 		$Entry::MSelfDiag::Init$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
 c 	$Ident::MRefalRTS$ $Ident::Print$ =

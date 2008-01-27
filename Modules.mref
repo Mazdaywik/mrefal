@@ -1,5 +1,6 @@
 $MODULE Modules;
 
+$IMPORT MCreateDirIfNeed;
 $IMPORT MStrings;
 $IMPORT MFileSystem;
 $IMPORT MOS;
@@ -11,12 +12,16 @@ $ENTRY CanonicalModuleName {
 }
 
 $ENTRY SymName {
-	e.ModName = 'Defs\\' e.ModName '.rsym';
+	e.ModName = <SymDirName> '\\' e.ModName '.rsym';
 }
 
 $ENTRY OutName {
-	e.ModName = 'ROut3\\' e.ModName '.rout3';
+	e.ModName = <OutDirName> '\\' e.ModName '.rout3';
 }
+
+SymDirName = <MCreateDirIfNeed::Create 'Defs'>;
+
+OutDirName = <MCreateDirIfNeed::Create 'ROut3'>; 
 
 $ENTRY SrcName {
 	e.ModName = e.ModName '.mref';
@@ -148,9 +153,7 @@ SwLookupAsSystemLibrary {
 HomeDir = <MOS::Env 'MR_Home'>;
 
 $ENTRY Init =
-	<CheckDefinedMRHome <HomeDir>>
-	<MOS::System 'md Defs>nul 2>nul'>
-	<MOS::System 'md ROut3>nul 2>nul'>;
+	<CheckDefinedMRHome <HomeDir>>;
 
 CheckDefinedMRHome {
 	None = <MError::Fatal 'MR_Home not defined'>;

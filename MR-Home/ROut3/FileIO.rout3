@@ -44,7 +44,7 @@ c }
 b Entry::FileIO::WriteLine-T
 c $Entry::FileIO::WriteLine-T$ {
 c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
-c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Put$ s.$Index::Handle$ e.$Index::Line$ > ;
+c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > e.$Index::Line$ ;
 c }
 
 b Entry::FileIO::WriteLine

@@ -54,4 +54,15 @@ $ENTRY Seq {
 		s.First <Seq <Math::Inc s.First> s.Last>;
 }
 
+/**
+	<Reverse e.Line> == e.eniL
+*/
+$ENTRY Reverse {
+	t.First e.Mid t.Tail =
+		t.Tail <Reverse e.Mid> t.First;
+
+	// t.One или empty
+	e.Other = e.Other;
+}
+
 $END MStrings.

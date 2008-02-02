@@ -1,3 +1,19 @@
+b Entry::InOut::WriteText-T
+c $Entry::InOut::WriteText-T$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ <$Entry::InOut::WriteLine-T$ e.$Index::Line$ > ) <$Entry::InOut::WriteText-T$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
+b Entry::InOut::WriteText
+c $Entry::InOut::WriteText$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
+c 		<$Entry::InOut::WriteLine$ e.$Index::Line$ > <$Entry::InOut::WriteText$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
 b Entry::InOut::ReadLine
 c $Entry::InOut::ReadLine$ {
 c 	=
@@ -7,7 +23,7 @@ c }
 b Entry::InOut::WriteLine-T
 c $Entry::InOut::WriteLine-T$ {
 c 	e.$Index::Line$ =
-c 		<$Entry::MRefalRTS::Print$ e.$Index::Line$ > ;
+c 		<$Entry::MRefalRTS::Prout$ e.$Index::Line$ > e.$Index::Line$ ;
 c }
 
 b Entry::InOut::WriteLine
@@ -24,6 +40,10 @@ c 	$Ident::WriteLine-T$ =
 c 		$Entry::InOut::WriteLine-T$ ;
 c 	$Ident::ReadLine$ =
 c 		$Entry::InOut::ReadLine$ ;
+c 	$Ident::WriteText$ =
+c 		$Entry::InOut::WriteText$ ;
+c 	$Ident::WriteText-T$ =
+c 		$Entry::InOut::WriteText-T$ ;
 c 	$Ident::FnPtr$ =
 c 		$Local::InOut::FnPtr$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =

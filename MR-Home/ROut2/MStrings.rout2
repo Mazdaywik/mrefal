@@ -1,3 +1,17 @@
+MStrings::Reverse::Entry {
+	t.First e.Mid t.Tail =
+		t.Tail <MStrings::Reverse::Entry e.Mid > t.First ;
+	e.Other =
+		e.Other ;
+}
+
+MStrings::Seq::Entry {
+	s.Last s.Last =
+		s.Last ;
+	s.First s.Last =
+		s.First <MStrings::Seq::Entry <Math::Inc::Entry s.First > s.Last > ;
+}
+
 MStrings::DoFirst::Local {
 	0 ( Structure e.First ) e.Last =
 		( Structure e.First ) e.Last ;
@@ -22,9 +36,16 @@ MStrings::Upper::Entry {
 		<MRefalRTS::Upper::Entry e.Expr > ;
 }
 
+MStrings::DoLength-T::Local {
+	s.Length ( Structure e.Scanned ) t.Next e.Tail =
+		<MStrings::DoLength-T::Local <Math::Inc::Entry s.Length > ( Structure e.Scanned t.Next ) e.Tail > ;
+	s.Length ( Structure e.Scanned ) =
+		s.Length e.Scanned ;
+}
+
 MStrings::Length-T::Entry {
 	e.Expr =
-		<MRefalRTS::Lenw::Entry e.Expr > ;
+		<MStrings::DoLength-T::Local 0 ( Structure ) e.Expr > ;
 }
 
 MStrings::UnLen::Local {
@@ -34,7 +55,7 @@ MStrings::UnLen::Local {
 
 MStrings::Length::Entry {
 	e.Expr =
-		<MStrings::UnLen::Local <MRefalRTS::Lenw::Entry e.Expr > > ;
+		<MStrings::UnLen::Local <MStrings::Length-T::Entry e.Expr > > ;
 }
 
 MStrings::Chr::Entry {
@@ -72,6 +93,8 @@ MStrings::FnPtr::Local {
 		$MStrings::UnLen::Local$ ;
 	Length-T =
 		$MStrings::Length-T::Entry$ ;
+	DoLength-T =
+		$MStrings::DoLength-T::Local$ ;
 	Upper =
 		$MStrings::Upper::Entry$ ;
 	Lower =
@@ -80,12 +103,14 @@ MStrings::FnPtr::Local {
 		$MStrings::First::Entry$ ;
 	DoFirst =
 		$MStrings::DoFirst::Local$ ;
+	Seq =
+		$MStrings::Seq::Entry$ ;
+	Reverse =
+		$MStrings::Reverse::Entry$ ;
 	FnPtr =
 		$MStrings::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =

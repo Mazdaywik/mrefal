@@ -216,8 +216,6 @@ c 	$Ident::FnPtr$ =
 c 		$Local::MFileSystem::FnPtr$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
-c 	$Ident::MRefalRTS$ $Ident::Print$ =
-c 		$Entry::MRefalRTS::Print$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =
 c 		$Entry::MRefalRTS::Card$ ;
 c 	$Ident::MRefalRTS$ $Ident::Open$ =
@@ -326,6 +324,10 @@ c 	$Ident::MStrings$ $Ident::Lower$ =
 c 		$Entry::MStrings::Lower$ ;
 c 	$Ident::MStrings$ $Ident::First$ =
 c 		$Entry::MStrings::First$ ;
+c 	$Ident::MStrings$ $Ident::Seq$ =
+c 		$Entry::MStrings::Seq$ ;
+c 	$Ident::MStrings$ $Ident::Reverse$ =
+c 		$Entry::MStrings::Reverse$ ;
 c 	$Ident::Math$ $Ident::Add$ =
 c 		$Entry::Math::Add$ ;
 c 	$Ident::Math$ $Ident::Sub$ =

@@ -1,3 +1,17 @@
+InOut::WriteText-T::Entry {
+	( Structure e.Line ) e.Tail =
+		( Structure <InOut::WriteLine-T::Entry e.Line > ) <InOut::WriteText-T::Entry e.Tail > ;
+	=
+		;
+}
+
+InOut::WriteText::Entry {
+	( Structure e.Line ) e.Tail =
+		<InOut::WriteLine::Entry e.Line > <InOut::WriteText::Entry e.Tail > ;
+	=
+		;
+}
+
 InOut::ReadLine::Entry {
 	=
 		<MRefalRTS::Card::Entry > ;
@@ -5,7 +19,7 @@ InOut::ReadLine::Entry {
 
 InOut::WriteLine-T::Entry {
 	e.Line =
-		<MRefalRTS::Print::Entry e.Line > ;
+		<MRefalRTS::Prout::Entry e.Line > e.Line ;
 }
 
 InOut::WriteLine::Entry {
@@ -20,6 +34,10 @@ InOut::FnPtr::Local {
 		$InOut::WriteLine-T::Entry$ ;
 	ReadLine =
 		$InOut::ReadLine::Entry$ ;
+	WriteText =
+		$InOut::WriteText::Entry$ ;
+	WriteText-T =
+		$InOut::WriteText-T::Entry$ ;
 	FnPtr =
 		$InOut::FnPtr::Local$ ;
 	MRefalRTS Prout =

@@ -6,5 +6,7 @@ $import MRefalRTS;
 $entry WriteLine;
 $entry WriteLine-T;
 $entry ReadLine;
+$entry WriteText;
+$entry WriteText-T;
 
 $end InOut.

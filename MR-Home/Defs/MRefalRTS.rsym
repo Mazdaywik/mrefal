@@ -1,7 +1,6 @@
 $module MRefalRTS;
 
 $entry Prout;
-$entry Print;
 $entry Card;
 
 $entry Open;

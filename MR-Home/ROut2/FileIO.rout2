@@ -37,7 +37,7 @@ FileIO::ExtractFileName::Entry {
 
 FileIO::WriteLine-T::Entry {
 	( Structure s.Handle e.FileName ) e.Line =
-		( Structure s.Handle e.FileName ) <MRefalRTS::Put::Entry s.Handle e.Line > ;
+		( Structure s.Handle e.FileName ) <MRefalRTS::Putout::Entry s.Handle e.Line > e.Line ;
 }
 
 FileIO::WriteLine::Entry {

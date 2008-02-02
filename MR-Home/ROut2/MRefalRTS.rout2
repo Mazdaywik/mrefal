@@ -1,7 +1,5 @@
 MRefalRTS::Prout::Entry { e.Arg = <Prout e.Arg >; }
 
-MRefalRTS::Print::Entry { e.Arg = <Print e.Arg >; }
-
 MRefalRTS::Card::Entry { = <Card >; }
 
 MRefalRTS::Open::Entry {

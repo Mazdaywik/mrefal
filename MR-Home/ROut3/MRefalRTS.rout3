@@ -1,9 +1,6 @@
 b Entry::MRefalRTS::Prout
 c $Entry::MRefalRTS::Prout$ { e.Arg = <Prout e.Arg >; }
 
-b Entry::MRefalRTS::Print
-c $Entry::MRefalRTS::Print$ { e.Arg = <Print e.Arg >; }
-
 b Entry::MRefalRTS::Card
 c $Entry::MRefalRTS::Card$ { = <Card >; }
 

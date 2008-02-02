@@ -194,8 +194,6 @@ MFileSystem::FnPtr::Local {
 		$MFileSystem::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =
@@ -304,6 +302,10 @@ MFileSystem::FnPtr::Local {
 		$MStrings::Lower::Entry$ ;
 	MStrings First =
 		$MStrings::First::Entry$ ;
+	MStrings Seq =
+		$MStrings::Seq::Entry$ ;
+	MStrings Reverse =
+		$MStrings::Reverse::Entry$ ;
 	Math Add =
 		$Math::Add::Entry$ ;
 	Math Sub =

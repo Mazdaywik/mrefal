@@ -13,5 +13,7 @@ $entry Length-T;
 $entry Upper;
 $entry Lower;
 $entry First;
+$entry Seq;
+$entry Reverse;
 
 $end MStrings.

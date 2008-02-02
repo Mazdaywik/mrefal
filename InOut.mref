@@ -7,11 +7,29 @@ $ENTRY WriteLine {
 }
 
 $ENTRY WriteLine-T {
-	e.Line = <MRefalRTS::Print e.Line>;
+	e.Line =
+		<MRefalRTS::Prout e.Line>
+		e.Line;
 }
 
 $ENTRY ReadLine {
 	= <MRefalRTS::Card>;
+}
+
+$ENTRY WriteText {
+	(e.Line) e.Tail =
+		<WriteLine e.Line>
+		<WriteText e.Tail>;
+
+	= ;
+}
+
+$ENTRY WriteText-T {
+	(e.Line) e.Tail =
+		( <WriteLine-T e.Line> )
+		<WriteText-T e.Tail>;
+
+	= ;
 }
 
 $END InOut.

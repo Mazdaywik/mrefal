@@ -84,7 +84,9 @@ $ENTRY WriteLine {
 
 $ENTRY WriteLine-T {
 	(s.Handle e.FileName) e.Line =
-		(s.Handle e.FileName) <MRefalRTS::Put s.Handle e.Line>;
+		(s.Handle e.FileName)
+		<MRefalRTS::Putout s.Handle e.Line>
+		e.Line;
 }
 
 $ENTRY ExtractFileName {

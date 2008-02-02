@@ -11,11 +11,23 @@ $ENTRY Ord e.Line = <MRefalRTS::Ord e.Line>;
 
 $ENTRY Chr e.Line = <MRefalRTS::Chr e.Line>;
 
-$ENTRY Length e.Expr = <UnLen <MRefalRTS::Lenw e.Expr> >;
+$ENTRY Length e.Expr = <UnLen <Length-T e.Expr> >;
 
 UnLen s.Length e.Expr = s.Length;
 
-$ENTRY Length-T e.Expr = <MRefalRTS::Lenw e.Expr>;
+$ENTRY Length-T
+	e.Expr = <DoLength-T 0 () e.Expr>;
+
+DoLength-T {
+	s.Length (e.Scanned) t.Next e.Tail =
+		<DoLength-T
+			<Math::Inc s.Length>
+			(e.Scanned t.Next) e.Tail
+		>;
+
+	s.Length (e.Scanned) =
+		s.Length e.Scanned;
+}
 
 $ENTRY Upper e.Expr = <MRefalRTS::Upper e.Expr>;
 
@@ -28,6 +40,18 @@ DoFirst {
 	s.Num (e.First) = e.First;
 	s.Num (e.First) t.Next e.Last =
 		<DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
+}
+
+/**
+	<Seq s.NFirst s.NLast>
+		== s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
+	s.NFirst и s.NLast -- числа,
+	при чём должно быть s.NFirst <= s.NLast
+*/
+$ENTRY Seq {
+	s.Last s.Last = s.Last;
+	s.First s.Last =
+		s.First <Seq <Math::Inc s.First> s.Last>;
 }
 
 $END MStrings.

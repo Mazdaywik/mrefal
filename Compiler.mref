@@ -24,6 +24,7 @@ $IMPORT MError;
 $IMPORT MFrontEnd;
 $IMPORT MLocation;
 $IMPORT Modules;
+$IMPORT MResolver;
 $IMPORT MSelfDiag;
 $IMPORT MSymModule;
 
@@ -503,7 +504,7 @@ CheckFnCalls
 	t.Context t.SymTable-Old t.Module =
 		t.Context
 		<PrintUnresolved
-			<MFrontEnd::Resolve
+			<MResolver::Resolve
 				t.Module
 				<MError::CreateErrList>
 				<OldSymTableToQualifiedList t.SymTable-Old>

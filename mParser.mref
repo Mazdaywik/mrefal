@@ -95,14 +95,21 @@ NModuleHeader {
 	t.ErrorList t.SymTable ()
 	t.Lexer (Directive t.SrcPos Module) =
 		<NModuleHeader-ModuleName
-			t.ErrorList t.SymTable ()
+			RegularModule t.ErrorList t.SymTable ()
 			<MLexer::NextToken t.Lexer>
 		>;
 
 	t.ErrorList t.SymTable ()
 	t.Lexer (Directive t.SrcPos Program) =
 		<NModuleHeader-ModuleName
-			t.ErrorList t.SymTable ()
+			MainModule t.ErrorList t.SymTable ()
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable ()
+	t.Lexer (Directive t.SrcPos ClearModule) =
+		<NModuleHeader-ModuleName
+			ClearModule t.ErrorList t.SymTable ()
 			<MLexer::NextToken t.Lexer>
 		>;
 
@@ -123,7 +130,7 @@ NModuleHeader {
 
 // ModuleHeader-ModuleName --> ExpectEndSent
 NModuleHeader-ModuleName {
-	t.ErrorList t.SymTable ()
+	s.ModuleType t.ErrorList t.SymTable ()
 	t.Lexer (Identifier t.SrcPos e.Name) =
 		<ExpectEndSent
 			<MSymTable::AddCurrentModule
@@ -136,7 +143,7 @@ NModuleHeader-ModuleName {
 
 	/* Здесь мы пропускаем текущую неопознанную лексему до тех пор, пока
 	не встретим идентификатор или конец ввода */
-	t.ErrorList t.SymTable ()
+	s.ModuleType t.ErrorList t.SymTable ()
 	t.Lexer (EndOfText t.SrcPos) =
 		<MError::AddUnexpected
 			t.ErrorList (EndOfText t.SrcPos) 'module name'
@@ -144,9 +151,10 @@ NModuleHeader-ModuleName {
 		t.SymTable ()
 		t.Lexer (EndOfText t.SrcPos);
 
-	t.ErrorList t.SymTable ()
+	s.ModuleType t.ErrorList t.SymTable ()
 	t.Lexer t.OtherToken =
 		<NModuleHeader-ModuleName
+			s.ModuleType
 			<MError::AddUnexpected
 				t.ErrorList t.OtherToken 'module name'
 			>

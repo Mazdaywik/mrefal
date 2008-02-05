@@ -2,19 +2,34 @@ $MODULE InOut;
 
 $IMPORT MRefalRTS;
 
+$SWAP G_Buffer;
+
 $ENTRY WriteLine {
-	e.Line = <MRefalRTS::Prout e.Line>;
+	e.Line = <MRefalRTS::Prout <G_Buffer> e.Line>;
 }
 
 $ENTRY WriteLine-T {
 	e.Line =
-		<MRefalRTS::Prout e.Line>
+		<MRefalRTS::Prout <G_Buffer> e.Line>
 		e.Line;
 }
 
 $ENTRY ReadLine {
-	= <MRefalRTS::Card>;
+	= <FlushBuffer> <MRefalRTS::Card>;
 }
+
+FlushBuffer = <SwFlushBuffer <G_Buffer>>;
+
+SwFlushBuffer {
+	= ;
+	e.Line = <MRefalRTS::Prout e.Line>;
+}
+
+$ENTRY Write
+	e.Text = <G_Buffer <G_Buffer> e.Text>;
+
+$ENTRY Write-T
+	e.Text = <Write e.Text> e.Text;
 
 $ENTRY WriteText {
 	(e.Line) e.Tail =

@@ -2,7 +2,8 @@
 .mref:
 
 Module = ModuleHeader ModuleBody ModuleTailer .
-ModuleHeader = '$module' ModuleName ';' | '$program' ModuleName ';' .
+ModuleHeader = ModuleType ModuleName ';' | '$program' ModuleName ';' .
+ModuleType = '$module' | '$program' | '$clearmodule' .
 ModuleTailer = '$end' ModuleName '.' .
 ModuleName = QualifiedName .
 ModuleBody = ModuleElement* .

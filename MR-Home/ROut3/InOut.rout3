@@ -1,3 +1,10 @@
+b Swap::InOut::G_Buffer
+c $Swap::InOut::G_Buffer$ {
+c 	e.NewValue =
+c 		<Dg ('InOut::G_Buffer')>
+c 		<Br ('InOut::G_Buffer') '=' e.NewValue >;
+c }
+
 b Entry::InOut::WriteText-T
 c $Entry::InOut::WriteText-T$ {
 c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
@@ -14,32 +21,68 @@ c 	=
 c 		;
 c }
 
+b Entry::InOut::Write-T
+c $Entry::InOut::Write-T$ {
+c 	e.$Index::Text$ =
+c 		<$Entry::InOut::Write$ e.$Index::Text$ > e.$Index::Text$ ;
+c }
+
+b Entry::InOut::Write
+c $Entry::InOut::Write$ {
+c 	e.$Index::Text$ =
+c 		<$Swap::InOut::G_Buffer$ <$Swap::InOut::G_Buffer$ > e.$Index::Text$ > ;
+c }
+
+b Local::InOut::SwFlushBuffer
+c $Local::InOut::SwFlushBuffer$ {
+c 	=
+c 		;
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Prout$ e.$Index::Line$ > ;
+c }
+
+b Local::InOut::FlushBuffer
+c $Local::InOut::FlushBuffer$ {
+c 	=
+c 		<$Local::InOut::SwFlushBuffer$ <$Swap::InOut::G_Buffer$ > > ;
+c }
+
 b Entry::InOut::ReadLine
 c $Entry::InOut::ReadLine$ {
 c 	=
-c 		<$Entry::MRefalRTS::Card$ > ;
+c 		<$Local::InOut::FlushBuffer$ > <$Entry::MRefalRTS::Card$ > ;
 c }
 
 b Entry::InOut::WriteLine-T
 c $Entry::InOut::WriteLine-T$ {
 c 	e.$Index::Line$ =
-c 		<$Entry::MRefalRTS::Prout$ e.$Index::Line$ > e.$Index::Line$ ;
+c 		<$Entry::MRefalRTS::Prout$ <$Swap::InOut::G_Buffer$ > e.$Index::Line$ > e.$Index::Line$ ;
 c }
 
 b Entry::InOut::WriteLine
 c $Entry::InOut::WriteLine$ {
 c 	e.$Index::Line$ =
-c 		<$Entry::MRefalRTS::Prout$ e.$Index::Line$ > ;
+c 		<$Entry::MRefalRTS::Prout$ <$Swap::InOut::G_Buffer$ > e.$Index::Line$ > ;
 c }
 
 b Local::InOut::FnPtr
 c $Local::InOut::FnPtr$ {
+c 	$Ident::G_Buffer$ =
+c 		$Swap::InOut::G_Buffer$ ;
 c 	$Ident::WriteLine$ =
 c 		$Entry::InOut::WriteLine$ ;
 c 	$Ident::WriteLine-T$ =
 c 		$Entry::InOut::WriteLine-T$ ;
 c 	$Ident::ReadLine$ =
 c 		$Entry::InOut::ReadLine$ ;
+c 	$Ident::FlushBuffer$ =
+c 		$Local::InOut::FlushBuffer$ ;
+c 	$Ident::SwFlushBuffer$ =
+c 		$Local::InOut::SwFlushBuffer$ ;
+c 	$Ident::Write$ =
+c 		$Entry::InOut::Write$ ;
+c 	$Ident::Write-T$ =
+c 		$Entry::InOut::Write-T$ ;
 c 	$Ident::WriteText$ =
 c 		$Entry::InOut::WriteText$ ;
 c 	$Ident::WriteText-T$ =
@@ -48,8 +91,6 @@ c 	$Ident::FnPtr$ =
 c 		$Local::InOut::FnPtr$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
-c 	$Ident::MRefalRTS$ $Ident::Print$ =
-c 		$Entry::MRefalRTS::Print$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =
 c 		$Entry::MRefalRTS::Card$ ;
 c 	$Ident::MRefalRTS$ $Ident::Open$ =

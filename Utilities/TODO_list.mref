@@ -83,9 +83,9 @@ TrimLast {
 CreateTagTable = ( );
 
 Add_TODO {
-	// Повторное TODO не добавляем
+	// Повторное TODO. Удаляем предыдущее, это помещаем в конец.
 	( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
-		( e.Tags-B (TODO e.ToDo-Name) e.Tags-E );
+		( e.Tags-B e.Tags-E (TODO e.ToDo-Name) );
 
 	( e.Tags ) e.ToDo-Name =
 		( e.Tags (TODO e.ToDo-Name) );
@@ -107,9 +107,9 @@ Add_BAD-TAG {
 }
 
 Add_ERROR {
-	// Повторно не добавляем
+	// Повторное вхождение. Предыдущее удаляем, новое переносим в конец.
 	( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
-		( e.Tags-B (ERROR e.Error-Name) e.Tags-E );
+		( e.Tags-B e.Tags-E (ERROR e.Error-Name) );
 
 	( e.Tags ) e.Error-Name =
 		( e.Tags (ERROR e.Error-Name) );

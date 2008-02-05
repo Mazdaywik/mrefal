@@ -1,3 +1,9 @@
+InOut::G_Buffer::Swap {
+	e.NewValue =
+		<Dg ('InOut::G_Buffer')>
+		<Br ('InOut::G_Buffer') '=' e.NewValue >;
+}
+
 InOut::WriteText-T::Entry {
 	( Structure e.Line ) e.Tail =
 		( Structure <InOut::WriteLine-T::Entry e.Line > ) <InOut::WriteText-T::Entry e.Tail > ;
@@ -12,28 +18,60 @@ InOut::WriteText::Entry {
 		;
 }
 
-InOut::ReadLine::Entry {
+InOut::Write-T::Entry {
+	e.Text =
+		<InOut::Write::Entry e.Text > e.Text ;
+}
+
+InOut::Write::Entry {
+	e.Text =
+		<InOut::G_Buffer::Swap <InOut::G_Buffer::Swap > e.Text > ;
+}
+
+InOut::SwFlushBuffer::Local {
 	=
-		<MRefalRTS::Card::Entry > ;
-}
-
-InOut::WriteLine-T::Entry {
-	e.Line =
-		<MRefalRTS::Prout::Entry e.Line > e.Line ;
-}
-
-InOut::WriteLine::Entry {
+		;
 	e.Line =
 		<MRefalRTS::Prout::Entry e.Line > ;
 }
 
+InOut::FlushBuffer::Local {
+	=
+		<InOut::SwFlushBuffer::Local <InOut::G_Buffer::Swap > > ;
+}
+
+InOut::ReadLine::Entry {
+	=
+		<InOut::FlushBuffer::Local > <MRefalRTS::Card::Entry > ;
+}
+
+InOut::WriteLine-T::Entry {
+	e.Line =
+		<MRefalRTS::Prout::Entry <InOut::G_Buffer::Swap > e.Line > e.Line ;
+}
+
+InOut::WriteLine::Entry {
+	e.Line =
+		<MRefalRTS::Prout::Entry <InOut::G_Buffer::Swap > e.Line > ;
+}
+
 InOut::FnPtr::Local {
+	G_Buffer =
+		$InOut::G_Buffer::Swap$ ;
 	WriteLine =
 		$InOut::WriteLine::Entry$ ;
 	WriteLine-T =
 		$InOut::WriteLine-T::Entry$ ;
 	ReadLine =
 		$InOut::ReadLine::Entry$ ;
+	FlushBuffer =
+		$InOut::FlushBuffer::Local$ ;
+	SwFlushBuffer =
+		$InOut::SwFlushBuffer::Local$ ;
+	Write =
+		$InOut::Write::Entry$ ;
+	Write-T =
+		$InOut::Write-T::Entry$ ;
 	WriteText =
 		$InOut::WriteText::Entry$ ;
 	WriteText-T =
@@ -42,8 +80,6 @@ InOut::FnPtr::Local {
 		$InOut::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =

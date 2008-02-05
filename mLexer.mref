@@ -352,6 +352,9 @@ SwDirective {
 	t.SymStream 'PROGRAM' = t.SymStream (Directive Program);
 	t.SymStream 'program' = t.SymStream (Directive Program);
 
+	t.SymStream 'CLEARMODULE' = t.SymStream (Directive ClearModule);
+	t.SymStream 'clearmodule' = t.SymStream (Directive ClearModule);
+
 	t.SymStream e.Other = t.SymStream (Error 'unknown directive \'' e.Other '\'');
 }
 

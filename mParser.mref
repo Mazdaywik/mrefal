@@ -711,7 +711,16 @@ NPatternExpr {
 	t.Lexer (OpenBrac t.SrcPos) =
 		<NPatternExpr
 			t.ErrorList t.SymTable t.VarTable
-			( (e.PatternExpr) t.ParentStack )
+			( (')' e.PatternExpr) t.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( e.PatternExpr t.ParentStack )
+	t.Lexer (OpenSquare t.SrcPos) =
+		<NPatternExpr
+			t.ErrorList t.SymTable t.VarTable
+			( (']' e.PatternExpr) t.ParentStack )
 			<MLexer::NextToken t.Lexer>
 		>;
 
@@ -725,23 +734,32 @@ NPatternExpr {
 				t.ErrorList (OpenFnCall t.SrcPos)
 				'any correct passive term'
 			> t.SymTable t.VarTable
-			( (e.PatternExpr) t.ParentStack )
+			( (')' e.PatternExpr) t.ParentStack )
 			<MLexer::NextToken t.Lexer>
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
-	( (e.MultiBracket) e.InBracket t.ParentStack)
+	( (')' e.MultiBracket) e.InBrackets t.ParentStack)
 	t.Lexer (CloseBrac t.SrcPos) =
 		<NPatternExpr
 			t.ErrorList t.SymTable t.VarTable
-			(e.MultiBracket (Structure e.InBracket) t.ParentStack)
+			(e.MultiBracket (Structure e.InBrackets) t.ParentStack)
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( (']' e.MultiBracket) e.InBrackets t.ParentStack)
+	t.Lexer (CloseSquare t.SrcPos) =
+		<NPatternExpr
+			t.ErrorList t.SymTable t.VarTable
+			(e.MultiBracket (Structure e.InBrackets) t.ParentStack)
 			<MLexer::NextToken t.Lexer>
 		>;
 
 	/* Продолжение осмысленной реакции -- интерпретация закрывающей
 	функциональной скобки как структурной*/
 	t.ErrorList t.SymTable t.VarTable
-	( (e.MultiBracket) e.InBracket t.ParentStack)
+	( (')' e.MultiBracket) e.InBracket t.ParentStack)
 	t.Lexer (CloseFnCall t.SrcPos) =
 		<NPatternExpr
 			<MError::AddUnexpected
@@ -753,14 +771,26 @@ NPatternExpr {
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
-	( '$' e.PatternExpr t.ParentStack )
+	( e.PatternExpr t.ParentStack )
 	t.Lexer (CloseBrac t.SrcPos) =
 		<NPatternExpr
 			<MError::AddUnexpected
 				t.ErrorList (CloseBrac t.SrcPos)
 				'any correct term (unbalanced structure brackets)'
 			> t.SymTable t.VarTable
-			( '$' e.PatternExpr t.ParentStack )
+			( e.PatternExpr t.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( e.PatternExpr t.ParentStack )
+	t.Lexer (CloseSquare t.SrcPos) =
+		<NPatternExpr
+			<MError::AddUnexpected
+				t.ErrorList (CloseSquare t.SrcPos)
+				'any correct term (unbalanced ADT brackets)'
+			> t.SymTable t.VarTable
+			( e.PatternExpr t.ParentStack )
 			<MLexer::NextToken t.Lexer>
 		>;
 
@@ -772,24 +802,24 @@ NPatternExpr {
 		t.Lexer (Replaces t.SrcPos);
 
 	t.ErrorList t.SymTable t.VarTable
-	( (e.MultiBracket) e.InBrackets t.ParentStack )
+	( (s.BracketType e.MultiBracket) e.InBrackets t.ParentStack )
 	t.Lexer (Replaces t.SrcPos) =
 		<NPatternExpr
 			<MError::AddUnexpected
 				t.ErrorList (Replaces t.SrcPos)
-				'\')\''
+				'\'' s.BracketType '\''
 			> t.SymTable t.VarTable
 			( e.MultiBracket (e.InBrackets) t.ParentStack )
 			t.Lexer (Replaces t.SrcPos)
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
-	( (e.MultiBracket) e.InBrackets t.ParentStack )
+	( (s.BracketType e.MultiBracket) e.InBrackets t.ParentStack )
 	t.Lexer t.Unexpected =
 		<NPatternExpr
 			<MError::AddUnexpected
 				t.ErrorList t.Unexpected
-				'\')\''
+				'\'' s.BracketType '\''
 			> t.SymTable t.VarTable
 			( e.MultiBracket (e.InBrackets) t.ParentStack )
 			<MLexer::NextToken t.Lexer>
@@ -894,6 +924,15 @@ NResultExpr {
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
+	(e.ResultExpr t.ParentStack)
+	t.Lexer (OpenSquare t.SrcPos) =
+		<NResultExpr
+			t.ErrorList t.SymTable t.VarTable
+			( ( ']' e.ResultExpr ) t.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
 	( ( ')' e.MultiBracket ) e.InBrackets t.ParentStack )
 	t.Lexer (CloseBrac t.SrcPos) =
 		<NResultExpr
@@ -909,6 +948,27 @@ NResultExpr {
 			<MError::AddUnexpected
 				t.ErrorList ( CloseBrac t.SrcPos )
 				'result expression or semicolon (unbalanced structure brackets)'
+			> t.SymTable t.VarTable
+			( e.ResultExpr t.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( ( ']' e.MultiBracket ) e.InBrackets t.ParentStack )
+	t.Lexer (CloseSquare t.SrcPos) =
+		<NResultExpr
+			t.ErrorList t.SymTable t.VarTable
+			( e.MultiBracket (Structure e.InBrackets) t.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	(e.ResultExpr t.ParentStack)
+	t.Lexer (CloseSquare t.SrcPos) =
+		<NResultExpr
+			<MError::AddUnexpected
+				t.ErrorList (CloseSquare t.SrcPos)
+				'result expression or semicolon (unbalanced ADT brackets)'
 			> t.SymTable t.VarTable
 			( e.ResultExpr t.ParentStack )
 			<MLexer::NextToken t.Lexer>

@@ -1,0 +1,1 @@
+@call compile_mr Main.mref

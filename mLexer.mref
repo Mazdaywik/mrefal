@@ -209,6 +209,9 @@ RealExtract-SwFirst {
 	t.SymStream '(' = t.SymStream (OpenBrac);
 	t.SymStream ')' = t.SymStream (CloseBrac);
 
+	t.SymStream '[' = t.SymStream (OpenSquare);
+	t.SymStream ']' = t.SymStream (CloseSquare);
+
 	t.SymStream '&' = t.SymStream (Ampersand);
 	t.SymStream ':' = <Colon <MSymStream::NextChar t.SymStream>>;
 	t.SymStream ',' = t.SymStream (Comma);
@@ -454,7 +457,7 @@ CheckValid-T
 	s.Char =
 		<Types::OneOf
 			s.Char
-			(' \t' CrLf '{}<>()&:,.;=$\"\'est' <Types::UpAlph> <Types::Digits>)
+			(' \t' CrLf '[]{}<>()&:,.;=$\"\'est' <Types::UpAlph> <Types::Digits>)
 		> s.Char;
 
 $ENTRY TokenToString {
@@ -466,6 +469,9 @@ $ENTRY TokenToString {
 
 	(OpenBrac) = <Q '('>;
 	(CloseBrac) = <Q ')'>;
+
+	(OpenSquare) = <Q '['>;
+	(CloseSquare) = <Q ']'>;
 
 	(Ampersand) = <Q '&'>;
 	(Colon) = <Q ':'>;

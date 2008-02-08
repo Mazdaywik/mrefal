@@ -9,8 +9,11 @@ CloseBlock		нет					'}'
 OpenFnCall		нет					'<'
 CloseFnCall		нет					'>'
 
-LeftBrac		нет					'('
-RigthBrac		нет					')'
+OpenBrac		нет					'('
+CloseBrac		нет					')'
+
+OpenSquare		нет					'['
+CloseSquare		нет					']'
 
 Ampersand		нет					'&'
 Colon			нет					':'

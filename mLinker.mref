@@ -68,7 +68,7 @@ PutModule {
 		<TypeContent
 			t.ExeTyper
 			t.Aliases
-			<FileIO::Open 'r' e.OutName>
+			e.OutName
 		>
 		t.Context;
 }
@@ -96,12 +96,19 @@ CreateStartInfo {
 PutStartCaller {
 	t.ExeTyper t.Aliases t.Context t.StartInfo =
 		t.Context
-		<TypeStart
-			t.StartInfo
-			t.ExeTyper
-			<OutAliases t.Aliases>
+		<DestroyExeTyperAndAliases
+			<TypeStart
+				t.StartInfo
+				t.ExeTyper
+				<OutAliases t.Aliases>
+			>
 		>;
 }
+
+DestroyExeTyperAndAliases
+	t.Aliases t.ExeTyper =
+		<CloseAliases t.Aliases>
+		<MExeTyper::Destroy t.ExeTyper>;
 
 /*------------------------------------------------------------------------------
  Построчное препроцессирование .rout-файлов с их добавлением в выходной файл.
@@ -112,43 +119,92 @@ PutStartCaller {
  библиотечные файлы написаны с особым вниманием.
 ------------------------------------------------------------------------------*/
 
-// <TypeContext t.ExeTyper t.Aliases t.FIn> ==  t.ExeTyper t.Aliases
+// <TypeContext t.ExeTyper t.Aliases e.FileName> ==  t.ExeTyper t.Aliases
 TypeContent {
-	t.ExeTyper t.Aliases t.FIn =
+	t.ExeTyper t.Aliases e.FileName =
 		<DoTypeContent
-			t.Aliases t.ExeTyper <LoadLine t.FIn>
+			t.Aliases t.ExeTyper <LoadLines e.FileName>
 		>;
 }
+
+LoadLines
+	e.FileName =
+		<GroupLinkUnits
+			<DoLoadLines
+				<FileIO::Load e.FileName>
+			>
+		>;
+
+GroupLinkUnits {
+	(Banner e.Banner) e.Lines =
+		<GroupOneLinkUnit
+			((e.Banner)) e.Lines
+		>;
+
+	= ;
+}
+
+GroupOneLinkUnit {
+	(e.Unit) (Code e.CodeLine) e.Lines =
+		<GroupOneLinkUnit
+			(e.Unit (e.CodeLine)) e.Lines
+		>;
+
+	(e.Unit) (Banner e.Banner) e.Lines =
+		(e.Unit)
+		<GroupLinkUnits (Banner e.Banner) e.Lines>;
+
+	(e.Unit) = (e.Unit);
+}
+
+DoLoadLines {
+	= ;
+
+	(e.NextLine) e.Lines =
+		<AnalyseLine (e.NextLine)>
+		<DoLoadLines e.Lines>;
+}
+		
 
 DoTypeContent {
-	t.Aliases t.ExeTyper t.FIn =
-		<DoTypeContent
-			t.Aliases t.ExeTyper <LoadLine t.FIn>
-		>;
-	
-	t.Aliases t.ExeTyper t.FIn 0 =
-		t.ExeTyper t.Aliases <FileIO::Close t.FIn>;
+	t.Aliases t.ExeTyper =
+		t.ExeTyper t.Aliases;
 
-	t.Aliases t.ExeTyper t.FIn e.Raw =
+	t.Aliases t.ExeTyper (e.NextUnit) e.Units =
 		<DoTypeContent
-			<SwTypeContent t.Aliases t.ExeTyper t.FIn e.Raw>
+			<TypeUnit t.Aliases t.ExeTyper e.NextUnit>
+			e.Units
 		>;
 }
 
-LoadLine
-	t.FIn = <AnalyseLine <FileIO::ReadLine t.FIn>>;
+TypeUnit {
+	t.Aliases t.ExeTyper (e.Banner) e.Lines =
+		<DoTypeUnits
+			t.Aliases
+			<MExeTyper::TypeComment t.ExeTyper e.Banner>
+			e.Lines
+		>;
+}
+
+DoTypeUnits {
+	t.Aliases t.ExeTyper =
+		t.Aliases t.ExeTyper;
+
+	t.Aliases t.ExeTyper (e.NextLine) e.Lines =
+		<DoTypeUnits
+			<TypeLine t.Aliases t.ExeTyper e.NextLine>
+			e.Lines
+		>;
+}
 
 AnalyseLine {
-	t.FIn 'b ' e.BannerLine = <LoadLine t.FIn>;
+	('b ' e.BannerLine) = (Banner e.BannerLine);
 
-	t.FIn 'r ' e.BannerLine = <LoadLine t.FIn>;
+	('r ' e.?RemarkLine) = ;
 
-	t.FIn 'c ' e.CodeLine =
-		t.FIn <HideQuotes e.CodeLine>;
+	('c ' e.CodeLine) = (Code <HideQuotes e.CodeLine>);
 
-	t.FIn = <LoadLine t.FIn>;
-
-	t.FIn 0 = t.FIn 0;
+	() = ;
 }
 
 HideQuotes {
@@ -174,31 +230,43 @@ StartHidingQuote {
 		>;
 }
 
+TypeLine {
+	t.Aliases t.ExeTyper =
+		t.Aliases t.ExeTyper;
+
+	t.Aliases t.ExeTyper e.Line =
+		<TypeLine
+			<SwTypeContent
+				t.Aliases t.ExeTyper e.Line
+			>
+		>;
+}
+
 SwTypeContent {
-	t.Aliases t.ExeTyper t.FIn (s.Quote e.HiddenQuote) e.Raw =
+	t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
 		t.Aliases
 		<MExeTyper::TypeQuoted
 			t.ExeTyper s.Quote e.HiddenQuote
-		> t.FIn e.Raw;
+		> e.Raw;
 
-	t.Aliases t.ExeTyper (t.FIn '$$' e.Raw) =
-		t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> t.FIn e.Raw;
+	t.Aliases t.ExeTyper '$$' e.Raw =
+		t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> e.Raw;
 
-	t.Aliases t.ExeTyper t.FIn '$' e.FnName '$' e.Raw =
+	t.Aliases t.ExeTyper '$' e.FnName '$' e.Raw =
 		<TypeRenamed
 			( <LookupAlias t.Aliases e.FnName> )
-			t.ExeTyper t.FIn e.Raw
+			t.ExeTyper e.Raw
 		>;
 
-	t.Aliases t.ExeTyper t.FIn s.Char e.Raw =
+	t.Aliases t.ExeTyper s.Char e.Raw =
 		t.Aliases
 		<MExeTyper::TypeChar t.ExeTyper s.Char>
-		t.FIn e.Raw;
+		e.Raw;
 }
 
 TypeRenamed
-	(t.Aliases e.FnAlias) t.ExeTyper t.FIn e.Raw =
-		t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> t.FIn e.Raw;
+	(t.Aliases e.FnAlias) t.ExeTyper e.Raw =
+		t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> e.Raw;
 
 *-------------------------------------------------------------------------------
 * Хранилище информации о точках запуска модулей (функций Go, Init и Final)
@@ -283,6 +351,7 @@ UpdateFinalList {
 		( t.Inits t.GoInfo t.Finals );
 }
 
+// <TypeStart t.StartInfo t.ExeTyper t.Aliases> == t.ExeTyper t.Aliases
 TypeStart {
 	( t.InitFuncs () t.FinalFuncs ) t.ExeTyper t.Aliases =
 		<MError::LinkError 'Startfunction not found'>;
@@ -297,42 +366,21 @@ TypeStart {
 
 TypeCallSeq {
 	t.ExeTyper t.Aliases e.FunList =
-		<DoTypeCallSeq
-			<TypeOpenBlock t.ExeTyper>
-			t.Aliases e.FunList
-		>;
-}
-
-TypeOpenBlock {
-	t.ExeTyper = <ExeTypeLine t.ExeTyper '$ENTRY Go { = '>;
-}
-
-ExeTypeLine {
-	t.ExeTyper = <MExeTyper::Flush t.ExeTyper>;
-
-	t.ExeTyper s.NextChar e.Tail =
-		<ExeTypeLine
-			<MExeTyper::TypeChar t.ExeTyper s.NextChar>
-			e.Tail
+		<TypeUnit
+			t.Aliases t.ExeTyper
+			('Starter')
+			('$ENTRY Go { =')
+			<DoTypeCallSeq e.FunList>
+			(';}')
 		>;
 }
 
 DoTypeCallSeq {
-	t.ExeTyper t.Aliases (e.NextFunc) e.FunList =
-		<DoTypeCallSeq
-			<TypeOneCall t.ExeTyper <LookupAlias t.Aliases e.NextFunc>>
-			e.FunList
-		>;
+	(e.NextFunc) e.Funcs =
+		('\t<$' e.NextFunc '$>')
+		<DoTypeCallSeq e.Funcs>;
 
-	t.ExeTyper t.Aliases =
-		<CloseAliases t.Aliases>
-		<MExeTyper::Destroy <ExeTypeLine t.ExeTyper ';}'>>;
-}
-
-TypeOneCall {
-	t.ExeTyper t.Aliases e.FnAlias =
-		<ExeTypeLine t.ExeTyper '\t<' e.FnAlias '>'>
-		t.Aliases;
+	= ;
 }
 
 /*------------------------------------------------------------------------------

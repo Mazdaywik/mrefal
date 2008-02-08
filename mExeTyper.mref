@@ -247,4 +247,18 @@ $ENTRY TypeRenamed {
 		(ExeTyper s.Limit <Dec3 <Dec s.Free>> t.FOut e.Converted e.Name ' ');
 }
 
+/**
+	<TypeComment t.ExeTyper e.Comment> == t.ExeTyper
+*/
+$ENTRY TypeComment
+	(ExeTyper s.Limit s.Free t.FOut e.Converted) e.Comment =
+		(ExeTyper s.Limit s.Limit
+			<FileIO::WriteLine
+				<FileIO::WriteLine
+					<FileIO::WriteLine t.FOut e.Converted>
+				>
+				'* ' e.Comment
+			>
+		);
+
 $END MExeTyper.

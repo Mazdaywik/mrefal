@@ -1,0 +1,5 @@
+$MODULE MVersion;
+
+$ENTRY ROut = 'ROUT3 Module Refal 0.1';
+
+$END MVersion.

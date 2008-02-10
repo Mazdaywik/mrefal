@@ -1,8 +1,9 @@
+v ROUT3 Module Refal 0.1
 b Swap::FileIO::G_Handles
 c $Swap::FileIO::G_Handles$ {
-c 	e.NewValue =
+c 	e.$Index::NewValue$ =
 c 		<Dg ('FileIO::G_Handles')>
-c 		<Br ('FileIO::G_Handles') '=' e.NewValue >;
+c 		<Br ('FileIO::G_Handles') '=' e.$Index::NewValue$ >;
 c }
 
 b Local::FileIO::DoSave
@@ -179,8 +180,6 @@ c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
 c 		$Entry::MSelfDiag::Assert-NE$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
-c 	$Ident::MRefalRTS$ $Ident::Print$ =
-c 		$Entry::MRefalRTS::Print$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =
 c 		$Entry::MRefalRTS::Card$ ;
 c 	$Ident::MRefalRTS$ $Ident::Open$ =

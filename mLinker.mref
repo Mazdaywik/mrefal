@@ -9,6 +9,7 @@ $IMPORT MOS;
 $IMPORT MOutModuleStatus;
 $IMPORT MStartupSeqGenerator;
 $IMPORT MSymModule;
+$IMPORT MVersion;
 
 $ENTRY Link {
 	t.Context =
@@ -22,7 +23,6 @@ RealLink {
 		<MOutModuleStatus::Linking e.ProgName>
 		<MOutModuleStatus::Flush>
 
-		//<PutModules
 		<StartLinkLoop
 			<MExeTyper::Create <DefLim> e.ProgName>
 			<CreateUnitStorage>
@@ -80,7 +80,6 @@ LinkLoop {
 			> t.Context e.Modules
 		>;
 
-	// К улучшению
 	Finish t.UnitStorage t.AliasTable t.ExeTyper
 	t.Context e.Modules =
 		<DestroyUnitStorage t.UnitStorage>
@@ -98,6 +97,13 @@ LinkLoop {
 				t.UnitStorage t.AliasTable t.ExeTyper
 				t.Context e.NextModule
 			> e.Modules
+		>;
+
+	LoadModule t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context =
+		<MError::LinkError
+			'Unresolved name '
+			<NextRequestedName-D t.UnitStorage>
 		>;
 }
 
@@ -152,9 +158,7 @@ DoAddUnits {
 LoadUnits
 	t.Context Found e.FileName =
 		t.Context
-		<LoadLines e.FileName>;
-
-//==============================================================================
+		<LoadUnits-Aux e.FileName>;
 
 CreateStartUnit {
 	GoNotFound =
@@ -308,37 +312,53 @@ DestroyUnitStorage
 		(Requests e.Requests)
 		(Units e.Units)
 		(Linked e.Linked)
-	) =
-		<MSelfDiag::Log>
-		<MSelfDiag::Log 'DestroyUnitStorage'>
-		<MSelfDiag::Log 'NotLinked:'>
-		<OutNotLinked e.Units>
-		;
+	) = ;
 
-OutNotLinked {
-	((e.Name) e.?Content) e.Units =
-		<MSelfDiag::Log e.Name>
-		<OutNotLinked e.Units>;
+/**
+	<NextRequestedName-D t.UnitStorage>
+		== e.Name
+*/
+NextRequestedName-D {
+	(UnitStorage
+		(Requests (e.NextName) e.Requests) t.Units t.Linked
+	) = e.NextName;
 
-	= ;
+	t.UnitStorage = 'Unknown';
 }
-
-$import MSelfDiag;
 
 /*------------------------------------------------------------------------------
  Последующие Type-фукции выполняют вывод содержимого единиц компоновки в выход-
  ной файл.
 ------------------------------------------------------------------------------*/
 
-LoadLines
+LoadUnits-Aux
 	e.FileName =
 		<GroupLinkUnits
-			<DoLoadLines
+			(e.FileName)
+			(<MVersion::ROut>)
+			<DoLoadUnits-Aux
 				<FileIO::Load e.FileName>
 			>
 		>;
 
 GroupLinkUnits {
+	(e.?FileName) (e.ValidVersion) (Version e.ValidVersion)
+	e.Lines =
+		<DoGroupLinkUnits e.Lines>;
+
+	(e.FileName) (e.ValidVersion) (Version e.InvalidVersion)
+	e.?Lines =
+		<MError::LinkError
+			'Invalid version in .rout-file `' e.FileName '\''
+		>;
+
+	(e.FileName) (e.?ValidVersion) e.?OtherLines =
+		<MError::LinkError
+			'Invalid .rout-file `' e.FileName '\' -- missed version tag'
+		>;
+}
+
+DoGroupLinkUnits {
 	(Banner e.Banner) e.Lines =
 		<GroupOneLinkUnit
 			((e.Banner)) e.Lines
@@ -355,17 +375,17 @@ GroupOneLinkUnit {
 
 	(e.Unit) (Banner e.Banner) e.Lines =
 		(e.Unit)
-		<GroupLinkUnits (Banner e.Banner) e.Lines>;
+		<DoGroupLinkUnits (Banner e.Banner) e.Lines>;
 
 	(e.Unit) = (e.Unit);
 }
 
-DoLoadLines {
+DoLoadUnits-Aux {
 	= ;
 
 	(e.NextLine) e.Lines =
 		<AnalyseLine (e.NextLine)>
-		<DoLoadLines e.Lines>;
+		<DoLoadUnits-Aux e.Lines>;
 }
 		
 
@@ -407,6 +427,8 @@ DoTypeUnits {
 }
 
 AnalyseLine {
+	('v ' e.Version) = (Version e.Version);
+
 	('b ' e.BannerLine) = (Banner e.BannerLine);
 
 	('r ' e.?RemarkLine) = ;

@@ -4,6 +4,7 @@ $IMPORT FileIO;
 $IMPORT MQualifiedName;
 $IMPORT MSymTable;
 $IMPORT MStrings;
+$IMPORT MVersion;
 
 /**
 	<Generate t.Module t.ErrorList e.OutName>
@@ -15,6 +16,8 @@ $ENTRY Generate
 		Success t.ErrorList
 		<FileIO::Save
 			(e.OutName)
+			('v ' <MVersion::ROut>)
+			()
 			<GenerateContent t.Module>
 		>;
 
@@ -48,7 +51,7 @@ DoGenerateSwaps {
 		('c $Swap::' e.ModuleName '::' e.SwapName '$ {')
 		('c \te.$Index::NewValue$ =')
 		('c \t\t<Dg (\'' e.ModuleName '::' e.SwapName '\')>')
-		('c \t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' $Index::e.NewValue$ >;')
+		('c \t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' e.$Index::NewValue$ >;')
 		('c }') ()
 		<DoGenerateSwaps
 			(e.ModuleName) t.SymTable e.Functions-E

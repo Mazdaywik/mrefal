@@ -1,8 +1,9 @@
+v ROUT3 Module Refal 0.1
 b Swap::InOut::G_Buffer
 c $Swap::InOut::G_Buffer$ {
-c 	e.NewValue =
+c 	e.$Index::NewValue$ =
 c 		<Dg ('InOut::G_Buffer')>
-c 		<Br ('InOut::G_Buffer') '=' e.NewValue >;
+c 		<Br ('InOut::G_Buffer') '=' e.$Index::NewValue$ >;
 c }
 
 b Entry::InOut::WriteText-T

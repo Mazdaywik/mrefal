@@ -1,3 +1,4 @@
+v ROUT3 Module Refal 0.1
 b Entry::MOS::Env
 c $Entry::MOS::Env$ {
 c 	e.$Index::Name$ =
@@ -88,8 +89,6 @@ c 	$Ident::FnPtr$ =
 c 		$Local::MOS::FnPtr$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
-c 	$Ident::MRefalRTS$ $Ident::Print$ =
-c 		$Entry::MRefalRTS::Print$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =
 c 		$Entry::MRefalRTS::Card$ ;
 c 	$Ident::MRefalRTS$ $Ident::Open$ =

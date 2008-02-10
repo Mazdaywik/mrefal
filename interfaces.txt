@@ -1,4 +1,90 @@
 ===============================
+Module Brackets;
+
+===============================
+Module Compiler;
+*****************************************************************************
+Модуль реализует трансляцию отдельных модулей исходного текста Модульного
+Рефала. Точки входа в модуль -- функции CompileByModuleName и CompileByFileName
+выполняют компиляцию указанного модуля по заданному имени файла (имя в файло-
+вой системе) или модуля (указанного после директивы $MODULE). Сигнатуры этих
+функций следующие:
+<CompileBy***Name t.Context e.***Name> == t.UpdatedContext
+В процессе компиляции функции возвращают контекст с обновлённой информацией
+о скомпилированных модулях или завершают выполнение программы аварийно вызовом
+функции из модуля Error. Функции также при необходимости рекурсивно перекомпи-
+лируют модули указанные в директивах $IMPORT указанных модулей.
+Для простоты потребуем в данной версии, чтобы имя модуля совпадало с именем
+файла. Поиск исходных файлов осуществляется в текущей директории, поиск библио-
+течных файлов осуществляется сначала в текущей директории, затем по алгоритму,
+находящемуся в модуле Modules вызовом Modules::LookupLibrary.
+******************************************************************************
+
+<CompileModule
+	t.Context
+	(e.Directory)
+	e.ModuleName
+> == t.UpdatedContext
+
+===============================
+Module Context;
+
+===============================
+Module FileIO;
+
+===============================
+Module InOut;
+
+===============================
+Module MAliasTable;
+
+<Create>
+	== t.AliasTable
+
+<Destroy t.AliasTable>
+	== empty
+
+<AddExternInfo t.AliasTable t.SymInfo>
+	== t.UpdatedAliasTable t.SymInfo
+
+<AddLocalInfo t.AliasTable t.SymTable>
+	== t.UpdatedAliasTable t.SymTable
+
+<GetRealName
+	t.AliasTable
+	t.ErrorList t.SrcPos
+	e.QNameInSrc
+>
+	== t.AliasTable t.ErrorList s.LinkType e.RealQName
+	== t.AliasTable t.ErrorList NotFound
+
+===============================
+Module Math;
+
+===============================
+Module MBackEnd;
+
+<Generate t.Module t.ErrorList e.OutName>
+	== s.Result t.UpdatedErrorList
+s.Result ::= Success | Waringns | Errors
+
+===============================
+Module MBuildNumber;
+
+===============================
+Module MCheckNeedCompile;
+
+===============================
+Module MCreateDirIfNeed;
+
+<Create e.DirName> == e.DirName
+
+<InfoDir> == 'Info'
+
+===============================
+Module MError;
+
+===============================
 Module MExeTyper;
 
 <Create s.Limit e.OutputName> == t.ExeTyper
@@ -12,4 +98,308 @@ Module MExeTyper;
 <TypeQuoted t.ExeTyper s.Quote e.Text> == t.ExeTyper
 
 <TypeRenamed t.ExeTyper e.RenamedName> == t.ExeTyper
+
+<TypeComment t.ExeTyper e.Comment> == t.ExeTyper
+
+===============================
+Module MFileSystem;
+
+<ParseFileName e.FileName>
+	== (e.Directory) e.FileNameNoExt (e.Ext)
+Пример:
+<ParseFileName 'c:\\Directory\\Document.doc'>
+	== ('c;\\Directory') 'Document' ('doc')
+
+===============================
+Module MFrontEnd;
+
+<LoadModule e.SourceName>
+	== t.Module s.Status t.ErrorList
+s.Status ::= Success | Warnings | Errors | Fatal
+
+<SymInfo t.Module>
+	== t.Module t.SymInfo
+
+<SymInfo-Old t.Module>
+	== t.Module
+	( Module (e.Directory) e.ModuleName )
+	( Functions (e.FnName)* )
+	( Imports ((e.ImportDirectory) e.ImportName)* )
+
+===============================
+Module MLexer;
+
+===============================
+Module MLinker;
+
+<CreateStartupUnit t.Context>
+	== t.Context (t.StartupUnit)
+
+<CreateUnitStorage> == t.UnitStorage
+
+<AddUnit t.UnitStorage t.Unit>
+	== t.UnitStorage
+
+<AddRequest t.UnitStorage e.Name>
+	== t.UnitStorage
+
+<AddLinked t.UnitStorage e.Name>
+	== t.UnitStorage
+
+<GetNextUnit t.UnitStorage>
+	== t.UnitStorage t.Unit
+	== t.UnitStorage None
+	== t.UnitStorage Finish
+
+<DestroyUnitStorage t.UnitStorage> == empty
+
+===============================
+Module MLinkerAliasTable;
+
+===============================
+Module MLocation;
+
+<LookupModule-T t.Context (e.Directory) e.ModuleName>
+	== t.Context
+		s.Known s.Status
+		(Sym e.SymFileName)
+		(Out e.OutFileName)
+		(Src e.SrcFileName)
+		(e.Directory) e.ModuleName
+s.Known ::= Known | NotKnown
+s.Status ::=
+	if Known
+		Recompiled | Updated | Library | InCompiling
+	if NotKnown
+		ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
+
+===============================
+Module MModulesList;
+
+===============================
+Module Modules;
+
+===============================
+Module MOrder;
+
+===============================
+Module MOS;
+
+===============================
+Module MOutModuleStatus;
+
+===============================
+Module MParser;
+
+<SrcModule e.SrcFileName>
+	== t.Module s.ErrorResult t.ErrorList
+s.ErrorResult ::= Success | Warnings | Errors | Fatal
+
+===============================
+Module MQualifiedName;
+*****************************************************************************
+Абстрактный тип данных -- квалифицированное имя.
+******************************************************************************
+
+<Create> == t.EmptyQualifierName
+<Create e.Name>
+	== t.QalifierName // только с одним сегментом
+
+<Destroy t.QualifiedName> == empty
+
+<CreateFromSegments (e.Segment)*>
+	== t.QualifiedName
+
+<AddSubName t.QualifiedName e.SubName>
+	== t.UpdatedQualifiedName
+
+<AddSuperName t.QualifiedName e.SuperName>
+	== t.UpdatedQualifiedName
+
+<Parse t.QualifiedName>
+	== (e.SegmentName)*
+
+<Parse-T t.QualifiedName>
+	== t.QualifiedName (e.SegmentName)*
+
+<ToRelativeFSPath-T t.QualifiedName>
+	== t.QualifiedName
+		e.Segment '/' e.Segment '/' ... '/' e.Segment
+
+<Append t.QualifiedAcceptor t.QualifiedForAppend>
+	== t.UpdatedQualifierAcceptor
+
+<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
+	== t.UpdatedQualifierAcceptor t.QualifierForAppend
+
+===============================
+Module MQualifiedSupport;
+*****************************************************************************
+Тип данных -- квалифицированное имя.
+
+Хотя в программе была попытка использовать имя с директорией:
+e.FullName = (e.Directory) e.Name
+e.Directory = (e.SubName)*
+******************************************************************************
+
+<DirNameToQualifiedName (e.Directory) e.Name>
+	== t.QualifiedName
+
+<QualifiedNameToDirName-T t.QualifiedName>
+	== t.QualifiedName (e.Directory) e.Name
+
+<UnQualify t.QualifiedName>
+	== e.Name
+t.QualifiedName должен содержать один сегмент.
+
+===============================
+Module MRefal;
+
+===============================
+Module MResolver;
+
+<Resolve t.Module t.ErrorList e.QualifiedList>
+	== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+
+e.QualifiedList ::= ( t.ModuleLocation (e.EntryFnName)* )*
+t.ModuleLocation ::= ((e.Directory) e.ModuleName)
+
+===============================
+Module MResolveTable;
+
+<Create> == t.ResolveTable
+
+<Add t.ResolveTable
+	t.InternalQualifier
+	s.ScopeClass
+	t.ExternalQualifier
+> == t.UpdatedResolveTable
+
+<Lookup t.ResolveTable t.InternalQualifier>
+	== t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+	== t.ResolveTable NotFound NotFound t.InternalQualifier
+
+===============================
+Module MSelfDiag;
+
+===============================
+Module MStartupSeqGenerator;
+
+<Generate t.Context>
+	== t.Context e.FnList
+	== t.Context GoNotFound
+	== t.Context MultipleGo e.FnList--GoFunctions
+e.FnList = (e.Function)*
+
+<UpdateStartInfo t.StartInfo t.Context e.ModuleName>
+	== t.StartInfo t.Context
+
+===============================
+Module MStrings;
+
+<Seq s.NFirst s.NLast>
+	== s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
+s.NFirst и s.NLast -- числа,
+при чём должно быть s.NFirst <= s.NLast
+
+<Reverse e.Line> == e.eniL
+
+===============================
+Module MSymInfo;
+
+<Create>
+	== t.SymInfo
+<Create e.QualifiedModuleName>
+	== t.SymInfo
+
+<Destroy t.SymInfo>
+	== empty
+
+<LoadForModule t.Context e.QualifiedModuleName>
+	== t.SymInfo t.Context
+
+<LoadFromFile e.FileName>
+	== t.SymInfo
+
+<SaveForModule t.SymInfo t.Context>
+	== t.Context
+
+<SaveForModule-T t.SymInfo t.Context>
+	== t.SymInfo t.Context
+
+<SaveToFile t.SymInfo>
+	== empty
+
+<SaveToFile-T t.SymInfo>
+	== t.SymInfo
+
+<ToOldSymInfo t.SymInfo>
+	= e.OldSymInfo
+
+<ToOldSymInfo-T t.SymInfo>
+	= t.SymInfo e.OldSymInfo
+
+<CreateFromSymTable t.SymTable>
+	== t.SymTable t.SymInfo
+
+===============================
+Module MSymModule;
+
+Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
+на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
+линковщик.
+
+<LoadInfo t.Context (e.Directory) e.ModuleName>
+	== t.UpdatedContext
+		( Module (e.Directory) e.ModuleName )
+		( Functions (e.FnName)* )
+		( Imports ((e.ImportDirectory) e.ImportName)* )
+	== t.Context SymInfoNotFound
+
+===============================
+Module MSymStream;
+
+** Описание абстрактного типа данных "Символьный поток" SymStream **
+Определены операции:
+
+<Create e.FileName> == t.SymStream
+создаёт новый поток;
+
+<NextChar t.SymStream> == t.SymStream s.Char
+возвращает следующий символ из потока, CrLf в случае перехода на новую
+строку, EOF в случае конца файла;
+
+<Destroy t.SymStream> == empty
+закрывает поток;
+
+<UnGetChar t.SymStream s.Char> == t.SymStream
+возвращает символ обратно в поток, при необходимости корректируется номер
+строки;
+
+<ExtractFromSet (e.Set) t.SymStream>
+	== s.Char t.SymStream //Если символ из набора.
+	== t.SymStream //Если символ не из набора.
+извлекает из потока символ из заданного набора; во втором случае символ
+возвращается в поток;
+
+<ExtractsFromSet (e.Set) t.SymStream>
+	== t.SymStream e.Chars
+аналогично ExtractFromSet, но возвращает последовательность символов из
+заданного набора (которая может быть и пустой).
+
+<ExtractsFromSet-N (e.Set) t.SymStream s.NChars>
+	== t.SymStream e.Chars
+аналогично ExtractsFromSet, но возвращает последовательность символов из
+заданного набора (которая может быть и пустой), причём её длина не может быть
+более s.NChars символов.
+
+===============================
+Module MSymTable;
+
+<ExtractLocalInfo t.SymTable>
+	== t.SymTable (s.ScopeClass e.EntityName)*
+s.ScopeClass ::= Entry | Local | Swap
+
+===============================
+Module Types;
 

@@ -1,3 +1,4 @@
+v ROUT3 Module Refal 0.1
 b Local::MOrder::SwMerge
 c $Local::MOrder::SwMerge$ {
 c 	'>' ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ t.$Index::First2$ e.$Index::Series2$ ) =
@@ -42,6 +43,8 @@ c }
 
 b Entry::MOrder::Sort
 c $Entry::MOrder::Sort$ {
+c 	=
+c 		;
 c 	e.$Index::Sequence$ =
 c 		<$Local::MOrder::MergePairs$ <$Local::MOrder::CreateSeries$ e.$Index::Sequence$ > > ;
 c }
@@ -160,8 +163,6 @@ c 	$Ident::FnPtr$ =
 c 		$Local::MOrder::FnPtr$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
-c 	$Ident::MRefalRTS$ $Ident::Print$ =
-c 		$Entry::MRefalRTS::Print$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =
 c 		$Entry::MRefalRTS::Card$ ;
 c 	$Ident::MRefalRTS$ $Ident::Open$ =

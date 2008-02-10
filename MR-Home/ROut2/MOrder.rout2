@@ -36,6 +36,8 @@ MOrder::CreateSeries::Local {
 }
 
 MOrder::Sort::Entry {
+	=
+		;
 	e.Sequence =
 		<MOrder::MergePairs::Local <MOrder::CreateSeries::Local e.Sequence > > ;
 }
@@ -145,8 +147,6 @@ MOrder::FnPtr::Local {
 		$MOrder::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =

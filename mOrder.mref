@@ -83,8 +83,11 @@ SwSymbCompare {
 	() () = '=';
 }
 
-$ENTRY Sort
+$ENTRY Sort {
+	= ;
+
 	e.Sequence = <MergePairs <CreateSeries e.Sequence> >;
+}
 
 CreateSeries {
 	t.Elem e.Tail = ( t.Elem ) <CreateSeries e.Tail>;

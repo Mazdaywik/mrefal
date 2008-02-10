@@ -4,15 +4,18 @@ $IMPORT InOut;
 $IMPORT MOS;
 $IMPORT MLexer;
 $IMPORT MOrder;
+$IMPORT MOutModuleStatus;
 $IMPORT MSymStream;
 
 $ENTRY Fatal
 	e.Message =
+		<MOutModuleStatus::Flush>
 		<InOut::WriteLine 'FATAL ERROR: ' e.Message>
 		<MOS::Exit 1>;
 
 $ENTRY LinkError
 	e.Message =
+		<MOutModuleStatus::Flush>
 		<InOut::WriteLine 'LINKER ERROR: ' e.Message>
 		<MOS::Exit 1>;
 
@@ -35,6 +38,7 @@ PrintError {
 
 OutError {
 	t.SrcPos (e.Kind) e.Message =
+		<MOutModuleStatus::Flush>
 		<InOut::WriteLine
 			e.Kind ' ERROR ('
 			<MSymStream::SrcPosToString t.SrcPos>
@@ -44,6 +48,7 @@ OutError {
 
 $ENTRY Warning {
 	s.LineNumber e.Text =
+		<MOutModuleStatus::Flush>
 		<InOut::WriteLine 'WARNING in line ' s.LineNumber ': ' e.Text>;
 }
 

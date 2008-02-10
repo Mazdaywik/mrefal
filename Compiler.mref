@@ -18,12 +18,12 @@ $MODULE Compiler;
 *******************************************************************************/
 
 $IMPORT Context;
-$IMPORT InOut;
 $IMPORT MBackEnd;
 $IMPORT MError;
 $IMPORT MFrontEnd;
 $IMPORT MLocation;
 $IMPORT Modules;
+$IMPORT MOutModuleStatus;
 $IMPORT MResolver;
 $IMPORT MSelfDiag;
 $IMPORT MSymModule;
@@ -56,7 +56,7 @@ ParseAndCompile {
 	s.Known s.Status
 	(Sym e.SymName) (Out e.OutName) (Src e.SrcName)
 	(e.Directory) e.Name =
-		<InOut::WriteLine 'Compiling file `' e.SrcName '`...'>
+		<MOutModuleStatus::Compiling e.SrcName>
 		<Compile
 			(File e.SrcName)
 			t.Context
@@ -64,8 +64,7 @@ ParseAndCompile {
 				e.SrcName
 			>
 		>
- 		<InOut::WriteLine '... compiled file `' e.SrcName '`'>
-		;
+ 		<MOutModuleStatus::Compiled e.SrcName>;
 }
 
 /**
@@ -320,7 +319,7 @@ SwCompileIfNeed-Old {
 	t.Context Library
 	(Sym e.SymFile) (Out e.OutFile) (Src None)
 	e.ModuleName =
-		<InOut::WriteLine 'Library \'' e.ModuleName '\''>
+		<MOutModuleStatus::Library e.ModuleName>
 		<CheckCompileIfNeed-Old
 			<Context::UpdateModuleInfo
 				t.Context
@@ -333,7 +332,7 @@ SwCompileIfNeed-Old {
 	t.Context SystemLibrary
 	(Sym e.SymFile) (Out e.OutFile) (Src None)
 	e.ModuleName =
-		<InOut::WriteLine 'System library \'' e.ModuleName '\''>
+		<MOutModuleStatus::SystemLibrary e.ModuleName>
 		<CheckCompileIfNeed-Old
 			<Context::UpdateModuleInfo
 				t.Context
@@ -419,7 +418,7 @@ DoCheckCompileIfNeed-Old {
 		>;
 
 	(e.ModuleName) Updated t.Context =
-		<InOut::WriteLine 'Updated `' e.ModuleName '`'>
+		<MOutModuleStatus::Updated e.ModuleName>
 		<Context::UpdateModuleInfo
 			t.Context
 			(e.ModuleName)

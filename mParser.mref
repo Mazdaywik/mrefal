@@ -408,7 +408,7 @@ NImportBlock-AfterName {
 	( e.ParentStack )
 	t.Lexer t.OtherToken =
 		<MError::AddUnexpected
-			t.ErrorList t.SymTable 'semicolon'
+			t.ErrorList t.OtherToken 'semicolon'
 		> t.SymTable ( e.ParentStack )
 		t.Lexer t.OtherToken;
 }

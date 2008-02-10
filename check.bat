@@ -1,2 +1,2 @@
-call make
-call make
+@call make
+@call make

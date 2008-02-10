@@ -34,10 +34,10 @@ GenerateSwaps
 
 DoGenerateSwaps {
 /*
-	ModuleName::SomeHolder::Swap {
-		e.NewValue =
+	$Swap::ModuleName::SomeHolder$ {
+		e.$Index::NewValue$ =
 			<Dg ('ModuleName::SomeHolder')>
-			<Br ('ModuleName::SomeHolder') '=' e.NewValue >;
+			<Br ('ModuleName::SomeHolder') '=' e.$Index::NewValue$ >;
 	}
 
 */
@@ -46,9 +46,9 @@ DoGenerateSwaps {
 	e.Functions-B (Swap e.SwapName) e.Functions-E =
 		('b Swap::' e.ModuleName '::' e.SwapName)
 		('c $Swap::' e.ModuleName '::' e.SwapName '$ {')
-		('c \te.NewValue =')
+		('c \te.$Index::NewValue$ =')
 		('c \t\t<Dg (\'' e.ModuleName '::' e.SwapName '\')>')
-		('c \t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' e.NewValue >;')
+		('c \t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' $Index::e.NewValue$ >;')
 		('c }') ()
 		<DoGenerateSwaps
 			(e.ModuleName) t.SymTable e.Functions-E

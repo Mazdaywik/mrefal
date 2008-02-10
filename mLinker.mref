@@ -2,130 +2,333 @@ $MODULE MLinker;
 
 $IMPORT Context;
 $IMPORT FileIO;
-$IMPORT InOut;
-$IMPORT MCreateDirIfNeed;
 $IMPORT MError;
-$IMPORT MOS;
 $IMPORT MExeTyper;
-$IMPORT MStrings;
+$IMPORT MLinkerAliasTable;
+$IMPORT MOS;
+$IMPORT MOutModuleStatus;
+$IMPORT MStartupSeqGenerator;
 $IMPORT MSymModule;
-$IMPORT MOrder;
 
 $ENTRY Link {
 	t.Context =
-		<InOut::WriteLine 'Linking...'>
 		<RealLink
-			<Context::GetProgName t.Context>
+			<Context::GetProgName t.Context> '.ref'
 		>;
 }
 
 RealLink {
 	t.Context e.ProgName =
-		<PutStartCaller
-			<PutModules
-				<MExeTyper::Create <DefLim> e.ProgName '.ref'>
-				<NewAliasesTable>
-				<NewStartInfo>
-				<Context::ExtractModulesList t.Context>
-			>
-		> <MOS::System 'refc ' e.ProgName '.ref'>;
+		<MOutModuleStatus::Linking e.ProgName>
+		<MOutModuleStatus::Flush>
+
+		//<PutModules
+		<StartLinkLoop
+			<MExeTyper::Create <DefLim> e.ProgName>
+			<CreateUnitStorage>
+			<Context::ExtractModulesList t.Context>
+		>
+
+		<MOS::System 'refc ' e.ProgName>;
 }
 
 DefLim = 64;
 
-PutModules
-	t.ExeTyper t.Aliases t.StartInfo t.Context e.Modules =
-		<DoPutModules
+StartLinkLoop
+	t.ExeTyper t.UnitStorage t.Context e.Modules =
+		<StartLinkLoop-Aux
+			t.UnitStorage
+			<MLinkerAliasTable::Create>
 			t.ExeTyper
-			t.Aliases
-			<CreateStartInfo t.StartInfo t.Context e.Modules>
+			<CreateStartupUnitForLoop t.Context>
 			e.Modules
 		>;
 
-
-DoPutModules {
-	t.ExeTyper t.Aliases t.Context t.StartInfo
-	(e.NextName) e.Tail =
-		<DoPutModules
-			<PutModule
-				t.ExeTyper t.Aliases
-				(e.NextName)
-				<Context::ExtractOption
-					t.Context
-					Out
-					e.NextName
-				>
-			>
-			t.StartInfo e.Tail
+/**
+	<CreateStartupUnit t.Context>
+		== t.Context (t.StartupUnit)
+*/
+CreateStartupUnitForLoop
+	t.Context =
+		<CreateStartupUnitForLoop-Aux
+			<MStartupSeqGenerator::GetFnList t.Context>
 		>;
 
-	t.ExeTyper t.Aliases t.Context t.StartInfo =
-		t.ExeTyper t.Aliases t.Context t.StartInfo;
+CreateStartupUnitForLoop-Aux
+	t.Context e.FnList =
+		t.Context
+		(<CreateStartUnit e.FnList>);
+
+StartLinkLoop-Aux
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context t.StartUnit e.Modules =
+		<LinkLoop
+			Continue
+			<AddUnit
+				<AddRequest t.UnitStorage 'Starter'>
+				t.StartUnit
+			> t.AliasTable t.ExeTyper
+			t.Context e.Modules
+		>;
+
+LinkLoop {
+	Continue t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context e.Modules =
+		<LinkLoop
+			<LinkNextUnit
+				t.UnitStorage t.AliasTable t.ExeTyper
+			> t.Context e.Modules
+		>;
+
+	// К улучшению
+	Finish t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context e.Modules =
+		<DestroyUnitStorage t.UnitStorage>
+		<MLinkerAliasTable::Destroy
+			<MLinkerAliasTable::OutAliases t.AliasTable>
+		>
+		<MExeTyper::Destroy t.ExeTyper>
+		t.Context;
+
+	LoadModule t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context (e.NextModule) e.Modules =
+		<LinkLoop
+			Continue
+			<AddNextModuleToUnitStorage
+				t.UnitStorage t.AliasTable t.ExeTyper
+				t.Context e.NextModule
+			> e.Modules
+		>;
 }
 
-PutModule {
-	t.ExeTyper t.Aliases (e.ModuleName) t.Context Found e.OutName =
-		<TypeContent
-			t.ExeTyper
-			t.Aliases
-			e.OutName
-		>
+LinkNextUnit
+	t.UnitStorage t.AliasTable t.ExeTyper =
+		<SwLinkNextUnit
+			<GetNextUnit t.UnitStorage>
+			t.AliasTable t.ExeTyper
+		>;
+
+SwLinkNextUnit {
+	t.UnitStorage Finish t.AliasTable t.ExeTyper =
+		Finish t.UnitStorage t.AliasTable t.ExeTyper;
+
+	t.UnitStorage None t.AliasTable t.ExeTyper =
+		LoadModule t.UnitStorage t.AliasTable t.ExeTyper;
+
+	t.UnitStorage (e.Unit) t.AliasTable t.ExeTyper =
+		Continue
+		<TypeUnit
+			t.UnitStorage t.AliasTable t.ExeTyper e.Unit
+		>;
+}
+
+AddNextModuleToUnitStorage
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context e.NextModule =
+		<DoAddUnits
+			t.UnitStorage t.AliasTable t.ExeTyper
+			<LoadUnits
+				<Context::ExtractOption
+					t.Context
+					Out e.NextModule
+				>
+			>
+		>;
+
+DoAddUnits {
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context t.NextUnit e.Units =
+		<DoAddUnits
+			<AddUnit t.UnitStorage t.NextUnit>
+			t.AliasTable t.ExeTyper t.Context e.Units
+		>;
+
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context =
+		t.UnitStorage t.AliasTable t.ExeTyper
 		t.Context;
 }
 
-/*
-	<CreateStartInfo
-		t.StartInfo t.Context e.Modules
-	> == t.Context t.StartInfo
-*/
-CreateStartInfo {
-	t.StartInfo t.Context (e.NextModuleName) e.Modules =
-		<CreateStartInfo
-			<UpdateStartInfo
-				t.StartInfo
-				t.Context
-				e.NextModuleName
-			>
-			e.Modules
-		>;
-
-	t.StartInfo t.Context =
-		t.Context t.StartInfo;
-}
-
-PutStartCaller {
-	t.ExeTyper t.Aliases t.Context t.StartInfo =
+LoadUnits
+	t.Context Found e.FileName =
 		t.Context
-		<DestroyExeTyperAndAliases
-			<TypeStart
-				t.StartInfo
-				t.ExeTyper
-				<OutAliases t.Aliases>
-			>
+		<LoadLines e.FileName>;
+
+//==============================================================================
+
+CreateStartUnit {
+	GoNotFound =
+		<MError::LinkError 'Go function not found'>;
+
+	MulipleGo e.GoList =
+		<MError::LinkError
+			'Multiple go functions: '
+			<TypeMultiplyGoList e.GoList>
 		>;
+
+	e.FunList =
+		('Starter')
+		('$ENTRY Go { =')
+		<DoCreateCallSeq e.FunList>
+		(';}');
 }
 
-DestroyExeTyperAndAliases
-	t.Aliases t.ExeTyper =
-		<CloseAliases t.Aliases>
-		<MExeTyper::Destroy t.ExeTyper>;
+TypeMultiplyGoList {
+	(e.Go1) (e.Go2) =
+		e.Go1 ' and ' e.Go2;
+
+	(e.NextGo) e.GoFunctions =
+		e.NextGo ', '
+		<TypeMultiplyGoList e.GoFunctions>;
+}
+
+DoCreateCallSeq {
+	(e.NextFunc) e.Funcs =
+		('\t<$' e.NextFunc '$>')
+		<DoCreateCallSeq e.Funcs>;
+
+	= ;
+}
 
 /*------------------------------------------------------------------------------
- Построчное препроцессирование .rout-файлов с их добавлением в выходной файл.
+ Хранилище единиц компоновки.
 
- Последующие Type-функции выполняют построчное препроцессирование .rout-файлов.
- Поскольку содержимое этих файлов сгенерировано автоматически, то можно ожидать,
- что вызовы функций и переменные написаны одноформатно, а вручную создаваемые
- библиотечные файлы написаны с особым вниманием.
+ Внутреннее устройство:
+ t.UnitStorage ::=
+ 	(UnitStorage (Requests e.Requests) (Units e.Units) (Linked e.Linked))
+ e.Requests ::= (e.UnitName)*
+ e.Units ::= t.LinkUnit*
+ e.Linked ::= (e.UnitName)*
 ------------------------------------------------------------------------------*/
 
-// <TypeContext t.ExeTyper t.Aliases e.FileName> ==  t.ExeTyper t.Aliases
-TypeContent {
-	t.ExeTyper t.Aliases e.FileName =
-		<DoTypeContent
-			t.Aliases t.ExeTyper <LoadLines e.FileName>
-		>;
+/**
+	<CreateUnitStorage> == t.UnitStorage
+*/
+CreateUnitStorage =
+	(UnitStorage (Requests) (Units) (Linked));
+
+/**
+	<AddUnit t.UnitStorage t.Unit>
+		== t.UnitStorage
+*/
+AddUnit
+	(UnitStorage t.Request (Units e.Units) t.Linked)
+	t.Unit =
+		(UnitStorage
+			t.Request (Units e.Units t.Unit) t.Linked
+		);
+
+/**
+	<AddRequest t.UnitStorage e.Name>
+		== t.UnitStorage
+*/
+AddRequest {
+	t.UnitStorage 'Entry::' e.Name =
+		<AddRequestAux t.UnitStorage 'Entry::' e.Name>;
+
+	t.UnitStorage 'Local::' e.Name =
+		<AddRequestAux t.UnitStorage 'Local::' e.Name>;
+
+	t.UnitStorage 'Swap::' e.Name =
+		<AddRequestAux t.UnitStorage 'Swap::' e.Name>;
+
+	t.UnitStorage 'Starter' =
+		<AddRequestAux t.UnitStorage 'Starter'>;
+
+	t.UnitStorage e.OtherName =
+		t.UnitStorage;
 }
+
+AddRequestAux {
+	(UnitStorage
+		t.Request t.Units (Linked e.Linked-B (e.Name) e.Linked-E)
+	) e.Name =
+		(UnitStorage
+			t.Request t.Units
+			(Linked e.Linked-B (e.Name) e.Linked-E)
+		);
+
+	(UnitStorage
+		(Requests e.Requests-B (e.Name) e.Requests-E) t.Units t.Linked
+	) e.Name =
+		(UnitStorage
+			(Requests e.Requests-B (e.Name) e.Requests-E)
+			t.Units t.Linked
+		);
+
+	(UnitStorage
+		(Requests e.Requests) t.Units t.Linked
+	)
+	e.Name =
+		(UnitStorage
+			(Requests e.Requests (e.Name)) t.Units t.Linked
+		);
+}
+
+/**
+	<AddLinked t.UnitStorage e.Name>
+		== t.UnitStorage
+*/
+AddLinked
+	(UnitStorage t.Requests t.Units (Linked e.Linked))
+	e.Name =
+		(UnitStorage
+			t.Requests t.Units (Linked e.Linked (e.Name))
+		);
+
+/**
+	<GetNextUnit t.UnitStorage>
+		== t.UnitStorage t.Unit
+		== t.UnitStorage None
+		== t.UnitStorage Finish
+*/
+GetNextUnit {
+	(UnitStorage (Requests) t.Units t.Linked) =
+		(UnitStorage (Requests) t.Units t.Linked)
+		Finish;
+
+	(UnitStorage
+		(Requests (e.NextName) e.Requests)
+		(Units e.Units-B ((e.NextName) e.Body) e.Units-E)
+		t.Linked
+	) =
+		(UnitStorage
+			(Requests e.Requests) (Units e.Units-B e.Units-E) t.Linked
+		) ((e.NextName) e.Body);
+
+	(UnitStorage t.Requests t.Units t.Linked) =
+		(UnitStorage t.Requests t.Units t.Linked) None;
+}
+
+/**
+	<DestroyUnitStorage t.UnitStorage> == empty
+*/
+DestroyUnitStorage
+	(UnitStorage
+		(Requests e.Requests)
+		(Units e.Units)
+		(Linked e.Linked)
+	) =
+		<MSelfDiag::Log>
+		<MSelfDiag::Log 'DestroyUnitStorage'>
+		<MSelfDiag::Log 'NotLinked:'>
+		<OutNotLinked e.Units>
+		;
+
+OutNotLinked {
+	((e.Name) e.?Content) e.Units =
+		<MSelfDiag::Log e.Name>
+		<OutNotLinked e.Units>;
+
+	= ;
+}
+
+$import MSelfDiag;
+
+/*------------------------------------------------------------------------------
+ Последующие Type-фукции выполняют вывод содержимого единиц компоновки в выход-
+ ной файл.
+------------------------------------------------------------------------------*/
 
 LoadLines
 	e.FileName =
@@ -168,18 +371,22 @@ DoLoadLines {
 
 DoTypeContent {
 	t.Aliases t.ExeTyper =
-		t.ExeTyper t.Aliases;
+		t.Aliases t.ExeTyper;
 
 	t.Aliases t.ExeTyper (e.NextUnit) e.Units =
 		<DoTypeContent
-			<TypeUnit t.Aliases t.ExeTyper e.NextUnit>
+			<TypeUnit
+				<CreateUnitStorage>
+				t.Aliases t.ExeTyper e.NextUnit
+			>
 			e.Units
 		>;
 }
 
 TypeUnit {
-	t.Aliases t.ExeTyper (e.Banner) e.Lines =
+	t.UnitStorage t.Aliases t.ExeTyper (e.Banner) e.Lines =
 		<DoTypeUnits
+			<AddLinked t.UnitStorage e.Banner>
 			t.Aliases
 			<MExeTyper::TypeComment t.ExeTyper e.Banner>
 			e.Lines
@@ -187,12 +394,14 @@ TypeUnit {
 }
 
 DoTypeUnits {
-	t.Aliases t.ExeTyper =
+	t.UnitStorage t.Aliases t.ExeTyper =
+		//<DestroyUnitStorage t.UnitStorage>
+		t.UnitStorage
 		t.Aliases t.ExeTyper;
 
-	t.Aliases t.ExeTyper (e.NextLine) e.Lines =
+	t.UnitStorage t.Aliases t.ExeTyper (e.NextLine) e.Lines =
 		<DoTypeUnits
-			<TypeLine t.Aliases t.ExeTyper e.NextLine>
+			<TypeLine t.UnitStorage t.Aliases t.ExeTyper e.NextLine>
 			e.Lines
 		>;
 }
@@ -231,35 +440,36 @@ StartHidingQuote {
 }
 
 TypeLine {
-	t.Aliases t.ExeTyper =
-		t.Aliases t.ExeTyper;
+	t.UnitStorage t.Aliases t.ExeTyper =
+		t.UnitStorage t.Aliases t.ExeTyper;
 
-	t.Aliases t.ExeTyper e.Line =
+	t.UnitStorage t.Aliases t.ExeTyper e.Line =
 		<TypeLine
 			<SwTypeContent
-				t.Aliases t.ExeTyper e.Line
+				t.UnitStorage t.Aliases t.ExeTyper e.Line
 			>
 		>;
 }
 
 SwTypeContent {
-	t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
-		t.Aliases
+	t.UnitStorage t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
+		t.UnitStorage t.Aliases
 		<MExeTyper::TypeQuoted
 			t.ExeTyper s.Quote e.HiddenQuote
 		> e.Raw;
 
-	t.Aliases t.ExeTyper '$$' e.Raw =
-		t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> e.Raw;
+	t.UnitStorage t.Aliases t.ExeTyper '$$' e.Raw =
+		t.UnitStorage t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> e.Raw;
 
-	t.Aliases t.ExeTyper '$' e.FnName '$' e.Raw =
+	t.UnitStorage t.Aliases t.ExeTyper '$' e.FnName '$' e.Raw =
+		<AddRequest t.UnitStorage e.FnName>
 		<TypeRenamed
-			( <LookupAlias t.Aliases e.FnName> )
+			( <MLinkerAliasTable::Lookup t.Aliases e.FnName> )
 			t.ExeTyper e.Raw
 		>;
 
-	t.Aliases t.ExeTyper s.Char e.Raw =
-		t.Aliases
+	t.UnitStorage t.Aliases t.ExeTyper s.Char e.Raw =
+		t.UnitStorage t.Aliases
 		<MExeTyper::TypeChar t.ExeTyper s.Char>
 		e.Raw;
 }
@@ -268,266 +478,5 @@ TypeRenamed
 	(t.Aliases e.FnAlias) t.ExeTyper e.Raw =
 		t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> e.Raw;
 
-*-------------------------------------------------------------------------------
-* Хранилище информации о точках запуска модулей (функций Go, Init и Final)
-*-------------------------------------------------------------------------------
-
-NewStartInfo {
-	= ( (/* InitList */) (/* Go */) (/* FinalList */) );
-}
-
-/**
-	<UpdateStartInfo t.StartInfo t.Context e.ModuleName>
-		== t.StartInfo t.Context
-*/
-UpdateStartInfo {
-	t.StartInfo t.Context e.ModuleName =
-		<UpdateInitList
-			t.StartInfo
-			<MSymModule::LoadInfo t.Context () e.ModuleName>
-		>;
-}
-
-UpdateInitList {
-	( (e.InitList) t.GoInfo t.FinalList )
-	t.Context
-	( Module () e.ModuleName )
-	( Functions e.Fn-B ('Init') e.Fn-E )
-	( Imports e.Imports ) =
-		<UpdateGoInfo
-			( (e.InitList ('Entry::' e.ModuleName '::Init')) t.GoInfo t.FinalList )
-			( e.ModuleName )
-			( Functions e.Fn-B e.Fn-E )
-		> t.Context;
-
-	t.StartInfo t.Context
-	( Module () e.ModuleName )
-	( Functions e.FnList )
-	( Imports e.Imports ) =
-		<UpdateGoInfo
-			t.StartInfo
-			( e.ModuleName )
-			( Functions e.FnList )
-		> t.Context;
-}
-
-UpdateGoInfo {
-	( t.Inits () t.Finals )
-	( e.ModuleName )
-	( Functions e.Fn-B ('Go') e.Fn-E ) =
-		<UpdateFinalList
-			( t.Inits ('Entry::' e.ModuleName '::Go') t.Finals )
-			( e.ModuleName )
-			( Functions e.Fn-B e.Fn-E )
-		>;
-
-	( t.Inits (e.OtherGo) t.Finals )
-	( e.ModuleName )
-	( Functions e.Fn-B ('Go') e.Fn-E ) =
-		<MError::LinkError
-			'Found two Go functions: ' e.OtherGo ' and Entry::' e.ModuleName '::Go'
-		>;
-
-	( t.Inits (e.GoInfo) t.Finals )
-	( e.ModuleName )
-	( Functions e.FnList ) =
-		<UpdateFinalList
-			( t.Inits (e.GoInfo) t.Finals )
-			( e.ModuleName )
-			( Functions e.FnList )
-		>;
-}
-
-UpdateFinalList {
-	( t.Inits t.GoInfo (e.Finals) )
-	( e.ModuleName )
-	( Functions e.Fn-B ('Final') e.Fn-E ) =
-		// Финализаторы выполняются в порядке, обратном инициализаторам
-		( t.Inits t.GoInfo (('Entry::' e.ModuleName '::Final') e.Finals) );
-
-	( t.Inits t.GoInfo t.Finals )
-	( e.ModuleName )
-	( Functions e.FnList ) =
-		( t.Inits t.GoInfo t.Finals );
-}
-
-// <TypeStart t.StartInfo t.ExeTyper t.Aliases> == t.ExeTyper t.Aliases
-TypeStart {
-	( t.InitFuncs () t.FinalFuncs ) t.ExeTyper t.Aliases =
-		<MError::LinkError 'Startfunction not found'>;
-
-	( (e.InitFuncs) t.GoFunction (e.FinalFuncs) ) t.ExeTyper t.Aliases =
-		<TypeCallSeq
-			t.ExeTyper
-			t.Aliases
-			e.InitFuncs t.GoFunction e.FinalFuncs
-		>;
-}
-
-TypeCallSeq {
-	t.ExeTyper t.Aliases e.FunList =
-		<TypeUnit
-			t.Aliases t.ExeTyper
-			('Starter')
-			('$ENTRY Go { =')
-			<DoTypeCallSeq e.FunList>
-			(';}')
-		>;
-}
-
-DoTypeCallSeq {
-	(e.NextFunc) e.Funcs =
-		('\t<$' e.NextFunc '$>')
-		<DoTypeCallSeq e.Funcs>;
-
-	= ;
-}
-
-/*------------------------------------------------------------------------------
- Таблица псевдонимов для замены имён функций и индексов переменных на более
- короткие (для индексов переменных это не особо актуально, а вот для имён
- функций необходимо, т.к. Рефал-5 не переваривает строки длиннее 260 символов,
- а квалифицированные имена функций достаточно длинны).
- Формат таблицы псевдонимов ( (e.Nums) (e.Name(e.Alias))* )
-	e.Nums -- номера, преписываемые следующему псевдониму,
-		e.Nums := (s.Categ e.Num)*
-	e.Name -- оригинальное имя (типа 'NextToken' или '.Context')
-	e.Alias -- псевдоним
-------------------------------------------------------------------------------*/
-
-NewAliasesTable {
-	= ( () );
-}
-
-LookupAlias {
-	( t.Num e.Aliases-B ( e.Name (e.Alias) ) e.Aliases-E )
-	e.Name =
-		( t.Num ( e.Name (e.Alias) ) e.Aliases-B e.Aliases-E )
-		e.Alias;
-
-	( t.Num e.Aliases ) e.Name =
-		<LookupAlias
-			( <NewAlias t.Num e.Name> e.Aliases )
-			e.Name
-		>;
-}
-
-CategChar {
-	'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E';
-	'Swap' = 'S'; 'Ident' = 'W'; 'ADT' = 'T';
-}
-
-NewAlias {
-	/* Все */
-	t.Num e.CategStr '::' e.Name =
-		<NewAliasAux
-			<CategChar e.CategStr>
-			t.Num e.CategStr '::' e.Name
-		>;
-}
-
-NewAliasAux
-	s.CategChar t.Num e.NameInRout =
-		<NewAliasAuxWithNumber
-			s.CategChar
-			<IncCateg t.Num s.CategChar>
-			(e.NameInRout)
-		>;
-
-NewAliasAuxWithNumber
-	s.CategChar t.Num e.AliasNumber (e.NameInRout) =
-		t.Num
-		(e.NameInRout (s.CategChar e.AliasNumber));
-
-// <IncCateg t.Num s.Categ> == t.UpdatedNum s.CatNumber
-IncCateg {
-	(e.Nums-B (s.Categ e.Num) e.Nums-E) s.Categ =
-		((s.Categ <IncStringIndex e.Num>) e.Nums-B e.Nums-E) e.Num;
-
-	(e.Nums) s.Categ =
-		<IncCateg ((s.Categ) e.Nums) s.Categ>;
-}
-
-IncStringIndex
-	e.Num =
-		<IncStringIndexAux
-			(e.Num) <CharDigitsSeq>
-		>;
-
-CharDigitsSeq =
-	'0123456789'
-	'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-	'abcdefghijklmnopqrstuvwxyz';
-
-IncStringIndexAux {
-	(s.Last) s.Zero s.First e.Seq s.Last =
-		s.First s.Zero;
-
-	(e.Num s.Last) s.Zero e.Seq s.Last =
-		<IncStringIndexAux
-			(e.Num) s.Zero e.Seq s.Last
-		> s.Zero;
-
-	(e.Num s.Last) e.Seq-B s.Last s.Next e.Seq-E =
-		e.Num s.Next;
-
-	() s.First e.Seq-E = s.First;
-}
-
-OutAliases {
-	( t.Num e.Aliases ) =
-		( t.Num e.Aliases )
-		<UserTypeAliases
-			<FileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
-			<SortAliases e.Aliases>
-		>;
-}
-
-SortAliases
-	e.Aliases =
-		<DoDecode <MOrder::Sort <DoCode e.Aliases>>>;
-
-DoCode {
-	t.Next e.Tail =
-		<Code t.Next> <DoCode e.Tail>;
-
-	= ;
-}
-
-Code
-	( e.Name (s.Categ e.Index) ) =
-		( (s.Categ <MStrings::Length-T e.Index>) e.Name );
-
-DoDecode {
-	t.Next e.Tail =
-		<Decode t.Next> <DoDecode e.Tail>;
-
-	= ;
-}
-
-Decode
-	( (s.Categ s.Length e.Index) e.Name ) =
-		( e.Name (s.Categ e.Index) );
-
-UserTypeAliases {
-	//Пропускаем индексы переменных.
-	t.FAli ('Index::' e.Name ('i' e.Alias)) e.Tail =
-		<UserTypeAliases
-			t.FAli e.Tail
-		>;
-
-	t.FAli (e.Categ '::' e.Name (e.Alias)) e.Tail =
-		<UserTypeAliases
-			<FileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
-			e.Tail
-		>;
-
-	t.FAli =
-		<FileIO::Close t.FAli>;
-}
-
-CloseAliases {
-	( t.Num e.Aliases ) = ;
-}
 
 $END MLinker.

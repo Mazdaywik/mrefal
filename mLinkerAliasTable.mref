@@ -1,0 +1,156 @@
+$MODULE MLinkerAliasTable;
+
+$IMPORT FileIO;
+$IMPORT MCreateDirIfNeed;
+$IMPORT MStrings;
+$IMPORT MOrder;
+
+/*------------------------------------------------------------------------------
+ Таблица псевдонимов для замены имён функций и индексов переменных на более
+ короткие (для индексов переменных это не особо актуально, а вот для имён
+ функций необходимо, т.к. Рефал-5 не переваривает строки длиннее 260 символов,
+ а квалифицированные имена функций достаточно длинны).
+ Формат таблицы псевдонимов (AliasTable (e.Nums) (e.Name(e.Alias))* )
+	e.Nums -- номера, преписываемые следующему псевдониму,
+		e.Nums := (s.Categ e.Num)*
+	e.Name -- оригинальное имя (типа 'NextToken' или '.Context')
+	e.Alias -- псевдоним
+------------------------------------------------------------------------------*/
+
+$ENTRY Create {
+	= (AliasTable () );
+}
+
+$ENTRY Lookup {
+	(AliasTable t.Num e.Aliases-B ( e.Name (e.Alias) ) e.Aliases-E )
+	e.Name =
+		(AliasTable t.Num ( e.Name (e.Alias) ) e.Aliases-B e.Aliases-E )
+		e.Alias;
+
+	(AliasTable t.Num e.Aliases ) e.Name =
+		<Lookup
+			(AliasTable <NewAlias t.Num e.Name> e.Aliases )
+			e.Name
+		>;
+}
+
+CategChar {
+	'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E';
+	'Swap' = 'S'; 'Ident' = 'W'; 'ADT' = 'T';
+}
+
+NewAlias {
+	/* Все */
+	t.Num e.CategStr '::' e.Name =
+		<NewAliasAux
+			<CategChar e.CategStr>
+			t.Num e.CategStr '::' e.Name
+		>;
+}
+
+NewAliasAux
+	s.CategChar t.Num e.NameInRout =
+		<NewAliasAuxWithNumber
+			s.CategChar
+			<IncCateg t.Num s.CategChar>
+			(e.NameInRout)
+		>;
+
+NewAliasAuxWithNumber
+	s.CategChar t.Num e.AliasNumber (e.NameInRout) =
+		t.Num
+		(e.NameInRout (s.CategChar e.AliasNumber));
+
+// <IncCateg t.Num s.Categ> == t.UpdatedNum s.CatNumber
+IncCateg {
+	(e.Nums-B (s.Categ e.Num) e.Nums-E) s.Categ =
+		((s.Categ <IncStringIndex e.Num>) e.Nums-B e.Nums-E) e.Num;
+
+	(e.Nums) s.Categ =
+		<IncCateg ((s.Categ) e.Nums) s.Categ>;
+}
+
+IncStringIndex
+	e.Num =
+		<IncStringIndexAux
+			(e.Num) <CharDigitsSeq>
+		>;
+
+CharDigitsSeq =
+	'0123456789'
+	'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	//'abcdefghijklmnopqrstuvwxyz'
+	;
+
+IncStringIndexAux {
+	(s.Last) s.Zero s.First e.Seq s.Last =
+		s.First s.Zero;
+
+	(e.Num s.Last) s.Zero e.Seq s.Last =
+		<IncStringIndexAux
+			(e.Num) s.Zero e.Seq s.Last
+		> s.Zero;
+
+	(e.Num s.Last) e.Seq-B s.Last s.Next e.Seq-E =
+		e.Num s.Next;
+
+	() s.First e.Seq-E = s.First;
+}
+
+$ENTRY OutAliases {
+	(AliasTable t.Num e.Aliases ) =
+		(AliasTable t.Num e.Aliases )
+		<UserTypeAliases
+			<FileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
+			<SortAliases e.Aliases>
+		>;
+}
+
+SortAliases
+	e.Aliases =
+		<DoDecode <MOrder::Sort <DoCode e.Aliases>>>;
+
+DoCode {
+	t.Next e.Tail =
+		<Code t.Next> <DoCode e.Tail>;
+
+	= ;
+}
+
+Code
+	( e.Name (s.Categ e.Index) ) =
+		( (s.Categ <MStrings::Length-T e.Index>) e.Name );
+
+DoDecode {
+	t.Next e.Tail =
+		<Decode t.Next> <DoDecode e.Tail>;
+
+	= ;
+}
+
+Decode
+	( (s.Categ s.Length e.Index) e.Name ) =
+		( e.Name (s.Categ e.Index) );
+
+UserTypeAliases {
+	//Пропускаем индексы переменных.
+	t.FAli ('Index::' e.Name ('i' e.Alias)) e.Tail =
+		<UserTypeAliases
+			t.FAli e.Tail
+		>;
+
+	t.FAli (e.Categ '::' e.Name (e.Alias)) e.Tail =
+		<UserTypeAliases
+			<FileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
+			e.Tail
+		>;
+
+	t.FAli =
+		<FileIO::Close t.FAli>;
+}
+
+$ENTRY Destroy {
+	(AliasTable t.Num e.Aliases ) = ;
+}
+
+$END MLinkerAliasTable.

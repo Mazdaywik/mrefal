@@ -1,4 +1,5 @@
 v ROUT3 Module Refal 0.1
+
 b Local::MFileSystem::DoParseDirectory
 c $Local::MFileSystem::DoParseDirectory$ {
 c 	( $ADT::__StructureBrackets$ e.$Index::Directory$ '/' ) e.$Index::Name$ =
@@ -145,7 +146,7 @@ c }
 
 b Local::MFileSystem::ParseListing
 c $Local::MFileSystem::ParseListing$ {
-c 	t.$Index::Hdr1$ t.$Index::Hdr2$ ( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ e.$Index::Text1$ s.$Index::Disk$ ':' e.$Index::Path$ ) ( $ADT::__StructureBrackets$ ) e.$Index::Tail$ =
+c 	t.$Index::?Hdr1$ t.$Index::?Hdr2$ ( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ e.$Index::?Text1$ s.$Index::Disk$ ':' e.$Index::Path$ ) ( $ADT::__StructureBrackets$ ) e.$Index::Tail$ =
 c 		<$Local::MFileSystem::ReadFileList$ ( $ADT::__StructureBrackets$ s.$Index::Disk$ ':' e.$Index::Path$ ) e.$Index::Tail$ > ;
 c 	e.$Index::Other$ =
 c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: ' e.$Index::Other$ > ;
@@ -154,7 +155,7 @@ c }
 b Entry::MFileSystem::FilesInfo
 c $Entry::MFileSystem::FilesInfo$ {
 c 	e.$Index::Mask$ =
-c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp' > <$Local::MFileSystem::ParseListing$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
+c 		<$Entry::MOS::System$ <$Entry::MSelfDiag::Log-T$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > > <$Local::MFileSystem::ParseListing$ <$Entry::MSelfDiag::Log-T$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::MSelfDiag::Log-T$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
 c }
 
 b Entry::MFileSystem::ExistFile-T
@@ -215,6 +216,10 @@ c 	$Ident::DoParseDirectory$ =
 c 		$Local::MFileSystem::DoParseDirectory$ ;
 c 	$Ident::FnPtr$ =
 c 		$Local::MFileSystem::FnPtr$ ;
+c 	$Ident::MDosWinRecoder$ $Ident::WinToDos$ =
+c 		$Entry::MDosWinRecoder::WinToDos$ ;
+c 	$Ident::MDosWinRecoder$ $Ident::DosToWin$ =
+c 		$Entry::MDosWinRecoder::DosToWin$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =

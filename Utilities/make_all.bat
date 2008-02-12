@@ -1,6 +1,10 @@
-call compile_mr grab_info.mref
-call compile_mr text-to-html.mref
-call compile_mr TODO_list.mref
-call compile_mr error_parser.mref
+@echo off
+set PROGRAMS=grab_info text-to-html TODO_list error_parser Recoder
+
+for %%p in ( %PROGRAMS% ) do (
+	call compile_mr %%p.mref
+	echo.
+)
+
 del *.ref
 rd /s /q Defs Info ROut3

@@ -1,6 +1,7 @@
 /* Automatically generated file, don't edit! */
 $module InOut;
 
+$import MDosWinRecoder;
 $import MRefalRTS;
 
 $entry WriteLine;

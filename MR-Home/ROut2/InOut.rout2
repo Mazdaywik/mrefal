@@ -32,7 +32,7 @@ InOut::SwFlushBuffer::Local {
 	=
 		;
 	e.Line =
-		<MRefalRTS::Prout::Entry e.Line > ;
+		<MRefalRTS::Prout::Entry <MDosWinRecoder::WinToDos::Entry e.Line > > ;
 }
 
 InOut::FlushBuffer::Local {
@@ -42,17 +42,17 @@ InOut::FlushBuffer::Local {
 
 InOut::ReadLine::Entry {
 	=
-		<InOut::FlushBuffer::Local > <MRefalRTS::Card::Entry > ;
+		<InOut::FlushBuffer::Local > <MDosWinRecoder::DosToWin::Entry <MRefalRTS::Card::Entry > > ;
 }
 
 InOut::WriteLine-T::Entry {
 	e.Line =
-		<MRefalRTS::Prout::Entry <InOut::G_Buffer::Swap > e.Line > e.Line ;
+		<InOut::WriteLine::Entry e.Line > e.Line ;
 }
 
 InOut::WriteLine::Entry {
 	e.Line =
-		<MRefalRTS::Prout::Entry <InOut::G_Buffer::Swap > e.Line > ;
+		<MRefalRTS::Prout::Entry <MDosWinRecoder::WinToDos::Entry <InOut::G_Buffer::Swap > e.Line > > ;
 }
 
 InOut::FnPtr::Local {
@@ -78,6 +78,10 @@ InOut::FnPtr::Local {
 		$InOut::WriteText-T::Entry$ ;
 	FnPtr =
 		$InOut::FnPtr::Local$ ;
+	MDosWinRecoder WinToDos =
+		$MDosWinRecoder::WinToDos::Entry$ ;
+	MDosWinRecoder DosToWin =
+		$MDosWinRecoder::DosToWin::Entry$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
 	MRefalRTS Card =

@@ -1,6 +1,7 @@
 /* Automatically generated file, don't edit! */
 $module MFileSystem;
 
+$import MDosWinRecoder;
 $import MRefalRTS;
 $import MOS;
 $import FileIO;

@@ -1,28 +1,38 @@
 $MODULE InOut;
 
+$IMPORT MDosWinRecoder;
 $IMPORT MRefalRTS;
 
 $SWAP G_Buffer;
 
 $ENTRY WriteLine {
-	e.Line = <MRefalRTS::Prout <G_Buffer> e.Line>;
+	e.Line =
+		<MRefalRTS::Prout
+			<MDosWinRecoder::WinToDos <G_Buffer> e.Line>
+		>;
 }
 
 $ENTRY WriteLine-T {
 	e.Line =
-		<MRefalRTS::Prout <G_Buffer> e.Line>
+		<WriteLine e.Line>
 		e.Line;
 }
 
 $ENTRY ReadLine {
-	= <FlushBuffer> <MRefalRTS::Card>;
+	= <FlushBuffer>
+		<MDosWinRecoder::DosToWin <MRefalRTS::Card>>;
 }
 
 FlushBuffer = <SwFlushBuffer <G_Buffer>>;
 
 SwFlushBuffer {
 	= ;
-	e.Line = <MRefalRTS::Prout e.Line>;
+	e.Line =
+		<MRefalRTS::Prout
+			<MDosWinRecoder::WinToDos
+				e.Line
+			>
+		>;
 }
 
 $ENTRY Write

@@ -126,7 +126,7 @@ MFileSystem::ReadFileList::Local {
 }
 
 MFileSystem::ParseListing::Local {
-	t.Hdr1 t.Hdr2 ( Structure ) ( Structure e.Text1 s.Disk ':' e.Path ) ( Structure ) e.Tail =
+	t.?Hdr1 t.?Hdr2 ( Structure ) ( Structure e.?Text1 s.Disk ':' e.Path ) ( Structure ) e.Tail =
 		<MFileSystem::ReadFileList::Local ( Structure s.Disk ':' e.Path ) e.Tail > ;
 	e.Other =
 		<MSelfDiag::Error::Entry 'Directory listing error: ' e.Other > ;
@@ -134,7 +134,7 @@ MFileSystem::ParseListing::Local {
 
 MFileSystem::FilesInfo::Entry {
 	e.Mask =
-		<MOS::System::Entry 'dir ' e.Mask '>~dirlst.tmp' > <MFileSystem::ParseListing::Local <FileIO::Load::Entry '~dirlst.tmp' > > <MOS::System::Entry 'del ~dirlst.tmp' > ;
+		<MOS::System::Entry <MSelfDiag::Log-T::Entry 'dir ' e.Mask '>~dirlst.tmp 2>nul' > > <MFileSystem::ParseListing::Local <MSelfDiag::Log-T::Entry <MDosWinRecoder::DosToWin::Entry <MSelfDiag::Log-T::Entry <FileIO::Load::Entry '~dirlst.tmp' > > > > > <MOS::System::Entry 'del ~dirlst.tmp' > ;
 }
 
 MFileSystem::ExistFile-T::Entry {
@@ -192,6 +192,10 @@ MFileSystem::FnPtr::Local {
 		$MFileSystem::DoParseDirectory::Local$ ;
 	FnPtr =
 		$MFileSystem::FnPtr::Local$ ;
+	MDosWinRecoder WinToDos =
+		$MDosWinRecoder::WinToDos::Entry$ ;
+	MDosWinRecoder DosToWin =
+		$MDosWinRecoder::DosToWin::Entry$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
 	MRefalRTS Card =

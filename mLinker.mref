@@ -164,7 +164,7 @@ CreateStartUnit {
 	GoNotFound =
 		<MError::LinkError 'Go function not found'>;
 
-	MulipleGo e.GoList =
+	MultipleGo e.GoList =
 		<MError::LinkError
 			'Multiple go functions: '
 			<TypeMultiplyGoList e.GoList>

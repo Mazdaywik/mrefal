@@ -1,5 +1,6 @@
 $MODULE MFileSystem;
 
+$IMPORT MDosWinRecoder;
 $IMPORT MRefalRTS;
 $IMPORT MOS;
 $IMPORT FileIO;
@@ -14,13 +15,23 @@ $ENTRY ExistFile-T
 
 $ENTRY FilesInfo
 	e.Mask =
-		<MOS::System 'dir ' e.Mask '>~dirlst.tmp'>
+		<MOS::System
+			<MSelfDiag::Log-T
+			'dir ' e.Mask '>~dirlst.tmp 2>nul'
+			>
+		>
 		<ParseListing
-			<FileIO::Load '~dirlst.tmp'>
+			<MSelfDiag::Log-T
+			<MDosWinRecoder::DosToWin
+			<MSelfDiag::Log-T
+				<FileIO::Load '~dirlst.tmp'>
+			>
+			>
+			>
 		> <MOS::System 'del ~dirlst.tmp'>;
 
 ParseListing {
-	t.Hdr1 t.Hdr2 () (e.Text1 s.Disk ':' e.Path) () e.Tail =
+	t.?Hdr1 t.?Hdr2 () (e.?Text1 s.Disk ':' e.Path) () e.Tail =
 		<ReadFileList (s.Disk ':' e.Path) e.Tail>;
 
 	e.Other = <MSelfDiag::Error 'Directory listing error: ' e.Other>;
@@ -41,9 +52,10 @@ ParseLine {
 	e.Line = <CutDateTime <MStrings::First 17 e.Line>>;
 }
 
-CutDateTime (e.DateTime) e.SizeAndName =
-	(DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
-	<CutSize <MStrings::First 19 e.SizeAndName>>;
+CutDateTime
+	(e.DateTime) e.SizeAndName =
+		(DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
+		<CutSize <MStrings::First 19 e.SizeAndName>>;
 
 ParseDateTime (e.Date) e.Time =
 	<ParseDate <Trim e.Date>>

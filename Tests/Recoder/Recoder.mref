@@ -1,0 +1,32 @@
+$MODULE Recoder;
+
+$IMPORT InOut, MDosWinRecoder;
+
+$ENTRY Go =
+	<Loop Start>;
+
+Loop {
+	Start = <Loop Next>;
+	Next = <Loop Line <InOut::ReadLine>>;
+	Finish = ;
+
+	Line e.Line 0 =
+		<Process e.Line>
+		<Loop Finish>;
+
+	Line e.Line =
+		<Process e.Line>
+		<Loop Next>;
+}
+
+Process
+	e.Line =
+		<InOut::WriteLine
+			<MDosWinRecoder::DosToWin
+				<MDosWinRecoder::WinToDos
+					e.Line
+				>
+			>
+		>;
+
+$END Recoder.

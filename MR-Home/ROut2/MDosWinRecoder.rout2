@@ -1,0 +1,52 @@
+MDosWinRecoder::DoDosToWin::Local {
+	( Structure e.Table-B ( Structure s.Dos s.Win ) e.Table-E ) s.Dos e.Tail =
+		s.Win <MDosWinRecoder::DoDosToWin::Local ( Structure e.Table-B ( Structure s.Dos s.Win ) e.Table-E ) e.Tail > ;
+	( Structure e.Table ) s.Next e.Tail =
+		s.Next <MDosWinRecoder::DoDosToWin::Local ( Structure e.Table ) e.Tail > ;
+	( Structure e.Table ) ( Structure e.Nested ) e.Tail =
+		( Structure <MDosWinRecoder::DoDosToWin::Local ( Structure e.Table ) e.Nested > ) <MDosWinRecoder::DoDosToWin::Local ( Structure e.Table ) e.Tail > ;
+	( Structure e.Table ) =
+		;
+}
+
+MDosWinRecoder::DosToWin::Entry {
+	e.Line =
+		<MDosWinRecoder::DoDosToWin::Local ( Structure <MDosWinRecoder::Table::Local > ) e.Line > ;
+}
+
+MDosWinRecoder::DoWinToDos::Local {
+	( Structure e.Table-B ( Structure s.Dos s.Win ) e.Table-E ) s.Win e.Tail =
+		s.Dos <MDosWinRecoder::DoWinToDos::Local ( Structure e.Table-B ( Structure s.Dos s.Win ) e.Table-E ) e.Tail > ;
+	( Structure e.Table ) s.Next e.Tail =
+		s.Next <MDosWinRecoder::DoWinToDos::Local ( Structure e.Table ) e.Tail > ;
+	( Structure e.Table ) ( Structure e.Nested ) e.Tail =
+		( Structure <MDosWinRecoder::DoWinToDos::Local ( Structure e.Table ) e.Nested > ) <MDosWinRecoder::DoWinToDos::Local ( Structure e.Table ) e.Tail > ;
+	( Structure e.Table ) =
+		;
+}
+
+MDosWinRecoder::WinToDos::Entry {
+	e.Line =
+		<MDosWinRecoder::DoWinToDos::Local ( Structure <MDosWinRecoder::Table::Local > ) e.Line > ;
+}
+
+MDosWinRecoder::Table::Local {
+	=
+		( Structure '€À' ) ( Structure 'Á' ) ( Structure '‚Â' ) ( Structure 'ƒÃ' ) ( Structure '„Ä' ) ( Structure '…Å' ) ( Structure 'ğ¨' ) ( Structure '†Æ' ) ( Structure '‡Ç' ) ( Structure 'ˆÈ' ) ( Structure '‰É' ) ( Structure 'ŠÊ' ) ( Structure '‹Ë' ) ( Structure 'ŒÌ' ) ( Structure 'Í' ) ( Structure 'Î' ) ( Structure 'Ï' ) ( Structure 'Ğ' ) ( Structure '‘Ñ' ) ( Structure '’Ò' ) ( Structure '“Ó' ) ( Structure '”Ô' ) ( Structure '•Õ' ) ( Structure '–Ö' ) ( Structure '—×' ) ( Structure '˜Ø' ) ( Structure '™Ù' ) ( Structure 'šÚ' ) ( Structure '›Û' ) ( Structure 'œÜ' ) ( Structure 'İ' ) ( Structure 'Ş' ) ( Structure 'Ÿß' ) ( Structure ' à' ) ( Structure '¡á' ) ( Structure '¢â' ) ( Structure '£ã' ) ( Structure '¤ä' ) ( Structure '¥å' ) ( Structure 'ñ¸' ) ( Structure '¦æ' ) ( Structure '§ç' ) ( Structure '¨è' ) ( Structure '©é' ) ( Structure 'ªê' ) ( Structure '«ë' ) ( Structure '¬ì' ) ( Structure '­í' ) ( Structure '®î' ) ( Structure '¯ï' ) ( Structure 'àğ' ) ( Structure 'áñ' ) ( Structure 'âò' ) ( Structure 'ãó' ) ( Structure 'äô' ) ( Structure 'åõ' ) ( Structure 'æö' ) ( Structure 'ç÷' ) ( Structure 'èø' ) ( Structure 'éù' ) ( Structure 'êú' ) ( Structure 'ëû' ) ( Structure 'ìü' ) ( Structure 'íı' ) ( Structure 'îş' ) ( Structure 'ïÿ' ) ;
+}
+
+MDosWinRecoder::FnPtr::Local {
+	Table =
+		$MDosWinRecoder::Table::Local$ ;
+	WinToDos =
+		$MDosWinRecoder::WinToDos::Entry$ ;
+	DoWinToDos =
+		$MDosWinRecoder::DoWinToDos::Local$ ;
+	DosToWin =
+		$MDosWinRecoder::DosToWin::Entry$ ;
+	DoDosToWin =
+		$MDosWinRecoder::DoDosToWin::Local$ ;
+	FnPtr =
+		$MDosWinRecoder::FnPtr::Local$ ;
+}
+

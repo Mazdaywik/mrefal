@@ -2,7 +2,6 @@ $MODULE MRefal;
 
 $IMPORT Context;
 $IMPORT Compiler;
-$IMPORT MBuildNumber;
 $IMPORT MError;
 $IMPORT MLinker;
 $IMPORT Modules;
@@ -27,7 +26,6 @@ StartCompiling {
 
 Results {
 	t.Context =
-		//<MBuildNumber::Update>
 		<Context::Destroy t.Context>;
 }
 

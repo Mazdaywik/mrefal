@@ -16,17 +16,11 @@ $ENTRY ExistFile-T
 $ENTRY FilesInfo
 	e.Mask =
 		<MOS::System
-			<MSelfDiag::Log-T
 			'dir ' e.Mask '>~dirlst.tmp 2>nul'
-			>
 		>
 		<ParseListing
-			<MSelfDiag::Log-T
 			<MDosWinRecoder::DosToWin
-			<MSelfDiag::Log-T
 				<FileIO::Load '~dirlst.tmp'>
-			>
-			>
 			>
 		> <MOS::System 'del ~dirlst.tmp'>;
 

@@ -1,6 +1,6 @@
 $PROGRAM Recoder;
 
-$IMPORT MOS, FileIO;
+$IMPORT MOS, FileIO, MUtilitiesBanner;
 
 Table =
 	('€ΐ')('Α')('‚Β')('ƒΓ')('„Δ')('…Ε')
@@ -16,6 +16,7 @@ Table =
 	('κϊ')('λϋ')('μό')('νύ')('ξώ')('οÿ');
 
 $ENTRY Go =
+	<MUtilitiesBanner::Type 'Recoder'>
 	<Main <MOS::ArgList>>;
 
 Main {

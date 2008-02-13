@@ -1,8 +1,10 @@
 $MODULE Grab_info;
 
-$IMPORT InOut, FileIO, MOS;
+$IMPORT InOut, FileIO, MOS, MUtilitiesBanner;
 
-$ENTRY Go = <Main <MOS::ArgList>>;
+$ENTRY Go =
+	<MUtilitiesBanner::Type 'Grab_info'>
+	<Main <MOS::ArgList>>;
 
 Main {
 	(e.?ProgName) = <InOut::WriteLine 'usage grab_info filelist'>;

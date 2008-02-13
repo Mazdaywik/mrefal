@@ -292,12 +292,14 @@ GetNextUnit {
 		Finish;
 
 	(UnitStorage
-		(Requests (e.NextName) e.Requests)
+		(Requests e.Requests-B (e.NextName) e.Requests-E)
 		(Units e.Units-B ((e.NextName) e.Body) e.Units-E)
 		t.Linked
 	) =
 		(UnitStorage
-			(Requests e.Requests) (Units e.Units-B e.Units-E) t.Linked
+			(Requests e.Requests-B e.Requests-E)
+			(Units e.Units-B e.Units-E)
+			t.Linked
 		) ((e.NextName) e.Body);
 
 	(UnitStorage t.Requests t.Units t.Linked) =

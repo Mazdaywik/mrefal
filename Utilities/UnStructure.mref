@@ -1,8 +1,10 @@
 $MODULE UnStructure;
 
-$IMPORT InOut;
+$IMPORT InOut, MUtilitiesBanner;
 
-$ENTRY Go = <Loop <InOut::ReadLine>>;
+$ENTRY Go =
+	<MUtilitiesBanner::Type 'UnStructure'>;
+	<Loop <InOut::ReadLine>>;
 
 Loop {
 	e.Line 0 =

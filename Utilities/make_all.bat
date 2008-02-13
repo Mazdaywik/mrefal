@@ -1,8 +1,13 @@
 @echo off
-set PROGRAMS=grab_info text-to-html TODO_list error_parser Recoder
+set PROGRAMS=grab_info text-to-html TODO_list error_parser Recoder VersionUpdater
+
+refgo VersionUpdater /verfile:Utilities_version.txt /srcfile:mUtilitiesBanner.mref >nul
+
+if exist compilation.log del compilation.log
 
 for %%p in ( %PROGRAMS% ) do (
-	call compile_mr %%p.mref
+	echo Compiling %%p ...
+	call compile_mr %%p.mref >> compilation.log
 	echo.
 )
 

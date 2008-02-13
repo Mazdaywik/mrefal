@@ -15,5 +15,6 @@ $entry Lower;
 $entry First;
 $entry Seq;
 $entry Reverse;
+$entry Trim;
 
 $end MStrings.

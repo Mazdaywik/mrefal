@@ -134,7 +134,7 @@ MFileSystem::ParseListing::Local {
 
 MFileSystem::FilesInfo::Entry {
 	e.Mask =
-		<MOS::System::Entry <MSelfDiag::Log-T::Entry 'dir ' e.Mask '>~dirlst.tmp 2>nul' > > <MFileSystem::ParseListing::Local <MSelfDiag::Log-T::Entry <MDosWinRecoder::DosToWin::Entry <MSelfDiag::Log-T::Entry <FileIO::Load::Entry '~dirlst.tmp' > > > > > <MOS::System::Entry 'del ~dirlst.tmp' > ;
+		<MOS::System::Entry 'dir ' e.Mask '>~dirlst.tmp 2>nul' > <MFileSystem::ParseListing::Local <MDosWinRecoder::DosToWin::Entry <FileIO::Load::Entry '~dirlst.tmp' > > > <MOS::System::Entry 'del ~dirlst.tmp' > ;
 }
 
 MFileSystem::ExistFile-T::Entry {

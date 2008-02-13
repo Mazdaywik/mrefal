@@ -9,10 +9,12 @@ $IMPORT Modules;
 $IMPORT MOS;
 $IMPORT Math;
 $IMPORT MStrings;
+$IMPORT MVersion;
 
 $IMPORT MSelfDiag;
 
 $ENTRY Go =
+	<MVersion::Show>
 	<StartCompiling>;
 
 StartCompiling {
@@ -25,7 +27,7 @@ StartCompiling {
 
 Results {
 	t.Context =
-		<MBuildNumber::Update>
+		//<MBuildNumber::Update>
 		<Context::Destroy t.Context>;
 }
 

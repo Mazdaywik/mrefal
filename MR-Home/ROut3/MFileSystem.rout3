@@ -155,7 +155,7 @@ c }
 b Entry::MFileSystem::FilesInfo
 c $Entry::MFileSystem::FilesInfo$ {
 c 	e.$Index::Mask$ =
-c 		<$Entry::MOS::System$ <$Entry::MSelfDiag::Log-T$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > > <$Local::MFileSystem::ParseListing$ <$Entry::MSelfDiag::Log-T$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::MSelfDiag::Log-T$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
+c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > <$Local::MFileSystem::ParseListing$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
 c }
 
 b Entry::MFileSystem::ExistFile-T
@@ -334,6 +334,8 @@ c 	$Ident::MStrings$ $Ident::Seq$ =
 c 		$Entry::MStrings::Seq$ ;
 c 	$Ident::MStrings$ $Ident::Reverse$ =
 c 		$Entry::MStrings::Reverse$ ;
+c 	$Ident::MStrings$ $Ident::Trim$ =
+c 		$Entry::MStrings::Trim$ ;
 c 	$Ident::Math$ $Ident::Add$ =
 c 		$Entry::Math::Add$ ;
 c 	$Ident::Math$ $Ident::Sub$ =

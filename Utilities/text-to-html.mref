@@ -1,9 +1,10 @@
 $MODULE Text-To-HTML;
 
-$IMPORT FileIO, MOS, InOut;
+$IMPORT FileIO, MOS, InOut, MUtilitiesBanner;
 
-$ENTRY Go
-	= <CheckArgs (<MOS::Arg 1>) (<MOS::Arg 2>)>;
+$ENTRY Go =
+	<MUtilitiesBanner::Type 'Text-To-HTML'>
+	<CheckArgs (<MOS::Arg 1>) (<MOS::Arg 2>)>;
 
 CheckArgs {
 	() () = <InOut::WriteLine 'command line error'>;

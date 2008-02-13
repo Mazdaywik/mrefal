@@ -1,4 +1,29 @@
 v ROUT3 Module Refal 0.1
+
+b Local::MStrings::Trim-R
+c $Local::MStrings::Trim-R$ {
+c 	e.$Index::Line$ ' ' =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ '\t' =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ '\n' =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ =
+c 		e.$Index::Line$ ;
+c }
+
+b Entry::MStrings::Trim
+c $Entry::MStrings::Trim$ {
+c 	' ' e.$Index::Line$ =
+c 		<$Entry::MStrings::Trim$ e.$Index::Line$ > ;
+c 	'\t' e.$Index::Line$ =
+c 		<$Entry::MStrings::Trim$ e.$Index::Line$ > ;
+c 	'\n' e.$Index::Line$ =
+c 		<$Entry::MStrings::Trim$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c }
+
 b Entry::MStrings::Reverse
 c $Entry::MStrings::Reverse$ {
 c 	t.$Index::First$ e.$Index::Mid$ t.$Index::Tail$ =
@@ -123,6 +148,10 @@ c 	$Ident::Seq$ =
 c 		$Entry::MStrings::Seq$ ;
 c 	$Ident::Reverse$ =
 c 		$Entry::MStrings::Reverse$ ;
+c 	$Ident::Trim$ =
+c 		$Entry::MStrings::Trim$ ;
+c 	$Ident::Trim-R$ =
+c 		$Local::MStrings::Trim-R$ ;
 c 	$Ident::FnPtr$ =
 c 		$Local::MStrings::FnPtr$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =

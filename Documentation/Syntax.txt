@@ -10,15 +10,17 @@ ModuleBody = ModuleElement* .
 
 QualifiedName = IDENTIFIER | QualifiedName '::' IDENTIFIER .
 
-ModuleElement = ImportBlock | FunctionDefinition | SwapDefinition | ';' .
+ModuleElement = ImportBlock | FunctionDefinition | SwapDefinition
+	| ADTDefinition | ';' .
 
 ImportBlock =
 	'$import' ModuleImport { ',' ModuleImport } ';' .
 ModuleImport = [ ModuleAlias '=' ] ModuleName .
 ModuleAlias = IDENTIFIER .
 
-SwapDefinition = '$swap' SwapName ';'
-SwapName = IDENTIFIER '.'
+SwapDefinition = '$swap' SwapList ';' .
+SwapList = SwapName | SwapName ',' SwapList .
+SwapName = IDENTIFIER .
 
 FunctionDefinition = [ '$entry' ] FunctionName FunctionBody .
 FunctionName = IDENTIFIER .
@@ -34,6 +36,10 @@ ResultTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
 	| '(' ResultExpr ')' | DQWORD | FunctionCall .
 FunctionCall = '<' Callable ResultExpr '>' .
 Callable = QualifiedName | SwapName | S-VARIABLE .
+
+ADTDefinition = '$data' ADTList .
+ADTList = ADTName | ADTName ',' ADTList .
+ADTName = INENTIFIER .
 
 .msym:
 

@@ -46,8 +46,9 @@ t.ResultTerm ::=
 
 t.Callable ::=
 	(Qualified
-		(Module t.SrcPosModule e.ModName)
-		(Function t.SrcPosFunction e.FnName)
+		// (Module t.SrcPosModule e.ModName)
+		// (Function t.SrcPosFunction e.FnName)
+		t.SrcPosModule t.QualifiedName
 	)
 	(Local
 		(Function t.SrcPosFunction e.FnName)

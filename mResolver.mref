@@ -44,8 +44,8 @@ ResolvingElements
 
 AddFnPtrFunction
 	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
-		<DoAddFnPtrFunctions ()
-			(e.CurModule) (e.LocalScope) (e.QualifiedList)
+		<DoAddFnPtrFunctions
+			() (e.CurModule) (e.LocalScope) (e.QualifiedList)
 		>;
 
 DoAddFnPtrFunctions {
@@ -107,13 +107,25 @@ DoAddFnPtrFunctions {
 		);
 }
 
+AddFnPtrIfNeed {
+	(e.?CurModule)
+	(e.?LocalScope-B (s.?ScopeClass 'FnPtr') e.?LocalScope-E (Local 'FnPtr'))
+	(e.?QualifiedList) =
+		/* пусто */;
+
+	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
+		<AddFnPtrFunction
+			(e.CurModule) (e.LocalScope) (e.QualifiedList)
+		>;
+}
+
 DoResolvingElements {
 	t.SymTable ( e.ResolvedElements )
 	t.ErrorList
 	(e.CurModuleName) (e.LocalScope) (e.QualifiedList) =
 		( t.SymTable
 			e.ResolvedElements
-			<AddFnPtrFunction (e.CurModuleName) (e.LocalScope) (e.QualifiedList)>
+			<AddFnPtrIfNeed (e.CurModuleName) (e.LocalScope) (e.QualifiedList)>
 		)
 		<CheckErrors t.ErrorList>;
 

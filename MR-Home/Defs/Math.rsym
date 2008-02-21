@@ -1,0 +1,13 @@
+/* Automatically generated file, don't edit! */
+$module Math;
+
+$import MRefalRTS;
+
+$entry Add;
+$entry Sub;
+$entry Inc;
+$entry Dec;
+$entry Compare;
+$entry Compare-T;
+
+$end Math.

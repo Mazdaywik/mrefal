@@ -1,4 +1,5 @@
 @echo off
+echo STABLE
 refgo -c128 mrefal.s MRefal.mref %1
 if not errorlevel 1 (
 	refgo Utilities/VersionUpdater /verfile:Info/Version.txt /srcfile:mVersion.mref>nul

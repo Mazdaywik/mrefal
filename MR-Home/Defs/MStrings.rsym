@@ -1,0 +1,20 @@
+/* Automatically generated file, don't edit! */
+$module MStrings;
+
+$import MRefalRTS;
+$import Math;
+
+$entry Numb;
+$entry Symb;
+$entry Ord;
+$entry Chr;
+$entry Length;
+$entry Length-T;
+$entry Upper;
+$entry Lower;
+$entry First;
+$entry Seq;
+$entry Reverse;
+$entry Trim;
+
+$end MStrings.

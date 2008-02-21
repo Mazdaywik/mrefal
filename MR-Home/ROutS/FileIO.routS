@@ -1,0 +1,227 @@
+v ROUT3 Module Refal 0.1
+
+b Swap::FileIO::G_Handles
+c $Swap::FileIO::G_Handles$ {
+c 	e.$Index::NewValue$ =
+c 		<Dg ('FileIO::G_Handles')>
+c 		<Br ('FileIO::G_Handles') '=' e.$Index::NewValue$ >;
+c }
+
+b Local::FileIO::DoSave
+c $Local::FileIO::DoSave$ {
+c 	t.$Index::File$ ( $ADT::__StructureBrackets$ e.$Index::NextLine$ ) e.$Index::Tail$ =
+c 		<$Local::FileIO::DoSave$ <$Entry::FileIO::WriteLine$ t.$Index::File$ e.$Index::NextLine$ > e.$Index::Tail$ > ;
+c 	t.$Index::File$ =
+c 		<$Entry::FileIO::NulClose$ t.$Index::File$ > ;
+c }
+
+b Entry::FileIO::Save
+c $Entry::FileIO::Save$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::FileName$ ) e.$Index::Content$ =
+c 		<$Local::FileIO::DoSave$ <$Entry::FileIO::Open$ 'w' e.$Index::FileName$ > e.$Index::Content$ > ;
+c }
+
+b Local::FileIO::DoLoad
+c $Local::FileIO::DoLoad$ {
+c 	t.$Index::File$ 0 =
+c 		<$Entry::FileIO::NulClose$ t.$Index::File$ > ;
+c 	t.$Index::File$ e.$Index::Line$ 0 =
+c 		( $ADT::__StructureBrackets$ e.$Index::Line$ ) <$Entry::FileIO::NulClose$ t.$Index::File$ > ;
+c 	t.$Index::File$ e.$Index::Line$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Line$ ) <$Local::FileIO::DoLoad$ <$Entry::FileIO::ReadLine$ t.$Index::File$ > > ;
+c }
+
+b Entry::FileIO::Load
+c $Entry::FileIO::Load$ {
+c 	e.$Index::FileName$ =
+c 		<$Local::FileIO::DoLoad$ <$Entry::FileIO::ReadLine$ <$Entry::FileIO::Open$ 'r' e.$Index::FileName$ > > > ;
+c }
+
+b Entry::FileIO::ExtractFileName
+c $Entry::FileIO::ExtractFileName$ {
+c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::FileName$ ;
+c }
+
+b Entry::FileIO::WriteLine-T
+c $Entry::FileIO::WriteLine-T$ {
+c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
+c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > e.$Index::Line$ ;
+c }
+
+b Entry::FileIO::WriteLine
+c $Entry::FileIO::WriteLine$ {
+c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
+c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > ;
+c }
+
+b Entry::FileIO::ReadLine
+c $Entry::FileIO::ReadLine$ {
+c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Get$ s.$Index::Handle$ > ;
+c }
+
+b Entry::FileIO::NulClose
+c $Entry::FileIO::NulClose$ {
+c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		<$Entry::MRefalRTS::Open$ 'r' s.$Index::Handle$ 'nul' > <$Local::FileIO::ReleaseHandle$ s.$Index::Handle$ > ;
+c }
+
+b Entry::FileIO::Close
+c $Entry::FileIO::Close$ {
+c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		<$Entry::MRefalRTS::Open$ 'r' s.$Index::Handle$ e.$Index::FileName$ > <$Local::FileIO::ReleaseHandle$ s.$Index::Handle$ > ;
+c }
+
+b Local::FileIO::SwOpen
+c $Local::FileIO::SwOpen$ {
+c 	$Ident::None$ s.$Index::Mode$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
+c 	s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
+c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Open$ s.$Index::Mode$ s.$Index::Handle$ e.$Index::FileName$ > ;
+c }
+
+b Local::FileIO::CheckExistAndOpenForRead
+c $Local::FileIO::CheckExistAndOpenForRead$ {
+c 	$Ident::True$ e.$Index::FileName$ =
+c 		<$Local::FileIO::SwOpen$ <$Local::FileIO::GetHandle$ > 'r' e.$Index::FileName$ > ;
+c 	$Ident::False$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file \'' e.$Index::FileName$ '\' for reading' > ;
+c }
+
+b Entry::FileIO::Open
+c $Entry::FileIO::Open$ {
+c 	'r' e.$Index::FileName$ =
+c 		<$Local::FileIO::CheckExistAndOpenForRead$ <$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > e.$Index::FileName$ > ;
+c 	'w' e.$Index::FileName$ =
+c 		<$Local::FileIO::SwOpen$ <$Local::FileIO::GetHandle$ > 'w' e.$Index::FileName$ > ;
+c 	s.$Index::OtherMode$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ s.$Index::OtherMode$ ' -- unknown open file mode (' 'file \'' e.$Index::FileName$ '\')' > ;
+c }
+
+b Local::FileIO::ReleaseHandle
+c $Local::FileIO::ReleaseHandle$ {
+c 	s.$Index::Handle$ =
+c 		<$Swap::FileIO::G_Handles$ <$Swap::FileIO::G_Handles$ > s.$Index::Handle$ > ;
+c }
+
+b Local::FileIO::SwGetHandle
+c $Local::FileIO::SwGetHandle$ {
+c 	=
+c 		$Ident::None$ ;
+c 	s.$Index::Handle$ e.$Index::OtherHandles$ =
+c 		s.$Index::Handle$ <$Swap::FileIO::G_Handles$ e.$Index::OtherHandles$ > ;
+c }
+
+b Local::FileIO::GetHandle
+c $Local::FileIO::GetHandle$ {
+c 	=
+c 		<$Local::FileIO::SwGetHandle$ <$Swap::FileIO::G_Handles$ > > ;
+c }
+
+b Entry::FileIO::Init
+c $Entry::FileIO::Init$ {
+c 	=
+c 		<$Swap::FileIO::G_Handles$ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 > ;
+c }
+
+b Local::FileIO::FnPtr
+c $Local::FileIO::FnPtr$ {
+c 	$Ident::G_Handles$ =
+c 		$Swap::FileIO::G_Handles$ ;
+c 	$Ident::Init$ =
+c 		$Entry::FileIO::Init$ ;
+c 	$Ident::GetHandle$ =
+c 		$Local::FileIO::GetHandle$ ;
+c 	$Ident::SwGetHandle$ =
+c 		$Local::FileIO::SwGetHandle$ ;
+c 	$Ident::ReleaseHandle$ =
+c 		$Local::FileIO::ReleaseHandle$ ;
+c 	$Ident::Open$ =
+c 		$Entry::FileIO::Open$ ;
+c 	$Ident::CheckExistAndOpenForRead$ =
+c 		$Local::FileIO::CheckExistAndOpenForRead$ ;
+c 	$Ident::SwOpen$ =
+c 		$Local::FileIO::SwOpen$ ;
+c 	$Ident::Close$ =
+c 		$Entry::FileIO::Close$ ;
+c 	$Ident::NulClose$ =
+c 		$Entry::FileIO::NulClose$ ;
+c 	$Ident::ReadLine$ =
+c 		$Entry::FileIO::ReadLine$ ;
+c 	$Ident::WriteLine$ =
+c 		$Entry::FileIO::WriteLine$ ;
+c 	$Ident::WriteLine-T$ =
+c 		$Entry::FileIO::WriteLine-T$ ;
+c 	$Ident::ExtractFileName$ =
+c 		$Entry::FileIO::ExtractFileName$ ;
+c 	$Ident::Load$ =
+c 		$Entry::FileIO::Load$ ;
+c 	$Ident::DoLoad$ =
+c 		$Local::FileIO::DoLoad$ ;
+c 	$Ident::Save$ =
+c 		$Entry::FileIO::Save$ ;
+c 	$Ident::DoSave$ =
+c 		$Local::FileIO::DoSave$ ;
+c 	$Ident::FnPtr$ =
+c 		$Local::FileIO::FnPtr$ ;
+c 	$Ident::MSelfDiag$ $Ident::Error$ =
+c 		$Entry::MSelfDiag::Error$ ;
+c 	$Ident::MSelfDiag$ $Ident::Log$ =
+c 		$Entry::MSelfDiag::Log$ ;
+c 	$Ident::MSelfDiag$ $Ident::Log-T$ =
+c 		$Entry::MSelfDiag::Log-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq-T$ =
+c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE-T$ =
+c 		$Entry::MSelfDiag::Assert-NE-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
+c 		$Entry::MSelfDiag::Assert-Eq$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
+c 		$Entry::MSelfDiag::Assert-NE$ ;
+c 	$Ident::MRefalRTS$ $Ident::Prout$ =
+c 		$Entry::MRefalRTS::Prout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Card$ =
+c 		$Entry::MRefalRTS::Card$ ;
+c 	$Ident::MRefalRTS$ $Ident::Open$ =
+c 		$Entry::MRefalRTS::Open$ ;
+c 	$Ident::MRefalRTS$ $Ident::Get$ =
+c 		$Entry::MRefalRTS::Get$ ;
+c 	$Ident::MRefalRTS$ $Ident::Put$ =
+c 		$Entry::MRefalRTS::Put$ ;
+c 	$Ident::MRefalRTS$ $Ident::Putout$ =
+c 		$Entry::MRefalRTS::Putout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Arg$ =
+c 		$Entry::MRefalRTS::Arg$ ;
+c 	$Ident::MRefalRTS$ $Ident::Exit$ =
+c 		$Entry::MRefalRTS::Exit$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile$ =
+c 		$Entry::MRefalRTS::ExistFile$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile-T$ =
+c 		$Entry::MRefalRTS::ExistFile-T$ ;
+c 	$Ident::MRefalRTS$ $Ident::System$ =
+c 		$Entry::MRefalRTS::System$ ;
+c 	$Ident::MRefalRTS$ $Ident::Env$ =
+c 		$Entry::MRefalRTS::Env$ ;
+c 	$Ident::MRefalRTS$ $Ident::Upper$ =
+c 		$Entry::MRefalRTS::Upper$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lower$ =
+c 		$Entry::MRefalRTS::Lower$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lenw$ =
+c 		$Entry::MRefalRTS::Lenw$ ;
+c 	$Ident::MRefalRTS$ $Ident::Numb$ =
+c 		$Entry::MRefalRTS::Numb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Symb$ =
+c 		$Entry::MRefalRTS::Symb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Ord$ =
+c 		$Entry::MRefalRTS::Ord$ ;
+c 	$Ident::MRefalRTS$ $Ident::Chr$ =
+c 		$Entry::MRefalRTS::Chr$ ;
+c 	$Ident::MRefalRTS$ $Ident::Add$ =
+c 		$Entry::MRefalRTS::Add$ ;
+c 	$Ident::MRefalRTS$ $Ident::Sub$ =
+c 		$Entry::MRefalRTS::Sub$ ;
+c 	$Ident::MRefalRTS$ $Ident::Compare$ =
+c 		$Entry::MRefalRTS::Compare$ ;
+c }
+

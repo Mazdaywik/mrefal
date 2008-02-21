@@ -1,0 +1,60 @@
+v ROUT3 Module Refal 0.1
+
+b Local::MDosWinRecoder::DoDosToWin
+c $Local::MDosWinRecoder::DoDosToWin$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Table-B$ ( $ADT::__StructureBrackets$ s.$Index::Dos$ s.$Index::Win$ ) e.$Index::Table-E$ ) s.$Index::Dos$ e.$Index::Tail$ =
+c 		s.$Index::Win$ <$Local::MDosWinRecoder::DoDosToWin$ ( $ADT::__StructureBrackets$ e.$Index::Table-B$ ( $ADT::__StructureBrackets$ s.$Index::Dos$ s.$Index::Win$ ) e.$Index::Table-E$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Table$ ) s.$Index::Next$ e.$Index::Tail$ =
+c 		s.$Index::Next$ <$Local::MDosWinRecoder::DoDosToWin$ ( $ADT::__StructureBrackets$ e.$Index::Table$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Table$ ) ( $ADT::__StructureBrackets$ e.$Index::Nested$ ) e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ <$Local::MDosWinRecoder::DoDosToWin$ ( $ADT::__StructureBrackets$ e.$Index::Table$ ) e.$Index::Nested$ > ) <$Local::MDosWinRecoder::DoDosToWin$ ( $ADT::__StructureBrackets$ e.$Index::Table$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Table$ ) =
+c 		;
+c }
+
+b Entry::MDosWinRecoder::DosToWin
+c $Entry::MDosWinRecoder::DosToWin$ {
+c 	e.$Index::Line$ =
+c 		<$Local::MDosWinRecoder::DoDosToWin$ ( $ADT::__StructureBrackets$ <$Local::MDosWinRecoder::Table$ > ) e.$Index::Line$ > ;
+c }
+
+b Local::MDosWinRecoder::DoWinToDos
+c $Local::MDosWinRecoder::DoWinToDos$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Table-B$ ( $ADT::__StructureBrackets$ s.$Index::Dos$ s.$Index::Win$ ) e.$Index::Table-E$ ) s.$Index::Win$ e.$Index::Tail$ =
+c 		s.$Index::Dos$ <$Local::MDosWinRecoder::DoWinToDos$ ( $ADT::__StructureBrackets$ e.$Index::Table-B$ ( $ADT::__StructureBrackets$ s.$Index::Dos$ s.$Index::Win$ ) e.$Index::Table-E$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Table$ ) s.$Index::Next$ e.$Index::Tail$ =
+c 		s.$Index::Next$ <$Local::MDosWinRecoder::DoWinToDos$ ( $ADT::__StructureBrackets$ e.$Index::Table$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Table$ ) ( $ADT::__StructureBrackets$ e.$Index::Nested$ ) e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ <$Local::MDosWinRecoder::DoWinToDos$ ( $ADT::__StructureBrackets$ e.$Index::Table$ ) e.$Index::Nested$ > ) <$Local::MDosWinRecoder::DoWinToDos$ ( $ADT::__StructureBrackets$ e.$Index::Table$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Table$ ) =
+c 		;
+c }
+
+b Entry::MDosWinRecoder::WinToDos
+c $Entry::MDosWinRecoder::WinToDos$ {
+c 	e.$Index::Line$ =
+c 		<$Local::MDosWinRecoder::DoWinToDos$ ( $ADT::__StructureBrackets$ <$Local::MDosWinRecoder::Table$ > ) e.$Index::Line$ > ;
+c }
+
+b Local::MDosWinRecoder::Table
+c $Local::MDosWinRecoder::Table$ {
+c 	=
+c 		( $ADT::__StructureBrackets$ 'Ä¿' ) ( $ADT::__StructureBrackets$ 'Å¡' ) ( $ADT::__StructureBrackets$ 'Ç¬' ) ( $ADT::__StructureBrackets$ 'É√' ) ( $ADT::__StructureBrackets$ 'Ñƒ' ) ( $ADT::__StructureBrackets$ 'Ö≈' ) ( $ADT::__StructureBrackets$ '®' ) ( $ADT::__StructureBrackets$ 'Ü∆' ) ( $ADT::__StructureBrackets$ 'á«' ) ( $ADT::__StructureBrackets$ 'à»' ) ( $ADT::__StructureBrackets$ 'â…' ) ( $ADT::__StructureBrackets$ 'ä ' ) ( $ADT::__StructureBrackets$ 'ãÀ' ) ( $ADT::__StructureBrackets$ 'åÃ' ) ( $ADT::__StructureBrackets$ 'çÕ' ) ( $ADT::__StructureBrackets$ 'éŒ' ) ( $ADT::__StructureBrackets$ 'èœ' ) ( $ADT::__StructureBrackets$ 'ê–' ) ( $ADT::__StructureBrackets$ 'ë—' ) ( $ADT::__StructureBrackets$ 'í“' ) ( $ADT::__StructureBrackets$ 'ì”' ) ( $ADT::__StructureBrackets$ 'î‘' ) ( $ADT::__StructureBrackets$ 'ï’' ) ( $ADT::__StructureBrackets$ 'ñ÷' ) ( $ADT::__StructureBrackets$ 'ó◊' ) ( $ADT::__StructureBrackets$ 'òÿ' ) ( $ADT::__StructureBrackets$ 'ôŸ' ) ( $ADT::__StructureBrackets$ 'ö⁄' ) ( $ADT::__StructureBrackets$ 'õ€' ) ( $ADT::__StructureBrackets$ 'ú‹' ) ( $ADT::__StructureBrackets$ 'ù›' ) ( $ADT::__StructureBrackets$ 'ûﬁ' ) ( $ADT::__StructureBrackets$ 'üﬂ' ) ( $ADT::__StructureBrackets$ '†‡' ) ( $ADT::__StructureBrackets$ '°·' ) ( $ADT::__StructureBrackets$ '¢‚' ) ( $ADT::__StructureBrackets$ '£„' ) ( $ADT::__StructureBrackets$ '§‰' ) ( $ADT::__StructureBrackets$ '•Â' ) ( $ADT::__StructureBrackets$ 'Ò∏' ) ( $ADT::__StructureBrackets$ '¶Ê' ) ( $ADT::__StructureBrackets$ 'ßÁ' ) ( $ADT::__StructureBrackets$ '®Ë' ) ( $ADT::__StructureBrackets$ '©È' ) ( $ADT::__StructureBrackets$ '™Í' ) ( $ADT::__StructureBrackets$ '´Î' ) ( $ADT::__StructureBrackets$ '¨Ï' ) ( $ADT::__StructureBrackets$ '≠Ì' ) ( $ADT::__StructureBrackets$ 'ÆÓ' ) ( $ADT::__StructureBrackets$ 'ØÔ' ) ( $ADT::__StructureBrackets$ '‡' ) ( $ADT::__StructureBrackets$ '·Ò' ) ( $ADT::__StructureBrackets$ '‚Ú' ) ( $ADT::__StructureBrackets$ '„Û' ) ( $ADT::__StructureBrackets$ '‰Ù' ) ( $ADT::__StructureBrackets$ 'Âı' ) ( $ADT::__StructureBrackets$ 'Êˆ' ) ( $ADT::__StructureBrackets$ 'Á˜' ) ( $ADT::__StructureBrackets$ 'Ë¯' ) ( $ADT::__StructureBrackets$ 'È˘' ) ( $ADT::__StructureBrackets$ 'Í˙' ) ( $ADT::__StructureBrackets$ 'Î˚' ) ( $ADT::__StructureBrackets$ 'Ï¸' ) ( $ADT::__StructureBrackets$ 'Ì˝' ) ( $ADT::__StructureBrackets$ 'Ó˛' ) ( $ADT::__StructureBrackets$ 'Ôˇ' ) ;
+c }
+
+b Local::MDosWinRecoder::FnPtr
+c $Local::MDosWinRecoder::FnPtr$ {
+c 	$Ident::Table$ =
+c 		$Local::MDosWinRecoder::Table$ ;
+c 	$Ident::WinToDos$ =
+c 		$Entry::MDosWinRecoder::WinToDos$ ;
+c 	$Ident::DoWinToDos$ =
+c 		$Local::MDosWinRecoder::DoWinToDos$ ;
+c 	$Ident::DosToWin$ =
+c 		$Entry::MDosWinRecoder::DosToWin$ ;
+c 	$Ident::DoDosToWin$ =
+c 		$Local::MDosWinRecoder::DoDosToWin$ ;
+c 	$Ident::FnPtr$ =
+c 		$Local::MDosWinRecoder::FnPtr$ ;
+c }
+

@@ -1,0 +1,143 @@
+v ROUT3 Module Refal 0.1
+
+b Swap::InOut::G_Buffer
+c $Swap::InOut::G_Buffer$ {
+c 	e.$Index::NewValue$ =
+c 		<Dg ('InOut::G_Buffer')>
+c 		<Br ('InOut::G_Buffer') '=' e.$Index::NewValue$ >;
+c }
+
+b Entry::InOut::WriteText-T
+c $Entry::InOut::WriteText-T$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ <$Entry::InOut::WriteLine-T$ e.$Index::Line$ > ) <$Entry::InOut::WriteText-T$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
+b Entry::InOut::WriteText
+c $Entry::InOut::WriteText$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
+c 		<$Entry::InOut::WriteLine$ e.$Index::Line$ > <$Entry::InOut::WriteText$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
+b Entry::InOut::Write-T
+c $Entry::InOut::Write-T$ {
+c 	e.$Index::Text$ =
+c 		<$Entry::InOut::Write$ e.$Index::Text$ > e.$Index::Text$ ;
+c }
+
+b Entry::InOut::Write
+c $Entry::InOut::Write$ {
+c 	e.$Index::Text$ =
+c 		<$Swap::InOut::G_Buffer$ <$Swap::InOut::G_Buffer$ > e.$Index::Text$ > ;
+c }
+
+b Local::InOut::SwFlushBuffer
+c $Local::InOut::SwFlushBuffer$ {
+c 	=
+c 		;
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Prout$ <$Entry::MDosWinRecoder::WinToDos$ e.$Index::Line$ > > ;
+c }
+
+b Local::InOut::FlushBuffer
+c $Local::InOut::FlushBuffer$ {
+c 	=
+c 		<$Local::InOut::SwFlushBuffer$ <$Swap::InOut::G_Buffer$ > > ;
+c }
+
+b Entry::InOut::ReadLine
+c $Entry::InOut::ReadLine$ {
+c 	=
+c 		<$Local::InOut::FlushBuffer$ > <$Entry::MDosWinRecoder::DosToWin$ <$Entry::MRefalRTS::Card$ > > ;
+c }
+
+b Entry::InOut::WriteLine-T
+c $Entry::InOut::WriteLine-T$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::InOut::WriteLine$ e.$Index::Line$ > e.$Index::Line$ ;
+c }
+
+b Entry::InOut::WriteLine
+c $Entry::InOut::WriteLine$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Prout$ <$Entry::MDosWinRecoder::WinToDos$ <$Swap::InOut::G_Buffer$ > e.$Index::Line$ > > ;
+c }
+
+b Local::InOut::FnPtr
+c $Local::InOut::FnPtr$ {
+c 	$Ident::G_Buffer$ =
+c 		$Swap::InOut::G_Buffer$ ;
+c 	$Ident::WriteLine$ =
+c 		$Entry::InOut::WriteLine$ ;
+c 	$Ident::WriteLine-T$ =
+c 		$Entry::InOut::WriteLine-T$ ;
+c 	$Ident::ReadLine$ =
+c 		$Entry::InOut::ReadLine$ ;
+c 	$Ident::FlushBuffer$ =
+c 		$Local::InOut::FlushBuffer$ ;
+c 	$Ident::SwFlushBuffer$ =
+c 		$Local::InOut::SwFlushBuffer$ ;
+c 	$Ident::Write$ =
+c 		$Entry::InOut::Write$ ;
+c 	$Ident::Write-T$ =
+c 		$Entry::InOut::Write-T$ ;
+c 	$Ident::WriteText$ =
+c 		$Entry::InOut::WriteText$ ;
+c 	$Ident::WriteText-T$ =
+c 		$Entry::InOut::WriteText-T$ ;
+c 	$Ident::FnPtr$ =
+c 		$Local::InOut::FnPtr$ ;
+c 	$Ident::MDosWinRecoder$ $Ident::WinToDos$ =
+c 		$Entry::MDosWinRecoder::WinToDos$ ;
+c 	$Ident::MDosWinRecoder$ $Ident::DosToWin$ =
+c 		$Entry::MDosWinRecoder::DosToWin$ ;
+c 	$Ident::MRefalRTS$ $Ident::Prout$ =
+c 		$Entry::MRefalRTS::Prout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Card$ =
+c 		$Entry::MRefalRTS::Card$ ;
+c 	$Ident::MRefalRTS$ $Ident::Open$ =
+c 		$Entry::MRefalRTS::Open$ ;
+c 	$Ident::MRefalRTS$ $Ident::Get$ =
+c 		$Entry::MRefalRTS::Get$ ;
+c 	$Ident::MRefalRTS$ $Ident::Put$ =
+c 		$Entry::MRefalRTS::Put$ ;
+c 	$Ident::MRefalRTS$ $Ident::Putout$ =
+c 		$Entry::MRefalRTS::Putout$ ;
+c 	$Ident::MRefalRTS$ $Ident::Arg$ =
+c 		$Entry::MRefalRTS::Arg$ ;
+c 	$Ident::MRefalRTS$ $Ident::Exit$ =
+c 		$Entry::MRefalRTS::Exit$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile$ =
+c 		$Entry::MRefalRTS::ExistFile$ ;
+c 	$Ident::MRefalRTS$ $Ident::ExistFile-T$ =
+c 		$Entry::MRefalRTS::ExistFile-T$ ;
+c 	$Ident::MRefalRTS$ $Ident::System$ =
+c 		$Entry::MRefalRTS::System$ ;
+c 	$Ident::MRefalRTS$ $Ident::Env$ =
+c 		$Entry::MRefalRTS::Env$ ;
+c 	$Ident::MRefalRTS$ $Ident::Upper$ =
+c 		$Entry::MRefalRTS::Upper$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lower$ =
+c 		$Entry::MRefalRTS::Lower$ ;
+c 	$Ident::MRefalRTS$ $Ident::Lenw$ =
+c 		$Entry::MRefalRTS::Lenw$ ;
+c 	$Ident::MRefalRTS$ $Ident::Numb$ =
+c 		$Entry::MRefalRTS::Numb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Symb$ =
+c 		$Entry::MRefalRTS::Symb$ ;
+c 	$Ident::MRefalRTS$ $Ident::Ord$ =
+c 		$Entry::MRefalRTS::Ord$ ;
+c 	$Ident::MRefalRTS$ $Ident::Chr$ =
+c 		$Entry::MRefalRTS::Chr$ ;
+c 	$Ident::MRefalRTS$ $Ident::Add$ =
+c 		$Entry::MRefalRTS::Add$ ;
+c 	$Ident::MRefalRTS$ $Ident::Sub$ =
+c 		$Entry::MRefalRTS::Sub$ ;
+c 	$Ident::MRefalRTS$ $Ident::Compare$ =
+c 		$Entry::MRefalRTS::Compare$ ;
+c }
+

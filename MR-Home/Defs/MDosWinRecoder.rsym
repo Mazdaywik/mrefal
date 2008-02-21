@@ -1,7 +1,0 @@
-/* Automatically generated file, don't edit! */
-$module MDosWinRecoder;
-
-$entry WinToDos;
-$entry DosToWin;
-
-$end MDosWinRecoder.

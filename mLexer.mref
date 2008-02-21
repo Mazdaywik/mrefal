@@ -337,6 +337,12 @@ Directive t.SymStream =
 	<SwDirective <MSymStream::ExtractsFromSet t.SymStream (<Types::UpAlph> <Types::LoAlph>)>>;
 
 SwDirective {
+	t.SymStream 'CLEARMODULE' = t.SymStream (Directive ClearModule);
+	t.SymStream 'clearmodule' = t.SymStream (Directive ClearModule);
+
+	t.SymStream 'DATA' = t.SymStream (Directive Data);
+	t.SymStream 'data' = t.SymStream (Directive Data);
+
 	t.SymStream 'END' = t.SymStream (Directive End);
 	t.SymStream 'end' = t.SymStream (Directive End);
 
@@ -349,14 +355,11 @@ SwDirective {
 	t.SymStream 'MODULE' = t.SymStream (Directive Module);
 	t.SymStream 'module' = t.SymStream (Directive Module);
 
-	t.SymStream 'SWAP' = t.SymStream (Directive Swap);
-	t.SymStream 'swap' = t.SymStream (Directive Swap);
-
 	t.SymStream 'PROGRAM' = t.SymStream (Directive Program);
 	t.SymStream 'program' = t.SymStream (Directive Program);
 
-	t.SymStream 'CLEARMODULE' = t.SymStream (Directive ClearModule);
-	t.SymStream 'clearmodule' = t.SymStream (Directive ClearModule);
+	t.SymStream 'SWAP' = t.SymStream (Directive Swap);
+	t.SymStream 'swap' = t.SymStream (Directive Swap);
 
 	t.SymStream e.Other = t.SymStream (Error 'unknown directive \'' e.Other '\'');
 }

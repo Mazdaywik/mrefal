@@ -77,8 +77,6 @@ MOS::FnPtr::Local {
 		$MOS::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =

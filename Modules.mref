@@ -16,12 +16,12 @@ $ENTRY SymName {
 }
 
 $ENTRY OutName {
-	e.ModName = <OutDirName> '\\' e.ModName '.rout3';
+	e.ModName = <OutDirName> '\\' e.ModName '.rout';
 }
 
 SymDirName = <MCreateDirIfNeed::Create 'Defs'>;
 
-OutDirName = <MCreateDirIfNeed::Create 'ROut3'>; 
+OutDirName = <MCreateDirIfNeed::Create 'ROut'>; 
 
 $ENTRY SrcName {
 	e.ModName = e.ModName '.mref';
@@ -90,7 +90,7 @@ $ENTRY LookupLibrary
 	e.ModuleName =
 		<SwLookupLibrary
 			( <MFileSystem::ExistFile-T <HomeDir> '\\Defs\\' e.ModuleName '.rsym'> )
-			( <MFileSystem::ExistFile-T <HomeDir> '\\ROut3\\' e.ModuleName '.rout3'> )
+			( <MFileSystem::ExistFile-T <HomeDir> '\\ROut\\' e.ModuleName '.rout'> )
 		>;
 
 SwLookupLibrary {

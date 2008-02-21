@@ -289,8 +289,7 @@ NModuleBody {
 	t.Lexer (Directive t.SrcPos Swap) =
 		<NModuleBody
 			<NSwapBlock
-				t.ErrorList
-				t.SymTable
+				t.ErrorList t.SymTable
 				( e.Elements )
 				<MLexer::NextToken t.Lexer>
 			>
@@ -302,6 +301,16 @@ NModuleBody {
 			<NFunctionDefinition
 				t.ErrorList t.SymTable
 				( Entry (e.Elements) )
+				<MLexer::NextToken t.Lexer>
+			>
+		>;
+
+	t.ErrorList t.SymTable ( e.Elements )
+	t.Lexer (Directive t.SrcPos Data) =
+		<NModuleBody
+			<NDataBlock
+				t.ErrorList t.SymTable
+				( e.Elements )
 				<MLexer::NextToken t.Lexer>
 			>
 		>;
@@ -436,8 +445,8 @@ NImportBlock-ModuleRenaming {
 
 /*
 	SwapBlock = '$swap' SwapBlock-Chain .
-	Swap-Chain = IDENTIFIER Swap-AfterName .
-	Swap-AfterName = ';' | ',' Swap-Chain .
+	SwapBlock-Chain = IDENTIFIER SwapBlock-AfterName .
+	SwapBlock-AfterName = ';' | ',' Swap-Chain .
 */
 NSwapBlock {
 	t.ErrorList t.SymTable ( e.ParentStack )
@@ -464,6 +473,53 @@ NSwapBlock-AfterName {
 	t.ErrorList t.SymTable ( e.ParentStack )
 	t.Lexer (Comma t.SrcPos) =
 		<NSwapBlock
+			t.ErrorList t.SymTable
+			( e.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer (EndSent t.SrcPos) =
+		t.ErrorList t.SymTable ( e.ParentStack )
+		<MLexer::NextToken t.Lexer>;
+
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer t.OtherToken =
+		<MError::AddUnexpected
+			t.ErrorList t.OtherToken 'comma or semicolon'
+		> t.SymTable ( e.ParentStack )
+		t.Lexer t.OtherToken;
+}
+
+/*
+	DataBlock = '$swap' DataBlock-Chain .
+	DataBlock-Chain = IDENTIFIER DataBlock-AfterName .
+	DataBlock-AfterName = ';' | ',' DataBlock-Chain .
+*/
+NDataBlock {
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer (Identifier t.SrcPos e.Ident) =
+		<NDataBlock-AfterName
+			<MSymTable::AddADT
+				t.ErrorList t.SymTable t.SrcPos e.Ident
+			>
+			( e.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer t.OtherToken =
+		<MError::AddUnexpected
+			t.ErrorList t.OtherToken 'swap name'
+		> t.SymTable
+		( e.ParentStack )
+		t.Lexer t.OtherToken;
+}
+
+NDataBlock-AfterName {
+	t.ErrorList t.SymTable ( e.ParentStack )
+	t.Lexer (Comma t.SrcPos) =
+		<NDataBlock
 			t.ErrorList t.SymTable
 			( e.ParentStack )
 			<MLexer::NextToken t.Lexer>

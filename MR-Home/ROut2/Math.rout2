@@ -56,8 +56,6 @@ Math::FnPtr::Local {
 		$Math::FnPtr::Local$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =

@@ -24,6 +24,7 @@ EndSent			нет					';'
 Replaces		нет					'='
 
 Directive		ClearModule			'$CLEARMODULE', '$clearmodule'
+				Data				'$DATA', '$data'
 				End					'$END', '$end'
 				Entry				'$ENTRY', '$entry'
 				Import				'$IMPORT', '$import'

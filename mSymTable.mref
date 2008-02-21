@@ -155,6 +155,26 @@ $ENTRY AddFunction {
 		);
 }
 
+$ENTRY AddADT {
+	t.ErrorList
+	( (Idents e.Idents-B (e.ADT-Name) e.Idents-E)
+		t.CurModule t.Modules t.Functions
+	) t.SrcPos e.ADT-Name =
+		<MError::AddRedeclaredIdentifier
+			t.ErrorList t.SrcPos e.ADT-Name
+		> ( (Idents e.Idents-B (e.ADT-Name) e.Idents-E)
+			t.CurModule t.Modules t.Functions
+		);
+
+	t.ErrorList
+	( (Idents e.Idents) t.CurModule t.Modules t.Functions )
+	t.?SrcPos e.ADT-Name =
+		t.ErrorList
+		( (Idents e.Idents (e.ADT-Name))
+			t.CurModule t.Modules t.Functions
+		);
+}
+
 /**
 	<ExtractLocalInfo t.SymTable>
 		== t.SymTable (s.ScopeClass e.EntityName)*

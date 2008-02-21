@@ -1,3 +1,25 @@
+MStrings::Trim-R::Local {
+	e.Line ' ' =
+		<MStrings::Trim-R::Local e.Line > ;
+	e.Line '\t' =
+		<MStrings::Trim-R::Local e.Line > ;
+	e.Line '\n' =
+		<MStrings::Trim-R::Local e.Line > ;
+	e.Line =
+		e.Line ;
+}
+
+MStrings::Trim::Entry {
+	' ' e.Line =
+		<MStrings::Trim::Entry e.Line > ;
+	'\t' e.Line =
+		<MStrings::Trim::Entry e.Line > ;
+	'\n' e.Line =
+		<MStrings::Trim::Entry e.Line > ;
+	e.Line =
+		<MStrings::Trim-R::Local e.Line > ;
+}
+
 MStrings::Reverse::Entry {
 	t.First e.Mid t.Tail =
 		t.Tail <MStrings::Reverse::Entry e.Mid > t.First ;
@@ -107,6 +129,10 @@ MStrings::FnPtr::Local {
 		$MStrings::Seq::Entry$ ;
 	Reverse =
 		$MStrings::Reverse::Entry$ ;
+	Trim =
+		$MStrings::Trim::Entry$ ;
+	Trim-R =
+		$MStrings::Trim-R::Local$ ;
 	FnPtr =
 		$MStrings::FnPtr::Local$ ;
 	MRefalRTS Prout =

@@ -160,8 +160,6 @@ FileIO::FnPtr::Local {
 		$MSelfDiag::Assert-NE::Entry$ ;
 	MRefalRTS Prout =
 		$MRefalRTS::Prout::Entry$ ;
-	MRefalRTS Print =
-		$MRefalRTS::Print::Entry$ ;
 	MRefalRTS Card =
 		$MRefalRTS::Card::Entry$ ;
 	MRefalRTS Open =

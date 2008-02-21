@@ -310,6 +310,8 @@ MFileSystem::FnPtr::Local {
 		$MStrings::Seq::Entry$ ;
 	MStrings Reverse =
 		$MStrings::Reverse::Entry$ ;
+	MStrings Trim =
+		$MStrings::Trim::Entry$ ;
 	Math Add =
 		$Math::Add::Entry$ ;
 	Math Sub =

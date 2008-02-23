@@ -4,8 +4,8 @@ $IMPORT MQualifiedName;
 
 /*------------------------------------------------------------------------------
 	Внутренний формат
-		t.ResolveTable = (ResolveTable t.Pair*)
-		t.Pair = ((e.InternalSegments) s.ScopeClass e.ExternalSegments)
+		t.ResolveTable ::= (ResolveTable t.Pair*)
+		t.Pair ::= ((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 	e.***Segments образуются применением MQualifiedName::Parse к ***Qualifier
 ------------------------------------------------------------------------------*/
 

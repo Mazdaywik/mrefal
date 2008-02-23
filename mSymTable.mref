@@ -4,176 +4,423 @@ $IMPORT MError;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 
-*-------------------------------------------------------------------------------
-* Функции для работы с таблицей символов
-*-------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Функции для работы с таблицей символов
+//------------------------------------------------------------------------------
 
 /* Внутренний формат: 
-	( ( Idents (e.Ident)* )
-		( CurModule e.CurModule )
-		( Modules (e.ModuleName)* )
-		( Functions (s.ScopeClass e.FnName)* )
-	)
+	t.SymTable ::= [SymTable e.Names]
+	e.Names ::= (Name e.Attribs)*
+	e.Attribs ::= (s.Attrib e.Value)*
+
+	Каждое имя всегда имеет атрибут Kind. По умолчанию его значение Unknown
 */
 
-$ENTRY Create {
-	Current e.ModuleName =
-		( (Idents) (CurModule e.ModuleName) (Modules) (Functions) );
+//==============================================================================
+// Базовые операции
+//==============================================================================
+
+$DATA SymTable;
+
+/**
+	<Create> == t.SymTable
+*/
+$ENTRY Create
+	= [SymTable];
+
+/**
+	<AddName t.SymTable e.Name>
+		== t.SymTable
+*/
+$ENTRY AddName {
+	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E] e.Name =
+		[SymTable
+			e.Names-B ((e.Name) e.Attribs) e.Names-E
+		];
+
+	[SymTable e.Names] e.NewName =
+		[SymTable e.Names ((e.NewName) (Kind Unknown))];
 }
 
-$ENTRY Destroy
-	( t.Idents t.CurModule t.Modules t.Functions ) = ;
+/**
+	<UpdateAttrib t.SymTable (e.Name) s.Attrib e.Value>
+		== t.SymTable
+*/
+$ENTRY UpdateAttrib {
+	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
+	(e.Name) s.Attrib e.Value =
+		[SymTable
+			e.Names-B
+			((e.Name) <UpdateAttrib-Aux (s.Attrib e.Value) e.Attribs>)
+			e.Names-E
+		];
 
-$ENTRY AddCurrentModule {
-	t.ErrorList
-	( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
-	t.SrcPos e.ModuleName-InSrc =
+	t.SymTable (e.Name) s.Attrib e.Value =
+		<UpdateAttrib
+			<AddName t.SymTable e.Name>
+			(e.Name) s.Attrib e.Value
+		>;
+}
+
+UpdateAttrib-Aux {
+	(s.NewAttrib e.NewValue)
+	(s.NewAttrib e.?OldValue) e.Tail =
+		(s.NewAttrib e.NewValue) e.Tail;
+
+	(s.NewAttrib e.NewValue)
+	(s.OtherAttrib e.OtherValue) e.Tail =
+		(s.OtherAttrib e.OtherValue)
+		<UpdateAttrib-Aux
+			(s.NewAttrib e.NewValue) e.Tail
+		>;
+
+	(s.NewAttrib e.NewValue) =
+		(s.NewAttrib e.NewValue);
+}
+
+/**
+	<RemoveAttrib t.SymTable e.Name s.Attrib>
+		== t.SymTable Found e.Value
+		== t.SymTable NoAttrib
+		== t.SymTable NoName
+*/
+$ENTRY RemoveAttrib {
+	[SymTable
+		e.Names-B
+		((e.Name)
+			e.Attribs-B (s.Attrib e.Value) e.Attribs-E
+		) e.Names-E
+	] e.Name s.Attrib =
+		[SymTable
+			((e.Name) e.Attribs-B e.Attribs-E)
+			e.Names-B e.Names-E
+		] Found e.Value;
+
+	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
+	e.Name s.?Attrib =
+		[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
+		NoAttrib;
+
+	[SymTable e.Names] e.?Name s.?Attrib =
+		[SymTable e.Names] NoName;
+}
+
+/**
+	<GetAttrib t.SymTable e.Name s.Attrib>
+		== t.SymTable Found e.Value
+		== t.SymTable NoAttrib
+		== t.SymTable NoName
+*/
+$ENTRY GetAttrib
+	t.SymTable e.Name s.Attrib =
+		<SwGetAttrib
+			(e.Name) s.Attrib
+			<RemoveAttrib t.SymTable e.Name s.Attrib>
+		>;
+
+SwGetAttrib {
+	(e.Name) s.Attrib t.SymTable Found e.Value =
+		<UpdateAttrib
+			t.SymTable (e.Name) s.Attrib e.Value
+		> Found e.Value;
+
+	(e.Name) s.Attrib t.SymTable NoAttrib =
+		t.SymTable NoAttrib;
+
+	(e.Name) s.Attrib t.SymTable NoName =
+		t.SymTable NoName;
+}
+
+/**
+	<RemoveName t.SymTable e.Name>
+		== t.SymTable
+*/
+$ENTRY RemoveName {
+	[SymTable e.Names-B ((e.Name) e.?Attribs) e.Names-E]
+	e.Name =
+		[SymTable e.Names-B e.Names-E];
+
+	[SymTable e.Names] e.Name =
+		<MSelfDiag::Error
+			'MSymTable::RemoveName: name ' e.Name ' not found'
+		>;
+}
+
+/**
+	<ExtractNames t.SymTable>
+		== t.SymTable (e.Name)*
+*/
+$ENTRY ExtractNames
+	[SymTable e.Names] =
+		<DoExtractNames
+			[SymTable] () e.Names
+		>;
+
+/*
+	Инвариант:
+	<DoExtractNames [SymTable e.Scanned] ( (e.Name)* ) e.NotScanned>
+*/
+DoExtractNames {
+	[SymTable e.Scanned]
+	(e.Names) ((e.NextName) e.Attribs) e.NotScanned =
+		<DoExtractNames
+			[SymTable e.Scanned ((e.NextName) e.Attribs)]
+			(e.Names (e.NextName)) e.NotScanned
+		>;
+
+	t.SymTable (e.Names) =
+		t.SymTable e.Names;
+}
+
+$ENTRY Destroy 
+	[SymTable e.Names] = ;
+
+
+//==============================================================================
+// Производные операции
+//==============================================================================
+
+/**
+	<UpdateAttribSet
+		t.SymTable (e.Name)
+		(s.Attrib e.Value)*
+	> == t.SymTable
+*/
+$ENTRY UpdateAttribSet {
+	t.SymTable (e.Name) (s.Attrib e.Value) =
+		<UpdateAttrib
+			t.SymTable (e.Name) s.Attrib e.Value
+		>;
+
+	t.SymTable (e.Name) (s.Attrib e.Value) e.Tail =
+		<UpdateAttribSet
+			<UpdateAttrib
+				t.SymTable (e.Name) s.Attrib e.Value
+			> (e.Name) e.Tail
+		>;
+}
+
+/**
+	<FindByKind t.SymTable s.Kind>
+		== t.SymTable (e.Name)*
+*/
+$ENTRY FindByKind
+	t.SymTable s.Kind =
+		<DoFindByKind
+			<ExtractNames t.SymTable>
+			s.Kind
+		>;
+
+/*
+	Инвариант <DoFindByKind t.SymTable e.Names s.Kind>
+*/
+DoFindByKind {
+	t.SymTable e.Names (e.NextName) s.Kind =
+		<DoFindByKind-Aux
+			<GetAttrib t.SymTable e.NextName Kind>
+			e.Names (e.NextName) s.Kind
+		>;
+
+	t.SymTable s.Kind =
+		t.SymTable;
+}
+
+DoFindByKind-Aux {
+	t.SymTable Found s.Kind e.Names (e.NextName) s.Kind =
+		<DoFindByKind
+			t.SymTable e.Names s.Kind
+		> (e.NextName);
+
+	t.SymTable Found s.Kind1 e.Names (e.?NextName) s.Kind2 =
+		<DoFindByKind
+			t.SymTable e.Names s.Kind2
+		>;
+
+	// Предполагается, что имя e.NextName есть в таблице -- ведь из таблицы
+	// мы его и извлекали. Предполагаем также, что Kind всегда в таблице
+	// присутствует.
+}
+
+/**
+	<AddNewName t.SymTable (e.Name) (s.Attrib e.Value)*>
+		== t.SymTable Success
+		== t.SymTable Fails
+
+	Если имя (e.Name) отсутствует в таблице, то оно добавляется с указанными
+	атрибутами, в противном случае таблица не изменяется.
+	Фукция возвращает Success при успешном добавлении имени, Fails в случае,
+	если имя уже в таблице было.
+*/
+$ENTRY AddNewName
+	t.SymTable (e.Name) e.Attribs =
+		<SwAddNewName
+			<GetAttrib t.SymTable e.Name Kind>
+			(e.Name) e.Attribs
+		>;
+
+SwAddNewName {
+	t.SymTable NoName (e.Name) e.Attribs =
+		<UpdateAttribSet
+			t.SymTable (e.Name) e.Attribs
+		> Success;
+
+	t.SymTable Found s.?Kind (e.?Name) e.?Attribs =
+		t.SymTable Fails;
+}
+
+//==============================================================================
+// Специальные операции
+//==============================================================================
+
+$ENTRY Initialize {
+	t.SymTable e.ModuleName =
+		<UpdateAttrib
+			t.SymTable (FsName)
+			LowerName <MStrings::Lower e.ModuleName>
+		>;
+}
+
+/**
+	<AddCurrentModule
+		t.ErrorList t.SymTable t.SrcPos e.ModuleName
+	> == t.ErrorList t.SymTable
+*/
+$ENTRY AddCurrentModule
+	t.ErrorList t.SymTable t.SrcPos e.ModuleName s.ModuleType =
 		<AddCurrentModule-CheckIdent
 			t.ErrorList
-			( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
-			t.SrcPos e.ModuleName-InSrc
-			( <MStrings::Lower e.ModuleName-InFS> )
-			( <MStrings::Lower e.ModuleName-InSrc> )
+			(<GetAttrib t.SymTable FsName LowerName>)
+			t.SrcPos e.ModuleName s.ModuleType
+			(<MStrings::Lower e.ModuleName>)
 		>;
-
-	t.ErrorList
-	t.Other t.SrcPos e.ModuleName =
-		<MSelfDiag::Error
-			'Error in symbol table -- can\'t insert current module name'
-		>;
-}
 
 AddCurrentModule-CheckIdent {
-	t.ErrorList
-	( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
-	t.SrcPos e.ModuleName-InSrc
-	( e.ModuleName-Lower ) ( e.ModuleName-Lower ) =
+	t.ErrorList (t.SymTable Found e.LowerName)
+	t.SrcPos e.ModuleName s.ModuleType (e.LowerName) =
 		t.ErrorList
-		( (Idents (e.ModuleName-InSrc))
-			(CurModule t.SrcPos e.ModuleName-InSrc)
-			t.Modules t.Functions
-		);
+		<UpdateAttribSet
+			<RemoveName t.SymTable FsName>
+			(e.ModuleName)
+			(Kind ModuleName)
+			(Position t.SrcPos)
+			(FsName e.LowerName)
+			(ModuleType s.ModuleType)
+		>;
 
-	t.ErrorList
-	( (Idents) (CurModule e.ModuleName-InFS) t.Modules t.Functions )
-	t.SrcPos e.ModuleName-InSrc
-	( e.InFS-Lower ) (e.InSrc-Lower) =
+	t.ErrorList (t.SymTable Found e.LowerFsName)
+	t.SrcPos e.ModuleName (e.?LowerModuleName) =
 		<MError::AddMismatchModuleAndFile
-			t.ErrorList t.SrcPos (e.ModuleName-InFS) (e.ModuleName-InSrc)
-		> ( (Idents (e.ModuleName-InSrc))
-			(CurModule t.SrcPos e.ModuleName-InSrc)
-			t.Modules t.Functions
-		);
+			t.ErrorList t.SrcPos (e.ModuleName) (e.LowerFsName)
+		> <UpdateAttribSet
+			<RemoveName t.SymTable FsName>
+			(e.ModuleName)
+			(Kind ModuleName)
+			(Position t.SrcPos)
+			(FsName e.LowerFsName)
+		>;
 }
 
-$ENTRY ExtractCurrentModule-NoQualified
-	( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions ) =
-		( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions )
-		e.ModuleName;
+/**
+	<ExtractCurrentModule t.SymTable>
+		== t.SymTable e.ModuleName
+*/
+$ENTRY ExtractCurrentModule
+	t.SymTable =
+		<ExtractCurrentModule-Aux
+			<FindByKind t.SymTable ModuleName>
+		>;
 
-$ENTRY ExtractCurrentModule-Qualified
-	( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions ) =
-		( t.Idents (CurModule t.SrcPos e.ModuleName) t.Modules t.Functions )
-		(e.ModuleName);
+ExtractCurrentModule-Aux {
+	t.SymTable (e.ModuleName) =
+		t.SymTable e.ModuleName;
 
-* <CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
-*	== t.ErrorList t.SymTable
-*	== t.UpdatedErrorList t.SymTable
-$ENTRY CheckCurrentModule {
-	t.ErrorList
-	( t.Idents (CurModule t.SrcPos1 e.ModuleName) e.OtherInfo )
-	t.SrcPos2 e.ModuleName =
-		t.ErrorList
-		( t.Idents (CurModule t.SrcPos1 e.ModuleName) e.OtherInfo );
+	t.SymTable =
+		<MSelfDiag::Error
+			'MSymTable::ExtractCurrentModule: name of module not found in symtable'
+		>;
+}
 
-	t.ErrorList
-	( t.Idents (CurModule t.SrcPos1 e.ModuleNameInHeader) e.OtherInfo )
-	t.SrcPos2 e.ModuleNameInTailer =
+/**
+	<CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
+		== t.ErrorList t.SymTable
+		== t.UpdatedErrorList t.SymTable
+*/
+$ENTRY CheckCurrentModule
+	t.ErrorList t.SymTable t.SrcPos e.ModuleName =
+		<CheckCurrentModule-Aux
+			t.ErrorList
+			(<ExtractCurrentModule t.SymTable>)
+			t.SrcPos e.ModuleName
+		>;
+
+CheckCurrentModule-Aux {
+	t.ErrorList (t.SymTable e.ModuleName) t.SrcPos e.ModuleName =
+		t.ErrorList t.SymTable;
+
+	t.ErrorList (t.SymTable e.ModuleName-Head)
+	t.SrcPos-Tail e.ModuleName-Tail =
+		<MakeError-MismatchModuleName
+			t.ErrorList
+			<GetAttrib t.SymTable e.ModuleName-Head Position>
+			(e.ModuleName-Head) t.SrcPos-Tail e.ModuleName-Tail
+		>;
+}
+
+MakeError-MismatchModuleName
+	t.ErrorList t.SymTable t.SrcPos-Head
+	(e.ModuleName-Head) t.SrcPos-Tail e.ModuleName-Tail =
 		<MError::AddNamesMismatch
 			t.ErrorList
-			( t.SrcPos1 e.ModuleNameInHeader )
-			( t.SrcPos2 e.ModuleNameInTailer )
-		>
-		( t.Idents (CurModule t.SrcPos1 e.ModuleNameInHeader) e.OtherInfo);
-}
+			( t.SrcPos-Head e.ModuleName-Head )
+			( t.SrcPos-Tail e.ModuleName-Tail )
+		> t.SymTable;
 
-$ENTRY AddImportModule {
-	t.ErrorList
-	( (Idents e.Idents-B (e.ModuleName) e.Idents-E)
-		e.OtherInfo
-	)
-	t.SrcPos e.ModuleName =
-		<MError::AddRedeclaredIdentifier
-			t.ErrorList t.SrcPos e.ModuleName
-		> ( (Idents e.Idents-B (e.ModuleName) e.Idents-E)
-			e.OtherInfo
-		);
+/**
+	<AddNewEntity
+		t.ErrorList t.SymTable t.SrcPos (e.Name)
+		(s.Attribute e.Value)*
+	> == t.ErrorList t.SymTable
+*/
+$ENTRY AddNewEntity
+	t.ErrorList t.SymTable t.SrcPos (e.Name) e.Attribs =
+		<CheckRedeclaration
+			t.ErrorList
+			<AddNewName
+				t.SymTable (e.Name) e.Attribs
+			>
+			t.SrcPos e.Name
+		>;
 
-	t.ErrorList
-	( (Idents e.Idents)
-		t.CurModule
-		(Modules e.Modules)
-		t.Functions
-	) t.SrcPos e.ModuleName =
+CheckRedeclaration {
+	t.ErrorList t.SymTable Success t.SrcPos e.Name =
 		t.ErrorList
-		( (Idents e.Idents (e.ModuleName) ) 
-			t.CurModule
-			(Modules e.Modules (e.ModuleName))
-			t.Functions
-		);
+		t.SymTable;
+
+	t.ErrorList t.SymTable Fails t.SrcPos e.Name =
+		<MError::AddRedeclaredIdentifier
+			t.ErrorList t.SrcPos e.Name
+		> t.SymTable;
 }
 
-* <ExtractImportList t.SymTable>
-*	== t.SymTable (e.ImportName)*
+/**
+	<ExtractImportList t.SymTable>
+		== t.SymTable (e.ImportName)*
+*/
 $ENTRY ExtractImportList
-	( t.Idents t.CurModule (Modules e.ModulesList) t.Functions ) =
-		( t.Idents t.CurModule (Modules e.ModulesList) t.Functions )
-		e.ModulesList;
+	t.SymTable =
+		<FindByKind t.SymTable ImportName>;
 
-$ENTRY AddFunction {
-	t.ErrorList
-	( (Idents e.Idents-B (e.FnName) e.Idents-E)
-		e.OtherInfo
-	) s.ScopeClass t.SrcPos e.FnName =
-		<MError::AddRedeclaredIdentifier
-			t.ErrorList t.SrcPos e.FnName
-		> ( (Idents e.Idents-B (e.FnName) e.Idents-E)
-			e.OtherInfo
-		);
-
-	t.ErrorList
-	( (Idents e.Idents)
-		t.CurModule
-		t.Modules
-		(Functions e.Functions)
-	) s.ScopeClass t.SrcPos e.FnName =
-		t.ErrorList
-		( (Idents e.Idents (e.FnName))
-			t.CurModule
-			t.Modules
-			(Functions e.Functions (s.ScopeClass e.FnName))
-		);
-}
-
-$ENTRY AddADT {
-	t.ErrorList
-	( (Idents e.Idents-B (e.ADT-Name) e.Idents-E)
-		t.CurModule t.Modules t.Functions
-	) t.SrcPos e.ADT-Name =
-		<MError::AddRedeclaredIdentifier
-			t.ErrorList t.SrcPos e.ADT-Name
-		> ( (Idents e.Idents-B (e.ADT-Name) e.Idents-E)
-			t.CurModule t.Modules t.Functions
-		);
-
-	t.ErrorList
-	( (Idents e.Idents) t.CurModule t.Modules t.Functions )
-	t.?SrcPos e.ADT-Name =
-		t.ErrorList
-		( (Idents e.Idents (e.ADT-Name))
-			t.CurModule t.Modules t.Functions
-		);
-}
+/**
+	<AddADT t.ErrorList t.SymTable t.SrcPos e.ADTName>
+		== t.ErrorList t.SymTable
+*/
+$ENTRY AddADT
+	t.ErrorList t.SymTable t.SrcPos e.ADTName =
+		<AddNewEntity
+			t.ErrorList t.SymTable t.SrcPos (e.ADTName)
+			(Kind ADT)
+			(Position t.SrcPos)
+		>;
 
 /**
 	<ExtractLocalInfo t.SymTable>
@@ -181,103 +428,65 @@ $ENTRY AddADT {
 	s.ScopeClass ::= Entry | Local | Swap
 */
 $ENTRY ExtractLocalInfo
-	( t.Idents t.CurModule t.Modules (Functions e.Functions) ) =
-		( t.Idents t.CurModule t.Modules (Functions e.Functions) )
-		e.Functions;
+	t.SymTable =
+		<DoAddScopeClass
+			<FindByKind t.SymTable Function>
+		>;
 
-* <ExtractEntryFunctions t.SymTable>
-*	== t.SymTable (e.FnName)*
+/*
+	Инвариант: <DoAddScopeClass t.SymTable (e.FnName)*>
+*/
+DoAddScopeClass {
+	t.SymTable e.Functions (e.FnName) =
+		<DoAddScopeClass-Aux
+			<GetAttrib t.SymTable e.FnName ScopeClass>
+			e.Functions (e.FnName)
+		>;
+
+	t.SymTable = t.SymTable;
+}
+
+DoAddScopeClass-Aux {
+	t.SymTable Found s.ScopeClass e.Functions (e.FnName) =
+		<DoAddScopeClass
+			t.SymTable e.Functions
+		> (s.ScopeClass e.FnName);
+
+	t.SymTable NoAttrib e.Functions (e.FnName) =
+		<MSelfDiag::Error
+			'MSymTable::DoAddScopeClass: '
+			'attribute ScopeClass for name '
+			e.FnName ' not found'
+		>;
+}
+
+/**
+	<ExtractEntryFunctions t.SymTable>
+		== t.SymTable (e.FnName)*
+*/
 $ENTRY ExtractEntryFunctions
-	( t.Idents t.CurModule t.Modules t.Functions ) =
-		<ReturnFunctions
-			( t.Idents t.CurModule t.Modules )
-			<ExtractEntries t.Functions>
+	t.SymTable =
+		<DoExtractEntryFunctions
+			<ExtractLocalInfo t.SymTable> ()
 		>;
 
-ExtractEntries
-	(Functions e.FnList) =
-		<DoExtractEntries (Functions) (/* entries */) e.FnList >;
-
-DoExtractEntries {
-	t.FnList t.EntriesList
-	t.Function e.Tail =
-		<DoExtractEntries
-			<SwDoExtractEntries
-				t.FnList t.EntriesList t.Function
-			>
-			e.Tail
+/*
+	Инвариант
+	<DoExtractEntryFunctions t.SymTable e.Names (e.Entries)>
+*/
+DoExtractEntryFunctions {
+	t.SymTable e.Names (Entry e.Name) (e.Entries) =
+		<DoExtractEntryFunctions
+			t.SymTable e.Names ((e.Name) e.Entries)
 		>;
 
-	t.FnList (e.EntriesList) = t.FnList e.EntriesList;
-}
+	t.SymTable e.Names (s.?ScopeClass e.?Name) (e.Entries) =
+		<DoExtractEntryFunctions
+			t.SymTable e.Names (e.Entries)
+		>;
 
-SwDoExtractEntries {
-	(Functions e.FnList) (e.EntriesList) (Entry e.FnName) =
-		(Functions e.FnList (Entry e.FnName)) (e.EntriesList (e.FnName));
-
-	(Functions e.FnList) (e.EntriesList) (Local e.FnName) =
-		(Functions e.FnList (Local e.FnName)) (e.EntriesList);
-
-	(Functions e.FnList) (e.EntriesList) (Swap e.FnName) =
-		(Functions e.FnList (Swap e.FnName)) (e.EntriesList);
-}
-
-ReturnFunctions
-	( t.Idents t.CurModule t.Modules )
-	t.Functions e.Entries =
-		( t.Idents t.CurModule t.Modules t.Functions )
-		e.Entries;
-
-*-------------------------------------------------------------------------------
-* Работа с переменными
-*-------------------------------------------------------------------------------
-
-$ENTRY CreateVarTable
-	= (VarTable);
-
-$ENTRY DestroyVarTable
-	(VarTable e.Vars) = ;
-
-$ENTRY AddVariable {
-	/* Повторное вхождение переменной -- ничего не добавляем */
-	t.ErrorList
-	( VarTable e.Vars-B (s.VarType e.Index) e.Vars-E )
-	t.SrcPos s.VarType e.Index =
-		t.ErrorList
-		( VarTable e.Vars-B (s.VarType e.Index) e.Vars-E )
-		Success;
-
-	/* Две разные переменные не могут иметь один индекс */
-	t.ErrorList
-	( VarTable e.Vars-B (s.OneVarType e.Index) e.Vars-E)
-	t.SrcPos s.OtherVarType e.Index =
-		<MError::AddVarTypeMismatch
-			t.ErrorList t.SrcPos e.Index
-		> ( VarTable e.Vars-B (s.OneVarType e.Index) e.Vars-E )
-		Fail;
-
-	/* Просто добавляем переменную */
-	t.ErrorList
-	( VarTable e.Variables)
-	t.SrcPos s.VarType e.Index =
-		t.ErrorList (VarTable e.Variables (s.VarType e.Index)) Success;
-}
-
-$ENTRY CheckVariable {
-	t.ErrorList
-	(VarTable e.Vars-B (s.VarType e.Index) e.Vars-E)
-	t.SrcPos s.VarType e.Index =
-		t.ErrorList
-		(VarTable e.Vars-B (s.VarType e.Index) e.Vars-E)
-		Success;
-
-	t.ErrorList
-	(VarTable e.OtherVariables)
-	t.SrcPos s.VarType e.Index =
-		<MError::AddUndeclaredVariable
-			t.ErrorList t.SrcPos s.VarType e.Index
-		> (VarTable e.OtherVariables)
-		Fail;
+	t.SymTable (e.Entries) =
+		t.SymTable e.Entries;
 }
 
 $END MSymTable.

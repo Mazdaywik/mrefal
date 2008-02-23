@@ -1,39 +1,11 @@
 ===============================
-Module Brackets;
-
-===============================
 Module Compiler;
-*****************************************************************************
-Модуль реализует трансляцию отдельных модулей исходного текста Модульного
-Рефала. Точки входа в модуль -- функции CompileByModuleName и CompileByFileName
-выполняют компиляцию указанного модуля по заданному имени файла (имя в файло-
-вой системе) или модуля (указанного после директивы $MODULE). Сигнатуры этих
-функций следующие:
-<CompileBy***Name t.Context e.***Name> == t.UpdatedContext
-В процессе компиляции функции возвращают контекст с обновлённой информацией
-о скомпилированных модулях или завершают выполнение программы аварийно вызовом
-функции из модуля Error. Функции также при необходимости рекурсивно перекомпи-
-лируют модули указанные в директивах $IMPORT указанных модулей.
-Для простоты потребуем в данной версии, чтобы имя модуля совпадало с именем
-файла. Поиск исходных файлов осуществляется в текущей директории, поиск библио-
-течных файлов осуществляется сначала в текущей директории, затем по алгоритму,
-находящемуся в модуле Modules вызовом Modules::LookupLibrary.
-******************************************************************************
 
 <CompileModule
 	t.Context
 	(e.Directory)
 	e.ModuleName
 > == t.UpdatedContext
-
-===============================
-Module Context;
-
-===============================
-Module FileIO;
-
-===============================
-Module InOut;
 
 ===============================
 Module MAliasTable;
@@ -59,9 +31,6 @@ Module MAliasTable;
 	== t.AliasTable t.ErrorList NotFound
 
 ===============================
-Module Math;
-
-===============================
 Module MBackEnd;
 
 <Generate t.Module t.ErrorList e.OutName>
@@ -69,20 +38,11 @@ Module MBackEnd;
 s.Result ::= Success | Waringns | Errors
 
 ===============================
-Module MBuildNumber;
-
-===============================
-Module MCheckNeedCompile;
-
-===============================
 Module MCreateDirIfNeed;
 
 <Create e.DirName> == e.DirName
 
 <InfoDir> == 'Info'
-
-===============================
-Module MError;
 
 ===============================
 Module MExeTyper;
@@ -127,9 +87,6 @@ s.Status ::= Success | Warnings | Errors | Fatal
 	( Imports ((e.ImportDirectory) e.ImportName)* )
 
 ===============================
-Module MLexer;
-
-===============================
 Module MLinker;
 
 <CreateStartupUnit t.Context>
@@ -153,8 +110,8 @@ Module MLinker;
 
 <DestroyUnitStorage t.UnitStorage> == empty
 
-===============================
-Module MLinkerAliasTable;
+<NextRequestedName-D t.UnitStorage>
+	== e.Name
 
 ===============================
 Module MLocation;
@@ -174,32 +131,18 @@ s.Status ::=
 		ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 
 ===============================
-Module MModulesList;
-
-===============================
-Module Modules;
-
-===============================
-Module MOrder;
-
-===============================
-Module MOS;
-
-===============================
-Module MOutModuleStatus;
-
-===============================
 Module MParser;
 
 <SrcModule e.SrcFileName>
 	== t.Module s.ErrorResult t.ErrorList
 s.ErrorResult ::= Success | Warnings | Errors | Fatal
 
+<SymModule t.Context e.SymFileName>
+	== t.SymTable s.ErrorResult t.ErrorList
+	s.ErrorResult ::= Success | Warnings | Errors | Fatal
+
 ===============================
 Module MQualifiedName;
-*****************************************************************************
-Абстрактный тип данных -- квалифицированное имя.
-******************************************************************************
 
 <Create> == t.EmptyQualifierName
 <Create e.Name>
@@ -234,13 +177,6 @@ Module MQualifiedName;
 
 ===============================
 Module MQualifiedSupport;
-*****************************************************************************
-Тип данных -- квалифицированное имя.
-
-Хотя в программе была попытка использовать имя с директорией:
-e.FullName = (e.Directory) e.Name
-e.Directory = (e.SubName)*
-******************************************************************************
 
 <DirNameToQualifiedName (e.Directory) e.Name>
 	== t.QualifiedName
@@ -251,9 +187,6 @@ e.Directory = (e.SubName)*
 <UnQualify t.QualifiedName>
 	== e.Name
 t.QualifiedName должен содержать один сегмент.
-
-===============================
-Module MRefal;
 
 ===============================
 Module MResolver;
@@ -278,9 +211,6 @@ Module MResolveTable;
 <Lookup t.ResolveTable t.InternalQualifier>
 	== t.ResolveTable Found s.ScopeClass t.ExternalQualifier
 	== t.ResolveTable NotFound NotFound t.InternalQualifier
-
-===============================
-Module MSelfDiag;
 
 ===============================
 Module MStartupSeqGenerator;
@@ -356,6 +286,26 @@ Module MSymModule;
 		( Imports ((e.ImportDirectory) e.ImportName)* )
 	== t.Context SymInfoNotFound
 
+<LoadInfo1 t.Context e.ModuleName>
+	== t.UpdatedContext
+		( Functions ((e.Qualifier)(e.FnName))* )
+		( Imports (e.ModName)* )
+	== t.Context SymInfoNotFound
+
+<SaveInfo-T1 t.Context t.SymTable>
+	== t.UpdatedContext t.SymTable Success
+	== t.Context t.SymTable Fail
+
+<SymTableToSymInfo-T t.SymTable>
+	== t.SymTable
+		( CurModule e.ModName )
+		( Functions (e.FnName)* )
+		( Imports (e.ModName)* )
+
+<LookupSym t.Context e.ModuleName>
+	== (e.ModuleName) t.Context Known s.Status e.SymName
+	== (e.ModuleName) t.Context NotKnown s.Status e.SymName
+
 ===============================
 Module MSymStream;
 
@@ -396,10 +346,73 @@ Module MSymStream;
 ===============================
 Module MSymTable;
 
+<Create> == t.SymTable
+
+<AddName t.SymTable e.Name>
+	== t.SymTable
+
+<UpdateAttrib t.SymTable (e.Name) s.Attrib e.Value>
+	== t.SymTable
+
+<RemoveAttrib t.SymTable e.Name s.Attrib>
+	== t.SymTable Found e.Value
+	== t.SymTable NoAttrib
+	== t.SymTable NoName
+
+<GetAttrib t.SymTable e.Name s.Attrib>
+	== t.SymTable Found e.Value
+	== t.SymTable NoAttrib
+	== t.SymTable NoName
+
+<RemoveName t.SymTable e.Name>
+	== t.SymTable
+
+<ExtractNames t.SymTable>
+	== t.SymTable (e.Name)*
+
+<UpdateAttribSet
+	t.SymTable (e.Name)
+	(s.Attrib e.Value)*
+> == t.SymTable
+
+<FindByKind t.SymTable s.Kind>
+	== t.SymTable (e.Name)*
+
+<AddNewName t.SymTable (e.Name) (s.Attrib e.Value)*>
+	== t.SymTable Success
+	== t.SymTable Fails
+
+Если имя (e.Name) отсутствует в таблице, то оно добавляется с указанными
+атрибутами, в противном случае таблица не изменяется.
+Фукция возвращает Success при успешном добавлении имени, Fails в случае,
+если имя уже в таблице было.
+
+<AddCurrentModule
+	t.ErrorList t.SymTable t.SrcPos e.ModuleName
+> == t.ErrorList t.SymTable
+
+<ExtractCurrentModule t.SymTable>
+	== t.SymTable e.ModuleName
+
+<CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
+	== t.ErrorList t.SymTable
+	== t.UpdatedErrorList t.SymTable
+
+<AddNewEntity
+	t.ErrorList t.SymTable t.SrcPos (e.Name)
+	(s.Attribute e.Value)*
+> == t.ErrorList t.SymTable
+
+<ExtractImportList t.SymTable>
+	== t.SymTable (e.ImportName)*
+
+<AddADT t.ErrorList t.SymTable t.SrcPos e.ADTName>
+	== t.ErrorList t.SymTable
+
 <ExtractLocalInfo t.SymTable>
 	== t.SymTable (s.ScopeClass e.EntityName)*
 s.ScopeClass ::= Entry | Local | Swap
 
-===============================
-Module Types;
+<ExtractEntryFunctions t.SymTable>
+	== t.SymTable (e.FnName)*
 

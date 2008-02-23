@@ -1,8 +1,10 @@
 $MODULE TODO_list;
 
-$IMPORT FileIO, MOS, InOut;
+$IMPORT FileIO, MOS, InOut, MUtilitiesBanner;
 
-$ENTRY Go = <Main <MOS::ArgList>>;
+$ENTRY Go =
+	<MUtilitiesBanner::Type 'TODO_list'>
+	<Main <MOS::ArgList>>;
 
 Main {
 	(e.?ProgName) (e.FileForScan) =

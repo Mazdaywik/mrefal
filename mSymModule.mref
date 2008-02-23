@@ -8,6 +8,7 @@ $MODULE MSymModule;
 
 $IMPORT Context;
 $IMPORT FileIO;
+$IMPORT MError;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MParser;
@@ -57,17 +58,20 @@ ActualStatus {
 SwCheckActual {
 	t.Context Actual e.SymFileName =
 		<ExtractSymInfo
-			<MParser::SymModule t.Context e.SymFileName>
+			t.Context
+			<MParser::SymModule e.SymFileName>
 		>;
 
 	t.Context NotActual = t.Context SymInfoNotFound;
 }
 
-* <LoadInfo1 t.Context e.ModuleName>
-*	== t.UpdatedContext
-*		( Functions ((e.Qualifier)(e.FnName))* )
-*		( Imports (e.ModName)* )
-*	== t.Context SymInfoNotFound
+/**
+	<LoadInfo1 t.Context e.ModuleName>
+		== t.UpdatedContext
+			( Functions ((e.Qualifier)(e.FnName))* )
+			( Imports (e.ModName)* )
+		== t.Context SymInfoNotFound
+*/
 $ENTRY LoadInfo1
 	t.Context e.ModuleName =
 		<CheckActual-Old
@@ -81,7 +85,8 @@ CheckActual-Old {
 	(e.ModuleName) t.Context Known s.Status e.SymFName =
 		<SymInfo-ToOld
 			<ExtractSymInfo
-				<MParser::SymModule t.Context e.SymFName>
+				t.Context
+				<MParser::SymModule e.SymFName>
 			>
 		>;
 
@@ -95,7 +100,8 @@ SwCheckActual-Old {
 	t.Context Actual e.SymFName =
 		<SymInfo-ToOld
 			<ExtractSymInfo
-				<MParser::SymModule t.Context e.SymFName>
+				t.Context
+				<MParser::SymModule e.SymFName>
 			>
 		>;
 
@@ -111,12 +117,19 @@ ActualState-Old {
 	SystemLibrary = Actual;
 }
 
-ExtractSymInfo
-	t.Context t.SymTable =
+ExtractSymInfo {
+	t.Context t.SymTable Success t.ErrorList =
 		<ExtractSymInfo--CreateResult
 			t.Context
 			<SymTableToSymInfo-T t.SymTable>
-		>;
+		> <MError::DestroyErrList t.ErrorList>;
+
+	t.Context t.SymTable s.ErrorResult t.ErrorList =
+		t.Context
+		<MSymTable::Destroy t.SymTable>
+		<MError::PrintErrors t.ErrorList>
+		SymInfoNotFound;
+}
 
 ExtractSymInfo--CreateResult
 	t.Context t.SymTable (CurModule e.CurModule)
@@ -135,7 +148,7 @@ AddEmptyDirectory {
 	= ;
 }
 
-SymInfo-ToOld
+SymInfo-ToOld {
 	t.Context
 	( Module () e.CurModule )
 	( Functions e.FnList )
@@ -143,6 +156,10 @@ SymInfo-ToOld
 		t.Context
 		( Functions <ToQualified (e.CurModule) e.FnList> )
 		( Imports <RemoveEmptyDirectory e.Imports> );
+
+	t.Context SymInfoNotFound =
+		t.Context SymInfoNotFound;
+}
 
 RemoveEmptyDirectory {
 	(() e.ImportName) e.Tail =
@@ -170,9 +187,11 @@ DoToQualified {
 * Сохранение символической информации
 *-------------------------------------------------------------------------------
 
-* <SaveInfo-T1 t.Context t.SymTable>
-*	== t.UpdatedContext t.SymTable Success
-*	== t.Context t.SymTable Fail
+/**
+	<SaveInfo-T1 t.Context t.SymTable>
+		== t.UpdatedContext t.SymTable Success
+		== t.Context t.SymTable Fail
+*/
 $ENTRY SaveInfo-T1
 	t.Context t.SymTable =
 		<RealSaveInfo
@@ -180,7 +199,7 @@ $ENTRY SaveInfo-T1
 			<SymTableToSymInfo-T t.SymTable>
 		>;
 
-$ENTRY SaveInfo1
+/*$ENTRY*/ SaveInfo1
 	t.Context t.SymTable =
 		<CloseSymTable
 			<SaveInfo-T1 t.Context t.SymTable>
@@ -276,11 +295,13 @@ DoGenImports {
 * Извлечение информации из таблицы символов
 *-------------------------------------------------------------------------------
 
-* <SymTableToSymInfo-T t.SymTable>
-*	== t.SymTable
-*		( CurModule e.ModName )
-*		( Functions (e.FnName)* )
-*		( Imports (e.ModName)* )
+/**
+	<SymTableToSymInfo-T t.SymTable>
+		== t.SymTable
+			( CurModule e.ModName )
+			( Functions (e.FnName)* )
+			( Imports (e.ModName)* )
+*/
 SymTableToSymInfo-T
 	t.SymTable =
 		<SymTableToSymInfo--Imports
@@ -296,7 +317,7 @@ SymTableToSymInfo--Imports
 SymTableToSymInfo--Functions
 	t.SymTable e.Functions =
 		<SymTableToSymInfo--CurModule
-			<MSymTable::ExtractCurrentModule-NoQualified t.SymTable>
+			<MSymTable::ExtractCurrentModule t.SymTable>
 		> ( Functions e.Functions );
 
 SymTableToSymInfo--CurModule
@@ -307,9 +328,11 @@ SymTableToSymInfo--CurModule
 * Ищет имя sym-файла, а также возвращает его статус
 *-------------------------------------------------------------------------------
 
-* <LookupSym t.Context e.ModuleName>
-*	== (e.ModuleName) t.Context Known s.Status e.SymName
-*	== (e.ModuleName) t.Context NotKnown s.Status e.SymName
+/**
+	<LookupSym t.Context e.ModuleName>
+		== (e.ModuleName) t.Context Known s.Status e.SymName
+		== (e.ModuleName) t.Context NotKnown s.Status e.SymName
+*/
 LookupSym
 	t.Context e.ModuleName =
 		<SwKnownModule

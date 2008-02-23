@@ -48,9 +48,24 @@ DoScanFiles {
 
 ExtractInfo
 	e.FileName =
-		<ModuleToInterface
-			<FileIO::Load e.FileName>
+		<CheckEmpty
+			<ModuleToInterface
+				<FileIO::Load e.FileName>
+			>
 		>;
+
+CheckEmpty {
+	(e.?Line1) =
+		/* empty */;
+
+	(e.?Line1) (e.?Line2) =
+		/* empty */;
+
+	(e.?Line1) (e.?Line2) (e.?Line3) =
+		/* empty */;
+
+	e.Lines = e.Lines;
+}
 
 ModuleToInterface {
 	('$MODULE ' e.ModuleName)

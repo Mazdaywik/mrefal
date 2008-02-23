@@ -25,7 +25,7 @@ StartResolving
 	( e.ModuleContent )
 	t.ErrorList e.QualifiedList =
 		<ResolvingElements
-			( <MSymTable::ExtractCurrentModule-NoQualified t.SymTable> )
+			( <MSymTable::ExtractCurrentModule t.SymTable> )
 			(e.ModuleContent) t.ErrorList
 			(e.LocalScope) e.QualifiedList
 		>;

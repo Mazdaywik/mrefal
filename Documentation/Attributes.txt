@@ -1,0 +1,27 @@
+	Атрибуты имён в зависимости от сорта (Kind) имени.
+
+Kind = Unknown
+	Ничего конкретного нельзя сказать.
+
+Kind = ModuleName
+	(Position t.SrcPos)
+	(FsName e.LowerName)
+	(ModuleType s.ModuleType)
+	e.LowerName -- имя файла без расширения в нижнем регистре
+	s.ModuleType ::= Regular | Main | Clear
+
+Kind = ImportName
+	(Position t.SrcPos)
+	(Alias e.AliasName)
+	Если псевдоним модуля не задан, то e.AliasName совпадает с самим
+	именем модуля.
+
+Kind = Function
+	(ScopeClass s.ScopeClass)
+	(Position t.ScrPos)
+	(Body t.FunctionBody)
+	s.ScopeClass ::= Entry | Local | Swap
+	t.FunctionBody описано в MainStructures.txt. Может отсутствовать (у Swap).
+
+Kind = ADT
+	(Position s.Position)

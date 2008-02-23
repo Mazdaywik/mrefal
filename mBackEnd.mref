@@ -24,7 +24,7 @@ $ENTRY Generate
 GenerateContent
 	(t.SymTable e.Elements) =
 		<GenerateSwaps
-			<MSymTable::ExtractCurrentModule-NoQualified t.SymTable>
+			<MSymTable::ExtractCurrentModule t.SymTable>
 		>
 		<GenerateElements e.Elements>;
 

@@ -4,6 +4,7 @@ $IMPORT MResolveTable;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 $IMPORT MSymTable;
+$IMPORT MSymTable-Module;
 $IMPORT MError;
 
 /**
@@ -14,6 +15,13 @@ $IMPORT MError;
 	t.ModuleLocation ::= ((e.Directory) e.ModuleName)
 */
 $ENTRY Resolve
+	t.SymTable t.ErrorList e.QualifiedList =
+		<Resolve-Aux
+			<MSymTable-Module::Module-From-SymTable t.SymTable>
+			t.ErrorList e.QualifiedList
+		>;
+
+Resolve-Aux
 	( t.SymTable e.ModuleContent ) t.ErrorList e.QualifiedList =
 		<StartResolving
 			( <MSymTable::ExtractLocalInfo t.SymTable> )

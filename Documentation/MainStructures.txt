@@ -15,7 +15,7 @@ s.ScopeClass ::=
 	Local
 
 t.FunctionBody ::=
-	t.Sentence*
+	( t.Sentence* )
 
 t.Sentence ::=
 	t.PatternExpr t.ResultExpr

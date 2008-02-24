@@ -1,0 +1,88 @@
+$MODULE MSymTable-Module;
+
+$IMPORT MSymTable;
+
+/**
+	<SymTable-From-Module t.Module>
+		== t.SymTable
+*/
+$ENTRY SymTable-From-Module
+	(t.SymTable e.ModuleContent) =
+		<DoSymTableFromModule
+			t.SymTable e.ModuleContent
+		>;
+
+DoSymTableFromModule {
+	t.SymTable
+	(Function s.ScopeClass (e.Name) t.FunctionBody)
+	e.Tail =
+		<DoSymTableFromModule
+			<MSymTable::UpdateAttribSet
+				t.SymTable (e.Name)
+				(Kind Function)
+				(ScopeClass s.ScopeClass)
+				(Body t.FunctionBody)
+			> e.Tail
+		>;
+
+	t.SymTable = t.SymTable;
+}
+
+/**
+	<Module-From-SymTable t.SymTable>
+		== t.Module
+*/
+$ENTRY Module-From-SymTable
+	t.SymTable =
+		<DoModuleFromSymTable
+			<MSymTable::FindByKind t.SymTable Function>
+			()
+		>;
+
+DoModuleFromSymTable {
+	t.SymTable e.Names (e.LastName) (e.Module) =
+		<DoModuleFromSymTable-Aux
+			<MSymTable::GetAttrib
+				t.SymTable e.LastName ScopeClass
+			>
+			e.Names (e.LastName) (e.Module)
+		>;
+
+	t.SymTable (e.Module) = (t.SymTable e.Module);
+}
+
+DoModuleFromSymTable-Aux {
+	t.SymTable Found Swap e.Names (e.LastName) (e.Module) =
+		<DoModuleFromSymTable
+			t.SymTable e.Names (e.Module)
+		>;
+
+	t.SymTable Found s.ScopeClass e.Names (e.LastName) (e.Module) =
+		<DoModuleFromSymTable-Aux2
+			s.ScopeClass
+			<MSymTable::RemoveAttrib
+				t.SymTable e.LastName Body
+			>
+			e.Names (e.LastName) (e.Module)
+		>;
+
+	/* Если всё остальное корректно работает, то функция
+	и её атрибуты должны существовать */
+}
+
+DoModuleFromSymTable-Aux2 {
+	s.ScopeClass t.SymTable Found t.FunctionBody
+	e.Names (e.LastName) (e.Module) =
+		<DoModuleFromSymTable
+			t.SymTable e.Names
+			( (Function s.ScopeClass (e.LastName) t.FunctionBody)
+				e.Module
+			)
+		>;
+
+	// Должно быть в таблице
+}
+
+
+
+$END MSymTable-Module.

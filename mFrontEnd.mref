@@ -5,6 +5,7 @@ $IMPORT MParser;
 //$IMPORT MQualifiedSupport;
 $IMPORT MSymInfo;
 //$IMPORT MSymTable;
+$IMPORT MSymTable-Module;
 //$IMPORT MError;
 
 /**
@@ -21,15 +22,14 @@ $ENTRY LoadModule
 		== t.Module t.SymInfo
 */
 $ENTRY SymInfo
-	(t.SymTable e.ModuleContent) =
+	t.SymTable =
 		<RestoreModule
 			<MSymInfo::CreateFromSymTable t.SymTable>
-			e.ModuleContent
 		>;
 
 RestoreModule
-	t.SymTable t.SymInfo e.ModuleContent =
-		(t.SymTable e.ModuleContent) t.SymInfo;
+	t.SymTable t.SymInfo =
+		t.SymTable t.SymInfo;
 
 /**
 	<SymInfo-Old t.Module>

@@ -4,6 +4,7 @@ $IMPORT MLexer;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MSymTable;
+$IMPORT MSymTable-Module;
 $IMPORT MVarTable;
 
 /**
@@ -13,63 +14,18 @@ $IMPORT MVarTable;
 */
 $ENTRY SrcModule
 	e.SrcFileName =
-		<ModuleFromSymTable
+		//<ModuleFromSymTable
 			<ErrorResult
 				<NModule <StartParsing e.SrcFileName> >
-			>
+			//>
 		>;
 
 ModuleFromSymTable
 	t.SymTable s.ErrorResult t.ErrorList =
-		<DoModuleFromSymTable
-			<MSymTable::FindByKind t.SymTable Function>
-			()
-		>
-		s.ErrorResult t.ErrorList;
+		<MSymTable-Module::Module-From-SymTable
+			t.SymTable
+		> s.ErrorResult t.ErrorList;
 
-DoModuleFromSymTable {
-	t.SymTable e.Names (e.LastName) (e.Module) =
-		<DoModuleFromSymTable-Aux
-			<MSymTable::GetAttrib
-				t.SymTable e.LastName ScopeClass
-			>
-			e.Names (e.LastName) (e.Module)
-		>;
-
-	t.SymTable (e.Module) = (t.SymTable e.Module);
-}
-
-DoModuleFromSymTable-Aux {
-	t.SymTable Found Swap e.Names (e.LastName) (e.Module) =
-		<DoModuleFromSymTable
-			t.SymTable e.Names (e.Module)
-		>;
-
-	t.SymTable Found s.ScopeClass e.Names (e.LastName) (e.Module) =
-		<DoModuleFromSymTable-Aux2
-			s.ScopeClass
-			<MSymTable::RemoveAttrib
-				t.SymTable e.LastName Body
-			>
-			e.Names (e.LastName) (e.Module)
-		>;
-
-	/* Если всё остальное корректно работает, то функция
-	и её атрибуты должны существовать */
-}
-
-DoModuleFromSymTable-Aux2 {
-	s.ScopeClass t.SymTable Found t.FunctionBody
-	e.Names (e.LastName) (e.Module) =
-		<DoModuleFromSymTable
-			t.SymTable e.Names
-			( (Function s.ScopeClass (e.LastName) t.FunctionBody)
-				e.Module
-			)
-		>;
-
-	// Должно быть в таблице
-}
 
 /**
 	<SymModule t.Context e.SymFileName>

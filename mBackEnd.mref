@@ -7,16 +7,15 @@ $IMPORT MStrings;
 $IMPORT MVersion;
 
 /**
-	<Generate t.Module t.ErrorList e.OutName>
-		== s.Result t.UpdatedErrorList
-	s.Result ::= Success | Waringns | Errors
+	<Generate t.Module e.OutName>
+		== empty
 */
 $ENTRY Generate
-	t.Module t.ErrorList e.OutName =
-		Success t.ErrorList
+	t.Module e.OutName =
 		<FileIO::Save
 			(e.OutName)
 			('v ' <MVersion::ROut>)
+			('r file ' e.OutName)
 			()
 			<GenerateContent t.Module>
 		>;

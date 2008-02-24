@@ -11,6 +11,7 @@ $IMPORT FileIO;
 $IMPORT MError;
 $IMPORT MLocation;
 $IMPORT Modules;
+$IMPORT MOrder;
 $IMPORT MParser;
 $IMPORT MSymTable;
 
@@ -267,7 +268,8 @@ GenerateSym
 
 GenFuncDecl {
 	= ;
-	e.Funcs = <DoGenFuncDecl e.Funcs> ();
+	e.Funcs =
+		<DoGenFuncDecl <MOrder::Sort e.Funcs>> ();
 }
 
 DoGenFuncDecl {
@@ -280,7 +282,8 @@ DoGenFuncDecl {
 
 GenImports {
 	= ;
-	e.ImportList = <DoGenImports e.ImportList> ();
+	e.ImportList =
+		<DoGenImports <MOrder::Sort e.ImportList>> ();
 }
 
 DoGenImports {

@@ -27,25 +27,21 @@ $IMPORT MOutModuleStatus;
 $IMPORT MResolver;
 $IMPORT MSelfDiag;
 $IMPORT MSymModule;
+//$IMPORT MSymTable-Module;
 
 
 $ENTRY CompileByModuleName
-	t.Context e.ModuleName =
-		<Lookup-Dummy t.Context e.ModuleName>;
-
-$ENTRY CompileByFileName {
-	t.Context e.FileName s.Dot s.M s.R s.E s.F =
-		<Lookup-Dummy t.Context e.FileName >;
-}
-
-// Функция-затычка
-Lookup-Dummy
 	t.Context e.ModuleName =
 		<ParseAndCompile
 			<MLocation::LookupModule-T
 				t.Context () e.ModuleName
 			>
 		>;
+
+$ENTRY CompileByFileName {
+	t.Context e.FileName s.Dot s.M s.R s.E s.F =
+		<CompileByModuleName t.Context e.FileName >;
+}
 
 ParseAndCompile {
 	t.Context NotKnown ModuleNotFound
@@ -65,29 +61,6 @@ ParseAndCompile {
 			>
 		>
  		<MOutModuleStatus::Compiled e.SrcName>;
-}
-
-/**
-	<CompileModule
-		t.Context
-		(e.Directory)
-		e.ModuleName
-	> == t.UpdatedContext
-*/
-$ENTRY CompileModule {
-	t.Context (e.Directory) e.ModuleName =
-		<CheckCompileIfNeed
-			<MLocation::LookupModule-T
-				t.Context (e.Directory) e.ModuleName
-			>
-		>;
-}
-
-CheckCompileIfNeed {
-	t.Context s.Known s.Status
-	(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-	(e.Directory) e.Module =
-		;
 }
 
 Compile {
@@ -548,7 +521,7 @@ PrintUnresolved {
 *	== t.UpdatedContext
 Generate {
 	(e.ModuleName) (Out e.OutName) (Sym e.SymName)
-	t.Context (t.SymTable e.ModuleContent) =
+	t.Context (t.SymTable e.Functions) =
 		<UpdateContext
 			<GenerateOut
 				(Out e.OutName)
@@ -556,7 +529,7 @@ Generate {
 					t.Context
 					t.SymTable
 				>
-				e.ModuleContent
+				e.Functions
 			>
 			e.ModuleName
 		>;
@@ -593,22 +566,11 @@ GuardResult
 * <GenerateOut (Out e.OutName) t.Context t.SymTable t.Module>
 *	== t.UpdatedContext
 GenerateOut
-	(Out e.OutName) t.Context t.SymTable e.Elements =
+	(Out e.OutName) t.Context t.SymTable e.Functions =
 		t.Context
-		<CheckGenerateResult
-			<MBackEnd::Generate
-				(t.SymTable e.Elements)
-				<MError::CreateErrList>
-				e.OutName
-			>
+		<MBackEnd::Generate
+			( t.SymTable e.Functions )
+			e.OutName
 		>;
-
-CheckGenerateResult {
-	Success t.ErrorList =
-		<MError::DestroyErrList t.ErrorList>;
-
-	s.Other t.ErrorList =
-		<MError::PrintErrorsAndStop t.ErrorList>;
-}
 
 $END Compiler.

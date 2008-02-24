@@ -1,11 +1,11 @@
 $MODULE MResolver;
 
-$IMPORT MResolveTable;
+$IMPORT MError;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
+$IMPORT MResolveTable;
 $IMPORT MSymTable;
 $IMPORT MSymTable-Module;
-$IMPORT MError;
 
 /**
 	<Resolve t.Module t.ErrorList e.QualifiedList>
@@ -18,27 +18,94 @@ $ENTRY Resolve
 	t.SymTable t.ErrorList e.QualifiedList =
 		<Resolve-Aux
 			<MSymTable-Module::Module-From-SymTable t.SymTable>
+			<MResolveTable::Create>
 			t.ErrorList e.QualifiedList
 		>;
 
 Resolve-Aux
-	( t.SymTable e.ModuleContent ) t.ErrorList e.QualifiedList =
+	( t.SymTable e.ModuleContent ) t.ResolveTable t.ErrorList e.QualifiedList =
 		<StartResolving
+			t.ResolveTable
 			( <MSymTable::ExtractLocalInfo t.SymTable> )
 			(e.ModuleContent) t.ErrorList e.QualifiedList
 		>;
 
 StartResolving
+	t.ResolveTable
 	( t.SymTable e.LocalScope )
 	( e.ModuleContent )
 	t.ErrorList e.QualifiedList =
 		<ResolvingElements
-			( <MSymTable::ExtractCurrentModule t.SymTable> )
-			(e.ModuleContent) t.ErrorList
-			(e.LocalScope) e.QualifiedList
+			<FillTable
+				t.ResolveTable
+				( <MSymTable::ExtractCurrentModule t.SymTable> )
+				(e.ModuleContent) t.ErrorList
+				(e.LocalScope) e.QualifiedList
+			>
 		>;
 
+FillTable {
+	t.ResolveTable
+	( t.SymTable e.CurrentModule )
+	(e.ModuleContent) t.ErrorList
+	(e.LocalScope) e.QualifiedList =
+		<ResolvingElements
+			<FillQualified
+				<FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
+				e.QualifiedList
+			>
+		>
+		(t.SymTable e.CurrentModule)
+		(e.ModuleContent) t.ErrorList
+		(e.LocalScope) e.QualifiedList;
+}
+
+/*
+	Инвариант: <FillQualified t.ResolveTable e.QualifiedList>
+		e.QualifiedList объяснено выше
+*/
+FillQualified {
+	t.ResolveTable
+	( (() e.ModuleName) (e.Function) e.Functions )
+	e.Modules =
+		<FillQualified
+			<MResolveTable::Add
+				t.ResolveTable
+				<MQualifiedName::Create (e.ModuleName) (e.Function)>
+				Entry
+				<MQualifiedName::Create (e.ModuleName) (e.Function)>
+			>
+			( (() e.ModuleName) e.Functions ) e.Modules
+		>;
+
+	t.ResolveTable
+	( (() e.ModuleName) ) e.Modules =
+		<FillQualified t.ResolveTable e.Modules>;
+
+	t.ResolveTable = t.ResolveTable;
+}
+
+/*
+	Инвариант: <FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
+		e.LocalScope ::= (s.ScopeClass e.FnName)*
+*/
+FillLocal {
+	t.ResolveTable (e.CurrentModule)
+	(s.ScopeClass e.Function) e.Functions =
+		<FillLocal
+			<MResolveTable::Add
+				<MQualifiedName::Create (e.Function)>
+				s.ScopeClass
+				<MQualifiedName::Create (e.CurrentModule)(e.Function)>
+			> (e.CurrentModule) e.Functions
+		>;
+
+	t.ResolveTable (e.CurrentModule) =
+		t.ResolveTable;
+}
+
 ResolvingElements
+	t.ResolveTable
 	( t.SymTable e.CurModuleName )
 	( e.Elements ) t.ErrorList
 	(e.LocalScope) e.QualifiedList =
@@ -46,108 +113,109 @@ ResolvingElements
 			t.SymTable
 			( )
 			t.ErrorList
-			(e.CurModuleName) (e.LocalScope (Local 'FnPtr')) (e.QualifiedList)
+			t.ResolveTable
 			e.Elements
 		>;
 
-AddFnPtrFunction
-	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
-		<DoAddFnPtrFunctions
-			() (e.CurModule) (e.LocalScope) (e.QualifiedList)
-		>;
 
-DoAddFnPtrFunctions {
-	( e.Sentences ) ( e.CurModule )
-	( (s.ScopeClass e.FnName) e.OtherLocals )
-	( e.QualifiedList ) =
-		<DoAddFnPtrFunctions
-			( e.Sentences
-				(
-					( (Identifier e.FnName) )
-					(
-						(FnPtr
-							(s.ScopeClass
-								<MQualifiedName::CreateFromSegments
-									(e.CurModule) (e.FnName)
-								>
-							)
-						)
-					)
-				)
-			)
-			( e.CurModule ) ( e.OtherLocals ) ( e.QualifiedList )
-		>;
+* //Потом разберёмся
+* AddFnPtrFunction
+* 	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
+* 		<DoAddFnPtrFunctions
+* 			() (e.CurModule) (e.LocalScope) (e.QualifiedList)
+* 		>;
+* 
+* DoAddFnPtrFunctions {
+* 	( e.Sentences ) ( e.CurModule )
+* 	( (s.ScopeClass e.FnName) e.OtherLocals )
+* 	( e.QualifiedList ) =
+* 		<DoAddFnPtrFunctions
+* 			( e.Sentences
+* 				(
+* 					( (Identifier e.FnName) )
+* 					(
+* 						(FnPtr
+* 							(s.ScopeClass
+* 								<MQualifiedName::CreateFromSegments
+* 									(e.CurModule) (e.FnName)
+* 								>
+* 							)
+* 						)
+* 					)
+* 				)
+* 			)
+* 			( e.CurModule ) ( e.OtherLocals ) ( e.QualifiedList )
+* 		>;
+* 
+* 	( e.Sentences ) ( e.CurModule ) ()
+* 	( ( (() e.ModuleName) (e.FnName) e.OtherFunctions) e.OtherModulesInfo ) =
+* 		<DoAddFnPtrFunctions
+* 			( e.Sentences
+* 				(
+* 					( (Identifier e.ModuleName) (Identifier e.FnName) )
+* 					(
+* 						(FnPtr
+* 							(Entry
+* 								<MQualifiedName::CreateFromSegments
+* 									(e.ModuleName) (e.FnName)
+* 								>
+* 							)
+* 						)
+* 					)
+* 				)
+* 			)
+* 			( e.CurModule ) ()
+* 			( ( (() e.ModuleName) e.OtherFunctions) e.OtherModulesInfo )
+* 		>;
+* 
+* 	( e.Sentences ) ( e.CurModule ) ()
+* 	( (t.ModuleLocation) e.OtherModulesInfo ) =
+* 		<DoAddFnPtrFunctions
+* 			( e.Sentences ) ( e.CurModule ) ()
+* 			( e.OtherModulesInfo )
+* 		>;
+* 
+* 	( e.Sentences ) (e.CurModule) () () =
+* 		( Function Local
+* 			<MQualifiedName::CreateFromSegments
+* 				(e.CurModule) ('FnPtr')
+* 			>
+* 			(e.Sentences)
+* 		);
+* }
+* 
+* AddFnPtrIfNeed {
+* 	(e.?CurModule)
+* 	(e.?LocalScope-B (s.?ScopeClass 'FnPtr') e.?LocalScope-E (Local 'FnPtr'))
+* 	(e.?QualifiedList) =
+* 		/* пусто */;
+* 
+* 	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
+* 		<AddFnPtrFunction
+* 			(e.CurModule) (e.LocalScope) (e.QualifiedList)
+* 		>;
+* }
 
-	( e.Sentences ) ( e.CurModule ) ()
-	( ( (() e.ModuleName) (e.FnName) e.OtherFunctions) e.OtherModulesInfo ) =
-		<DoAddFnPtrFunctions
-			( e.Sentences
-				(
-					( (Identifier e.ModuleName) (Identifier e.FnName) )
-					(
-						(FnPtr
-							(Entry
-								<MQualifiedName::CreateFromSegments
-									(e.ModuleName) (e.FnName)
-								>
-							)
-						)
-					)
-				)
-			)
-			( e.CurModule ) ()
-			( ( (() e.ModuleName) e.OtherFunctions) e.OtherModulesInfo )
-		>;
-
-	( e.Sentences ) ( e.CurModule ) ()
-	( (t.ModuleLocation) e.OtherModulesInfo ) =
-		<DoAddFnPtrFunctions
-			( e.Sentences ) ( e.CurModule ) ()
-			( e.OtherModulesInfo )
-		>;
-
-	( e.Sentences ) (e.CurModule) () () =
-		( Function Local
-			<MQualifiedName::CreateFromSegments
-				(e.CurModule) ('FnPtr')
-			>
-			(e.Sentences)
-		);
-}
-
-AddFnPtrIfNeed {
-	(e.?CurModule)
-	(e.?LocalScope-B (s.?ScopeClass 'FnPtr') e.?LocalScope-E (Local 'FnPtr'))
-	(e.?QualifiedList) =
-		/* пусто */;
-
-	(e.CurModule) (e.LocalScope) (e.QualifiedList) =
-		<AddFnPtrFunction
-			(e.CurModule) (e.LocalScope) (e.QualifiedList)
-		>;
-}
 
 DoResolvingElements {
 	t.SymTable ( e.ResolvedElements )
 	t.ErrorList
-	(e.CurModuleName) (e.LocalScope) (e.QualifiedList) =
+	t.ResolveTable =
 		( t.SymTable
 			e.ResolvedElements
-			<AddFnPtrIfNeed (e.CurModuleName) (e.LocalScope) (e.QualifiedList)>
 		)
+		<MResolveTable::Destroy t.ResolveTable>
 		<CheckErrors t.ErrorList>;
 
 	t.SymTable ( e.ResolvedElements )
-	t.ErrorList
-	(e.CurModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	t.NextElement e.Elements =
 		<DoResolvingElements
 			<AddElement
 				t.SymTable ( e.ResolvedElements )
 				<ResolvingOneElement
 					t.NextElement
-					t.ErrorList
-					(e.CurModuleName) (e.LocalScope) (e.QualifiedList)
+					t.ErrorList t.ResolveTable
 				>
 			> e.Elements
 		>;
@@ -166,100 +234,95 @@ SwCheckErrors {
 
 AddElement
 	t.SymTable ( e.ResolvedElements )
-	t.Resolved t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList) =
+	t.Resolved t.ErrorList t.ResolveTable =
 		t.SymTable
 		( e.ResolvedElements t.Resolved )
-		t.ErrorList
-		(e.ModuleName) (e.LocalScope) (e.QualifiedList);
+		t.ErrorList t.ResolveTable;
 
 // Модуль состоит только из функций, swaps регистрируются в таблице символов
 ResolvingOneElement {
 	( Function s.ScopeClass (e.FnName) (e.Sentences) )
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList) =
-		<DoResolvingFunction
-			( Function
-				s.ScopeClass
-				<MQualifiedName::CreateFromSegments (e.ModuleName) (e.FnName)>
-			)
+	t.ErrorList t.ResolveTable =
+		<ResolveFnName-Header
+			( Function s.ScopeClass (e.FnName) (e.Sentences) )
 			t.ErrorList
-			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			<MResolveTable::Lookup
+				t.ResolveTable
+				<MQualifiedName::Create (e.FnName)>
+			>
+		>;
+}
+
+ResolveFnName-Header {
+	( Function s.ScopeClass (e.FnName) (e.Sentences) )
+	t.ErrorList
+	t.ResolveTable Found s.ScopeClass t.FunctionNameQualified =
+		<DoResolvingFunction
+			( Function s.ScopeClass t.FunctionNameQualified )
+			t.ErrorList t.ResolveTable
 			() e.Sentences
 		>;
 }
 
 DoResolvingFunction {
 	( Function s.ScopeClass t.QualifiedFNName )
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.Resolved) =
 		( Function s.ScopeClass t.QualifiedFNName (e.Resolved) )
-		t.ErrorList
-		(e.ModuleName) (e.LocalScope) (e.QualifiedList);
+		t.ErrorList t.ResolveTable;
 
 	( Function s.ScopeClass t.QualifiedFNName )
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.Resolved) t.NextSentence e.Tail =
 		<DoResolvingFunction
 			(Function s.ScopeClass t.QualifiedFNName )
 			<ResolvingSentence
-				t.ErrorList
-				(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+				t.ErrorList t.ResolveTable
 				(e.Resolved) t.NextSentence
 			> e.Tail
 		>;
 }
 
 ResolvingSentence {
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) (e.Result) ) =
 		<ResolvingResult
-			t.ErrorList
-			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern) ('$') ) e.Result '$'
 		>;
 }
 
 ResolvingResult {
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ('$' e.ScannedResult) )
 	'$' =
-		t.ErrorList
-		(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+		t.ErrorList t.ResolveTable
 		( e.ResolvedSentences
 			( (e.Pattern) (e.ScannedResult) )
 		);
 
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
 	( Structure e.InBrackets ) e.Tail =
 		<ResolvingResult
-			t.ErrorList
-			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern)
 				( '!' Structure (e.ScannedResult) )
 			) e.InBrackets ( '!' Structure e.Tail )
 		>;
 
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
 	( Function t.Callable e.Argument ) e.Tail =
 		<ResolvingResult
 			<ResolvingCallable
-				t.ErrorList
-				(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+				t.ErrorList t.ResolveTable
 				(e.ResolvedSentences)
 				( (e.Pattern)
 					( '!' Function (e.ScannedResult) )
@@ -267,43 +330,37 @@ ResolvingResult {
 			>
 		>;
 
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
 	( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
 		<ResolvingResult
-			t.ErrorList
-			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern)
 				( '!' IndirectCall (e.ScannedResult) (SVar e.Index) )
 			) e.Argument ('!' IndirectCall e.Tail)
 		>;
 
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern)
 		( '!' s.BracketType (e.LMultiBracket) e.InBrackets )
 	) ( '!' s.BracketType e.RMultiBracket ) =
 		<ResolvingResult
-			t.ErrorList
-			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern)
 				( e.LMultiBracket (s.BracketType e.InBrackets) )
 			) e.RMultiBracket
 		>;
 
-	t.ErrorList
-	(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) (e.ScannedResult) )
 	t.NextTerm e.Tail =
 		<ResolvingResult
-			t.ErrorList
-			(e.ModuleName) (e.LocalScope) (e.QualifiedList)
+			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern) (e.ScannedResult t.NextTerm) )
 			e.Tail
@@ -317,7 +374,7 @@ ResolvingResult {
 информацию об ошибке в список ошибок.
 */
 ResolvingCallable {
-	t.ErrorList
+	t.ErrorList t.ResolveTable
 	(e.ModuleName)
 	(e.LocalScope-B (s.ScopeClass e.FnName) e.LocalScope-E)
 	(e.QualifiedList)

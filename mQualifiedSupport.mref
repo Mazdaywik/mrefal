@@ -18,7 +18,7 @@ $IMPORT MQualifiedName;
 $ENTRY DirNameToQualifiedName
 	(e.Directory) e.Name =
 		<DoDirNameToQualifiedName
-			<MQualifiedName::Create e.Name>
+			<MQualifiedName::Create (e.Name)>
 			e.Directory
 		>;
 

@@ -6,38 +6,28 @@ $MODULE MQualifiedName;
 
 /*------------------------------------------------------------------------------
 	Внутренний формат
-		t.QualifiedName = (QName t.Segment*)
+		t.QualifiedName = [QName t.Segment*]
 		t.Segment = (e.Name)
 		e.Name != empty
 ------------------------------------------------------------------------------*/
 
 $IMPORT MSelfDiag;
 
-/**
-	<Create> == t.EmptyQualifierName
-	<Create e.Name>
-		== t.QalifierName // только с одним сегментом
-*/
-$ENTRY Create {
-	= <CreateFromSegments>;
-
-	e.Name =
-		<CreateFromSegments (e.Name)>;
-}
+$DATA QName;
 
 /**
 	<Destroy t.QualifiedName> == empty
 */
 $ENTRY Destroy
-	(QName e.Segments) = ;
+	[QName e.Segments] = ;
 
 /**
-	<CreateFromSegments (e.Segment)*>
+	<Create (e.Segment)*>
 		== t.QualifiedName
 */
-$ENTRY CreateFromSegments
+$ENTRY Create
 	e.Segments =
-		(QName <CheckSegments e.Segments>);
+		[QName <CheckSegments e.Segments>];
 
 CheckSegments {
 	= ;
@@ -52,22 +42,22 @@ CheckSegments {
 		== t.UpdatedQualifiedName
 */
 $ENTRY AddSubName
-	(QName e.Qualifiers) e.SubName =
+	[QName e.Qualifiers] e.SubName =
 		<MSelfDiag::Assert-NE (e.SubName) () 'SubName must be not empty'>
-		(QName
+		[QName
 			e.Qualifiers (<CheckSegment e.SubName>)
-		);
+		];
 
 /**
 	<AddSuperName t.QualifiedName e.SuperName>
 		== t.UpdatedQualifiedName
 */
 $ENTRY AddSuperName
-	(QName e.Qualifiers) e.SuperName =
+	[QName e.Qualifiers] e.SuperName =
 		<MSelfDiag::Assert-NE (e.SuperName) () 'SuperName must be not empty'>
-		(QName
+		[QName
 			(<CheckSegment e.SuperName>) e.Qualifiers
-		);
+		];
 
 CheckSegment {
 	=
@@ -83,7 +73,7 @@ CheckSegment {
 		== (e.SegmentName)*
 */
 $ENTRY Parse
-	(QName e.Qualifiers) =
+	[QName e.Qualifiers] =
 		e.Qualifiers;
 
 /**
@@ -91,8 +81,8 @@ $ENTRY Parse
 		== t.QualifiedName (e.SegmentName)*
 */
 $ENTRY Parse-T
-	(QName e.Qualifiers) =
-		(QName e.Qualifiers) e.Qualifiers;
+	[QName e.Qualifiers] =
+		[QName e.Qualifiers] e.Qualifiers;
 
 /**
 	<ToRelativeFSPath-T t.QualifiedName>
@@ -100,8 +90,8 @@ $ENTRY Parse-T
 			e.Segment '/' e.Segment '/' ... '/' e.Segment
 */
 $ENTRY ToRelativeFSPath-T
-	(QName e.Segments) =
-		(QName e.Segments) <CreatePath e.Segments>;
+	[QName e.Segments] =
+		[QName e.Segments] <CreatePath e.Segments>;
 
 CreatePath {
 	(e.OneSegment) = e.OneSegment;
@@ -115,8 +105,8 @@ CreatePath {
 		== t.UpdatedQualifierAcceptor
 */
 $ENTRY Append
-	(QName e.AcceptorSegments) (QName e.ForAppendSegments) =
-		(QName e.AcceptorSegments e.ForAppendSegments);
+	[QName e.AcceptorSegments] [QName e.ForAppendSegments] =
+		[QName e.AcceptorSegments e.ForAppendSegments];
 
 /**
 	<Append-T t.QualifiedAcceptor t.QualifiedForAppend>

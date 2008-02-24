@@ -1,41 +1,8 @@
 ===============================
-Module Compiler;
-
-<CompileModule
-	t.Context
-	(e.Directory)
-	e.ModuleName
-> == t.UpdatedContext
-
-===============================
-Module MAliasTable;
-
-<Create>
-	== t.AliasTable
-
-<Destroy t.AliasTable>
-	== empty
-
-<AddExternInfo t.AliasTable t.SymInfo>
-	== t.UpdatedAliasTable t.SymInfo
-
-<AddLocalInfo t.AliasTable t.SymTable>
-	== t.UpdatedAliasTable t.SymTable
-
-<GetRealName
-	t.AliasTable
-	t.ErrorList t.SrcPos
-	e.QNameInSrc
->
-	== t.AliasTable t.ErrorList s.LinkType e.RealQName
-	== t.AliasTable t.ErrorList NotFound
-
-===============================
 Module MBackEnd;
 
-<Generate t.Module t.ErrorList e.OutName>
-	== s.Result t.UpdatedErrorList
-s.Result ::= Success | Waringns | Errors
+<Generate t.Module e.OutName>
+	== empty
 
 ===============================
 Module MCreateDirIfNeed;
@@ -342,6 +309,15 @@ Module MSymStream;
 аналогично ExtractsFromSet, но возвращает последовательность символов из
 заданного набора (которая может быть и пустой), причём её длина не может быть
 более s.NChars символов.
+
+===============================
+Module MSymTable-Module;
+
+<SymTable-From-Module t.Module>
+	== t.SymTable
+
+<Module-From-SymTable t.SymTable>
+	== t.Module
 
 ===============================
 Module MSymTable;

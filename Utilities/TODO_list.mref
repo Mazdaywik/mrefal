@@ -9,6 +9,13 @@ $ENTRY Go =
 Main {
 	(e.?ProgName) (e.FileForScan) =
 		<ExtractTags
+			('TODOs.txt')
+			<FileIO::Load e.FileForScan>
+		>;
+
+	(e.?ProgName) (e.FileForScan) (e.OutputFile) =
+		<ExtractTags
+			(e.OutputFile)
 			<FileIO::Load e.FileForScan>
 		>;
 
@@ -17,10 +24,14 @@ Main {
 }
 
 ExtractTags
+	(e.OutName)
 	e.FileContent =
-		<DoExtractTags
-			<CreateTagTable>
-			e.FileContent
+		<SaveInfo
+			(e.OutName)
+			<DoExtractTags
+				<CreateTagTable>
+				e.FileContent
+			>
 		>;
 
 DoExtractTags {
@@ -30,7 +41,7 @@ DoExtractTags {
 			e.Lines
 		>;
 
-	t.TagTable = <SaveInfo t.TagTable>;
+	t.TagTable = t.TagTable;
 }
 
 FindTag {
@@ -141,9 +152,9 @@ Add_CHANGED {
 }
 
 SaveInfo
-	( e.Tags ) =
+	(e.OutName) ( e.Tags ) =
 		<FileIO::Save
-			('TODOs.txt')
+			(e.OutName)
 			('\tСписок актуальных TODO из Changes.txt')
 			()
 			<OutTagList

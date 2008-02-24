@@ -4,7 +4,6 @@ $IMPORT MLexer;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MSymTable;
-$IMPORT MSymTable-Module;
 $IMPORT MVarTable;
 
 /**
@@ -14,18 +13,9 @@ $IMPORT MVarTable;
 */
 $ENTRY SrcModule
 	e.SrcFileName =
-		//<ModuleFromSymTable
-			<ErrorResult
-				<NModule <StartParsing e.SrcFileName> >
-			//>
+		<ErrorResult
+			<NModule <StartParsing e.SrcFileName> >
 		>;
-
-ModuleFromSymTable
-	t.SymTable s.ErrorResult t.ErrorList =
-		<MSymTable-Module::Module-From-SymTable
-			t.SymTable
-		> s.ErrorResult t.ErrorList;
-
 
 /**
 	<SymModule t.Context e.SymFileName>

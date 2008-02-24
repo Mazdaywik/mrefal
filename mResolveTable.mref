@@ -4,7 +4,7 @@ $IMPORT MQualifiedName;
 
 /*------------------------------------------------------------------------------
 	Внутренний формат
-		t.ResolveTable ::= (ResolveTable t.Pair*)
+		t.ResolveTable ::= [ResolveTable t.Pair*]
 		t.Pair ::= ((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 	e.***Segments образуются применением MQualifiedName::Parse к ***Qualifier
 ------------------------------------------------------------------------------*/
@@ -12,7 +12,13 @@ $IMPORT MQualifiedName;
 /**
 	<Create> == t.ResolveTable
 */
-$ENTRY Create = (ResolveTable );
+$ENTRY Create = [ResolveTable ];
+
+/**
+	<Destroy t.ResolveTable> == empty
+*/
+$ENTRY Destroy
+	[ResolveTable e.Pairs] = ;
 
 /**
 	<Add t.ResolveTable
@@ -22,15 +28,15 @@ $ENTRY Create = (ResolveTable );
 	> == t.UpdatedResolveTable
 */
 $ENTRY Add
-	(ResolveTable e.Pairs)
+	[ResolveTable e.Pairs]
 	t.InternalQualifier s.ScopeClass t.ExternalQualifier =
-		(ResolveTable
+		[ResolveTable
 			( (<MQualifiedName::Parse t.InternalQualifier>)
 				s.ScopeClass
 				<MQualifiedName::Parse t.ExternalQualifier>
 			)
 			e.Pairs
-		);
+		];
 
 /**
 	<Lookup t.ResolveTable t.InternalQualifier>
@@ -45,17 +51,17 @@ $ENTRY Lookup
 		>;
 
 RealLookup {
-	(ResolveTable
+	[ResolveTable
 		e.Pairs-B
 		((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 		e.Pairs-E
-	) t.InternalQualifier e.InternalSegmenst =
-		(ResolveTable
+	] t.InternalQualifier e.InternalSegmenst =
+		[ResolveTable
 			((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 			e.Pairs-B e.Pairs-E
-		) Found s.ScopeClass
+		] Found s.ScopeClass
 		<MQualifiedName::Destroy t.InternalQualifier>
-		<MQualifiedName::CreateFromSegments e.ExternalSegments>;
+		<MQualifiedName::Create e.ExternalSegments>;
 
 	t.ResolveTable t.InternalQualifier e.InternalSegments =
 		t.ResolveTable NotFound NotFound t.InternalQualifier;

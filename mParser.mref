@@ -3,6 +3,8 @@ $MODULE MParser;
 $IMPORT MLexer;
 $IMPORT MError;
 $IMPORT MFileSystem;
+$IMPORT MSelfDiag;
+$IMPORT MStrings;
 $IMPORT MSymTable;
 $IMPORT MVarTable;
 
@@ -14,6 +16,7 @@ $IMPORT MVarTable;
 $ENTRY SrcModule
 	e.SrcFileName =
 		<ErrorResult
+			(e.SrcFileName)
 			<NModule <StartParsing e.SrcFileName> >
 		>;
 
@@ -25,25 +28,67 @@ $ENTRY SrcModule
 $ENTRY SymModule
 	e.SymFileName =
 		<ErrorResult
+			(e.SymFileName)
 			<NSymModule <StartParsing e.SymFileName> >
 		>;
 
 StartParsing
-	e.FileName =
-		<StartParsing-ExtractFileName
-			<MFileSystem::ParseFileName e.FileName>
-		>;
-
-StartParsing-ExtractFileName
-	(e.Directory) e.Name (e.Ext) =
+	e.FullName =
 		<MError::CreateErrList>
-		<MSymTable::Initialize <MSymTable::Create> e.Name>
+		<MSymTable::Create>
 		()
 		<MLexer::NextToken
-			<MLexer::Create e.Directory e.Name '.' e.Ext>
+			<MLexer::Create e.FullName>
 		>;
 
 ErrorResult {
+	(e.FileName)
+	t.ErrorList t.SymTable =
+		<ErrorResult-Aux
+			<CheckInternalName
+				<MFileSystem::ParseFileName e.FileName>
+				t.ErrorList
+				(<MSymTable::FindByKind t.SymTable ModuleName>)
+			>
+		>;
+}
+
+CheckInternalName {
+	(e.Directory) e.Name (e.Ext)
+	t.ErrorList (t.SymTable (e.ModuleName)) =
+		<SwCheckInternalName
+			(<MStrings::Lower e.Name>)
+			(<MStrings::Lower e.ModuleName>)
+			(e.ModuleName)
+			t.ErrorList
+			<MSymTable::GetAttrib
+				t.SymTable e.ModuleName Position
+			>
+		>;
+}
+
+SwCheckInternalName {
+	(e.Name) (e.Name) (e.ModuleName)
+	t.ErrorList t.SymTable Found t.SrcPos =
+		t.ErrorList
+		<MSymTable::UpdateAttribSet
+			t.SymTable (e.ModuleName)
+			(FsName e.Name)
+		>;
+
+	(e.FsName) (e.LowerInternalName) (e.ModuleName)
+	t.ErrorList t.SymTable Found t.SrcPos =
+		<MError::AddMismatchModuleAndFile
+			t.ErrorList t.SrcPos (e.ModuleName) (e.FsName)
+		>
+		<MSymTable::UpdateAttribSet
+			t.SymTable (e.ModuleName)
+			(FsName e.FsName)
+		>;
+
+}
+
+ErrorResult-Aux {
 	t.ErrorList t.SymTable =
 		<SwErrorResult
 			<MError::EmptyList t.ErrorList>
@@ -119,10 +164,12 @@ NModuleHeader-ModuleName {
 	s.ModuleType t.ErrorList t.SymTable ()
 	t.Lexer (Identifier t.SrcPos e.Name) =
 		<ExpectEndSent
-			<MSymTable::AddCurrentModule
-				t.ErrorList t.SymTable
-				t.SrcPos e.Name
-				s.ModuleType
+			t.ErrorList
+			<MSymTable::UpdateAttribSet
+				t.SymTable (e.Name)
+				(Kind ModuleName)
+				(Position t.SrcPos)
+				(ModuleType s.ModuleType)
 			>
 			()
 			<MLexer::NextToken t.Lexer>

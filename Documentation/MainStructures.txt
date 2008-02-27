@@ -35,9 +35,7 @@ t.PatternTerm ::=
 	(DQWord e.Content)
 	(Macro s.Value)
 	(Structure e.InBrackets)
-	(FnPtr t.Callable) [1]
-
-[1] (FnPtr t.Callable) добавляется после проверки.
+	(FnPtr t.Callable)
 
 t.ResultTerm ::=
 	t.PatternTerm

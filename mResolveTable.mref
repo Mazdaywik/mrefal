@@ -55,7 +55,7 @@ RealLookup {
 		e.Pairs-B
 		((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 		e.Pairs-E
-	] t.InternalQualifier e.InternalSegmenst =
+	] t.InternalQualifier e.InternalSegments =
 		[ResolveTable
 			((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 			e.Pairs-B e.Pairs-E

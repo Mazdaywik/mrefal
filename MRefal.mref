@@ -1,4 +1,4 @@
-$MODULE MRefal;
+$PROGRAM MRefal;
 
 $IMPORT Context;
 $IMPORT Compiler;

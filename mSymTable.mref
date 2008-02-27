@@ -272,54 +272,6 @@ SwAddNewName {
 // Специальные операции
 //==============================================================================
 
-$ENTRY Initialize {
-	t.SymTable e.ModuleName =
-		<UpdateAttrib
-			t.SymTable (FsName)
-			LowerName <MStrings::Lower e.ModuleName>
-		>;
-}
-
-/**
-	<AddCurrentModule
-		t.ErrorList t.SymTable t.SrcPos e.ModuleName
-	> == t.ErrorList t.SymTable
-*/
-$ENTRY AddCurrentModule
-	t.ErrorList t.SymTable t.SrcPos e.ModuleName s.ModuleType =
-		<AddCurrentModule-CheckIdent
-			t.ErrorList
-			(<GetAttrib t.SymTable FsName LowerName>)
-			t.SrcPos e.ModuleName s.ModuleType
-			(<MStrings::Lower e.ModuleName>)
-		>;
-
-AddCurrentModule-CheckIdent {
-	t.ErrorList (t.SymTable Found e.LowerName)
-	t.SrcPos e.ModuleName s.ModuleType (e.LowerName) =
-		t.ErrorList
-		<UpdateAttribSet
-			<RemoveName t.SymTable FsName>
-			(e.ModuleName)
-			(Kind ModuleName)
-			(Position t.SrcPos)
-			(FsName e.LowerName)
-			(ModuleType s.ModuleType)
-		>;
-
-	t.ErrorList (t.SymTable Found e.LowerFsName)
-	t.SrcPos e.ModuleName (e.?LowerModuleName) =
-		<MError::AddMismatchModuleAndFile
-			t.ErrorList t.SrcPos (e.ModuleName) (e.LowerFsName)
-		> <UpdateAttribSet
-			<RemoveName t.SymTable FsName>
-			(e.ModuleName)
-			(Kind ModuleName)
-			(Position t.SrcPos)
-			(FsName e.LowerFsName)
-		>;
-}
-
 /**
 	<ExtractCurrentModule t.SymTable>
 		== t.SymTable e.ModuleName

@@ -113,7 +113,7 @@ $ENTRY AddNamesMismatch
 
 $ENTRY AddMismatchModuleAndFile
 	t.ErrorList
-	t.SrcPos (e.InFS) (e.InSrc) =
+	t.SrcPos (e.InSrc) (e.InFS) =
 		<AddToList
 			t.ErrorList
 			( Semantics t.SrcPos
@@ -189,7 +189,7 @@ $ENTRY AddUnresolvedFunction {
 			t.ErrorList
 			( Semantics
 				t.SrcPos
-				'Unresolved qualified name ' <TypeQualified e.QualifiedName>
+				'Unresolved calling <' <TypeQualified e.QualifiedName> '... >'
 			)
 		>;
 }

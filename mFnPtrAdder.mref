@@ -55,6 +55,7 @@ GenerateAndAdd-Aux
 					e.OldQualifiedList
 				>
 			)
+			(Qualified <MQualifiedName::Create ('FnPtr')>)
 		>;
 
 /*

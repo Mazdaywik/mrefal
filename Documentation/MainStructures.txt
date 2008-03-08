@@ -8,7 +8,9 @@ t.Module ::=
 e.ModuleContent ::= t.ModuleElement*
 
 t.ModuleElement ::=
-	(Function s.ScopeClass (e.FnName) t.FunctionBody)
+	(Function
+		s.ScopeClass (e.FnName) t.QualifiedName t.FunctionBody
+	)
 
 s.ScopeClass ::=
 	Entry
@@ -44,8 +46,6 @@ t.ResultTerm ::=
 
 t.Callable ::=
 	(Qualified
-		// (Module t.SrcPosModule e.ModName)
-		// (Function t.SrcPosFunction e.FnName)
 		t.SrcPosModule t.QualifiedName
 	)
 	(Local

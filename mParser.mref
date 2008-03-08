@@ -3,6 +3,7 @@ $MODULE MParser;
 $IMPORT MLexer;
 $IMPORT MError;
 $IMPORT MFileSystem;
+$IMPORT MQualifiedName;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 $IMPORT MSymTable;
@@ -104,10 +105,41 @@ SwErrorResult {
 		t.Module Errors t.ErrorList;
 }
 
-*-------------------------------------------------------------------------------
-* Синтаксический анализ модуля
-*-------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
+// Добавление в таблицу символов
+//------------------------------------------------------------------------------
+
+/**
+	<AddNewEntity
+		t.ErrorList t.SymTable t.SrcPos (e.NewName)
+		(s.Attrib e.Value)*
+	> == t.ErrorList t.SymTable
+*/
+AddNewEntity
+	t.ErrorList t.SymTable t.SrcPos (e.NewName) e.Attribs =
+		<CheckRedeclaration
+			t.ErrorList
+			<MSymTable::AddNewName
+				t.SymTable (e.NewName)
+				e.Attribs (Position t.SrcPos)
+			>
+			t.SrcPos e.NewName
+		>;
+
+CheckRedeclaration {
+	t.ErrorList t.SymTable Success t.SrcPos e.NewName =
+		t.ErrorList t.SymTable;
+
+	t.ErrorList t.SymTable Fails t.SrcPos e.NewName =
+		<MError::AddRedeclaredIdentifier
+			t.ErrorList t.SrcPos e.NewName
+		> t.SymTable;
+}
+
+//------------------------------------------------------------------------------
+// Синтаксический анализ модуля
+//------------------------------------------------------------------------------
 
 // Module = ModuleHeader ModuleBody ModuleTailer .
 // Цепочка Module --> ModuleHeader --> { ModuleBody --> ModuleTailer }
@@ -222,26 +254,39 @@ NModuleTailer {
 	t.ErrorList t.SymTable ( e.ModuleBody )
 	t.Lexer (Directive t.SrcPos End) =
 		<NModuleTailer-ModuleName
-			t.ErrorList t.SymTable ( e.ModuleBody )
+			t.ErrorList
+			(<MSymTable::ExtractCurrentModule t.SymTable>)
+			( e.ModuleBody )
 			<MLexer::NextToken t.Lexer>
 		>;
 }
 
 /* ModuleTailer-ModuleName --> { ModuleTailer-Dot --> ModuleTailer-EOF } */
 NModuleTailer-ModuleName {
-	t.ErrorList t.SymTable ( e.ModuleBody )
+	t.ErrorList (t.SymTable e.ModuleName)
+	( e.ModuleBody )
 	t.Lexer (Identifier t.SrcPos e.ModuleName) =
 		<NModuleTailer-Dot
-			<MSymTable::CheckCurrentModule
-				t.ErrorList t.SymTable t.SrcPos e.ModuleName
+			t.ErrorList t.SymTable ( e.ModuleBody )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList (t.SymTable e.ModuleName-Head)
+	( e.ModuleBody )
+	t.Lexer (Identifier t.SrcPos e.ModuleName-Tail) =
+		<NModuleTailer-Dot
+			<MError::AddNamesMismatch
+				t.ErrorList t.SrcPos
+				(e.ModuleName-Head) (e.ModuleName-Tail)
 			>
-			( e.ModuleBody )
+			t.SymTable ( e.ModuleBody )
 			<MLexer::NextToken t.Lexer>
 		>;
 
 	/* Пропускаем следующую лексему, до тех пор, пока не встретим
 	конец файла или идентификатор */
-	t.ErrorList t.SymTable ( e.ModuleBody )
+	t.ErrorList (t.SymTable e.ModuleName)
+	( e.ModuleBody )
 	t.Lexer (EndOfText t.SrcPos) =
 		<MError::AddUnexpected
 			t.ErrorList (EndOfText t.SrcPos) 'repeat of module name'
@@ -249,13 +294,15 @@ NModuleTailer-ModuleName {
 		t.SymTable ( e.ModuleBody )
 		t.Lexer (EndOfText t.SrcPos);
 
-	t.ErrorList t.SymTable ( e.ModuleBody )
+	t.ErrorList (t.SymTable e.ModuleName)
+	( e.ModuleBody )
 	t.Lexer t.OtherToken =
 		<NModuleTailer-ModuleName
 			<MError::AddUnexpected
 				t.ErrorList t.OtherToken 'repeat of moduleName'
 			>
-			t.SymTable ( e.ModuleBody )
+			(t.SymTable e.ModuleName)
+			( e.ModuleBody )
 			<MLexer::NextToken t.Lexer>
 		>;
 }
@@ -418,10 +465,9 @@ NImportBlock-AfterName {
 	t.ErrorList t.SymTable (Import e.ModuleName)
 	( e.ParentStack )
 	t.Lexer (EndSent t.SrcPos) =
-		<MSymTable::AddNewEntity
+		<AddNewEntity
 			t.ErrorList t.SymTable t.SrcPos (e.ModuleName)
 			(Kind ImportName)
-			(Position t.SrcPos)
 			(Alias e.ModuleName)
 		> ( e.ParentStack )
 		<MLexer::NextToken t.Lexer>;
@@ -440,10 +486,9 @@ NImportBlock-AfterName {
 	( e.ParentStack )
 	t.Lexer (Comma t.SrcPos) =
 		<NImportBlock
-			<MSymTable::AddNewEntity
+			<AddNewEntity
 				t.ErrorList t.SymTable t.SrcPos (e.ModuleName)
 				(Kind ImportName)
-				(Position t.SrcPos)
 				(Alias e.ModuleName)
 			> ( e.ParentStack )
 			<MLexer::NextToken t.Lexer>
@@ -464,10 +509,9 @@ NImportBlock-ModuleRenaming {
 	(Alias e.Alias) ( e.ParentStack )
 	t.Lexer (Identifier t.SrcPos e.ModuleName) =
 		<NImportBlock-AfterAlias
-			<MSymTable::AddNewEntity
+			<AddNewEntity
 				t.ErrorList t.SymTable t.SrcPos (e.ModuleName)
 				(Kind ImportName)
-				(Position t.SrcPos)
 				(Alias e.Alias)
 			>
 			( e.ParentStack )
@@ -515,11 +559,10 @@ NSwapBlock {
 	t.ErrorList t.SymTable ( e.ParentStack )
 	t.Lexer (Identifier t.SrcPos e.Ident) =
 		<NSwapBlock-AfterName
-			<MSymTable::AddNewEntity
+			<AddNewEntity
 				t.ErrorList t.SymTable t.SrcPos (e.Ident)
 				(Kind Function)
 				(ScopeClass Swap)
-				(Position t.SrcPos)
 			>
 			( e.ParentStack )
 			<MLexer::NextToken t.Lexer>
@@ -565,8 +608,9 @@ NDataBlock {
 	t.ErrorList t.SymTable ( e.ParentStack )
 	t.Lexer (Identifier t.SrcPos e.Ident) =
 		<NDataBlock-AfterName
-			<MSymTable::AddADT
-				t.ErrorList t.SymTable t.SrcPos e.Ident
+			<AddNewEntity
+				t.ErrorList t.SymTable t.SrcPos (e.Ident)
+				(Kind ADT)
 			>
 			( e.ParentStack )
 			<MLexer::NextToken t.Lexer>
@@ -629,12 +673,12 @@ NFunctionDefinition-Closing
 	t.ErrorList t.SymTable
 	( t.FunctionBody ( Function s.ScopeClass (e.Name) t.SrcPos ) (e.ParentStack) )
 	t.Lexer t.NextToken =
-		<MSymTable::AddNewEntity
+		<AddNewEntity
 			t.ErrorList t.SymTable t.SrcPos (e.Name)
 			(Kind Function)
 			(Body t.FunctionBody)
-			(Position t.SrcPos)
 			(ScopeClass s.ScopeClass)
+			(Qualified <MQualifiedName::Create (e.Name)>)
 		>
 		( e.ParentStack )
 		t.Lexer t.NextToken;
@@ -1233,8 +1277,12 @@ NCallable-AfterName {
 	t.Lexer t.NextToken =
 		t.ErrorList t.SymTable t.VarTable (
 			e.ResultExpr
-			( FnCall (Local (Function t.NamePos e.Name)) )
-			t.UpParentStack
+			( FnCall
+				(Qualified
+					t.NamePos
+					<MQualifiedName::Create (e.Name)>
+				)
+			) t.UpParentStack
 		) t.Lexer t.NextToken;
 }
 
@@ -1247,15 +1295,16 @@ NCallable-ReadQualified {
 			e.ResultExpr
 			(FnCall
 				(Qualified
-					(Module t.ModNamePos e.Name)
-					(Function t.SrcPos e.Function)
+					t.ModNamePos
+					<MQualifiedName::Create (e.Name) (e.Function)>
 				)
 			) t.UpParentStack
 		) <MLexer::NextToken t.Lexer>;
 
 	t.ErrorList t.SymTable t.VarTable
 	(Module t.ModNamePos e.Name)
-	( (e.ResultExpr t.UpParentStack) ) t.Lexer t.OtherToken =
+	( (e.ResultExpr t.UpParentStack) )
+	t.Lexer t.OtherToken =
 		<MError::AddUnexpected
 			t.ErrorList t.OtherToken 'qualified function name'
 		> t.SymTable t.VarTable
@@ -1263,9 +1312,10 @@ NCallable-ReadQualified {
 		t.Lexer t.OtherToken;
 }
 
-*-------------------------------------------------------------------------------
-* Синтаксический анализ sym-модуля
-*-------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// Синтаксический анализ sym-модуля
+//------------------------------------------------------------------------------
 
 NSymModule {
 	t.ErrorList t.SymTable ()
@@ -1281,11 +1331,10 @@ NFunctionDeclaration {
 	t.ErrorList t.SymTable ( e.ParentStack )
 	t.Lexer (Identifier t.SrcPos e.FnName) =
 		<ExpectEndSent
-			<MSymTable::AddNewEntity
+			<AddNewEntity
 				t.ErrorList t.SymTable t.SrcPos (e.FnName)
 				(Kind Function)
 				(ScopeClass Entry)
-				(Position t.SrcPos)
 			> ( e.ParentStack )
 			<MLexer::NextToken t.Lexer>
 		>;

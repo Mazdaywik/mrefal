@@ -12,7 +12,7 @@ $IMPORT MVersion;
 */
 $ENTRY Generate
 	t.Module e.OutName =
-		<FileIO::Save
+		<SaveModule
 			(e.OutName)
 			('v ' <MVersion::ROut>)
 			('r file ' e.OutName)
@@ -20,57 +20,89 @@ $ENTRY Generate
 			<GenerateContent t.Module>
 		>;
 
-GenerateContent
-	(t.SymTable e.Elements) =
-		<GenerateSwaps
-			<MSymTable::ExtractCurrentModule t.SymTable>
-		>
-		<GenerateElements e.Elements>;
+SaveModule
+	(e.OutName) e.Lines t.SymTable =
+		<FileIO::Save (e.OutName) e.Lines>
+		<MSymTable::Destroy t.SymTable>;
 
-GenerateSwaps
+GenerateContent
+	t.SymTable =
+		<GenerateElements
+			<MSymTable::ExtractCurrentModule t.SymTable>
+		>;
+
+GenerateElements
 	t.SymTable e.ModuleName =
-		<DoGenerateSwaps
+		<DoGenerateElements
 			(e.ModuleName)
 			<MSymTable::ExtractLocalInfo t.SymTable>
 		>;
 
-DoGenerateSwaps {
-/*
-	$Swap::ModuleName::SomeHolder$ {
-		e.$Index::NewValue$ =
-			<Dg ('ModuleName::SomeHolder')>
-			<Br ('ModuleName::SomeHolder') '=' e.$Index::NewValue$ >;
-	}
-
-*/
+DoGenerateElements {
+	(e.ModuleName) t.SymTable
+	(Swap e.SwapName) e.Functions =
+		<GenerateSwap (e.ModuleName) e.SwapName>
+		<DoGenerateElements
+			(e.ModuleName) t.SymTable e.Functions
+		>;
 
 	(e.ModuleName) t.SymTable
-	e.Functions-B (Swap e.SwapName) e.Functions-E =
+	(s.ScopeClass e.FnName) e.Functions =
+		<GenerateFunction
+			(e.ModuleName)
+			<MSymTable::GetAttrib
+				t.SymTable e.FnName Body
+			>
+			(s.ScopeClass e.FnName) e.Functions
+		>;
+
+	// Не осталось элементов
+	(e.ModuleName) t.SymTable = t.SymTable;
+}
+
+GenerateSwap
+	/*
+		b Swap::ModuleName::SomeHolder
+		c $Swap::ModuleName::SomeHolder$ {
+		c 	e.$Index::NewValue$ =
+		c 			<Dg ('ModuleName::SomeHolder')>
+		c 			<Br ('ModuleName::SomeHolder') '=' e.$Index::NewValue$ >;
+		c }
+
+	*/
+	(e.ModuleName) e.SwapName =
 		('b Swap::' e.ModuleName '::' e.SwapName)
 		('c $Swap::' e.ModuleName '::' e.SwapName '$ {')
 		('c \te.$Index::NewValue$ =')
 		('c \t\t<Dg (\'' e.ModuleName '::' e.SwapName '\')>')
 		('c \t\t<Br (\'' e.ModuleName '::' e.SwapName '\') \'=\' e.$Index::NewValue$ >;')
-		('c }') ()
-		<DoGenerateSwaps
-			(e.ModuleName) t.SymTable e.Functions-E
+		('c }') ();
+
+GenerateFunction
+	(e.ModuleName) t.SymTable Found (e.Sentences)
+	(s.ScopeClass e.FnName) e.Functions =
+		<GenerateFunction-Aux
+			(e.ModuleName)
+			<MSymTable::GetAttrib
+				t.SymTable e.FnName Qualified
+			>
+			(e.Sentences)
+			(s.ScopeClass e.FnName) e.Functions
 		>;
 
-	// Не осталось ящиков
-	(e.ModuleName) t.SymTable e.FunctionsWithOutSwaps =
-		<MSymTable::Destroy t.SymTable>;
-}
+GenerateFunction-Aux
+	(e.ModuleName) t.SymTable Found t.QualifiedName
+	(e.Sentences)
+	(s.ScopeClass e.FnName) e.Functions =
+		<GenerateFunctionCode
+			s.ScopeClass t.QualifiedName e.Sentences
+		>
+		<DoGenerateElements
+			(e.ModuleName) t.SymTable e.Functions
+		>;
 
-GenerateElements {
-	(e.Element) e.Tail =
-		<GenerateOneElement e.Element>
-		<GenerateElements e.Tail>;
-
-	= ;
-}
-
-GenerateOneElement {
-	Function s.ScopeClass t.QualifiedName (e.Content) =
+GenerateFunctionCode {
+	s.ScopeClass t.QualifiedName e.Content =
 		<GenerateFnHeader
 			s.ScopeClass t.QualifiedName
 		> <GenerateFnBody e.Content>;

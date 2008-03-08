@@ -9,43 +9,42 @@ $IMPORT MSymTable;
 $IMPORT MSymTable-Module;
 
 /**
-	<Resolve t.Module t.ErrorList e.QualifiedList>
+	<Resolve t.Module t.ErrorList t.ResolveTable e.QualifiedList>
 		== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
 
 	e.QualifiedList ::= ( t.ModuleLocation (e.EntryFnName)* )*
 	t.ModuleLocation ::= ((e.Directory) e.ModuleName)
 */
 $ENTRY Resolve
-	t.SymTable t.ErrorList e.QualifiedList =
+	t.SymTable t.ErrorList t.ResolveTable e.QualifiedList =
 		<Resolve-Aux
 			<MSymTable-Module::Module-From-SymTable
 				<MFnPtrAdder::AddFnPtr
 					t.SymTable e.QualifiedList
 				>
 			>
-			<MResolveTable::Create>
-			t.ErrorList e.QualifiedList
+			t.ResolveTable t.ErrorList
 		>;
 
 Resolve-Aux
-	( t.SymTable e.ModuleContent ) t.ResolveTable t.ErrorList e.QualifiedList =
+	( t.SymTable e.ModuleContent ) t.ResolveTable t.ErrorList =
 		<StartResolving
 			t.ResolveTable
 			( <MSymTable::ExtractLocalInfo t.SymTable> )
-			(e.ModuleContent) t.ErrorList e.QualifiedList
+			(e.ModuleContent) t.ErrorList
 		>;
 
 StartResolving
 	t.ResolveTable
 	( t.SymTable e.LocalScope )
 	( e.ModuleContent )
-	t.ErrorList e.QualifiedList =
+	t.ErrorList =
 		<ResolvingElements
 			<FillTable
 				t.ResolveTable
 				( <MSymTable::ExtractCurrentModule t.SymTable> )
 				(e.ModuleContent) t.ErrorList
-				(e.LocalScope) e.QualifiedList
+				e.LocalScope
 			>
 		>;
 
@@ -53,39 +52,9 @@ FillTable {
 	t.ResolveTable
 	( t.SymTable e.CurrentModule )
 	(e.ModuleContent) t.ErrorList
-	(e.LocalScope) e.QualifiedList =
-		<FillQualified
-			<FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
-			e.QualifiedList
-		>
-		(t.SymTable e.CurrentModule)
-		(e.ModuleContent) t.ErrorList
-		(e.LocalScope) e.QualifiedList;
-}
-
-/*
-	Инвариант: <FillQualified t.ResolveTable e.QualifiedList>
-		e.QualifiedList объяснено выше
-*/
-FillQualified {
-	t.ResolveTable
-	( (() e.ModuleName) (e.Function) e.Functions )
-	e.Modules =
-		<FillQualified
-			<MResolveTable::Add
-				t.ResolveTable
-				<MQualifiedName::Create (e.ModuleName) (e.Function)>
-				Entry
-				<MQualifiedName::Create (e.ModuleName) (e.Function)>
-			>
-			( (() e.ModuleName) e.Functions ) e.Modules
-		>;
-
-	t.ResolveTable
-	( (() e.ModuleName) ) e.Modules =
-		<FillQualified t.ResolveTable e.Modules>;
-
-	t.ResolveTable = t.ResolveTable;
+	e.LocalScope =
+		<FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
+		t.SymTable (e.ModuleContent) t.ErrorList;
 }
 
 /*
@@ -109,10 +78,7 @@ FillLocal {
 }
 
 ResolvingElements
-	t.ResolveTable
-	( t.SymTable e.CurModuleName )
-	( e.Elements ) t.ErrorList
-	(e.LocalScope) e.QualifiedList =
+	t.ResolveTable t.SymTable ( e.Elements ) t.ErrorList =
 		<DoResolvingElements
 			t.SymTable
 			( )
@@ -125,9 +91,9 @@ DoResolvingElements {
 	t.SymTable ( e.ResolvedElements )
 	t.ErrorList
 	t.ResolveTable =
-		( t.SymTable
-			e.ResolvedElements
-		)
+		<MSymTable-Module::SymTable-From-Module
+			( t.SymTable e.ResolvedElements )
+		>
 		<MResolveTable::Destroy t.ResolveTable>
 		<CheckErrors t.ErrorList>;
 
@@ -165,41 +131,38 @@ AddElement
 
 // Модуль состоит только из функций, swaps регистрируются в таблице символов
 ResolvingOneElement {
-	( Function s.ScopeClass (e.FnName) (e.Sentences) )
+	( Function s.ScopeClass (e.FnName) t.QualifiedName (e.Sentences) )
 	t.ErrorList t.ResolveTable =
 		<ResolveFnName-Header
-			( Function s.ScopeClass (e.FnName) (e.Sentences) )
+			( Function s.ScopeClass (e.FnName) t.QualifiedName (e.Sentences) )
 			t.ErrorList
-			<MResolveTable::Lookup
-				t.ResolveTable
-				<MQualifiedName::Create (e.FnName)>
-			>
+			<MResolveTable::Lookup t.ResolveTable t.QualifiedName>
 		>;
 }
 
 ResolveFnName-Header {
-	( Function s.ScopeClass (e.FnName) (e.Sentences) )
+	( Function s.ScopeClass (e.FnName) t.QualifiedName (e.Sentences) )
 	t.ErrorList
 	t.ResolveTable Found s.ScopeClass t.FunctionNameQualified =
 		<DoResolvingFunction
-			( Function s.ScopeClass t.FunctionNameQualified )
+			( Function s.ScopeClass (e.FnName) t.FunctionNameQualified )
 			t.ErrorList t.ResolveTable
 			() e.Sentences
 		>;
 }
 
 DoResolvingFunction {
-	( Function s.ScopeClass t.QualifiedFNName )
+	( Function s.ScopeClass (e.FnName) t.QualifiedFNName )
 	t.ErrorList t.ResolveTable
 	(e.Resolved) =
-		( Function s.ScopeClass t.QualifiedFNName (e.Resolved) )
+		( Function s.ScopeClass (e.FnName) t.QualifiedFNName (e.Resolved) )
 		t.ErrorList t.ResolveTable;
 
-	( Function s.ScopeClass t.QualifiedFNName )
+	( Function s.ScopeClass (e.FnName) t.QualifiedFNName )
 	t.ErrorList t.ResolveTable
 	(e.Resolved) t.NextSentence e.Tail =
 		<DoResolvingFunction
-			(Function s.ScopeClass t.QualifiedFNName )
+			(Function s.ScopeClass (e.FnName) t.QualifiedFNName )
 			<ResolvingSentence
 				t.ErrorList t.ResolveTable
 				(e.Resolved) t.NextSentence
@@ -301,31 +264,13 @@ ResolvingCallable {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-	(Local (Function t.SrcPos e.FnName) )
+	(Qualified t.SrcPosModule t.QualifiedName)
 	e.Argument ('!' Function e.RMultiBracket) =
 		<SwResolvingCallable
 			t.ErrorList
 			<MResolveTable::Lookup
 				t.ResolveTable
-				<MQualifiedName::Create (e.FnName)>
-			> t.SrcPos
-			(e.ResolvedSentences)
-			( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-			e.Argument ('!' Function e.RMultiBracket)
-		>;
-
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-	(Qualified
-		(Module t.SrcPosModule e.Qualification)
-		(Function t.SrcPosFn e.Function)
-	) e.Argument ('!' Function e.RMultiBracket) =
-		<SwResolvingCallable
-			t.ErrorList
-			<MResolveTable::Lookup
-				t.ResolveTable
-				<MQualifiedName::Create (e.Qualification) (e.Function)>
+				t.QualifiedName
 			> t.SrcPosModule
 			(e.ResolvedSentences)
 			( (e.Pattern) ('!' Function (e.LMultiBracket)) )

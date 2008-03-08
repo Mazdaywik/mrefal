@@ -20,6 +20,7 @@ Kind = Function
 	(ScopeClass s.ScopeClass)
 	(Position t.ScrPos)
 	(Body t.FunctionBody)
+	(Qualified t.Qualified)
 	s.ScopeClass ::= Entry | Local | Swap
 	t.FunctionBody описано в MainStructures.txt. Может отсутствовать (у Swap).
 

@@ -24,10 +24,11 @@ $IMPORT MFrontEnd;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOutModuleStatus;
+$IMPORT MQualifiedName;
 $IMPORT MResolver;
+$IMPORT MResolveTable;
 $IMPORT MSelfDiag;
 $IMPORT MSymModule;
-//$IMPORT MSymTable-Module;
 
 
 $ENTRY CompileByModuleName
@@ -482,9 +483,33 @@ CheckFnCalls
 			<MResolver::Resolve
 				t.Module
 				<MError::CreateErrList>
+				<FillQualified
+					<MResolveTable::Create>
+					<OldSymTableToQualifiedList t.SymTable-Old>
+				>
 				<OldSymTableToQualifiedList t.SymTable-Old>
 			>
 		>;
+
+FillQualified {
+	t.ResolveTable
+	( (() e.ModuleName) (e.Function) e.Functions ) e.Modules =
+		<FillQualified
+			<MResolveTable::Add
+				t.ResolveTable
+				<MQualifiedName::Create (e.ModuleName) (e.Function)>
+				Entry
+				<MQualifiedName::Create (e.ModuleName) (e.Function)>
+			>
+			( (() e.ModuleName) e.Functions ) e.Modules
+		>;
+
+	t.ResolveTable
+	( (() e.ModuleName) ) e.Modules =
+		<FillQualified t.ResolveTable e.Modules>;
+
+	t.ResolveTable = t.ResolveTable;
+}
 
 OldSymTableToQualifiedList
 	( t.Idents t.CurModule t.Imports t.Functions
@@ -521,7 +546,7 @@ PrintUnresolved {
 *	== t.UpdatedContext
 Generate {
 	(e.ModuleName) (Out e.OutName) (Sym e.SymName)
-	t.Context (t.SymTable e.Functions) =
+	t.Context t.SymTable =
 		<UpdateContext
 			<GenerateOut
 				(Out e.OutName)
@@ -529,7 +554,6 @@ Generate {
 					t.Context
 					t.SymTable
 				>
-				e.Functions
 			>
 			e.ModuleName
 		>;
@@ -566,11 +590,10 @@ GuardResult
 * <GenerateOut (Out e.OutName) t.Context t.SymTable t.Module>
 *	== t.UpdatedContext
 GenerateOut
-	(Out e.OutName) t.Context t.SymTable e.Functions =
+	(Out e.OutName) t.Context t.SymTable =
 		t.Context
 		<MBackEnd::Generate
-			( t.SymTable e.Functions )
-			e.OutName
+			t.SymTable e.OutName
 		>;
 
 $END Compiler.

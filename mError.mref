@@ -98,14 +98,16 @@ $ENTRY AddUnexpected {
 		>;
 }
 
-* <AddNamesMismatch t.ErrorList (t.Pos1 e.InHead) (t.Pos2 e.InTail)>
-*	== t.ErrorList
+/**
+	<AddNamesMismatch t.ErrorList t.TailPos (e.InHead) (e.InTail)>
+		== t.ErrorList
+*/
 $ENTRY AddNamesMismatch
-	t.ErrorList
-	( t.Pos1 e.InHead ) ( t.Pos2 e.InTail ) =
+	t.ErrorList t.TailPos
+	( e.InHead ) ( e.InTail ) =
 		<AddToList
 			t.ErrorList
-			( Semantics t.Pos1
+			( Semantics t.TailPos
 				'Mismatch module names in head `' e.InHead
 				'` and in tail `' e.InTail '`'
 			)

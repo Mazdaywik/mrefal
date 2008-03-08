@@ -14,7 +14,7 @@ $ENTRY SymTable-From-Module
 
 DoSymTableFromModule {
 	t.SymTable
-	(Function s.ScopeClass (e.Name) t.FunctionBody)
+	(Function s.ScopeClass (e.Name) t.QualifiedName t.FunctionBody)
 	e.Tail =
 		<DoSymTableFromModule
 			<MSymTable::UpdateAttribSet
@@ -22,6 +22,7 @@ DoSymTableFromModule {
 				(Kind Function)
 				(ScopeClass s.ScopeClass)
 				(Body t.FunctionBody)
+				(Qualified t.QualifiedName)
 			> e.Tail
 		>;
 
@@ -73,9 +74,28 @@ DoModuleFromSymTable-Aux {
 DoModuleFromSymTable-Aux2 {
 	s.ScopeClass t.SymTable Found t.FunctionBody
 	e.Names (e.LastName) (e.Module) =
+		<DoModuleFromSymTable-Aux3
+			s.ScopeClass
+			<MSymTable::RemoveAttrib
+				t.SymTable e.LastName Qualified
+			>
+			t.FunctionBody
+			e.Names (e.LastName) (e.Module)
+		>;
+
+	// Должно быть в таблице
+}
+
+DoModuleFromSymTable-Aux3 {
+	s.ScopeClass t.SymTable Found t.QualifiedName t.FunctionBody
+	e.Names (e.LastName) (e.Module) =
 		<DoModuleFromSymTable
 			t.SymTable e.Names
-			( (Function s.ScopeClass (e.LastName) t.FunctionBody)
+			(
+				(Function
+					s.ScopeClass (e.LastName)
+					t.QualifiedName t.FunctionBody
+				)
 				e.Module
 			)
 		>;

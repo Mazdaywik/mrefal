@@ -1,6 +1,5 @@
 $MODULE MSymTable;
 
-$IMPORT MError;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 
@@ -293,86 +292,12 @@ ExtractCurrentModule-Aux {
 }
 
 /**
-	<CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
-		== t.ErrorList t.SymTable
-		== t.UpdatedErrorList t.SymTable
-*/
-$ENTRY CheckCurrentModule
-	t.ErrorList t.SymTable t.SrcPos e.ModuleName =
-		<CheckCurrentModule-Aux
-			t.ErrorList
-			(<ExtractCurrentModule t.SymTable>)
-			t.SrcPos e.ModuleName
-		>;
-
-CheckCurrentModule-Aux {
-	t.ErrorList (t.SymTable e.ModuleName) t.SrcPos e.ModuleName =
-		t.ErrorList t.SymTable;
-
-	t.ErrorList (t.SymTable e.ModuleName-Head)
-	t.SrcPos-Tail e.ModuleName-Tail =
-		<MakeError-MismatchModuleName
-			t.ErrorList
-			<GetAttrib t.SymTable e.ModuleName-Head Position>
-			(e.ModuleName-Head) t.SrcPos-Tail e.ModuleName-Tail
-		>;
-}
-
-MakeError-MismatchModuleName
-	t.ErrorList t.SymTable t.SrcPos-Head
-	(e.ModuleName-Head) t.SrcPos-Tail e.ModuleName-Tail =
-		<MError::AddNamesMismatch
-			t.ErrorList
-			( t.SrcPos-Head e.ModuleName-Head )
-			( t.SrcPos-Tail e.ModuleName-Tail )
-		> t.SymTable;
-
-/**
-	<AddNewEntity
-		t.ErrorList t.SymTable t.SrcPos (e.Name)
-		(s.Attribute e.Value)*
-	> == t.ErrorList t.SymTable
-*/
-$ENTRY AddNewEntity
-	t.ErrorList t.SymTable t.SrcPos (e.Name) e.Attribs =
-		<CheckRedeclaration
-			t.ErrorList
-			<AddNewName
-				t.SymTable (e.Name) e.Attribs
-			>
-			t.SrcPos e.Name
-		>;
-
-CheckRedeclaration {
-	t.ErrorList t.SymTable Success t.SrcPos e.Name =
-		t.ErrorList
-		t.SymTable;
-
-	t.ErrorList t.SymTable Fails t.SrcPos e.Name =
-		<MError::AddRedeclaredIdentifier
-			t.ErrorList t.SrcPos e.Name
-		> t.SymTable;
-}
-
-/**
 	<ExtractImportList t.SymTable>
 		== t.SymTable (e.ImportName)*
 */
 $ENTRY ExtractImportList
 	t.SymTable =
 		<FindByKind t.SymTable ImportName>;
-
-/**
-	<AddADT t.ErrorList t.SymTable t.SrcPos e.ADTName>
-		== t.ErrorList t.SymTable
-*/
-$ENTRY AddADT
-	t.ErrorList t.SymTable t.SrcPos e.ADTName =
-		<AddNewEntity
-			t.ErrorList t.SymTable t.SrcPos (e.ADTName)
-			(Kind ADT)
-			(Position t.SrcPos)
-		>;
 
 /**
 	<ExtractLocalInfo t.SymTable>

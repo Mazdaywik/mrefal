@@ -45,12 +45,7 @@ t.ResultTerm ::=
 	(IndirectCall (SVar e.Index) e.Argument)
 
 t.Callable ::=
-	(Qualified
-		t.SrcPosModule t.QualifiedName
-	)
-	(Local
-		(Function t.SrcPosFunction e.FnName)
-	)
+	(Qualified t.SrcPosModule t.QualifiedName)
 
 После проверки t.ModuleElement и t.Callable меняются:
 

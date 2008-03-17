@@ -706,16 +706,11 @@ NFunctionBody {
 		t.Lexer t.NextToken;
 }
 
-ReverseSentences {
-	t.Sent e.Rest = <ReverseSentences e.Rest> t.Sent;
-	= ;
-}
-
 NBlock {
 	t.ErrorList t.SymTable ( e.Sentences (e.ParentStack) )
 	t.Lexer (CloseBlock t.SrcPos) =
 		t.ErrorList t.SymTable
-		( (<ReverseSentences e.Sentences>) e.ParentStack )
+		( (<MStrings::Reverse e.Sentences>) e.ParentStack )
 		<MLexer::NextToken t.Lexer>;
 
 	t.ErrorList t.SymTable ( e.Sentences (e.ParentStack) )
@@ -723,7 +718,7 @@ NBlock {
 		<MError::AddUnexpected
 			t.ErrorList (EndOfText t.SrcPos) 'start of pattern of closing block'
 		> t.SymTable
-		( (<ReverseSentences e.Sentences>) e.ParentStack )
+		( (<MStrings::Reverse e.Sentences>) e.ParentStack )
 		<MLexer::NextToken t.Lexer>;
 
 	t.ErrorList t.SymTable ( e.Sentences t.ParentStack )
@@ -1162,7 +1157,7 @@ NResultExpr {
 		<NResultExpr
 			t.ErrorList t.SymTable t.VarTable
 			( e.MultiBracket
-				(Function t.Callable e.ResultExprFnArgument)
+				<MakeFnCallTerm t.Callable e.ResultExprFnArgument>
 				t.ParentStack
 			) <MLexer::NextToken t.Lexer>
 		>;
@@ -1219,6 +1214,10 @@ NResultExpr {
 		t.Lexer t.Unexpected;
 }
 
+MakeFnCallTerm
+	t.Callable e.Argument =
+		(Function t.Callable e.Argument);
+
 NCallable {
 	t.ErrorList t.SymTable t.VarTable ( t.ParentStack )
 	t.Lexer (Identifier t.SrcPos e.Name) =
@@ -1239,12 +1238,12 @@ NCallable {
 			t.Lexer (Var t.SrcPos SVar e.Index)
 		>;
 
-	t.ErrorList t.SymTable t.VarTable ( (e.ParentStack) )
+	t.ErrorList t.SymTable t.VarTable ( (e.ResultExpr t.UpParentStack) )
 	t.Lexer t.OtherToken =
 		<MError::AddUnexpected
 			t.ErrorList t.OtherToken 'function name or module name'
 		> t.SymTable t.VarTable
-		( e.ParentStack )
+ 		( e.ResultExpr InvalidCallable t.UpParentStack )
 		t.Lexer t.OtherToken;
 }
 
@@ -1264,7 +1263,7 @@ NCallable-AfterName {
 	t.ErrorList t.SymTable t.VarTable
 	(Name t.NamePos e.Name)
 	( t.ParentStack ) t.Lexer (DoubleColon t.SrcPos) =
-		<NCallable-ReadQualified
+		<$entry NCallable-ReadQualified
 			t.ErrorList t.SymTable t.VarTable
 			(Module t.NamePos e.Name)
 			( t.ParentStack )

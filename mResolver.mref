@@ -276,21 +276,6 @@ ResolvingCallable {
 			( (e.Pattern) ('!' Function (e.LMultiBracket)) )
 			e.Argument ('!' Function e.RMultiBracket)
 		>;
-
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-	(RealQualified t.SrcPosModule t.QualifiedName)
-	e.Argument ('!' Function (e.RMultiBracket)) =
-		<SwResolvingCallable
-			t.ErrorList
-			<MResolveTable::Lookup
-				t.ResolveTable t.QualifiedName
-			> t.SrcPosModule
-			(e.ResolvedSentences)
-			( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-			e.Argument ('!' Function e.RMultiBracket)
-		>;
 }
 
 SwResolvingCallable {

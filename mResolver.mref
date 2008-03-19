@@ -19,9 +19,10 @@ $ENTRY Resolve
 	t.SymTable t.ErrorList t.ResolveTable e.QualifiedList =
 		<Resolve-Aux
 			<MSymTable-Module::Module-From-SymTable
-				<MFnPtrAdder::AddFnPtr
+				/*<MFnPtrAdder::AddFnPtr
 					t.SymTable e.QualifiedList
-				>
+				>*/
+				t.SymTable
 			>
 			t.ResolveTable t.ErrorList
 		>;
@@ -181,7 +182,26 @@ ResolvingSentence {
 		>;
 }
 
-ResolvingResult {
+$import MSelfDiag;
+
+ResolvingResult
+	t.ErrorList t.ResolveTable
+	(e.ResolvedSentences)
+	( (e.Pattern) (e.ScannedResult) )
+	e.Argument =
+		<MSelfDiag::Log>
+		<MSelfDiag::Log '<ResolvingResult>'>
+		<MSelfDiag::Log 'e.Pattern = ' e.Pattern>
+		<MSelfDiag::Log 'e.ScannedResult = ' e.ScannedResult>
+		<MSelfDiag::Log 'e.Argument = ' e.Argument>
+		<?ResolvingResult
+			t.ErrorList t.ResolveTable
+			(e.ResolvedSentences)
+			( (e.Pattern) (e.ScannedResult) )
+			e.Argument
+		>;
+
+?ResolvingResult {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ('$' e.ScannedResult) )
@@ -214,6 +234,20 @@ ResolvingResult {
 				( (e.Pattern)
 					( '!' Function (e.ScannedResult) )
 				) t.Callable e.Argument ( '!' Function e.Tail )
+			>
+		>;
+
+	t.ErrorList t.ResolveTable
+	(e.ResolvedSentences)
+	( (e.Pattern) ( e.ScannedResult ) )
+	( FnPtr t.Callable ) e.Tail =
+		<ResolvingResult
+			<ResolvingCallable
+				t.ErrorList t.ResolveTable
+				(e.ResolvedSentences)
+				( (e.Pattern)
+					( '!' FnPtr (e.ScannedResult) )
+				) t.Callable ( '!' FnPtr e.Tail )
 			>
 		>;
 
@@ -263,9 +297,9 @@ ResolvingResult {
 ResolvingCallable {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ('!' Function (e.LMultiBracket)) )
+	( (e.Pattern) (e.ScannedResult) )
 	(Qualified t.SrcPosModule t.QualifiedName)
-	e.Argument ('!' Function e.RMultiBracket) =
+	e.Argument (e.NotScannedResult) =
 		<SwResolvingCallable
 			t.ErrorList
 			<MResolveTable::Lookup
@@ -273,8 +307,8 @@ ResolvingCallable {
 				t.QualifiedName
 			> t.SrcPosModule
 			(e.ResolvedSentences)
-			( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-			e.Argument ('!' Function e.RMultiBracket)
+			( (e.Pattern) (e.ScannedResult) )
+			e.Argument (e.NotScannedResult)
 		>;
 }
 
@@ -282,19 +316,19 @@ SwResolvingCallable {
 	t.ErrorList t.ResolveTable
 	Found s.ScopeClass t.QualifiedName t.SrcPos
 	(e.ResolvedSentences)
-	( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-	e.Argument ('!' Function e.RMultiBracket) =
+	( (e.Pattern) (e.ScannedResult) )
+	e.Argument (e.NotScannedResult) =
 		t.ErrorList t.ResolveTable
 		(e.ResolvedSentences)
 		( (e.Pattern)
-			('!' Function (e.LMultiBracket)	(s.ScopeClass t.QualifiedName))
-		) e.Argument ('!' Function e.RMultiBracket);
+			(e.ScannedResult	(s.ScopeClass t.QualifiedName))
+		) e.Argument (e.NotScannedResult);
 
 	t.ErrorList t.ResolveTable
 	NotFound NotFound t.UnresolvedQualified t.SrcPos
 	(e.ResolvedSentences)
-	( (e.Pattern) ('!' Function (e.LMultiBracket)) )
-	e.Argument ('!' Function e.RMultiBracket) =
+	( (e.Pattern) ('!' s.BracketType (e.LMultiBracket)) )
+	e.Argument ('!' s.BracketType e.RMultiBracket) =
 		<MError::AddUnresolvedFunction
 			t.ErrorList t.SrcPos GenericQualified
 			<MQualifiedName::Parse t.UnresolvedQualified>

@@ -196,6 +196,13 @@ $ENTRY AddUnresolvedFunction {
 		>;
 }
 
+$ENTRY FnPtrError
+	t.ErrorList t.SrcPos =
+		<AddToList
+			t.ErrorList
+			( Semantics t.SrcPos 'FnPtr calling error: identifier expected')
+		>;
+
 TypeQualified {
 	(e.Qualifed) (e.SubQualified) e.Rest =
 		e.Qualifed '::'

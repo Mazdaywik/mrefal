@@ -1155,11 +1155,12 @@ NResultExpr {
 	( ('>' e.MultiBracket) (FnCall t.Callable) e.ResultExprFnArgument t.ParentStack )
 	t.Lexer ( CloseFnCall t.SrcPos ) =
 		<NResultExpr
-			t.ErrorList t.SymTable t.VarTable
-			( e.MultiBracket
-				<MakeFnCallTerm t.Callable e.ResultExprFnArgument>
-				t.ParentStack
-			) <MLexer::NextToken t.Lexer>
+			<MakeFnCallTerm
+				t.ErrorList t.SymTable t.VarTable
+				( e.MultiBracket t.ParentStack )
+				t.Callable e.ResultExprFnArgument
+			>
+			<MLexer::NextToken t.Lexer>
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
@@ -1214,9 +1215,96 @@ NResultExpr {
 		t.Lexer t.Unexpected;
 }
 
-MakeFnCallTerm
-	t.Callable e.Argument =
-		(Function t.Callable e.Argument);
+MakeFnCallTerm {
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	( Qualified t.SrcPos t.QualifiedName )
+	e.Argument =
+		<SwMakeFnCallTerm
+			t.ErrorList t.SymTable t.VarTable
+			( e.MultiBracket t.ParentStack )
+			( Qualified t.SrcPos <MQualifiedName::Parse-T t.QualifiedName> )
+			e.Argument
+		>;
+}
+
+SwMakeFnCallTerm {
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	( Qualified t.SrcPos t.QualifiedName ('FnPtr') )
+	e.Argument =
+		<MQualifiedName::Destroy t.QualifiedName>
+		<CheckArgumentFnPtr
+			t.ErrorList t.SymTable
+			t.VarTable
+			( e.MultiBracket t.ParentStack )
+			t.SrcPos e.Argument
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	( Qualified t.SrcPos t.QualifiedName e.Segments )
+	e.Argument =
+		t.ErrorList t.SymTable t.VarTable
+		( e.MultiBracket
+			(Function
+				( Qualified t.SrcPos t.QualifiedName )
+				e.Argument
+			)
+			t.ParentStack
+		);
+}
+
+CheckArgumentFnPtr {
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	t.SrcPos e.Argument =
+		<DoCheckArgumentFnPtr
+			t.ErrorList t.SymTable t.VarTable
+			( e.MultiBracket t.ParentStack )
+			<MQualifiedName::Create>
+			t.SrcPos e.Argument
+		>;
+}
+
+DoCheckArgumentFnPtr {
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	t.QualifiedName t.SrcPos
+	(Identifier e.Content) e.Tail =
+		<DoCheckArgumentFnPtr
+			t.ErrorList t.SymTable t.VarTable
+			( e.MultiBracket t.ParentStack )
+			<MQualifiedName::AddSubName t.QualifiedName e.Content>
+			t.SrcPos e.Tail
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	t.QualifiedName t.SrcPos =
+		t.ErrorList t.SymTable t.VarTable
+		( e.MultiBracket
+			(FnPtr
+				(Qualified
+					t.SrcPos t.QualifiedName
+				)
+			)
+			t.ParentStack
+		);
+
+	t.ErrorList t.SymTable t.VarTable
+	( e.MultiBracket t.ParentStack )
+	t.QualifiedName t.SrcPos
+	t.OtherTerm e.Tail =
+		<DoCheckArgumentFnPtr
+			<MError::FnPtrError
+				t.ErrorList t.SrcPos
+			>
+			t.SymTable t.VarTable
+			( e.MultiBracket t.ParentStack )
+			t.QualifiedName t.SrcPos e.Tail
+		>;
+}
 
 NCallable {
 	t.ErrorList t.SymTable t.VarTable ( t.ParentStack )
@@ -1257,13 +1345,21 @@ CheckCallableVariable {
 			t.UpParentStack
 		)
 		<MLexer::NextToken t.Lexer>;
+
+	t.SymTable t.ErrorList t.VarTable Fail
+	( (e.ResultExpr t.UpParentStack) )
+	t.Lexer (Var t.SrcPos SVar e.Index) =
+		t.ErrorList
+		t.SymTable t.VarTable
+		( e.ResultExpr InvalidCallable t.UpParentStack)
+		<MLexer::NextToken t.Lexer>;
 }
 
 NCallable-AfterName {
 	t.ErrorList t.SymTable t.VarTable
 	(Name t.NamePos e.Name)
 	( t.ParentStack ) t.Lexer (DoubleColon t.SrcPos) =
-		<$entry NCallable-ReadQualified
+		<NCallable-ReadQualified
 			t.ErrorList t.SymTable t.VarTable
 			(Module t.NamePos e.Name)
 			( t.ParentStack )

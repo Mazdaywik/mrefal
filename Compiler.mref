@@ -487,7 +487,6 @@ CheckFnCalls
 					<MResolveTable::Create>
 					<OldSymTableToQualifiedList t.SymTable-Old>
 				>
-				<OldSymTableToQualifiedList t.SymTable-Old>
 			>
 		>;
 

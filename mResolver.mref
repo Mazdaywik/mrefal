@@ -1,7 +1,6 @@
 $MODULE MResolver;
 
 $IMPORT MError;
-$IMPORT MFnPtrAdder;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 $IMPORT MResolveTable;
@@ -9,21 +8,13 @@ $IMPORT MSymTable;
 $IMPORT MSymTable-Module;
 
 /**
-	<Resolve t.Module t.ErrorList t.ResolveTable e.QualifiedList>
+	<Resolve t.Module t.ErrorList t.ResolveTable>
 		== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
-
-	e.QualifiedList ::= ( t.ModuleLocation (e.EntryFnName)* )*
-	t.ModuleLocation ::= ((e.Directory) e.ModuleName)
 */
 $ENTRY Resolve
-	t.SymTable t.ErrorList t.ResolveTable e.QualifiedList =
+	t.SymTable t.ErrorList t.ResolveTable =
 		<Resolve-Aux
-			<MSymTable-Module::Module-From-SymTable
-				/*<MFnPtrAdder::AddFnPtr
-					t.SymTable e.QualifiedList
-				>*/
-				t.SymTable
-			>
+			<MSymTable-Module::Module-From-SymTable t.SymTable>
 			t.ResolveTable t.ErrorList
 		>;
 

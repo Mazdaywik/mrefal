@@ -42,15 +42,17 @@ t.CommonTerm ::=
 t.PatternTerm ::=
 	t.CommonTerm
 	(Structure t.PatternTerm*)
+	(Abstract t.Callable t.PatternTerm*)
 
 t.ResultTerm ::=
 	t.CommonTerm
 	(Structure t.ResultTerm)
+	(Abstract t.Callable t.ResultTerm*)
 	(Function t.Callable e.Argument)
 	(IndirectCall (SVar e.Index) e.Argument)
 
 t.Callable ::=
-	(Qualified t.SrcPosModule t.QualifiedName)
+	(Qualified t.SrcPos t.QualifiedName)
 
 После проверки t.ModuleElement и t.Callable меняются:
 

@@ -38,7 +38,7 @@ $MODULE MSymStream;
 
 /*
 	Внутреннее устройство:
-	(s.LineNumber t.FInput e.BufferedChars)
+	[SymStream s.LineNumber t.FInput e.BufferedChars]
 	Символы e.BufferedChars в порядке чтения располагаются слева направо.
 */
 
@@ -47,31 +47,35 @@ $IMPORT Math;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 
+$DATA SymStream;
 
 $ENTRY Create {
 	e.FileName =
-		(1 <FileIO::Open 'r' e.FileName>);
+		[SymStream 1 <FileIO::Open 'r' e.FileName>];
 }
 
 $ENTRY NextChar {
-	(s.LineNumber t.FInput) =
+	[SymStream s.LineNumber t.FInput] =
 		<NextChar
-			(s.LineNumber
+			[SymStream
+				s.LineNumber
 				<CheckEnd <FileIO::ReadLine t.FInput>>
-			)
+			]
 		>;
 
-	(s.LineNumber t.FInput CrLf e.Buffered) =
-		(s.LineNumber t.FInput AfterCrLf e.Buffered) CrLf;
+	[SymStream s.LineNumber t.FInput CrLf e.Buffered] =
+		[SymStream s.LineNumber t.FInput AfterCrLf e.Buffered] CrLf;
 
-	(s.LineNumber t.FInput AfterCrLf e.Buffered) =
+	[SymStream s.LineNumber t.FInput AfterCrLf e.Buffered] =
 		<NextChar
-			( <Math::Inc s.LineNumber> t.FInput e.Buffered)
+			[SymStream <Math::Inc s.LineNumber> t.FInput e.Buffered]
 		>;
 
-	(s.LineNumber t.FInput EOF) = (s.LineNumber t.FInput EOF) EOF;
-	(s.LineNumber t.FInput s.Next e.Buffered) =
-		(s.LineNumber t.FInput e.Buffered) s.Next;
+	[SymStream s.LineNumber t.FInput EOF] =
+		[SymStream s.LineNumber t.FInput EOF] EOF;
+
+	[SymStream s.LineNumber t.FInput s.Next e.Buffered] =
+		[SymStream s.LineNumber t.FInput e.Buffered] s.Next;
 }
 
 CheckEnd {
@@ -81,11 +85,11 @@ CheckEnd {
 
 
 $ENTRY Destroy
-	(s.LineNumber t.FInput e.Buffered) =
+	[SymStream s.LineNumber t.FInput e.Buffered] =
 		<FileIO::Close t.FInput>;
 
 $ENTRY GetSrcPos
-	(s.LineNumber t.FInput e.Buffered) =
+	[SymStream s.LineNumber t.FInput e.Buffered] =
 		<GetSrcPos-AddFileName
 			(s.LineNumber e.Buffered)
 			<FileIO::ExtractFileName t.FInput>
@@ -94,7 +98,7 @@ $ENTRY GetSrcPos
 GetSrcPos-AddFileName
 	(s.LineNumber e.Buffered)
 	t.FInput e.FileName =
-		(s.LineNumber t.FInput e.Buffered)
+		[SymStream s.LineNumber t.FInput e.Buffered]
 		(SrcPos s.LineNumber e.FileName);
 
 $ENTRY SrcPosToString
@@ -103,20 +107,20 @@ $ENTRY SrcPosToString
 		<MStrings::Symb s.LineNumber>;
 
 $ENTRY ReturnChar {
-	(s.LineNumber t.FInput EOF) EOF =
-		(s.LineNumber t.FInput EOF);
+	[SymStream s.LineNumber t.FInput EOF] EOF =
+		[SymStream s.LineNumber t.FInput EOF];
 
-	(s.LineNumber t.FInput e.Buffered) EOF =
+	[SymStream s.LineNumber t.FInput e.Buffered] EOF =
 		<MSelfDiag::Error 'Can\'t return EOF to not finalized stream'>;
 
-	(s.LineNumber t.FInput AfterCrLf e.Buffered) CrLf =
-		(s.LineNumber t.FInput CrLf e.Buffered);
+	[SymStream s.LineNumber t.FInput AfterCrLf e.Buffered] CrLf =
+		[SymStream s.LineNumber t.FInput CrLf e.Buffered];
 
-	(s.LineNumber t.FInput e.Buffered) CrLf =
-		(<Math::Dec s.LineNumber> t.FInput CrLf e.Buffered);
+	[SymStream s.LineNumber t.FInput e.Buffered] CrLf =
+		[SymStream <Math::Dec s.LineNumber> t.FInput CrLf e.Buffered];
 
-	(s.LineNumber t.FInput e.Buffered) s.Char =
-		(s.LineNumber t.FInput s.Char e.Buffered);
+	[SymStream s.LineNumber t.FInput e.Buffered] s.Char =
+		[SymStream s.LineNumber t.FInput s.Char e.Buffered];
 }
 
 $ENTRY ExtractFromSet {

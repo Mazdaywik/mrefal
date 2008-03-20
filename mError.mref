@@ -52,32 +52,38 @@ $ENTRY Warning {
 		<InOut::WriteLine 'WARNING in line ' s.LineNumber ': ' e.Text>;
 }
 
-$ENTRY CreateErrList = ( ErrorList );
+$DATA ErrorList;
+
+$ENTRY CreateErrList = [ErrorList];
 
 $ENTRY DestroyErrList
-	( ErrorList e.Errors ) = ;
+	[ErrorList e.Errors] = ;
 
-* <EmptyList t.ErrorList>
-*	== t.ErrorList Empty
-*	== t.ErrorList NotEmpty
+/**
+	<EmptyList t.ErrorList>
+		== t.ErrorList Empty
+		== t.ErrorList NotEmpty
+*/
 $ENTRY EmptyList {
-	( ErrorList ) = ( ErrorList ) Empty;
+	[ErrorList] = [ErrorList] Empty;
 
-	( ErrorList e.Errors ) =
-		( ErrorList e.Errors ) NotEmpty;
+	[ErrorList e.Errors] =
+		[ErrorList e.Errors] NotEmpty;
 }
 
 AddToList {
-	( ErrorList e.Errors-B t.Error e.Errors-E )
+	[ErrorList e.Errors-B t.Error e.Errors-E]
 	t.Error =
-		( ErrorList e.Errors-B t.Error e.Errors-E );
+		[ErrorList e.Errors-B t.Error e.Errors-E];
 
-	( ErrorList e.Errors ) t.Error =
-		( ErrorList e.Errors t.Error );
+	[ErrorList e.Errors] t.Error =
+		[ErrorList e.Errors t.Error];
 }
 
-* <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
-*	== t.UpdatedErrorList
+/**
+	<AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
+		== t.UpdatedErrorList
+*/
 $ENTRY AddUnexpected {
 	t.ErrorList
 	(Error t.SrcPos e.Message) e.ExpectedText =
@@ -217,7 +223,7 @@ $ENTRY PrintErrorsAndStop
 		<MOS::Exit 1>;
 
 $ENTRY PrintErrors
-	( ErrorList e.Errors ) =
+	[ErrorList e.Errors] =
 		<DoPrintErrors
 			<MOrder::Sort e.Errors>
 		>;

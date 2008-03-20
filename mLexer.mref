@@ -8,30 +8,32 @@ $IMPORT Types;
 
 /*
 	Внутреннее устройство:
-	(t.SymStream t.NextToken*)
+	[Lexer t.SymStream t.NextToken*]
 	Лексемы t.NextToken* следуют слева направо в том порядке, в котором они
 будут затем извлекаться.
 */
 
+$DATA Lexer;
+
 $ENTRY Create
-	e.FileName = (<MSymStream::Create e.FileName>);
+	e.FileName = [Lexer <MSymStream::Create e.FileName>];
 
 $ENTRY Destroy
-	(t.SymStream e.Returned) =
+	[Lexer t.SymStream e.Returned] =
 		<MSymStream::Destroy t.SymStream>;
 
 $ENTRY NextToken {
-	(t.SymStream t.NextToken e.ReturnedTokens) =
-		(t.SymStream e.ReturnedTokens) t.NextToken;
+	[Lexer t.SymStream t.NextToken e.ReturnedTokens] =
+		[Lexer t.SymStream e.ReturnedTokens] t.NextToken;
 
-	(t.SymStream) =
+	[Lexer t.SymStream] =
 		<MakeLexer
 			<UnBlank-Chain t.SymStream>
 		>;
 }
 
 MakeLexer
-	t.SymStream t.NextToken = (t.SymStream) t.NextToken;
+	t.SymStream t.NextToken = [Lexer t.SymStream] t.NextToken;
 
 /*
 	UnBlank-Chain удаляет пробельные символы и комментарии. Дополнительная
@@ -220,7 +222,7 @@ RealExtract-SwFirst {
 	t.SymStream '=' = t.SymStream (Replaces);
 
 	t.SymStream '\'' = <Quoted t.SymStream '\''>;
-	t.SymStream '\"' = <Quoted t.SymStream '\"'>;
+	//t.SymStream '\"' = <Quoted t.SymStream '\"'>;
 
 	t.SymStream '$' = <Directive t.SymStream>;
 

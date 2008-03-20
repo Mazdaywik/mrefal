@@ -883,9 +883,11 @@ NPatternExpr {
 	( e.PatternExpr t.ParentStack )
 	t.Lexer (OpenSquare t.SrcPos) =
 		<NPatternExpr
-			t.ErrorList t.SymTable t.VarTable
-			( (']' e.PatternExpr) t.ParentStack )
-			<MLexer::NextToken t.Lexer>
+			<CallableADTName
+				t.ErrorList t.SymTable t.VarTable
+				( (']' e.PatternExpr) t.ParentStack )
+				<MLexer::NextToken t.Lexer>
+			>
 		>;
 
 	/* Сделаем осмысленную реакцию на ошибки -- будем интерпретировать
@@ -912,11 +914,23 @@ NPatternExpr {
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
-	( (']' e.MultiBracket) e.InBrackets t.ParentStack)
+	( (']' e.MultiBracket) InvalidADT e.InBrackets t.ParentStack)
 	t.Lexer (CloseSquare t.SrcPos) =
 		<NPatternExpr
 			t.ErrorList t.SymTable t.VarTable
 			(e.MultiBracket (Structure e.InBrackets) t.ParentStack)
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( (']' e.MultiBracket) t.Callable e.InBrackets t.ParentStack)
+	t.Lexer (CloseSquare t.SrcPos) =
+		<NPatternExpr
+			t.ErrorList t.SymTable t.VarTable
+			(e.MultiBracket
+				(Abstract t.Callable e.InBrackets)
+				t.ParentStack
+			)
 			<MLexer::NextToken t.Lexer>
 		>;
 
@@ -998,6 +1012,28 @@ NPatternExpr {
 		> t.SymTable t.VarTable
 		( (Pattern e.PatternExpr) e.ParentStack )
 		t.Lexer t.Unexpected;
+}
+
+CallableADTName {
+	t.ErrorList t.SymTable t.VarTable
+	( e.Pattern t.UpParentStack )
+	t.Lexer (Identifier t.SrcPos e.Content) =
+		t.ErrorList t.SymTable t.VarTable
+		( e.Pattern
+			(Qualified t.SrcPos
+				<MQualifiedName::Create (e.Content)>
+			) t.UpParentStack
+		) <MLexer::NextToken t.Lexer>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( e.Pattern t.UpParentStack )
+	t.Lexer t.OtherToken =
+		<MError::AddUnexpected
+			t.ErrorList t.OtherToken 'name of ADT'
+		> t.SymTable t.VarTable
+		( e.Pattern InvalidADT t.UpParentStack )
+		t.Lexer t.OtherToken;
+
 }
 
 CheckVariable {
@@ -1091,9 +1127,11 @@ NResultExpr {
 	(e.ResultExpr t.ParentStack)
 	t.Lexer (OpenSquare t.SrcPos) =
 		<NResultExpr
-			t.ErrorList t.SymTable t.VarTable
-			( ( ']' e.ResultExpr ) t.ParentStack )
-			<MLexer::NextToken t.Lexer>
+			<CallableADTName
+				t.ErrorList t.SymTable t.VarTable
+				( ( ']' e.ResultExpr ) t.ParentStack )
+				<MLexer::NextToken t.Lexer>
+			>
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
@@ -1118,11 +1156,23 @@ NResultExpr {
 		>;
 
 	t.ErrorList t.SymTable t.VarTable
-	( ( ']' e.MultiBracket ) e.InBrackets t.ParentStack )
+	( ( ']' e.MultiBracket ) InvalidADT e.InBrackets t.ParentStack )
 	t.Lexer (CloseSquare t.SrcPos) =
 		<NResultExpr
 			t.ErrorList t.SymTable t.VarTable
 			( e.MultiBracket (Structure e.InBrackets) t.ParentStack )
+			<MLexer::NextToken t.Lexer>
+		>;
+
+	t.ErrorList t.SymTable t.VarTable
+	( ( ']' e.MultiBracket ) t.Callable e.InBrackets t.ParentStack )
+	t.Lexer (CloseSquare t.SrcPos) =
+		<NResultExpr
+			t.ErrorList t.SymTable t.VarTable
+			( e.MultiBracket
+				(Abstract t.Callable e.InBrackets)
+				t.ParentStack
+			)
 			<MLexer::NextToken t.Lexer>
 		>;
 

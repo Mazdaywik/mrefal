@@ -10,26 +10,29 @@ $IMPORT MOrder;
  короткие (для индексов переменных это не особо актуально, а вот для имён
  функций необходимо, т.к. Рефал-5 не переваривает строки длиннее 260 символов,
  а квалифицированные имена функций достаточно длинны).
- Формат таблицы псевдонимов (AliasTable (e.Nums) (e.Name(e.Alias))* )
+ Формат таблицы псевдонимов
+ 	[AliasTable (e.Nums) (e.Name(e.Alias))* ]
 	e.Nums -- номера, преписываемые следующему псевдониму,
 		e.Nums := (s.Categ e.Num)*
 	e.Name -- оригинальное имя (типа 'NextToken' или '.Context')
 	e.Alias -- псевдоним
 ------------------------------------------------------------------------------*/
 
+$DATA AliasTable;
+
 $ENTRY Create {
-	= (AliasTable () );
+	= [AliasTable () ];
 }
 
 $ENTRY Lookup {
-	(AliasTable t.Num e.Aliases-B ( e.Name (e.Alias) ) e.Aliases-E )
+	[AliasTable t.Num e.Aliases-B ( e.Name (e.Alias) ) e.Aliases-E ]
 	e.Name =
-		(AliasTable t.Num ( e.Name (e.Alias) ) e.Aliases-B e.Aliases-E )
+		[AliasTable t.Num ( e.Name (e.Alias) ) e.Aliases-B e.Aliases-E ]
 		e.Alias;
 
-	(AliasTable t.Num e.Aliases ) e.Name =
+	[AliasTable t.Num e.Aliases ] e.Name =
 		<Lookup
-			(AliasTable <NewAlias t.Num e.Name> e.Aliases )
+			[AliasTable <NewAlias t.Num e.Name> e.Aliases ]
 			e.Name
 		>;
 }
@@ -98,8 +101,8 @@ IncStringIndexAux {
 }
 
 $ENTRY OutAliases {
-	(AliasTable t.Num e.Aliases ) =
-		(AliasTable t.Num e.Aliases )
+	[AliasTable t.Num e.Aliases ] =
+		[AliasTable t.Num e.Aliases ]
 		<UserTypeAliases
 			<FileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
 			<SortAliases e.Aliases>
@@ -150,7 +153,7 @@ UserTypeAliases {
 }
 
 $ENTRY Destroy {
-	(AliasTable t.Num e.Aliases ) = ;
+	[AliasTable t.Num e.Aliases ] = ;
 }
 
 $END MLinkerAliasTable.

@@ -22,13 +22,37 @@ Resolve-Aux
 	( t.SymTable e.ModuleContent ) t.ResolveTable t.ErrorList =
 		<StartResolving
 			t.ResolveTable
-			( <MSymTable::ExtractLocalInfo t.SymTable> )
+			<ExtractLocalInfo t.SymTable>
 			(e.ModuleContent) t.ErrorList
 		>;
 
+ExtractLocalInfo
+	t.SymTable =
+		<ExtractLocalInfo-ADT
+			<MSymTable::ExtractLocalInfo t.SymTable>
+		>;
+
+ExtractLocalInfo-ADT
+	t.SymTable e.LocalFunctions =
+		<DoExtractLocalInfo-ADT
+			<MSymTable::FindByKind t.SymTable ADT>
+			(e.LocalFunctions)
+		>;
+
+DoExtractLocalInfo-ADT {
+	t.SymTable (e.ADTName) e.ADTs (e.LocalScope) =
+		<DoExtractLocalInfo-ADT
+			t.SymTable e.ADTs
+			(e.LocalScope (ADT e.ADTName))
+		>;
+
+	t.SymTable (e.LocalScope) =
+		t.SymTable (e.LocalScope);
+}
+
 StartResolving
 	t.ResolveTable
-	( t.SymTable e.LocalScope )
+	t.SymTable ( e.LocalScope )
 	( e.ModuleContent )
 	t.ErrorList =
 		<ResolvingElements
@@ -162,49 +186,91 @@ DoResolvingFunction {
 		>;
 }
 
+/*
+	Образцовое и результатное выражения различаются лишь набором термов.
+	Считаем, что на входе имеем правильное выражение (чужих термов ни в образце,
+	ни в результате нет, все переменные на месте).
+	Не смотря на то, что пока поддерживается только Базисный Рефал, мы выражение
+	трактуем как цепочку из нескольких образцовых и результатных выражений:
+		(Pattern ...) (Result ...) (Result ...) ...
+	Эту последовательность можно трактовать как одно большое длинное выражение, в кото-
+	ром (Pattern e.Content) и (Result e.Content) -- просто особые типы скобок.
+*/
+
 ResolvingSentence {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) (e.Result) ) =
+	( e.UnresolvedChain ) =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern) ('$') ) e.Result '$'
+			( '$' ) e.UnresolvedChain '$'
 		>;
 }
 
 ResolvingChain {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ('$' e.ScannedResult) )
-	'$' =
+	( '$' e.ScannedChain ) '$' =
 		t.ErrorList t.ResolveTable
 		( e.ResolvedSentences
-			( (e.Pattern) (e.ScannedResult) )
+			( e.ScannedChain )
 		);
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ( e.ScannedResult ) )
-	( Structure e.InBrackets ) e.Tail =
+	( e.ScannedChain )
+	( Pattern e.SubChain ) e.Tail =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern)
-				( '!' Structure (e.ScannedResult) )
-			) e.InBrackets ( '!' Structure e.Tail )
+			( ( '!' Pattern e.ScannedChain ) )
+			e.SubChain ( '!' Pattern e.Tail )
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ( e.ScannedResult ) )
+	( e.ScannedChain )
+	( Result e.SubChain ) e.Tail =
+		<ResolvingChain
+			t.ErrorList t.ResolveTable
+			(e.ResolvedSentences)
+			( ( '!' Result e.ScannedChain ) )
+			e.SubChain ( '!' Result e.Tail )
+		>;
+
+	t.ErrorList t.ResolveTable
+	(e.ResolvedSentences)
+	( e.ScannedChain )
+	( Structure e.InBrackets ) e.Tail =
+		<ResolvingChain
+			t.ErrorList t.ResolveTable
+			(e.ResolvedSentences)
+			( ( '!' Structure e.ScannedChain ) )
+			e.InBrackets ( '!' Structure e.Tail )
+		>;
+
+	t.ErrorList t.ResolveTable
+	(e.ResolvedSentences)
+	( e.ScannedChain )
+	( Abstract e.InBrackets ) e.Tail =
+		<ResolvingChain
+			t.ErrorList t.ResolveTable
+			(e.ResolvedSentences)
+			( ( '!' Abstract e.ScannedChain ) )
+			e.InBrackets ( '!' Abstract e.Tail )
+		>;
+
+	t.ErrorList t.ResolveTable
+	(e.ResolvedSentences)
+	( e.ScannedChain )
 	( Qualified t.SrcPos t.QualifiedName )
 	e.Argument e.Tail =
 		<ResolvingChain
 			<ResolvingQualified
 				t.ErrorList t.ResolveTable
 				(e.ResolvedSentences)
-				( (e.Pattern) ( e.ScannedResult ) )
+				( e.ScannedChain )
 				( Qualified t.SrcPos t.QualifiedName )
 				e.Tail
 			>
@@ -212,61 +278,56 @@ ResolvingChain {
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ( e.ScannedResult ) )
+	( e.ScannedChain )
 	( Function t.Callable e.Argument ) e.Tail =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern)
-				( '!' Function (e.ScannedResult) )
-			) t.Callable e.Argument ( '!' Function e.Tail )
+			( ( '!' Function e.ScannedChain ) )
+			t.Callable e.Argument ( '!' Function e.Tail )
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ( e.ScannedResult ) )
+	( e.ScannedChain )
 	( FnPtr t.Callable ) e.Tail =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern)
-				( '!' FnPtr (e.ScannedResult) )
-			) t.Callable ( '!' FnPtr e.Tail )
+			( ( '!' FnPtr e.ScannedChain ) )
+			t.Callable ( '!' FnPtr e.Tail )
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) ( e.ScannedResult ) )
+	( e.ScannedChain )
 	( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern)
-				( '!' IndirectCall (e.ScannedResult) (SVar e.Index) )
-			) e.Argument ('!' IndirectCall e.Tail)
+			( ( '!' IndirectCall e.ScannedChain ) (SVar e.Index) )
+			e.Argument ('!' IndirectCall e.Tail)
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern)
-		( '!' s.BracketType (e.LMultiBracket) e.InBrackets )
-	) ( '!' s.BracketType e.RMultiBracket ) =
+	( ( '!' s.BracketType e.LMultiBracket ) e.InBrackets )
+	( '!' s.BracketType e.RMultiBracket ) =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern)
-				( e.LMultiBracket (s.BracketType e.InBrackets) )
-			) e.RMultiBracket
+			( e.LMultiBracket (s.BracketType e.InBrackets) )
+			e.RMultiBracket
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) (e.ScannedResult) )
+	( e.ScannedChain )
 	t.NextTerm e.Tail =
 		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
-			( (e.Pattern) (e.ScannedResult t.NextTerm) )
+			( e.ScannedChain t.NextTerm )
 			e.Tail
 		>;
 }
@@ -280,7 +341,7 @@ ResolvingChain {
 ResolvingQualified {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
-	( (e.Pattern) (e.ScannedResult) )
+	( e.ScannedChain )
 	(Qualified t.SrcPosModule t.QualifiedName)
 	e.Argument (e.NotScannedResult) =
 		<SwResolvingQualified
@@ -290,7 +351,7 @@ ResolvingQualified {
 				t.QualifiedName
 			> t.SrcPosModule
 			(e.ResolvedSentences)
-			( (e.Pattern) (e.ScannedResult) )
+			( e.ScannedChain )
 			e.Argument (e.NotScannedResult)
 		>;
 }
@@ -299,25 +360,24 @@ SwResolvingQualified {
 	t.ErrorList t.ResolveTable
 	Found s.ScopeClass t.QualifiedName t.SrcPos
 	(e.ResolvedSentences)
-	( (e.Pattern) (e.ScannedResult) )
+	( e.ScannedChain )
 	e.Argument (e.NotScannedResult) =
 		t.ErrorList t.ResolveTable
 		(e.ResolvedSentences)
-		( (e.Pattern)
-			(e.ScannedResult	(s.ScopeClass t.QualifiedName))
-		) e.Argument (e.NotScannedResult);
+		( e.ScannedChain (s.ScopeClass t.QualifiedName) )
+		e.Argument (e.NotScannedResult);
 
 	t.ErrorList t.ResolveTable
 	NotFound NotFound t.UnresolvedQualified t.SrcPos
 	(e.ResolvedSentences)
-	( (e.Pattern) ('!' s.BracketType (e.LMultiBracket)) )
+	( ('!' s.BracketType e.LMultiBracket) )
 	e.Argument ('!' s.BracketType e.RMultiBracket) =
 		<MError::AddUnresolvedFunction
 			t.ErrorList t.SrcPos GenericQualified
 			<MQualifiedName::Parse t.UnresolvedQualified>
 		> t.ResolveTable
 		(e.ResolvedSentences)
-		( (e.Pattern) ('!' Structure (e.LMultiBracket)) )
+		( ('!' Structure e.LMultiBracket) )
 		e.Argument ('!' Structure e.RMultiBracket);
 }
 

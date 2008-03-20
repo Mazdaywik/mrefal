@@ -193,6 +193,11 @@ GenerateTerm {
 		<GenerateExpression e.InBrackets>
 		')';
 
+	(Abstract (e.Callable) e.InBrackets) =
+		'( ' <GenerateCallable e.Callable> ' '
+		<GenerateExpression e.InBrackets>
+		')';
+
 	(Function (e.Callable) e.Argument) =
 		'<' <GenerateCallable e.Callable> ' '
 		<GenerateExpression e.Argument> '>';
@@ -229,6 +234,8 @@ GenerateCallable
 		<QualifiedToLine t.QualifiedFnName>
 		'$';
 
-CallTypeToPrefix { Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; }
+CallTypeToPrefix {
+	Entry = 'Entry'; Local = 'Local'; Swap = 'Swap'; ADT = 'ADT';
+}
 
 $END MBackEnd.

@@ -39,37 +39,37 @@ c }
 
 b Entry::FileIO::ExtractFileName
 c $Entry::FileIO::ExtractFileName$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
-c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::FileName$ ;
+c 	( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::FileName$ ;
 c }
 
 b Entry::FileIO::WriteLine-T
 c $Entry::FileIO::WriteLine-T$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
-c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > e.$Index::Line$ ;
+c 	( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
+c 		( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > e.$Index::Line$ ;
 c }
 
 b Entry::FileIO::WriteLine
 c $Entry::FileIO::WriteLine$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
-c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > ;
+c 	( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
+c 		( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > ;
 c }
 
 b Entry::FileIO::ReadLine
 c $Entry::FileIO::ReadLine$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
-c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Get$ s.$Index::Handle$ > ;
+c 	( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Get$ s.$Index::Handle$ > ;
 c }
 
 b Entry::FileIO::NulClose
 c $Entry::FileIO::NulClose$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 	( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
 c 		<$Entry::MRefalRTS::Open$ 'r' s.$Index::Handle$ 'nul' > <$Local::FileIO::ReleaseHandle$ s.$Index::Handle$ > ;
 c }
 
 b Entry::FileIO::Close
 c $Entry::FileIO::Close$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 	( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
 c 		<$Entry::MRefalRTS::Open$ 'r' s.$Index::Handle$ e.$Index::FileName$ > <$Local::FileIO::ReleaseHandle$ s.$Index::Handle$ > ;
 c }
 
@@ -78,7 +78,7 @@ c $Local::FileIO::SwOpen$ {
 c 	$Ident::None$ s.$Index::Mode$ e.$Index::FileName$ =
 c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
 c 	s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
-c 		( $ADT::__StructureBrackets$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Open$ s.$Index::Mode$ s.$Index::Handle$ e.$Index::FileName$ > ;
+c 		( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Open$ s.$Index::Mode$ s.$Index::Handle$ e.$Index::FileName$ > ;
 c }
 
 b Local::FileIO::CheckExistAndOpenForRead

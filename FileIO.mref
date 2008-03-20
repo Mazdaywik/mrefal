@@ -24,6 +24,8 @@ ReleaseHandle {
 		<G_Handles <G_Handles> s.Handle>;
 }
 
+$DATA File;
+
 $ENTRY Open {
 	'r' e.FileName =
 		<CheckExistAndOpenForRead
@@ -58,40 +60,40 @@ SwOpen {
 		>;
 
 	s.Handle s.Mode e.FileName =
-		(s.Handle e.FileName) <MRefalRTS::Open s.Mode s.Handle e.FileName>;
+		[File s.Handle e.FileName] <MRefalRTS::Open s.Mode s.Handle e.FileName>;
 }
 
 $ENTRY Close {
-	(s.Handle e.FileName) =
+	[File s.Handle e.FileName] =
 		<MRefalRTS::Open 'r' s.Handle e.FileName>
 		<ReleaseHandle s.Handle>;
 }
 
 $ENTRY NulClose
-	(s.Handle e.FileName) =
+	[File s.Handle e.FileName] =
 		<MRefalRTS::Open 'r' s.Handle 'nul'>
 		<ReleaseHandle s.Handle>;
 
 $ENTRY ReadLine {
-	(s.Handle e.FileName) =
-		(s.Handle e.FileName) <MRefalRTS::Get s.Handle>;
+	[File s.Handle e.FileName] =
+		[File s.Handle e.FileName] <MRefalRTS::Get s.Handle>;
 }
 
 $ENTRY WriteLine {
-	(s.Handle e.FileName) e.Line =
-		(s.Handle e.FileName) <MRefalRTS::Putout s.Handle e.Line>;
+	[File s.Handle e.FileName] e.Line =
+		[File s.Handle e.FileName] <MRefalRTS::Putout s.Handle e.Line>;
 }
 
 $ENTRY WriteLine-T {
-	(s.Handle e.FileName) e.Line =
-		(s.Handle e.FileName)
+	[File s.Handle e.FileName] e.Line =
+		[File s.Handle e.FileName]
 		<MRefalRTS::Putout s.Handle e.Line>
 		e.Line;
 }
 
 $ENTRY ExtractFileName {
-	(s.Handle e.FileName) =
-		(s.Handle e.FileName) e.FileName;
+	[File s.Handle e.FileName] =
+		[File s.Handle e.FileName] e.FileName;
 }
 
 $ENTRY Load

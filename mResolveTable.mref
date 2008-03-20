@@ -9,6 +9,8 @@ $IMPORT MQualifiedName;
 	e.***Segments образуются применением MQualifiedName::Parse к ***Qualifier
 ------------------------------------------------------------------------------*/
 
+$DATA ResolveTable;
+
 /**
 	<Create> == t.ResolveTable
 */

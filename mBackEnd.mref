@@ -154,7 +154,7 @@ GenerateSentences {
 }
 
 GenerateOneSentence
-	(e.Pattern) (e.Result) =
+	(Pattern e.Pattern) (Result e.Result) =
 		( 'c \t' <GenerateExpression e.Pattern> '=' )
 		( 'c \t\t' <GenerateExpression e.Result> ';' );
 

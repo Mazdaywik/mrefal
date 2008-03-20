@@ -23,12 +23,12 @@ t.Sentence ::=
 	t.PatternExpr t.ResultExpr
 
 t.PatternExpr ::=
-	( t.PatternTerm* )
+	( Pattern t.PatternTerm* )
 
 t.ResultExpr ::=
-	( t.ResultTerm* )
+	( Result t.ResultTerm* )
 
-t.PatternTerm ::=
+t.CommonTerm ::=
 	(Identifier e.Name)
 	(EVar e.Index)
 	(SVar e.Index)
@@ -36,11 +36,16 @@ t.PatternTerm ::=
 	(Literal e.Content)
 	(DQWord e.Content)
 	(Macro s.Value)
-	(Structure e.InBrackets)
 	(FnPtr t.Callable)
 
+
+t.PatternTerm ::=
+	t.CommonTerm
+	(Structure t.PatternTerm*)
+
 t.ResultTerm ::=
-	t.PatternTerm
+	t.CommonTerm
+	(Structure t.ResultTerm)
 	(Function t.Callable e.Argument)
 	(IndirectCall (SVar e.Index) e.Argument)
 

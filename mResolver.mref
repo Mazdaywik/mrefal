@@ -166,33 +166,14 @@ ResolvingSentence {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) (e.Result) ) =
-		<ResolvingResult
+		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern) ('$') ) e.Result '$'
 		>;
 }
 
-$import MSelfDiag;
-
-ResolvingResult
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( (e.Pattern) (e.ScannedResult) )
-	e.Argument =
-		<MSelfDiag::Log>
-		<MSelfDiag::Log '<ResolvingResult>'>
-		<MSelfDiag::Log 'e.Pattern = ' e.Pattern>
-		<MSelfDiag::Log 'e.ScannedResult = ' e.ScannedResult>
-		<MSelfDiag::Log 'e.Argument = ' e.Argument>
-		<?ResolvingResult
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( (e.Pattern) (e.ScannedResult) )
-			e.Argument
-		>;
-
-?ResolvingResult {
+ResolvingChain {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ('$' e.ScannedResult) )
@@ -206,7 +187,7 @@ ResolvingResult
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
 	( Structure e.InBrackets ) e.Tail =
-		<ResolvingResult
+		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern)
@@ -217,36 +198,47 @@ ResolvingResult
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
-	( Function t.Callable e.Argument ) e.Tail =
-		<ResolvingResult
-			<ResolvingCallable
+	( Qualified t.SrcPos t.QualifiedName )
+	e.Argument e.Tail =
+		<ResolvingChain
+			<ResolvingQualified
 				t.ErrorList t.ResolveTable
 				(e.ResolvedSentences)
-				( (e.Pattern)
-					( '!' Function (e.ScannedResult) )
-				) t.Callable e.Argument ( '!' Function e.Tail )
+				( (e.Pattern) ( e.ScannedResult ) )
+				( Qualified t.SrcPos t.QualifiedName )
+				e.Tail
 			>
+		>;
+
+	t.ErrorList t.ResolveTable
+	(e.ResolvedSentences)
+	( (e.Pattern) ( e.ScannedResult ) )
+	( Function t.Callable e.Argument ) e.Tail =
+		<ResolvingChain
+			t.ErrorList t.ResolveTable
+			(e.ResolvedSentences)
+			( (e.Pattern)
+				( '!' Function (e.ScannedResult) )
+			) t.Callable e.Argument ( '!' Function e.Tail )
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
 	( FnPtr t.Callable ) e.Tail =
-		<ResolvingResult
-			<ResolvingCallable
-				t.ErrorList t.ResolveTable
-				(e.ResolvedSentences)
-				( (e.Pattern)
-					( '!' FnPtr (e.ScannedResult) )
-				) t.Callable ( '!' FnPtr e.Tail )
-			>
+		<ResolvingChain
+			t.ErrorList t.ResolveTable
+			(e.ResolvedSentences)
+			( (e.Pattern)
+				( '!' FnPtr (e.ScannedResult) )
+			) t.Callable ( '!' FnPtr e.Tail )
 		>;
 
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) ( e.ScannedResult ) )
 	( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
-		<ResolvingResult
+		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern)
@@ -259,7 +251,7 @@ ResolvingResult
 	( (e.Pattern)
 		( '!' s.BracketType (e.LMultiBracket) e.InBrackets )
 	) ( '!' s.BracketType e.RMultiBracket ) =
-		<ResolvingResult
+		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern)
@@ -271,7 +263,7 @@ ResolvingResult
 	(e.ResolvedSentences)
 	( (e.Pattern) (e.ScannedResult) )
 	t.NextTerm e.Tail =
-		<ResolvingResult
+		<ResolvingChain
 			t.ErrorList t.ResolveTable
 			(e.ResolvedSentences)
 			( (e.Pattern) (e.ScannedResult t.NextTerm) )
@@ -285,13 +277,13 @@ ResolvingResult
 функций): функциональный терм заменяем скобочным термом и заносим
 информацию об ошибке в список ошибок.
 */
-ResolvingCallable {
+ResolvingQualified {
 	t.ErrorList t.ResolveTable
 	(e.ResolvedSentences)
 	( (e.Pattern) (e.ScannedResult) )
 	(Qualified t.SrcPosModule t.QualifiedName)
 	e.Argument (e.NotScannedResult) =
-		<SwResolvingCallable
+		<SwResolvingQualified
 			t.ErrorList
 			<MResolveTable::Lookup
 				t.ResolveTable
@@ -303,7 +295,7 @@ ResolvingCallable {
 		>;
 }
 
-SwResolvingCallable {
+SwResolvingQualified {
 	t.ErrorList t.ResolveTable
 	Found s.ScopeClass t.QualifiedName t.SrcPos
 	(e.ResolvedSentences)

@@ -962,7 +962,7 @@ NPatternExpr {
 	( '$' e.PatternExpr (e.ParentStack))
 	t.Lexer (Replaces t.SrcPos) =
 		t.ErrorList t.SymTable t.VarTable
-		( (e.PatternExpr) e.ParentStack )
+		( (Pattern e.PatternExpr) e.ParentStack )
 		t.Lexer (Replaces t.SrcPos);
 
 	t.ErrorList t.SymTable t.VarTable
@@ -996,7 +996,7 @@ NPatternExpr {
 			t.ErrorList t.Unexpected
 			'pattern expression or semicolon'
 		> t.SymTable t.VarTable
-		( (e.PatternExpr) e.ParentStack )
+		( (Pattern e.PatternExpr) e.ParentStack )
 		t.Lexer t.Unexpected;
 }
 
@@ -1189,7 +1189,7 @@ NResultExpr {
 	t.ErrorList t.SymTable t.VarTable
 	('$' e.ResultExpr (e.ParentStack))
 	t.Lexer (EndSent t.SrcPos) =
-		t.ErrorList t.SymTable t.VarTable ( (e.ResultExpr) e.ParentStack )
+		t.ErrorList t.SymTable t.VarTable ( (Result e.ResultExpr) e.ParentStack )
 		t.Lexer (EndSent t.SrcPos);
 
 	t.ErrorList t.SymTable t.VarTable

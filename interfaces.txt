@@ -12,6 +12,19 @@ Module MCreateDirIfNeed;
 <InfoDir> == 'Info'
 
 ===============================
+Module MError;
+
+<EmptyList t.ErrorList>
+	== t.ErrorList Empty
+	== t.ErrorList NotEmpty
+
+<AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
+	== t.UpdatedErrorList
+
+<AddNamesMismatch t.ErrorList t.TailPos (e.InHead) (e.InTail)>
+	== t.ErrorList
+
+===============================
 Module MExeTyper;
 
 <Create s.Limit e.OutputName> == t.ExeTyper
@@ -52,6 +65,78 @@ s.Status ::= Success | Warnings | Errors | Fatal
 	( Module (e.Directory) e.ModuleName )
 	( Functions (e.FnName)* )
 	( Imports ((e.ImportDirectory) e.ImportName)* )
+
+===============================
+Module MIModule;
+
+<Create> == t.IModule
+
+<Destroy t.IModule> == empty
+
+<GetModuleName t.IModule>
+	== t.IModule e.Name
+	== t.IModule Unknown
+
+<SetModuleName t.IModule e.Name>
+	== t.UpdatedIModule Success
+	== t.IModule Fails
+
+<UpdateFunction
+	t.IModule
+	(e.FunctionName)
+	(s.Attrib e.Value)*
+>
+	== t.IModule s.Status
+
+s.Status ::=
+	Success | InvalidKind | InvalidAttrib | InvariantError
+
+<UpdateEntity
+	t.IModule s.Kind (e.EntityName) e.Attribs
+>
+	== t.IModule s.Status
+
+s.Status ::=
+	Success | InvalidKind | InvalidAttrib | InvariantError
+
+<UpdateModule t.IModule e.Attribs>
+	== t.IModule s.Status
+
+s.Status ::=
+	Success | InvalidAttrib | InvariantError
+
+<GetFucntionAttribute t.IModule s.Attrib e.FnName>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
+
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+
+<GetEntityAttribute
+	t.IModule s.Kind s.Attrib e.Name
+>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
+
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+
+<GetModuleAttribute t.IModule s.Attribute>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
+
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
+
+<UpdateImport t.IModule (e.Import) e.Attribs>
+	== t.IModule s.Status
+
+<GetImportAttribute t.IModule s.Attrib e.Import>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
+
+<UpdateADT t.IModule (e.Name) e.Attribs>
+	== то же самое
+
+<GetADTAttributes t.IModule s.Attrib e.Name>
+	== то же самое
 
 ===============================
 Module MLinker;
@@ -108,16 +193,17 @@ s.ErrorResult ::= Success | Warnings | Errors | Fatal
 	== t.SymTable s.ErrorResult t.ErrorList
 	s.ErrorResult ::= Success | Warnings | Errors | Fatal
 
+<AddNewEntity
+	t.ErrorList t.SymTable t.SrcPos (e.NewName)
+	(s.Attrib e.Value)*
+> == t.ErrorList t.SymTable
+
 ===============================
 Module MQualifiedName;
 
-<Create> == t.EmptyQualifierName
-<Create e.Name>
-	== t.QalifierName // только с одним сегментом
-
 <Destroy t.QualifiedName> == empty
 
-<CreateFromSegments (e.Segment)*>
+<Create (e.Segment)*>
 	== t.QualifiedName
 
 <AddSubName t.QualifiedName e.SubName>
@@ -158,16 +244,15 @@ t.QualifiedName должен содержать один сегмент.
 ===============================
 Module MResolver;
 
-<Resolve t.Module t.ErrorList e.QualifiedList>
+<Resolve t.Module t.ErrorList t.ResolveTable>
 	== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
-
-e.QualifiedList ::= ( t.ModuleLocation (e.EntryFnName)* )*
-t.ModuleLocation ::= ((e.Directory) e.ModuleName)
 
 ===============================
 Module MResolveTable;
 
 <Create> == t.ResolveTable
+
+<Destroy t.ResolveTable> == empty
 
 <Add t.ResolveTable
 	t.InternalQualifier
@@ -346,6 +431,10 @@ Module MSymTable;
 <ExtractNames t.SymTable>
 	== t.SymTable (e.Name)*
 
+<Rename t.SymTable (e.OldName) e.NewName>
+	== t.SymTable Success
+	== t.SymTable Fails
+
 <UpdateAttribSet
 	t.SymTable (e.Name)
 	(s.Attrib e.Value)*
@@ -363,27 +452,11 @@ Module MSymTable;
 Фукция возвращает Success при успешном добавлении имени, Fails в случае,
 если имя уже в таблице было.
 
-<AddCurrentModule
-	t.ErrorList t.SymTable t.SrcPos e.ModuleName
-> == t.ErrorList t.SymTable
-
 <ExtractCurrentModule t.SymTable>
 	== t.SymTable e.ModuleName
 
-<CheckCurrentModule t.ErrorList t.SymTable t.SrcPos e.ModuleName>
-	== t.ErrorList t.SymTable
-	== t.UpdatedErrorList t.SymTable
-
-<AddNewEntity
-	t.ErrorList t.SymTable t.SrcPos (e.Name)
-	(s.Attribute e.Value)*
-> == t.ErrorList t.SymTable
-
 <ExtractImportList t.SymTable>
 	== t.SymTable (e.ImportName)*
-
-<AddADT t.ErrorList t.SymTable t.SrcPos e.ADTName>
-	== t.ErrorList t.SymTable
 
 <ExtractLocalInfo t.SymTable>
 	== t.SymTable (s.ScopeClass e.EntityName)*

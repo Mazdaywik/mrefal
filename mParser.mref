@@ -427,7 +427,7 @@ NModuleBody {
 			t.ErrorList (EndOfText t.SrcPos)
 			'$entry, $import, $swap or local function definition'
 		>
-		t.SymTable Error
+		t.SymTable
 		<MLexer::Destroy t.Lexer>;
 
 	/* Любая другая лексема пропускается */
@@ -1521,10 +1521,18 @@ NSymModuleBody {
 		>;
 
 	t.ErrorList t.SymTable ( e.Elements )
+	t.Lexer (EndOfText t.SrcPos) =
+		<MError::AddUnexpected
+			t.ErrorList (EndOfText t.SrcPos)
+			'import or function declaration'
+		> t.SymTable
+		<MLexer::Destroy t.Lexer>;
+
+	t.ErrorList t.SymTable ( e.Elements )
 	t.Lexer t.Unexpected =
 		<NSymModuleBody
 			<MError::AddUnexpected
-				t.ErrorList t.Unexpected 'import or module declaration'
+				t.ErrorList t.Unexpected 'import or function declaration'
 			> t.SymTable ( e.Elements )
 			<MLexer::NextToken t.Lexer>
 		>;

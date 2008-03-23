@@ -2,6 +2,7 @@ $MODULE MLinker;
 
 $IMPORT Context;
 $IMPORT FileIO;
+//$IMPORT 
 $IMPORT MError;
 $IMPORT MExeTyper;
 $IMPORT MLinkerAliasTable;
@@ -82,7 +83,7 @@ LinkLoop {
 
 	Finish t.UnitStorage t.AliasTable t.ExeTyper
 	t.Context e.Modules =
-		<DestroyUnitStorage t.UnitStorage>
+		<PrintUnresolvedUnits t.UnitStorage e.Modules>
 		<MLinkerAliasTable::Destroy
 			<MLinkerAliasTable::OutAliases t.AliasTable>
 		>
@@ -194,33 +195,39 @@ DoCreateCallSeq {
 	= ;
 }
 
+PrintUnresolvedUnits
+	t.UnitStorage e.Modules =
+		<DestroyUnitStorage t.UnitStorage>;
+
 /*------------------------------------------------------------------------------
  Хранилище единиц компоновки.
 
  Внутреннее устройство:
  t.UnitStorage ::=
- 	(UnitStorage (Requests e.Requests) (Units e.Units) (Linked e.Linked))
+ 	[UnitStorage (Requests e.Requests) (Units e.Units) (Linked e.Linked)]
  e.Requests ::= (e.UnitName)*
  e.Units ::= t.LinkUnit*
  e.Linked ::= (e.UnitName)*
 ------------------------------------------------------------------------------*/
 
+$DATA UnitStorage;
+
 /**
 	<CreateUnitStorage> == t.UnitStorage
 */
 CreateUnitStorage =
-	(UnitStorage (Requests) (Units) (Linked));
+	[UnitStorage (Requests) (Units) (Linked)];
 
 /**
 	<AddUnit t.UnitStorage t.Unit>
 		== t.UnitStorage
 */
 AddUnit
-	(UnitStorage t.Request (Units e.Units) t.Linked)
+	[UnitStorage t.Request (Units e.Units) t.Linked]
 	t.Unit =
-		(UnitStorage
+		[UnitStorage
 			t.Request (Units e.Units t.Unit) t.Linked
-		);
+		];
 
 /**
 	<AddRequest t.UnitStorage e.Name>
@@ -244,29 +251,29 @@ AddRequest {
 }
 
 AddRequestAux {
-	(UnitStorage
+	[UnitStorage
 		t.Request t.Units (Linked e.Linked-B (e.Name) e.Linked-E)
-	) e.Name =
-		(UnitStorage
+	] e.Name =
+		[UnitStorage
 			t.Request t.Units
 			(Linked e.Linked-B (e.Name) e.Linked-E)
-		);
+		];
 
-	(UnitStorage
+	[UnitStorage
 		(Requests e.Requests-B (e.Name) e.Requests-E) t.Units t.Linked
-	) e.Name =
-		(UnitStorage
+	] e.Name =
+		[UnitStorage
 			(Requests e.Requests-B (e.Name) e.Requests-E)
 			t.Units t.Linked
-		);
+		];
 
-	(UnitStorage
+	[UnitStorage
 		(Requests e.Requests) t.Units t.Linked
-	)
+	]
 	e.Name =
-		(UnitStorage
+		[UnitStorage
 			(Requests e.Requests (e.Name)) t.Units t.Linked
-		);
+		];
 }
 
 /**
@@ -274,11 +281,11 @@ AddRequestAux {
 		== t.UnitStorage
 */
 AddLinked
-	(UnitStorage t.Requests t.Units (Linked e.Linked))
+	[UnitStorage t.Requests t.Units (Linked e.Linked)]
 	e.Name =
-		(UnitStorage
+		[UnitStorage
 			t.Requests t.Units (Linked e.Linked (e.Name))
-		);
+		];
 
 /**
 	<GetNextUnit t.UnitStorage>
@@ -287,45 +294,61 @@ AddLinked
 		== t.UnitStorage Finish
 */
 GetNextUnit {
-	(UnitStorage (Requests) t.Units t.Linked) =
-		(UnitStorage (Requests) t.Units t.Linked)
+	[UnitStorage (Requests) t.Units t.Linked] =
+		[UnitStorage (Requests) t.Units t.Linked]
 		Finish;
 
-	(UnitStorage
+	[UnitStorage
 		(Requests e.Requests-B (e.NextName) e.Requests-E)
 		(Units e.Units-B ((e.NextName) e.Body) e.Units-E)
 		t.Linked
-	) =
-		(UnitStorage
+	] =
+		[UnitStorage
 			(Requests e.Requests-B e.Requests-E)
 			(Units e.Units-B e.Units-E)
 			t.Linked
-		) ((e.NextName) e.Body);
+		] ((e.NextName) e.Body);
 
-	(UnitStorage t.Requests t.Units t.Linked) =
-		(UnitStorage t.Requests t.Units t.Linked) None;
+	[UnitStorage t.Requests t.Units t.Linked] =
+		[UnitStorage t.Requests t.Units t.Linked] None;
 }
 
 /**
 	<DestroyUnitStorage t.UnitStorage> == empty
 */
 DestroyUnitStorage
-	(UnitStorage
+	[UnitStorage
 		(Requests e.Requests)
 		(Units e.Units)
 		(Linked e.Linked)
-	) = ;
+	] = ;
 
 /**
 	<NextRequestedName-D t.UnitStorage>
 		== e.Name
 */
 NextRequestedName-D {
-	(UnitStorage
+	[UnitStorage
 		(Requests (e.NextName) e.Requests) t.Units t.Linked
-	) = e.NextName;
+	] = e.NextName;
 
 	t.UnitStorage = 'Unknown';
+}
+
+/**
+	<NotLinkedList t.UnitStorage>
+		== t.UnitStorage (e.NotLinkedUnitName)*
+*/
+NotLinkedList
+	[UnitStorage t.Requests (Units e.Units) t.Linked] =
+		[UnitStorage t.Requests (Units e.Units) t.Linked]
+		<NameFromUnit e.Units>;
+
+NameFromUnit {
+	((e.Name) e.Content) e.Tail =
+		(e.Name) <NameFromUnit e.Tail>;
+
+	= ;
 }
 
 /*------------------------------------------------------------------------------

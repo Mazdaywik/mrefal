@@ -103,6 +103,4 @@ DoModuleFromSymTable-Aux3 {
 	// Должно быть в таблице
 }
 
-
-
 $END MSymTable-Module.

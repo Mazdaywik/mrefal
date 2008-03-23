@@ -9,7 +9,7 @@ $IMPORT MStrings;
 
 /* Внутренний формат: 
 	t.SymTable ::= [SymTable e.Names]
-	e.Names ::= (Name e.Attribs)*
+	e.Names ::= (e.Name e.Attribs)*
 	e.Attribs ::= (s.Attrib e.Value)*
 
 	Каждое имя всегда имеет атрибут Kind. По умолчанию его значение Unknown
@@ -84,11 +84,21 @@ UpdateAttrib-Aux {
 		== t.SymTable NoName
 */
 $ENTRY RemoveAttrib {
+	// Частный случай -- атрибут Kind не удаляем
 	[SymTable
 		e.Names-B
-		((e.Name)
-			e.Attribs-B (s.Attrib e.Value) e.Attribs-E
-		) e.Names-E
+		((e.Name) e.Attribs-B (Kind s.Value) e.Attribs-E)
+		e.Names-E
+	] e.Name Kind =
+		[SymTable
+			((e.Name) (Kind s.Value) e.Attribs-B e.Attribs-E)
+			e.Names-B e.Names-E
+		] Found s.Value;
+
+	[SymTable
+		e.Names-B
+		((e.Name) e.Attribs-B (s.Attrib e.Value) e.Attribs-E)
+		e.Names-E
 	] e.Name s.Attrib =
 		[SymTable
 			((e.Name) e.Attribs-B e.Attribs-E)
@@ -97,7 +107,7 @@ $ENTRY RemoveAttrib {
 
 	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
 	e.Name s.?Attrib =
-		[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
+		[SymTable ((e.Name) e.Attribs) e.Names-B e.Names-E]
 		NoAttrib;
 
 	[SymTable e.Names] e.?Name s.?Attrib =
@@ -169,6 +179,26 @@ DoExtractNames {
 
 	t.SymTable (e.Names) =
 		t.SymTable e.Names;
+}
+
+/**
+	<Rename t.SymTable (e.OldName) e.NewName>
+		== t.SymTable Success
+		== t.SymTable Fails
+*/
+$ENTRY Rename {
+	[SymTable e.Names-B ((e.NewName) e.Attribs) e.Names-E]
+	(e.OldName) e.NewName =
+		[SymTable e.Names-B ((e.NewName) e.Attribs) e.Names-E]
+		Fails;
+
+	[SymTable e.Names-B ((e.OldName) e.Attribs) e.Names-E]
+	(e.OldName) e.NewName =
+		[SymTable e.Names-B ((e.NewName) e.Attribs) e.Names-E]
+		Success;
+
+	[SymTable e.Names] (e.OldName) e.NewName =
+		[SymTable e.Names] Fails;
 }
 
 $ENTRY Destroy 

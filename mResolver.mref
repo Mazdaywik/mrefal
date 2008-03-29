@@ -5,7 +5,6 @@ $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 $IMPORT MResolveTable;
 $IMPORT MSymTable;
-$IMPORT MSymTable-Module;
 
 /**
 	<Resolve t.Module t.ErrorList t.ResolveTable>
@@ -14,16 +13,16 @@ $IMPORT MSymTable-Module;
 $ENTRY Resolve
 	t.SymTable t.ErrorList t.ResolveTable =
 		<Resolve-Aux
-			<MSymTable-Module::Module-From-SymTable t.SymTable>
+			t.SymTable
 			t.ResolveTable t.ErrorList
 		>;
 
 Resolve-Aux
-	( t.SymTable e.ModuleContent ) t.ResolveTable t.ErrorList =
+	t.SymTable t.ResolveTable t.ErrorList =
 		<StartResolving
 			t.ResolveTable
 			<ExtractLocalInfo t.SymTable>
-			(e.ModuleContent) t.ErrorList
+			t.ErrorList
 		>;
 
 ExtractLocalInfo
@@ -53,13 +52,12 @@ DoExtractLocalInfo-ADT {
 StartResolving
 	t.ResolveTable
 	t.SymTable ( e.LocalScope )
-	( e.ModuleContent )
 	t.ErrorList =
 		<ResolvingElements
 			<FillTable
 				t.ResolveTable
 				( <MSymTable::ExtractCurrentModule t.SymTable> )
-				(e.ModuleContent) t.ErrorList
+				t.ErrorList
 				e.LocalScope
 			>
 		>;
@@ -67,10 +65,10 @@ StartResolving
 FillTable {
 	t.ResolveTable
 	( t.SymTable e.CurrentModule )
-	(e.ModuleContent) t.ErrorList
+	t.ErrorList
 	e.LocalScope =
 		<FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
-		t.SymTable (e.ModuleContent) t.ErrorList;
+		t.SymTable t.ErrorList;
 }
 
 /*
@@ -94,36 +92,113 @@ FillLocal {
 }
 
 ResolvingElements
-	t.ResolveTable t.SymTable ( e.Elements ) t.ErrorList =
-		<DoResolvingElements
-			t.SymTable
-			( )
+	t.ResolveTable t.SymTable t.ErrorList =
+		<ResolvingElements-Aux
+			<MSymTable::FindByKind t.SymTable Function>
 			t.ErrorList
 			t.ResolveTable
-			e.Elements
 		>;
 
-DoResolvingElements {
-	t.SymTable ( e.ResolvedElements )
-	t.ErrorList
-	t.ResolveTable =
-		<MSymTable-Module::SymTable-From-Module
-			( t.SymTable e.ResolvedElements )
-		>
+ResolvingElements-Aux
+	t.SymTable e.Functions t.ErrorList t.ResolveTable=
+		<DoResolvingFunctions
+			t.SymTable t.ErrorList t.ResolveTable e.Functions
+		>;
+
+DoResolvingFunctions {
+	t.SymTable t.ErrorList t.ResolveTable
+	(e.NextFunction) e.Tail =
+		<DoResolvingFunctions
+			<ResolvingFunction
+				t.SymTable t.ErrorList t.ResolveTable
+				e.NextFunction
+			> e.Tail
+		>;
+
+	t.SymTable t.ErrorList t.ResolveTable =
+		t.SymTable
 		<MResolveTable::Destroy t.ResolveTable>
 		<CheckErrors t.ErrorList>;
+}
 
-	t.SymTable ( e.ResolvedElements )
-	t.ErrorList t.ResolveTable
-	t.NextElement e.Elements =
-		<DoResolvingElements
-			<AddElement
-				t.SymTable ( e.ResolvedElements )
-				<ResolvingOneElement
-					t.NextElement
-					t.ErrorList t.ResolveTable
+ResolvingFunction
+	t.SymTable t.ErrorList t.ResolveTable
+	e.Function =
+		<ResolvingFunction-ScopeClass
+			<MSymTable::GetAttrib t.SymTable e.Function ScopeClass>
+			t.ErrorList t.ResolveTable
+			e.Function
+		>;
+
+ResolvingFunction-ScopeClass {
+	t.SymTable Found Swap
+	t.ErrorList t.ResolveTable e.Function =
+		t.SymTable t.ErrorList t.ResolveTable;
+
+	t.SymTable Found s.ScopeClass
+	t.ErrorList t.ResolveTable e.Function =
+		<ResolvingFunction-Qualified
+			s.ScopeClass
+			<MSymTable::GetAttrib t.SymTable e.Function Qualified>
+			t.ErrorList t.ResolveTable e.Function
+		>;
+}
+
+ResolvingFunction-Qualified
+	s.ScopeClass
+	t.SymTable Found t.QualifiedName
+	t.ErrorList t.ResolveTable e.Function =
+		<SwResolvingFunction-Qualified
+			s.ScopeClass
+			t.SymTable t.ErrorList
+			<MResolveTable::Lookup t.ResolveTable t.QualifiedName>
+			e.Function
+		>;
+
+SwResolvingFunction-Qualified {
+	s.ScopeClass
+	t.SymTable t.ErrorList
+	t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+	e.Function =
+		<ResolvingFunction-Body
+			<MSymTable::RemoveAttrib
+				<MSymTable::UpdateAttribSet
+					t.SymTable (e.Function)
+					(ScopeClass s.ScopeClass)
+					(Qualified t.ExternalQualifier)
 				>
-			> e.Elements
+				e.Function Body
+			>
+			t.ErrorList t.ResolveTable e.Function
+		>;
+}
+
+ResolvingFunction-Body
+	t.SymTable Found (e.Sentences)
+	t.ErrorList t.ResolveTable e.FnName =
+		<ResolvingBody
+			(e.FnName)
+			t.SymTable t.ErrorList t.ResolveTable
+			(/* Распознанные выражения */) e.Sentences
+		>;
+
+ResolvingBody {
+	(e.FnName) t.SymTable t.ErrorList t.ResolveTable
+	(e.Resolved) =
+		<MSymTable::UpdateAttribSet
+			t.SymTable (e.FnName)
+			(Body (e.Resolved))
+		>
+		t.ErrorList t.ResolveTable;
+
+	(e.FnName) t.SymTable t.ErrorList t.ResolveTable
+	(e.Resolved) t.NextSentence e.Tail =
+		<ResolvingBody
+			(e.FnName) t.SymTable
+			<ResolvingSentence
+				t.ErrorList t.ResolveTable
+				(e.Resolved) t.NextSentence
+			> e.Tail
 		>;
 }
 
@@ -136,54 +211,6 @@ CheckErrors
 SwCheckErrors {
 	t.ErrorList Empty = Success t.ErrorList;
 	t.ErrorList NotEmpty = Errors t.ErrorList;
-}
-
-AddElement
-	t.SymTable ( e.ResolvedElements )
-	t.Resolved t.ErrorList t.ResolveTable =
-		t.SymTable
-		( e.ResolvedElements t.Resolved )
-		t.ErrorList t.ResolveTable;
-
-// Модуль состоит только из функций, swaps регистрируются в таблице символов
-ResolvingOneElement {
-	( Function s.ScopeClass (e.FnName) t.QualifiedName (e.Sentences) )
-	t.ErrorList t.ResolveTable =
-		<ResolveFnName-Header
-			( Function s.ScopeClass (e.FnName) t.QualifiedName (e.Sentences) )
-			t.ErrorList
-			<MResolveTable::Lookup t.ResolveTable t.QualifiedName>
-		>;
-}
-
-ResolveFnName-Header {
-	( Function s.ScopeClass (e.FnName) t.QualifiedName (e.Sentences) )
-	t.ErrorList
-	t.ResolveTable Found s.ScopeClass t.FunctionNameQualified =
-		<DoResolvingFunction
-			( Function s.ScopeClass (e.FnName) t.FunctionNameQualified )
-			t.ErrorList t.ResolveTable
-			() e.Sentences
-		>;
-}
-
-DoResolvingFunction {
-	( Function s.ScopeClass (e.FnName) t.QualifiedFNName )
-	t.ErrorList t.ResolveTable
-	(e.Resolved) =
-		( Function s.ScopeClass (e.FnName) t.QualifiedFNName (e.Resolved) )
-		t.ErrorList t.ResolveTable;
-
-	( Function s.ScopeClass (e.FnName) t.QualifiedFNName )
-	t.ErrorList t.ResolveTable
-	(e.Resolved) t.NextSentence e.Tail =
-		<DoResolvingFunction
-			(Function s.ScopeClass (e.FnName) t.QualifiedFNName )
-			<ResolvingSentence
-				t.ErrorList t.ResolveTable
-				(e.Resolved) t.NextSentence
-			> e.Tail
-		>;
 }
 
 /*

@@ -7,6 +7,8 @@ $IMPORT MStrings;
 
 //------------------------------------------------------------------------------
 
+$DATA Version; // t.Version ::= [Version s.Major s.Minor s.BuildNumber]
+
 /**
 	<Load e.FileName> ==
 		t.Version

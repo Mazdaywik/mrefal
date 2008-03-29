@@ -2,10 +2,11 @@ $MODULE MLinker;
 
 $IMPORT Context;
 $IMPORT FileIO;
-//$IMPORT 
+$IMPORT MCreateDirIfNeed;
 $IMPORT MError;
 $IMPORT MExeTyper;
 $IMPORT MLinkerAliasTable;
+$IMPORT MOrder;
 $IMPORT MOS;
 $IMPORT MOutModuleStatus;
 $IMPORT MStartupSeqGenerator;
@@ -197,7 +198,35 @@ DoCreateCallSeq {
 
 PrintUnresolvedUnits
 	t.UnitStorage e.Modules =
-		<DestroyUnitStorage t.UnitStorage>;
+		//<DestroyUnitStorage t.UnitStorage>;
+		<CreateNotLinkedFile
+			(e.Modules)
+			<NotLinkedList t.UnitStorage>
+		>;
+
+CreateNotLinkedFile
+	(e.Modules) t.UnitStorage e.UnitNames =
+		<DestroyUnitStorage t.UnitStorage>
+		<FileIO::Save
+			(<MCreateDirIfNeed::InfoDir> '/Not linked.txt')
+			('Not linked modules')
+			<ListNames e.Modules>
+			()
+			('Not linked units')
+			<ListNames e.UnitNames>
+		>;
+
+ListNames
+	e.Names =
+		<DoListNames <MOrder::Sort e.Names>>;
+
+DoListNames {
+	(e.Name) e.Tail =
+		('\t' e.Name)
+		<DoListNames e.Tail>;
+
+	= ;
+}
 
 /*------------------------------------------------------------------------------
  Хранилище единиц компоновки.

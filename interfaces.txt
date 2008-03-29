@@ -1,17 +1,17 @@
-===============================
+================================================================
 Module MBackEnd;
 
 <Generate t.Module e.OutName>
 	== empty
 
-===============================
+================================================================
 Module MCreateDirIfNeed;
 
 <Create e.DirName> == e.DirName
 
 <InfoDir> == 'Info'
 
-===============================
+================================================================
 Module MError;
 
 <EmptyList t.ErrorList>
@@ -24,7 +24,7 @@ Module MError;
 <AddNamesMismatch t.ErrorList t.TailPos (e.InHead) (e.InTail)>
 	== t.ErrorList
 
-===============================
+================================================================
 Module MExeTyper;
 
 <Create s.Limit e.OutputName> == t.ExeTyper
@@ -41,7 +41,7 @@ Module MExeTyper;
 
 <TypeComment t.ExeTyper e.Comment> == t.ExeTyper
 
-===============================
+================================================================
 Module MFileSystem;
 
 <ParseFileName e.FileName>
@@ -50,7 +50,7 @@ Module MFileSystem;
 <ParseFileName 'c:\\Directory\\Document.doc'>
 	== ('c;\\Directory') 'Document' ('doc')
 
-===============================
+================================================================
 Module MFrontEnd;
 
 <LoadModule e.SourceName>
@@ -66,7 +66,7 @@ s.Status ::= Success | Warnings | Errors | Fatal
 	( Functions (e.FnName)* )
 	( Imports ((e.ImportDirectory) e.ImportName)* )
 
-===============================
+================================================================
 Module MIModule;
 
 <Create> == t.IModule
@@ -138,7 +138,16 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 <GetADTAttributes t.IModule s.Attrib e.Name>
 	== то же самое
 
-===============================
+<GetFunctionList t.IModule>
+	== t.IModule (e.FnName)*
+
+<GetImportList t.IModule>
+	== t.IModule (e.ImportName)*
+
+<GetADTList t.IModule>
+	== t.IModule (e.ADT)
+
+================================================================
 Module MLinker;
 
 <CreateStartupUnit t.Context>
@@ -165,7 +174,10 @@ Module MLinker;
 <NextRequestedName-D t.UnitStorage>
 	== e.Name
 
-===============================
+<NotLinkedList t.UnitStorage>
+	== t.UnitStorage (e.NotLinkedUnitName)*
+
+================================================================
 Module MLocation;
 
 <LookupModule-T t.Context (e.Directory) e.ModuleName>
@@ -182,7 +194,7 @@ s.Status ::=
 	if NotKnown
 		ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 
-===============================
+================================================================
 Module MParser;
 
 <SrcModule e.SrcFileName>
@@ -198,7 +210,7 @@ s.ErrorResult ::= Success | Warnings | Errors | Fatal
 	(s.Attrib e.Value)*
 > == t.ErrorList t.SymTable
 
-===============================
+================================================================
 Module MQualifiedName;
 
 <Destroy t.QualifiedName> == empty
@@ -228,7 +240,7 @@ Module MQualifiedName;
 <Append-T t.QualifiedAcceptor t.QualifiedForAppend>
 	== t.UpdatedQualifierAcceptor t.QualifierForAppend
 
-===============================
+================================================================
 Module MQualifiedSupport;
 
 <DirNameToQualifiedName (e.Directory) e.Name>
@@ -241,13 +253,13 @@ Module MQualifiedSupport;
 	== e.Name
 t.QualifiedName должен содержать один сегмент.
 
-===============================
+================================================================
 Module MResolver;
 
 <Resolve t.Module t.ErrorList t.ResolveTable>
 	== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
 
-===============================
+================================================================
 Module MResolveTable;
 
 <Create> == t.ResolveTable
@@ -264,7 +276,7 @@ Module MResolveTable;
 	== t.ResolveTable Found s.ScopeClass t.ExternalQualifier
 	== t.ResolveTable NotFound NotFound t.InternalQualifier
 
-===============================
+================================================================
 Module MStartupSeqGenerator;
 
 <Generate t.Context>
@@ -276,7 +288,7 @@ e.FnList = (e.Function)*
 <UpdateStartInfo t.StartInfo t.Context e.ModuleName>
 	== t.StartInfo t.Context
 
-===============================
+================================================================
 Module MStrings;
 
 <Seq s.NFirst s.NLast>
@@ -286,7 +298,7 @@ s.NFirst и s.NLast -- числа,
 
 <Reverse e.Line> == e.eniL
 
-===============================
+================================================================
 Module MSymInfo;
 
 <Create>
@@ -324,7 +336,7 @@ Module MSymInfo;
 <CreateFromSymTable t.SymTable>
 	== t.SymTable t.SymInfo
 
-===============================
+================================================================
 Module MSymModule;
 
 Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
@@ -358,7 +370,7 @@ Module MSymModule;
 	== (e.ModuleName) t.Context Known s.Status e.SymName
 	== (e.ModuleName) t.Context NotKnown s.Status e.SymName
 
-===============================
+================================================================
 Module MSymStream;
 
 ** Описание абстрактного типа данных "Символьный поток" SymStream **
@@ -395,7 +407,7 @@ Module MSymStream;
 заданного набора (которая может быть и пустой), причём её длина не может быть
 более s.NChars символов.
 
-===============================
+================================================================
 Module MSymTable-Module;
 
 <SymTable-From-Module t.Module>
@@ -404,7 +416,7 @@ Module MSymTable-Module;
 <Module-From-SymTable t.SymTable>
 	== t.Module
 
-===============================
+================================================================
 Module MSymTable;
 
 <Create> == t.SymTable

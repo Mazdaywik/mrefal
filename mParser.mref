@@ -183,6 +183,7 @@ NModuleHeader {
 	t.ErrorList t.SymTable ()
 	t.Lexer t.OtherToken =
 		<NModuleHeader-ModuleName
+			Regular
 			<MError::AddUnexpected
 				t.ErrorList t.OtherToken 'directive \'$MODULE\''
 			>

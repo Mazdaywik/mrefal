@@ -1,0 +1,79 @@
+$PROGRAM Test_imodule;
+
+$IMPORT MIModule, InOut;
+
+$ENTRY Go =
+	<ApplyCommands
+		<MIModule::Create>
+		(<FnPtr MIModule GetModuleName>)
+		(<FnPtr MIModule SetModuleName> 'SymTable')
+		(<FnPtr MIModule GetModuleName>)
+		(<FnPtr MIModule UpdateFunction> ('Create') (Position 'Pos'))
+		(<FnPtr MIModule UpdateFunction> ('Create') (ScopeClass 'Entry'))
+		(<FnPtr MIModule UpdateFunction> ('SymTable') (ScopeClass 'Local'))
+		(<FnPtr MIModule UpdateFunction> ('Create') (ScopeClass 'Local'))
+		(<FnPtr MIModule UpdateFunction> ('Create') (Format 'est=(e)s'))
+		(<FnPtr MIModule UpdateModule> (Position 'PosMod') (ModuleType 'Program'))
+		(<FnPtr MIModule GetFunctionAttribute> Position 'Create')
+		(<FnPtr MIModule GetFunctionAttribute> ScopeClass 'Create')
+		(<FnPtr MIModule GetFunctionAttribute> Format 'Create')
+		(<FnPtr MIModule GetFunctionAttribute> Position 'SymTable')
+		(<FnPtr MIModule GetFunctionAttribute> ScopeClass 'SymTable')
+		(<FnPtr MIModule GetFunctionAttribute> ScopeClass 'Destroy')
+	>;
+
+ApplyCommands {
+	t.IModule = <MIModule::Destroy t.IModule>;
+
+	t.IModule t.NextCommand e.Commands =
+		<ApplyCommands
+			<ApplyCommand t.IModule t.NextCommand>
+			e.Commands
+		>;
+}
+
+ApplyCommand
+	t.IModule (s.Function e.Arguments) =
+		<PrintResult
+			<s.Function t.IModule e.Arguments>
+		>;
+
+PrintResult {
+	t.IModule Success =
+		t.IModule
+		<InOut::WriteLine 'Success'>;
+
+	t.IModule InvalidKind =
+		t.IModule
+		<InOut::WriteLine 'Invalid kind'>;
+
+	t.IModule InvalidAttrib =
+		t.IModule
+		<InOut::WriteLine 'Invalid attribute'>;
+
+	t.IModule InvariantError =
+		t.IModule
+		<InOut::WriteLine 'Invariant error'>;
+
+	t.IModule Fails =
+		t.IModule
+		<InOut::WriteLine 'Fails'>;
+
+	t.IModule Unknown =
+		t.IModule
+		<InOut::WriteLine 'Unknown'>;
+
+	t.IModule NoName =
+		t.IModule
+		<InOut::WriteLine 'No name'>;
+
+	t.IModule Found e.Value =
+		t.IModule
+		<InOut::WriteLine 'Found <' e.Value '>'>;
+
+	t.IModule e.Other =
+		t.IModule
+		<InOut::WriteLine 'Other: <' e.Other '>'>;
+}
+
+$END Test_imodule.

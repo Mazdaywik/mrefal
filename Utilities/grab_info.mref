@@ -70,7 +70,7 @@ CheckEmpty {
 ModuleToInterface {
 	('$MODULE ' e.ModuleName)
 	e.ModuleContent =
-		('===============================')
+		('================================================================')
 		('Module ' e.ModuleName)
 		<ModuleToInterface e.ModuleContent>;
 

@@ -65,8 +65,8 @@ GenerateSwap
 		b Swap::ModuleName::SomeHolder
 		c $Swap::ModuleName::SomeHolder$ {
 		c 	e.$Index::NewValue$ =
-		c 			<Dg ('ModuleName::SomeHolder')>
-		c 			<Br ('ModuleName::SomeHolder') '=' e.$Index::NewValue$ >;
+		c 		<Dg ('ModuleName::SomeHolder')>
+		c 		<Br ('ModuleName::SomeHolder') '=' e.$Index::NewValue$ >;
 		c }
 
 	*/

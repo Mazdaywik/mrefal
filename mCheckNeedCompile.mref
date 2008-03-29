@@ -1,5 +1,3 @@
 $MODULE MCheckNeedCompile;
 
-$IMPORT MSymInfo;
-
 $END MCheckNeedCompile.

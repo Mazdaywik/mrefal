@@ -57,9 +57,6 @@ Module MFrontEnd;
 	== t.Module s.Status t.ErrorList
 s.Status ::= Success | Warnings | Errors | Fatal
 
-<SymInfo t.Module>
-	== t.Module t.SymInfo
-
 <SymInfo-Old t.Module>
 	== t.Module
 	( Module (e.Directory) e.ModuleName )
@@ -299,44 +296,6 @@ s.NFirst и s.NLast -- числа,
 <Reverse e.Line> == e.eniL
 
 ================================================================
-Module MSymInfo;
-
-<Create>
-	== t.SymInfo
-<Create e.QualifiedModuleName>
-	== t.SymInfo
-
-<Destroy t.SymInfo>
-	== empty
-
-<LoadForModule t.Context e.QualifiedModuleName>
-	== t.SymInfo t.Context
-
-<LoadFromFile e.FileName>
-	== t.SymInfo
-
-<SaveForModule t.SymInfo t.Context>
-	== t.Context
-
-<SaveForModule-T t.SymInfo t.Context>
-	== t.SymInfo t.Context
-
-<SaveToFile t.SymInfo>
-	== empty
-
-<SaveToFile-T t.SymInfo>
-	== t.SymInfo
-
-<ToOldSymInfo t.SymInfo>
-	= e.OldSymInfo
-
-<ToOldSymInfo-T t.SymInfo>
-	= t.SymInfo e.OldSymInfo
-
-<CreateFromSymTable t.SymTable>
-	== t.SymTable t.SymInfo
-
-================================================================
 Module MSymModule;
 
 Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
@@ -406,15 +365,6 @@ Module MSymStream;
 аналогично ExtractsFromSet, но возвращает последовательность символов из
 заданного набора (которая может быть и пустой), причём её длина не может быть
 более s.NChars символов.
-
-================================================================
-Module MSymTable-Module;
-
-<SymTable-From-Module t.Module>
-	== t.SymTable
-
-<Module-From-SymTable t.SymTable>
-	== t.Module
 
 ================================================================
 Module MSymTable;

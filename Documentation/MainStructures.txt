@@ -1,20 +1,6 @@
 --------------------------------------------------------------------------------
-	Структура "Модуль -- промежуточное представление"
+	Структура "Тело функции"
 --------------------------------------------------------------------------------
-
-t.Module ::=
-	(t.SymTable e.ModuleContent)
-
-e.ModuleContent ::= t.ModuleElement*
-
-t.ModuleElement ::=
-	(Function
-		s.ScopeClass (e.FnName) t.QualifiedName t.FunctionBody
-	)
-
-s.ScopeClass ::=
-	Entry
-	Local
 
 t.FunctionBody ::=
 	( t.Sentence* )

@@ -1,12 +1,7 @@
 $MODULE MFrontEnd;
 
 $IMPORT MParser;
-//$IMPORT MQualifiedName;
-//$IMPORT MQualifiedSupport;
-$IMPORT MSymInfo;
-//$IMPORT MSymTable;
-//$IMPORT MSymTable-Module;
-//$IMPORT MError;
+$IMPORT MSymTable;
 
 /**
 	<LoadModule e.SourceName>
@@ -18,20 +13,6 @@ $ENTRY LoadModule
 		<MParser::SrcModule e.SourceName>;
 
 /**
-	<SymInfo t.Module>
-		== t.Module t.SymInfo
-*/
-$ENTRY SymInfo
-	t.SymTable =
-		<RestoreModule
-			<MSymInfo::CreateFromSymTable t.SymTable>
-		>;
-
-RestoreModule
-	t.SymTable t.SymInfo =
-		t.SymTable t.SymInfo;
-
-/**
 	<SymInfo-Old t.Module>
 		== t.Module
 		( Module (e.Directory) e.ModuleName )
@@ -40,13 +21,65 @@ RestoreModule
 */
 $ENTRY SymInfo-Old
 	t.Module =
-		<ToOldSymInfo
-			<SymInfo t.Module>
+		<SymInfo-Imports
+			<MSymTable::FindByKind t.Module ImportName>
 		>;
 
-ToOldSymInfo
-	t.Module t.SymInfo =
+SymInfo-Imports
+	t.Module e.Imports =
+		<SymInfo-Functions
+			<MSymTable::FindByKind t.Module Function>
+		>
+		<MakeImports e.Imports>;
+
+SymInfo-Functions
+	t.Module e.Functions =
+		<FilterEntry
+			t.Module () e.Functions
+		>;
+
+FilterEntry {
+	t.Module (e.Entries) (e.NextFn) e.Tail =
+		<FilterEntry
+			<CheckEntry
+				<MSymTable::GetAttrib t.Module e.NextFn ScopeClass>
+				(e.Entries) e.NextFn
+			>
+		>;
+
+	t.Module (e.Entries) =
+		<SymInfo-ModuleName
+			<MSymTable::FindByKind t.Module ModuleName>
+		>
+		<MakeEntries e.Entries>;
+}
+
+CheckEntry {
+	t.Module Found Entry (e.Entries) e.Name =
+		t.Module (e.Entries (e.Name));
+
+	t.Module Found s.Other (e.Entries) e.Name =
+		t.Module (e.Entries);
+}
+
+SymInfo-ModuleName
+	t.Module (e.ModuleName) =
 		t.Module
-		<MSymInfo::ToOldSymInfo t.SymInfo>;
+		(Module () e.ModuleName);
+
+MakeEntries
+	e.Entries =
+		(Functions e.Entries);
+
+MakeImports
+	e.Imports =
+		(Imports <AddEmpty e.Imports>);
+
+AddEmpty {
+	(e.Next) e.Tail =
+		(() e.Next) <AddEmpty e.Tail>;
+
+	= ;
+}
 
 $END MFrontEnd.

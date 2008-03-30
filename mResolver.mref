@@ -1,62 +1,91 @@
 $MODULE MResolver;
 
 $IMPORT MError;
+$IMPORT MIModule;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 $IMPORT MResolveTable;
-$IMPORT MSymTable;
 
 /**
 	<Resolve t.Module t.ErrorList t.ResolveTable>
 		== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
 */
 $ENTRY Resolve
-	t.SymTable t.ErrorList t.ResolveTable =
+	t.IModule t.ErrorList t.ResolveTable =
 		<Resolve-Aux
-			t.SymTable
+			t.IModule
 			t.ResolveTable t.ErrorList
 		>;
 
 Resolve-Aux
-	t.SymTable t.ResolveTable t.ErrorList =
+	t.IModule t.ResolveTable t.ErrorList =
 		<StartResolving
 			t.ResolveTable
-			<ExtractLocalInfo t.SymTable>
+			<ExtractLocalInfo t.IModule>
 			t.ErrorList
 		>;
 
 ExtractLocalInfo
-	t.SymTable =
+	t.IModule =
 		<ExtractLocalInfo-ADT
-			<MSymTable::ExtractLocalInfo t.SymTable>
+			<AddScopes
+				<MIModule::GetFunctionList t.IModule>
+			>
 		>;
 
+AddScopes
+	t.IModule e.FnList =
+		<DoAddScope t.IModule e.FnList>;
+
+DoAddScope {
+	t.IModule e.FnList (e.Next) =
+		<SwDoAddScope
+			<MIModule::GetFunctionAttribute
+				t.IModule ScopeClass e.Next
+			>
+			e.FnList (e.Next)
+		>;
+
+	t.IModule = t.IModule;
+}
+
+SwDoAddScope {
+	t.IModule Found s.ScopeClass e.FnList (e.Next) =
+		<DoAddScope t.IModule e.FnList>
+		(s.ScopeClass e.Next);
+
+	/*
+		Другие ошибки являются нарушением инварианта. В этом случае программа
+		должна молча умереть.
+	*/
+}
+
 ExtractLocalInfo-ADT
-	t.SymTable e.LocalFunctions =
+	t.IModule e.LocalFunctions =
 		<DoExtractLocalInfo-ADT
-			<MSymTable::FindByKind t.SymTable ADT>
+			<MIModule::GetADTList t.IModule>
 			(e.LocalFunctions)
 		>;
 
 DoExtractLocalInfo-ADT {
-	t.SymTable (e.ADTName) e.ADTs (e.LocalScope) =
+	t.IModule (e.ADTName) e.ADTs (e.LocalScope) =
 		<DoExtractLocalInfo-ADT
-			t.SymTable e.ADTs
+			t.IModule e.ADTs
 			(e.LocalScope (ADT e.ADTName))
 		>;
 
-	t.SymTable (e.LocalScope) =
-		t.SymTable (e.LocalScope);
+	t.IModule (e.LocalScope) =
+		t.IModule (e.LocalScope);
 }
 
 StartResolving
 	t.ResolveTable
-	t.SymTable ( e.LocalScope )
+	t.IModule ( e.LocalScope )
 	t.ErrorList =
 		<ResolvingElements
 			<FillTable
 				t.ResolveTable
-				( <MSymTable::ExtractCurrentModule t.SymTable> )
+				( <MIModule::GetModuleName t.IModule> )
 				t.ErrorList
 				e.LocalScope
 			>
@@ -64,11 +93,11 @@ StartResolving
 
 FillTable {
 	t.ResolveTable
-	( t.SymTable e.CurrentModule )
+	( t.IModule e.CurrentModule )
 	t.ErrorList
 	e.LocalScope =
 		<FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
-		t.SymTable t.ErrorList;
+		t.IModule t.ErrorList;
 }
 
 /*
@@ -92,109 +121,116 @@ FillLocal {
 }
 
 ResolvingElements
-	t.ResolveTable t.SymTable t.ErrorList =
+	t.ResolveTable t.IModule t.ErrorList =
 		<ResolvingElements-Aux
-			<MSymTable::FindByKind t.SymTable Function>
+			<MIModule::GetFunctionList t.IModule>
 			t.ErrorList
 			t.ResolveTable
 		>;
 
 ResolvingElements-Aux
-	t.SymTable e.Functions t.ErrorList t.ResolveTable=
+	t.IModule e.Functions t.ErrorList t.ResolveTable=
 		<DoResolvingFunctions
-			t.SymTable t.ErrorList t.ResolveTable e.Functions
+			t.IModule t.ErrorList t.ResolveTable e.Functions
 		>;
 
 DoResolvingFunctions {
-	t.SymTable t.ErrorList t.ResolveTable
+	t.IModule t.ErrorList t.ResolveTable
 	(e.NextFunction) e.Tail =
 		<DoResolvingFunctions
 			<ResolvingFunction
-				t.SymTable t.ErrorList t.ResolveTable
+				t.IModule t.ErrorList t.ResolveTable
 				e.NextFunction
 			> e.Tail
 		>;
 
-	t.SymTable t.ErrorList t.ResolveTable =
-		t.SymTable
+	t.IModule t.ErrorList t.ResolveTable =
+		t.IModule
 		<MResolveTable::Destroy t.ResolveTable>
 		<CheckErrors t.ErrorList>;
 }
 
 ResolvingFunction
-	t.SymTable t.ErrorList t.ResolveTable
+	t.IModule t.ErrorList t.ResolveTable
 	e.Function =
 		<ResolvingFunction-ScopeClass
-			<MSymTable::GetAttrib t.SymTable e.Function ScopeClass>
+			<MIModule::GetFunctionAttribute t.IModule ScopeClass e.Function>
 			t.ErrorList t.ResolveTable
 			e.Function
 		>;
 
 ResolvingFunction-ScopeClass {
-	t.SymTable Found Swap
+	t.IModule Found Swap
 	t.ErrorList t.ResolveTable e.Function =
-		t.SymTable t.ErrorList t.ResolveTable;
+		t.IModule t.ErrorList t.ResolveTable;
 
-	t.SymTable Found s.ScopeClass
+	t.IModule Found s.ScopeClass
 	t.ErrorList t.ResolveTable e.Function =
 		<ResolvingFunction-Qualified
 			s.ScopeClass
-			<MSymTable::GetAttrib t.SymTable e.Function Qualified>
+			<MIModule::GetFunctionAttribute t.IModule Qualified e.Function>
 			t.ErrorList t.ResolveTable e.Function
 		>;
 }
 
 ResolvingFunction-Qualified
 	s.ScopeClass
-	t.SymTable Found t.QualifiedName
+	t.IModule Found t.QualifiedName
 	t.ErrorList t.ResolveTable e.Function =
 		<SwResolvingFunction-Qualified
 			s.ScopeClass
-			t.SymTable t.ErrorList
+			t.IModule t.ErrorList
 			<MResolveTable::Lookup t.ResolveTable t.QualifiedName>
 			e.Function
 		>;
 
 SwResolvingFunction-Qualified {
 	s.ScopeClass
-	t.SymTable t.ErrorList
+	t.IModule t.ErrorList
 	t.ResolveTable Found s.ScopeClass t.ExternalQualifier
 	e.Function =
 		<ResolvingFunction-Body
-			<MSymTable::RemoveAttrib
-				<MSymTable::UpdateAttribSet
-					t.SymTable (e.Function)
-					(ScopeClass s.ScopeClass)
-					(Qualified t.ExternalQualifier)
+			<MIModule::GetFunctionAttribute
+				<CheckSuccess
+					<MIModule::UpdateFunction
+						t.IModule (e.Function)
+						(ScopeClass s.ScopeClass)
+						(Qualified t.ExternalQualifier)
+					>
 				>
-				e.Function Body
+				Body e.Function
 			>
 			t.ErrorList t.ResolveTable e.Function
 		>;
 }
 
+CheckSuccess
+	t.IModule Success = t.IModule;
+
 ResolvingFunction-Body
-	t.SymTable Found (e.Sentences)
+	t.IModule Found (e.Sentences)
 	t.ErrorList t.ResolveTable e.FnName =
 		<ResolvingBody
 			(e.FnName)
-			t.SymTable t.ErrorList t.ResolveTable
+			t.IModule t.ErrorList t.ResolveTable
 			(/* Распознанные выражения */) e.Sentences
 		>;
 
 ResolvingBody {
-	(e.FnName) t.SymTable t.ErrorList t.ResolveTable
+	(e.FnName) t.IModule t.ErrorList t.ResolveTable
 	(e.Resolved) =
-		<MSymTable::UpdateAttribSet
-			t.SymTable (e.FnName)
-			(Body (e.Resolved))
+		<CheckSuccess
+			<MIModule::UpdateFunction
+				t.IModule (e.FnName)
+				(Body (e.Resolved))
+			>
 		>
 		t.ErrorList t.ResolveTable;
 
-	(e.FnName) t.SymTable t.ErrorList t.ResolveTable
+	(e.FnName) t.IModule t.ErrorList t.ResolveTable
 	(e.Resolved) t.NextSentence e.Tail =
 		<ResolvingBody
-			(e.FnName) t.SymTable
+			(e.FnName) t.IModule
 			<ResolvingSentence
 				t.ErrorList t.ResolveTable
 				(e.Resolved) t.NextSentence

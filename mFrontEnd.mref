@@ -1,7 +1,7 @@
 $MODULE MFrontEnd;
 
+$IMPORT MIModule;
 $IMPORT MParser;
-$IMPORT MSymTable;
 
 /**
 	<LoadModule e.SourceName>
@@ -22,13 +22,13 @@ $ENTRY LoadModule
 $ENTRY SymInfo-Old
 	t.Module =
 		<SymInfo-Imports
-			<MSymTable::FindByKind t.Module ImportName>
+			<MIModule::GetImportList t.Module>
 		>;
 
 SymInfo-Imports
 	t.Module e.Imports =
 		<SymInfo-Functions
-			<MSymTable::FindByKind t.Module Function>
+			<MIModule::GetFunctionList t.Module>
 		>
 		<MakeImports e.Imports>;
 
@@ -42,14 +42,14 @@ FilterEntry {
 	t.Module (e.Entries) (e.NextFn) e.Tail =
 		<FilterEntry
 			<CheckEntry
-				<MSymTable::GetAttrib t.Module e.NextFn ScopeClass>
+				<MIModule::GetFunctionAttribute t.Module ScopeClass e.NextFn>
 				(e.Entries) e.NextFn
 			>
 		>;
 
 	t.Module (e.Entries) =
 		<SymInfo-ModuleName
-			<MSymTable::FindByKind t.Module ModuleName>
+			<MIModule::GetModuleName t.Module>
 		>
 		<MakeEntries e.Entries>;
 }
@@ -63,7 +63,7 @@ CheckEntry {
 }
 
 SymInfo-ModuleName
-	t.Module (e.ModuleName) =
+	t.Module e.ModuleName =
 		t.Module
 		(Module () e.ModuleName);
 

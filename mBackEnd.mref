@@ -1,8 +1,8 @@
 $MODULE MBackEnd;
 
 $IMPORT FileIO;
+$IMPORT MIModule;
 $IMPORT MQualifiedName;
-$IMPORT MSymTable;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
@@ -21,43 +21,47 @@ $ENTRY Generate
 		>;
 
 SaveModule
-	(e.OutName) e.Lines t.SymTable =
+	(e.OutName) e.Lines t.IModule =
 		<FileIO::Save (e.OutName) e.Lines>
-		<MSymTable::Destroy t.SymTable>;
+		<MIModule::Destroy t.IModule>;
 
 GenerateContent
-	t.SymTable =
+	t.IModule =
 		<GenerateElements
-			<MSymTable::ExtractCurrentModule t.SymTable>
+			<MIModule::GetModuleName t.IModule>
 		>;
 
 GenerateElements
-	t.SymTable e.ModuleName =
+	t.IModule e.ModuleName =
 		<DoGenerateElements
 			(e.ModuleName)
-			<MSymTable::ExtractLocalInfo t.SymTable>
+			<MIModule::GetFunctionList t.IModule>
 		>;
 
 DoGenerateElements {
-	(e.ModuleName) t.SymTable
-	(Swap e.SwapName) e.Functions =
-		<GenerateSwap (e.ModuleName) e.SwapName>
-		<DoGenerateElements
-			(e.ModuleName) t.SymTable e.Functions
+	(e.ModuleName) t.IModule (e.FnName) e.Tail =
+		<SwGenerateElements
+			(e.ModuleName)
+			<MIModule::GetFunctionAttribute t.IModule ScopeClass e.FnName>
+			(e.FnName) e.Tail
 		>;
 
-	(e.ModuleName) t.SymTable
-	(s.ScopeClass e.FnName) e.Functions =
+	(e.ModuleName) t.IModule = t.IModule;
+}
+
+SwGenerateElements {
+	(e.ModuleName) t.IModule Found Swap
+	(e.FnName) e.Tail =
+		<GenerateSwap (e.ModuleName) e.FnName>
+		<DoGenerateElements (e.ModuleName) t.IModule e.Tail>;
+
+	(e.ModuleName) t.IModule Found s.ScopeClass
+	(e.FnName) e.Tail =
 		<GenerateFunction
 			(e.ModuleName)
-			<MSymTable::GetAttrib
-				t.SymTable e.FnName Body
-			>
-			(s.ScopeClass e.FnName) e.Functions
+			<MIModule::GetFunctionAttribute t.IModule Body e.FnName>
+			(s.ScopeClass e.FnName) e.Tail
 		>;
-
-	// Не осталось элементов
-	(e.ModuleName) t.SymTable = t.SymTable;
 }
 
 GenerateSwap
@@ -79,27 +83,26 @@ GenerateSwap
 		('c }') ();
 
 GenerateFunction
-	(e.ModuleName) t.SymTable Found (e.Sentences)
-	(s.ScopeClass e.FnName) e.Functions =
+	(e.ModuleName) t.IModule Found (e.Sentences)
+	(s.ScopeClass e.FnName) e.Tail =
 		<GenerateFunction-Aux
 			(e.ModuleName)
-			<MSymTable::GetAttrib
-				t.SymTable e.FnName Qualified
+			<MIModule::GetFunctionAttribute
+				t.IModule Qualified e.FnName
 			>
 			(e.Sentences)
-			(s.ScopeClass e.FnName) e.Functions
+			(s.ScopeClass e.FnName)
+			e.Tail
 		>;
 
 GenerateFunction-Aux
-	(e.ModuleName) t.SymTable Found t.QualifiedName
+	(e.ModuleName) t.IModule Found t.QualifiedName
 	(e.Sentences)
-	(s.ScopeClass e.FnName) e.Functions =
+	(s.ScopeClass e.FnName) e.Tail =
 		<GenerateFunctionCode
 			s.ScopeClass t.QualifiedName e.Sentences
 		>
-		<DoGenerateElements
-			(e.ModuleName) t.SymTable e.Functions
-		>;
+		<DoGenerateElements (e.ModuleName) t.IModule e.Tail>;
 
 GenerateFunctionCode {
 	s.ScopeClass t.QualifiedName e.Content =

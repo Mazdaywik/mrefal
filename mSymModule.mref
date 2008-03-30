@@ -9,11 +9,11 @@ $MODULE MSymModule;
 $IMPORT Context;
 $IMPORT FileIO;
 $IMPORT MError;
+$IMPORT MIModule;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOrder;
 $IMPORT MParser;
-$IMPORT MSymTable;
 
 *-------------------------------------------------------------------------------
 * Загрузка символической информации
@@ -119,24 +119,24 @@ ActualState-Old {
 }
 
 ExtractSymInfo {
-	t.Context t.SymTable Success t.ErrorList =
+	t.Context t.IModule Success t.ErrorList =
 		<ExtractSymInfo--CreateResult
 			t.Context
-			<SymTableToSymInfo-T t.SymTable>
+			<SymTableToSymInfo-T t.IModule>
 		> <MError::DestroyErrList t.ErrorList>;
 
-	t.Context t.SymTable s.ErrorResult t.ErrorList =
+	t.Context t.IModule s.ErrorResult t.ErrorList =
 		t.Context
-		<MSymTable::Destroy t.SymTable>
+		<MIModule::Destroy t.IModule>
 		<MError::PrintErrors t.ErrorList>
 		SymInfoNotFound;
 }
 
 ExtractSymInfo--CreateResult
-	t.Context t.SymTable (CurModule e.CurModule)
+	t.Context t.IModule (CurModule e.CurModule)
 	(Functions e.FnList) (Imports e.Imports) =
 		t.Context
-		<MSymTable::Destroy t.SymTable>
+		<MIModule::Destroy t.IModule>
 		( Module () e.CurModule )
 		( Functions e.FnList )
 		( Imports <AddEmptyDirectory e.Imports> );
@@ -189,43 +189,43 @@ DoToQualified {
 *-------------------------------------------------------------------------------
 
 /**
-	<SaveInfo-T1 t.Context t.SymTable>
-		== t.UpdatedContext t.SymTable Success
-		== t.Context t.SymTable Fail
+	<SaveInfo-T1 t.Context t.IModule>
+		== t.UpdatedContext t.IModule Success
+		== t.Context t.IModule Fail
 */
 $ENTRY SaveInfo-T1
-	t.Context t.SymTable =
+	t.Context t.IModule =
 		<RealSaveInfo
 			t.Context
-			<SymTableToSymInfo-T t.SymTable>
+			<SymTableToSymInfo-T t.IModule>
 		>;
 
 /*$ENTRY*/ SaveInfo1
-	t.Context t.SymTable =
+	t.Context t.IModule =
 		<CloseSymTable
-			<SaveInfo-T1 t.Context t.SymTable>
+			<SaveInfo-T1 t.Context t.IModule>
 		>;
 
 CloseSymTable
-	t.Context t.SymTable s.Result =
+	t.Context t.IModule s.Result =
 		t.Context
-		<MSymTable::Destroy t.SymTable>
+		<MIModule::Destroy t.IModule>
 		s.Result;
 
 RealSaveInfo
-	t.Context t.SymTable (CurModule e.ModuleName) t.FnList t.ImportList =
+	t.Context t.IModule (CurModule e.ModuleName) t.FnList t.ImportList =
 		<CheckDestination
 			<LookupSym t.Context e.ModuleName>
-			t.SymTable t.FnList t.ImportList
+			t.IModule t.FnList t.ImportList
 		>;
 
 CheckDestination
 	(e.ModuleName) t.Context s.Known s.Status e.SymName
-	t.SymTable t.FnList t.ImportList =
+	t.IModule t.FnList t.ImportList =
 		<SwCheckDestination
 			(e.ModuleName) t.Context
 			<DestStatus s.Known s.Status> e.SymName
-			t.SymTable t.FnList t.ImportList
+			t.IModule t.FnList t.ImportList
 		>;
 
 DestStatus {
@@ -242,12 +242,12 @@ DestStatus {
 
 SwCheckDestination {
 	(e.ModuleName) t.Context NotAvail e.SymName
-	t.SymTable t.FnList t.ImportList =
-		t.Context t.SymTable Fail;
+	t.IModule t.FnList t.ImportList =
+		t.Context t.IModule Fail;
 
 	(e.ModuleName) t.Context Avail e.SymName
-	t.SymTable t.FnList t.ImportList =
-		t.Context t.SymTable Success
+	t.IModule t.FnList t.ImportList =
+		t.Context t.IModule Success
 		<FileIO::Save
 			(e.SymName)
 			<GenerateSym
@@ -299,33 +299,60 @@ DoGenImports {
 *-------------------------------------------------------------------------------
 
 /**
-	<SymTableToSymInfo-T t.SymTable>
-		== t.SymTable
+	<SymTableToSymInfo-T t.IModule>
+		== t.IModule
 			( CurModule e.ModName )
 			( Functions (e.FnName)* )
 			( Imports (e.ModName)* )
 */
 SymTableToSymInfo-T
-	t.SymTable =
+	t.IModule =
 		<SymTableToSymInfo--Imports
-			<MSymTable::ExtractImportList t.SymTable>
+			<MIModule::GetImportList t.IModule>
 		>;
 
 SymTableToSymInfo--Imports
-	t.SymTable e.Imports =
+	t.IModule e.Imports =
 		<SymTableToSymInfo--Functions
-			<MSymTable::ExtractEntryFunctions t.SymTable>
+			<FilterEntry <MIModule::GetFunctionList t.IModule>>
 		> ( Imports e.Imports );
 
+FilterEntry
+	t.IModule e.FnList =
+		<DoFilterEntry
+			t.IModule () e.FnList
+		>;
+
+DoFilterEntry {
+	t.IModule (e.Entries) (e.NextFn) e.FnList =
+		<DoFilterEntry
+			<SwFilterEntry
+				<MIModule::GetFunctionAttribute
+					t.IModule ScopeClass e.NextFn
+				> (e.Entries) e.NextFn
+			> e.FnList
+		>;
+
+	t.IModule (e.Entries) = t.IModule e.Entries;
+}
+
+SwFilterEntry {
+	t.IModule Found Entry (e.Entries) e.FnName =
+		t.IModule (e.Entries (e.FnName));
+
+	t.IModule Found s.OtherClass (e.Entries) e.FnName =
+		t.IModule (e.Entries);
+}
+
 SymTableToSymInfo--Functions
-	t.SymTable e.Functions =
+	t.IModule e.Functions =
 		<SymTableToSymInfo--CurModule
-			<MSymTable::ExtractCurrentModule t.SymTable>
+			<MIModule::GetModuleName t.IModule>
 		> ( Functions e.Functions );
 
 SymTableToSymInfo--CurModule
-	t.SymTable e.CurModule =
-		t.SymTable (CurModule e.CurModule);
+	t.IModule e.CurModule =
+		t.IModule (CurModule e.CurModule);
 
 *-------------------------------------------------------------------------------
 * Ищет имя sym-файла, а также возвращает его статус

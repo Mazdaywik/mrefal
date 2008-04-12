@@ -5,6 +5,32 @@ Module MBackEnd;
 	== empty
 
 ================================================================
+Module MContext;
+
+<Create> == t.Context
+
+<Destroy t.Context> == empty
+
+<UpdateInfo t.Context t.QualifiedName e.NewOptionList>
+	== Success t.UpdatedContext
+	== Fails t.Context
+
+<ExtractOption t.Context t.QualifiedName s.Option>
+	== t.Context Found e.Option
+	== t.Context OptionNotFound
+	== t.Context ModuleNotFound
+
+<ExtractModulesList t.Context>
+	== t.Context t.QualifiedName*
+
+<LastModule t.Context t.QualifiedName>
+	== t.UpdatedContext Success
+	== t.Context Fails
+
+<GetProgName t.Context>
+	== t.Context t.QualifiedName
+
+================================================================
 Module MCreateDirIfNeed;
 
 <Create e.DirName> == e.DirName
@@ -199,13 +225,8 @@ Module MParser;
 s.ErrorResult ::= Success | Warnings | Errors | Fatal
 
 <SymModule t.Context e.SymFileName>
-	== t.SymTable s.ErrorResult t.ErrorList
+	== t.IModule s.ErrorResult t.ErrorList
 	s.ErrorResult ::= Success | Warnings | Errors | Fatal
-
-<AddNewEntity
-	t.ErrorList t.SymTable t.SrcPos (e.NewName)
-	(s.Attrib e.Value)*
-> == t.ErrorList t.SymTable
 
 ================================================================
 Module MQualifiedName;
@@ -214,6 +235,7 @@ Module MQualifiedName;
 
 <Create (e.Segment)*>
 	== t.QualifiedName
+обратна Parse
 
 <AddSubName t.QualifiedName e.SubName>
 	== t.UpdatedQualifiedName
@@ -223,6 +245,7 @@ Module MQualifiedName;
 
 <Parse t.QualifiedName>
 	== (e.SegmentName)*
+обратна Create
 
 <Parse-T t.QualifiedName>
 	== t.QualifiedName (e.SegmentName)*
@@ -315,12 +338,12 @@ Module MSymModule;
 		( Imports (e.ModName)* )
 	== t.Context SymInfoNotFound
 
-<SaveInfo-T1 t.Context t.SymTable>
-	== t.UpdatedContext t.SymTable Success
-	== t.Context t.SymTable Fail
+<SaveInfo-T1 t.Context t.IModule>
+	== t.UpdatedContext t.IModule Success
+	== t.Context t.IModule Fail
 
-<SymTableToSymInfo-T t.SymTable>
-	== t.SymTable
+<SymTableToSymInfo-T t.IModule>
+	== t.IModule
 		( CurModule e.ModName )
 		( Functions (e.FnName)* )
 		( Imports (e.ModName)* )
@@ -413,17 +436,4 @@ Module MSymTable;
 атрибутами, в противном случае таблица не изменяется.
 Фукция возвращает Success при успешном добавлении имени, Fails в случае,
 если имя уже в таблице было.
-
-<ExtractCurrentModule t.SymTable>
-	== t.SymTable e.ModuleName
-
-<ExtractImportList t.SymTable>
-	== t.SymTable (e.ImportName)*
-
-<ExtractLocalInfo t.SymTable>
-	== t.SymTable (s.ScopeClass e.EntityName)*
-s.ScopeClass ::= Entry | Local | Swap
-
-<ExtractEntryFunctions t.SymTable>
-	== t.SymTable (e.FnName)*
 

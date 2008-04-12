@@ -1,3 +1,6 @@
 $MODULE MCheckNeedCompile;
 
+$IMPORT MBE-Mgr;
+$IMPORT MFE-Mgr;
+
 $END MCheckNeedCompile.

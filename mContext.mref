@@ -1,0 +1,208 @@
+$MODULE MContext;
+
+$IMPORT MQualifiedName;
+
+/*------------------------------------------------------------------------------
+	Внутренняя структура:
+		t.Context ::=	
+			[Context t.ModuleInfo*]
+		t.ModuleInfo ::= 
+			( t.ModuleName (s.Attrib e.Value)* )
+		t.ModuleName ::=
+			( (e.Segment)* )
+------------------------------------------------------------------------------*/
+$DATA Context;
+
+//------------------------------------------------------------------------------
+
+/**
+	<Create> == t.Context
+*/
+$ENTRY Create = [Context];
+
+//------------------------------------------------------------------------------
+
+/**
+	<Destroy t.Context> == empty
+*/
+$ENTRY Destroy
+	[Context e.Info] = ;
+
+//------------------------------------------------------------------------------
+
+/**
+	<UpdateInfo t.Context t.QualifiedName e.NewOptionList>
+		== Success t.UpdatedContext
+		== Fails t.Context
+*/
+$ENTRY UpdateInfo
+	[Context e.Info] t.QualifiedName e.NewOptions =
+		<UpdateInfo-FindName
+			[Context e.Info]
+			( <MQualifiedName::Parse t.QualifiedName> )
+			e.NewOptions
+		>;
+
+UpdateInfo-FindName {
+	[Context e.Info-B ( (e.Name) e.OldOptions) e.Info-E]
+	(e.Name) e.NewOptions =
+		<UpdateInfo-UpdateOptions
+			(e.Info-B) (e.Info-E) (e.Name)
+			<UpdateOptions
+				(e.OldOptions) e.NewOptions
+			>
+		>;
+
+	[Context e.Info] (e.Name) e.NewOptions =
+		<UpdateInfo-UpdateOptions
+			(e.Info) () (e.Name)
+			<UpdateOptions
+				(<DefaultOptions>) e.NewOptions
+			>
+		>;
+}
+
+UpdateInfo-UpdateOptions {
+	(e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Success e.Options =
+		[Context e.Info-B ( (e.Name) e.Options ) e.Info-E]
+		Success;
+
+	(e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Fails =
+		[Context e.Info-B ( (e.Name) e.OldOptions ) e.Info-E]
+		Fails;
+}
+
+DefaultOptions
+	= (Sym None) (Out None) (Src None) (Status Unknown);
+
+UpdateOptions
+	(e.OldOptions) e.NewOptions =
+		(e.OldOptions)
+		<DoUpdateOptions
+			() (e.OldOptions) e.NewOptions
+		>;
+
+DoUpdateOptions {
+	(e.NewOptions) () = Success e.NewOptions;
+
+	(e.Updated)
+	( (s.Option e.OldValue) e.OldOptions )
+	e.NewOptions-B (s.Option e.NewValue) e.NewOptions-E =
+		<DoUpdateOptions
+			(e.Updated
+				(s.Option e.NewValue)
+			)
+			(e.OldOptions) e.NewOptions-B e.NewOptions-E
+		>;
+
+	(e.Updated) (t.NextOption e.OldOptions) e.NewOptions =
+		<DoUpdateOptions
+			(e.Updated t.NextOption) (e.OldOptions) e.NewOptions
+		>;
+
+	(e.Updated) () e.NewOptions =
+		Fails;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<ExtractOption t.Context t.QualifiedName s.Option>
+		== t.Context Found e.Option
+		== t.Context OptionNotFound
+		== t.Context ModuleNotFound
+*/
+$ENTRY ExtractOption
+	[Context e.Info] t.QualifiedName s.Option =
+		<ExtractOption-FindName
+			[Context e.Info]
+			<MQualifiedName::Parse t.QualifiedName>
+			s.Option
+		>;
+
+ExtractOption-FindName {
+	[Context
+		e.Info-B
+		( (e.Name) e.Options-B (s.Option e.Info) e.Options-E )
+		e.Info-E
+	] e.Name s.Option =
+		[Context
+			e.Info-B
+			( (e.Name) e.Options-B (s.Option e.Info) e.Options-E )
+			e.Info-E
+		] Found e.Info;
+
+	[Context e.Info-B ((e.Name) e.Options) e.Info-E]
+	e.Name s.Option =
+		[Context e.Info-B ((e.Name) e.Options) e.Info-E]
+		OptionNotFound;
+
+	[Context e.Info] e.Name s.Option =
+		[Context e.Info] ModuleNotFound;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<ExtractModulesList t.Context>
+		== t.Context t.QualifiedName*
+*/
+$ENTRY ExtractModulesList
+	[Context e.Info] =
+		<DoExtractModulesList
+			() () e.Info
+		>;
+
+DoExtractModulesList {
+	(e.ScannedInfo) (e.Result)
+	( (e.NextName) e.Options ) e.Tail =
+		<DoExtractModulesList
+			(e.ScannedInfo
+				( (e.NextName) e.Options )
+			)
+			(e.Result
+				<MQualifiedName::Create e.NextName>
+			)
+			e.Tail
+		>;
+
+	(e.ScannedInfo) (e.Result) =
+		[Context e.ScannedInfo] e.Result;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<LastModule t.Context t.QualifiedName>
+		== t.UpdatedContext Success
+		== t.Context Fails
+*/
+$ENTRY LastModule
+	[Context e.Info] t.QualifiedName =
+		<LastModule-FindName
+			[Context e.Info]
+			<MQualifiedName::Parse t.QualifiedName>
+		>;
+
+LastModule-FindName {
+	[Context e.Info-B ( (e.Name) e.Options ) e.Info-E]
+	e.Name =
+		[Context e.Info-B e.Info-E ( (e.Name) e.Options )]
+		Success;
+
+	t.Context e.Name =
+		t.Context Fails;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<GetProgName t.Context>
+		== t.Context t.QualifiedName
+*/
+$ENTRY GetProgName
+	[Context e.Info ( (e.LastName) e.Options )] =
+		[Context e.Info ( (e.LastName) e.Options)]
+		<MQualifiedName::Create e.LastName>;
+
+$END MContext.

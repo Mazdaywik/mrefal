@@ -24,6 +24,7 @@ $ENTRY Destroy
 /**
 	<Create (e.Segment)*>
 		== t.QualifiedName
+	обратна Parse
 */
 $ENTRY Create
 	e.Segments =
@@ -71,6 +72,7 @@ CheckSegment {
 /**
 	<Parse t.QualifiedName>
 		== (e.SegmentName)*
+	обратна Create
 */
 $ENTRY Parse
 	[QName e.Qualifiers] =

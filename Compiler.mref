@@ -19,6 +19,7 @@ $MODULE Compiler;
 
 $IMPORT Context;
 $IMPORT MBackEnd;
+$IMPORT MCheckNeedCompile;
 $IMPORT MError;
 $IMPORT MFrontEnd;
 $IMPORT MLocation;

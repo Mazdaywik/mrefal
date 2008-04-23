@@ -41,23 +41,67 @@ $ENTRY Add
 		];
 
 /**
-	<Lookup t.ResolveTable t.InternalQualifier>
+	<Lookup t.ResolveTable (e.ValidScopes) t.InternalQualifier>
 		== t.ResolveTable Found s.ScopeClass t.ExternalQualifier
 		== t.ResolveTable NotFound NotFound t.InternalQualifier
+	e.ValidScopes ::= s.ScopeClass*
 */
 $ENTRY Lookup
-	t.ResolveTable t.InternalQualifier =
-		<RealLookup
-			t.ResolveTable
+	t.ResolveTable (e.ValidScopes) t.InternalQualifier =
+		<LookupModuleName
+			t.ResolveTable (e.ValidScopes)
 			<MQualifiedName::Parse-T t.InternalQualifier>
 		>;
 
-RealLookup {
+LookupModuleName {
+	[ResolveTable
+		e.Pairs-B
+		( ((e.ModuleAlias)) ModuleAlias e.ExternalModuleNameSegments )
+		e.Pairs-E
+	] (e.ValidScopes)
+	t.InternalQualifier (e.ModuleAlias) e.EntityNameSegments =
+		<LookupSubName
+			[ResolveTable
+				( ((e.ModuleAlias)) ModuleAlias e.ExternalModuleNameSegments )
+				e.Pairs-B e.Pairs-E
+			] (e.ValidScopes)
+			t.InternalQualifier e.ExternalModuleNameSegments e.EntityNameSegments
+		>;
+
+	t.ResolveTable (e.ValidScopes) t.InternalQualifier e.Segments =
+		<LookupSubName
+			t.ResolveTable (e.ValidScopes) t.InternalQualifier e.Segments
+		>;
+}
+
+LookupSubName {
 	[ResolveTable
 		e.Pairs-B
 		((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 		e.Pairs-E
-	] t.InternalQualifier e.InternalSegments =
+	]
+	(e.ValidScopes-B s.ScopeClass e.ValidScopes-E)
+	t.InternalQualifier e.InternalSegments =
+		[ResolveTable
+			((e.InternalSegments) s.ScopeClass e.ExternalSegments)
+			e.Pairs-B e.Pairs-E
+		]
+		Found s.ScopeClass
+		<MQualifiedName::Destroy t.InternalQualifier>
+		<MQualifiedName::Create e.ExternalSegments>;
+
+	t.ResolveTable (e.ValidScopes) t.InternalQualifier e.InternalSegments =
+		t.ResolveTable NotFound NotFound t.InternalQualifier;
+}
+
+/*RealLookup {
+	[ResolveTable
+		e.Pairs-B
+		((e.InternalSegments) s.ScopeClass e.ExternalSegments)
+		e.Pairs-E
+	]
+	(e.ValidScopes-B s.ScopeClass e.ValidScopes-E)
+	t.InternalQualifier e.InternalSegments =
 		[ResolveTable
 			((e.InternalSegments) s.ScopeClass e.ExternalSegments)
 			e.Pairs-B e.Pairs-E
@@ -65,8 +109,9 @@ RealLookup {
 		<MQualifiedName::Destroy t.InternalQualifier>
 		<MQualifiedName::Create e.ExternalSegments>;
 
-	t.ResolveTable t.InternalQualifier e.InternalSegments =
+	t.ResolveTable (e.ValidScopes) t.InternalQualifier e.InternalSegments =
 		t.ResolveTable NotFound NotFound t.InternalQualifier;
-}
+}*/
+
 
 $END MResolveTable.

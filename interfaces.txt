@@ -292,9 +292,10 @@ Module MResolveTable;
 	t.ExternalQualifier
 > == t.UpdatedResolveTable
 
-<Lookup t.ResolveTable t.InternalQualifier>
+<Lookup t.ResolveTable (e.ValidScopes) t.InternalQualifier>
 	== t.ResolveTable Found s.ScopeClass t.ExternalQualifier
 	== t.ResolveTable NotFound NotFound t.InternalQualifier
+e.ValidScopes ::= s.ScopeClass*
 
 ================================================================
 Module MStartupSeqGenerator;

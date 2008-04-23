@@ -8,7 +8,11 @@ ModuleTailer = '$end' ModuleName '.' .
 ModuleName = QualifiedName .
 ModuleBody = ModuleElement* .
 
-QualifiedName = IDENTIFIER | QualifiedName '::' IDENTIFIER .
+QualifiedName = IDENTIFIER | QuadQualified | DotQualified .
+QuadQualified =
+	IDENTIFIER '::' IDENTIFIER | QuadQualified '::' IDENTIFIER .
+DotQualified =
+	IDENTIFIER '.' IDENTIFIER | DotQualifier '.' IDENTIFIER .
 
 ModuleElement = ImportBlock | FunctionDefinition | SwapDefinition
 	| ADTDefinition | ';' .
@@ -28,14 +32,18 @@ FunctionBody = Block | Sentence .
 Block = '{' Sentence* '}' .
 
 Sentence = PatternExpr '=' ResultExpr ';' .
+
+CommonTerm =
+	IDENTIFIER | VARIABLE | LITERAL | MACRO | DQWORD | FnPtr .
 PatternExpr = PatternTerm* .
-PatternTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
-	| '(' PatternExpr ')' | DQWORD .
+PatternTerm =
+	CommonTerm | '(' PatternExpr ')' | '[' ADTName PatternExpr ']' .
 ResultExpr = ResultTerm* .
-ResultTerm = IDENTIFIER | VARIABLE | LITERAL | MACRO
-	| '(' ResultExpr ')' | DQWORD | FunctionCall .
+ResultTerm =
+	CommonTerm | '(' ResultExpr ')' | '[' ADTName ResultTerm ']'
+	| FunctionCall .
 FunctionCall = '<' Callable ResultExpr '>' .
-Callable = QualifiedName | SwapName | S-VARIABLE .
+Callable = QualifiedName | SwapName | S-VARIABLE | FnPtr .
 
 ADTDefinition = '$data' ADTList .
 ADTList = ADTName | ADTName ',' ADTList .

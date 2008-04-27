@@ -1,3 +1,43 @@
 $MODULE MBE-Mgr;
 
+$IMPORT MQualifiedName;
+
+/*==============================================================================
+	Внутрення структура хранилища:
+		(s.Name s.Generator (e.Folder) (e.Ext))*
+		s.Name ::= IDENTIFIER
+		s.Generator ::= { t.IModule e.FileName = t.IModule }
+		e.Folder -- имя папки
+		e.Ext -- расширение файла
+==============================================================================*/
+
+$SWAP G_BackEnds;
+
+//------------------------------------------------------------------------------
+
+/**
+	<Register s.Name s.Generator (e.Folder) (e.Ext)>
+		== empty
+*/
+$ENTRY Register
+	s.Name s.Generator (e.Folder) (e.Ext) =
+		<G_BackEnds
+			<G_BackEnds> (s.Name s.Generator (e.Folder) e.Ext)
+		>;
+
+//------------------------------------------------------------------------------
+
+/**
+	<Generate t.Context t.QualifiedName>
+		== t.Context t.QualifiedName Success
+		== t.Context t.QualifiedName Fails
+*/
+$ENTRY Generate
+	t.Context t.QualifiedName =
+		<MQualifiedName::Destroy t.QualifiedName>
+		t.Context Fails;
+
+//------------------------------------------------------------------------------
+
+
 $END MBE-Mgr.

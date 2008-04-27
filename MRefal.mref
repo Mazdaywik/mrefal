@@ -34,7 +34,7 @@ LoadModuleList {
 }
 
 DoLoadModuleList {
-	(e.Modules) 2 =
+	() 2 =
 		<MError::Fatal 'Command line error: use MRefal module1 module2'>;
 
 	(e.Modules) s.NextNumArg =
@@ -53,8 +53,8 @@ ModuleOrFile {
 }
 
 SwModuleOrFile {
-	( e.FnameName '.mref' ) e.FnameNameExtCase =
-		(File e.FnameNameExtCase);
+	( e.FnameName '.mref' ) e.FnameNameExtCase s.Dot s.M s.R s.E s.F =
+		(Module e.FnameNameExtCase);
 
 	( e.ModNameLower ) e.ModNameCase =
 		(Module <Modules::CanonicalModuleName e.ModNameCase>);
@@ -62,24 +62,7 @@ SwModuleOrFile {
 
 CompileList {
 	t.Context e.Modules =
-		<CompileFilesFromList t.Context e.Modules (Delim)>;
-}
-
-CompileFilesFromList {
-	t.Context (File e.FileName) e.Modules =
-		<CompileFilesFromList
-			<Compiler::CompileByFileName t.Context e.FileName> e.Modules
-		>;
-	
-	t.Context (Module e.ModName) e.Modules =
-		<CompileFilesFromList
-			t.Context e.Modules (Module e.ModName)
-		>;
-
-	t.Context (Delim) e.ModulesOnly =
-		<CompileModulesFromList
-			t.Context e.ModulesOnly
-		>;
+		<CompileModulesFromList t.Context e.Modules>;
 }
 
 CompileModulesFromList {

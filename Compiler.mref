@@ -40,11 +40,6 @@ $ENTRY CompileByModuleName
 			>
 		>;
 
-$ENTRY CompileByFileName {
-	t.Context e.FileName s.Dot s.M s.R s.E s.F =
-		<CompileByModuleName t.Context e.FileName >;
-}
-
 ParseAndCompile {
 	t.Context NotKnown ModuleNotFound
 	t.SymName t.OutName t.SrcName (e.Directory) e.ModuleName =
@@ -271,6 +266,17 @@ SwLoadFromOneModule {
 		>;
 }
 
+ReadSym
+	t.Context e.ModuleName =
+		<MSymModule::LoadInfo1 t.Context e.ModuleName>;
+
+* <FunctionsFromSym t.Context t.FnList t.ImportList>
+*	== t.Context ( ((e.Module) (e.FnName))* )
+FunctionsFromSym {
+	t.Context (Functions e.QualifiedList) t.ImportList =
+		t.Context (e.QualifiedList);
+}
+
 * <CompileIfNeed t.Context e.ModuleName>
 *	== t.UpdatedContext
 CompileIfNeed-Old {
@@ -446,22 +452,10 @@ SwDoCheckCompileIfNeed-Old {
 		t.ModuleName s.Status t.Context;
 }
 
-ReadSym
-	t.Context e.ModuleName =
-		<MSymModule::LoadInfo1 t.Context e.ModuleName>;
-
 FunctionList {
 	( t.Idents t.CurModule t.Modules (Functions e.FnList) t.Variables ) =
 		e.FnList;
 }
-
-* <FunctionsFromSym t.Context t.FnList t.ImportList>
-*	== t.Context ( ((e.Module) (e.FnName))* )
-FunctionsFromSym {
-	t.Context (Functions e.QualifiedList) t.ImportList =
-		t.Context (e.QualifiedList);
-}
-
 
 * <ImportsFromSym t.Context t.FnList t.ImportList>
 *	== t.Context (e.ImportName)*
@@ -575,7 +569,7 @@ UpdateContext {
 GenerateSym {
 	t.Context t.SymTable =
 		<GuardResult
-			<MSymModule::SaveInfo-T1 t.Context t.SymTable>
+			<MSymModule::SaveInfo-T t.Context t.SymTable>
 		>;
 }
 

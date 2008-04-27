@@ -189,28 +189,16 @@ DoToQualified {
 *-------------------------------------------------------------------------------
 
 /**
-	<SaveInfo-T1 t.Context t.IModule>
+	<SaveInfo-T t.Context t.IModule>
 		== t.UpdatedContext t.IModule Success
 		== t.Context t.IModule Fail
 */
-$ENTRY SaveInfo-T1
+$ENTRY SaveInfo-T
 	t.Context t.IModule =
 		<RealSaveInfo
 			t.Context
 			<SymTableToSymInfo-T t.IModule>
 		>;
-
-/*$ENTRY*/ SaveInfo1
-	t.Context t.IModule =
-		<CloseSymTable
-			<SaveInfo-T1 t.Context t.IModule>
-		>;
-
-CloseSymTable
-	t.Context t.IModule s.Result =
-		t.Context
-		<MIModule::Destroy t.IModule>
-		s.Result;
 
 RealSaveInfo
 	t.Context t.IModule (CurModule e.ModuleName) t.FnList t.ImportList =

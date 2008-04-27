@@ -1,29 +1,45 @@
 $MODULE MBackEnd;
 
 $IMPORT FileIO;
+$IMPORT MBE-Mgr;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
 /**
-	<Generate t.Module e.OutName>
+	<Generate t.IModule e.OutName>
 		== empty
 */
 $ENTRY Generate
-	t.Module e.OutName =
-		<SaveModule
-			(e.OutName)
-			('v ' <MVersion::ROut>)
-			('r file ' e.OutName)
-			()
-			<GenerateContent t.Module>
+	t.IModule e.OutName =
+		<MIModule::Destroy
+			<Generate-T t.IModule e.OutName>
 		>;
 
 SaveModule
 	(e.OutName) e.Lines t.IModule =
 		<FileIO::Save (e.OutName) e.Lines>
-		<MIModule::Destroy t.IModule>;
+		t.IModule;
+
+/*
+	<Generate-T t.IModule e.OutName>
+		== t.IModule
+*/
+Generate-T
+	t.IModule e.OutName =
+		<SaveModule
+			(e.OutName)
+			('v ' <MVersion::ROut>)
+			('r file ' e.OutName)
+			()
+			<GenerateContent t.IModule>
+		>;
+
+$ENTRY Init =
+	<MBE-Mgr::Register
+		Refal5BE <FnPtr Generate-T> ('ROut') ('.rout')
+	>;
 
 GenerateContent
 	t.IModule =

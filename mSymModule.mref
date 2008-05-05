@@ -165,11 +165,41 @@ GenerateBorders {
 	t.IModule e.ModuleName =
 		<MoveFirstLineToFront
 			<GenerateFunctions
-				<MIModule::GetFunctionList t.IModule>
+				//<MIModule::GetFunctionList t.IModule>
+				<GetEntryList t.IModule>
 			>
 			('$module ' e.ModuleName ';')
 			('$end ' e.ModuleName '.')
 		>;
+}
+
+GetEntryList
+	t.IModule =
+		<DoEntryList
+			() <MIModule::GetFunctionList t.IModule>
+		>;
+
+DoEntryList {
+	(e.Entries) t.IModule (e.NextFn) e.Tail =
+		<DoEntryList
+			<CheckEntry
+				(e.Entries) (e.NextFn)
+				<MIModule::GetFunctionAttribute
+					t.IModule ScopeClass e.NextFn
+				>
+			>
+			e.Tail
+		>;
+
+		(e.Entries) t.IModule = t.IModule e.Entries;
+}
+
+CheckEntry {
+	(e.Entries) (e.NextFn) t.IModule Found Entry =
+		(e.Entries (e.NextFn)) t.IModule;
+
+	(e.Entries) (e.NextFn) t.IModule Found s.OtherScope =
+		(e.Entries) t.IModule;
 }
 
 MoveFirstLineToFront
@@ -181,7 +211,9 @@ GenerateFunctions
 		<GenerateImports
 			<MIModule::GetImportList t.IModule>
 		>
-		<TypeFunctions e.Functions>;
+		<TypeFunctions
+			<MOrder::Sort e.Functions>
+		>;
 
 TypeFunctions {
 	t.OneName e.Names =
@@ -203,7 +235,7 @@ GenerateImports {
 
 	t.IModule e.Imports =
 		t.IModule
-		<DoTypeImports e.Imports> ();
+		<DoTypeImports <MOrder::Sort e.Imports> > ();
 }
 
 DoTypeImports {

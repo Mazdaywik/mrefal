@@ -8,141 +8,61 @@ $MODULE MSymModule;
 
 $IMPORT Context;
 $IMPORT FileIO;
+$IMPORT MBE-Mgr;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOrder;
 $IMPORT MParser;
+$IMPORT MSelfDiag;
 
 *-------------------------------------------------------------------------------
 * Загрузка символической информации
 *-------------------------------------------------------------------------------
 
 /**
-	<LoadInfo t.Context (e.Directory) e.ModuleName>
+	<LoadInfo t.Context e.ModuleName>
 		== t.UpdatedContext
-			( Module (e.Directory) e.ModuleName )
-			( Functions (e.FnName)* )
-			( Imports ((e.ImportDirectory) e.ImportName)* )
-		== t.Context SymInfoNotFound
-*/
-$ENTRY ?LoadInfo
-	t.Context (e.Directory) e.ModuleName =
-		<CheckActual
-			<MLocation::LookupModule-T
-				t.Context (e.Directory) e.ModuleName
-			>
-		>;
-
-$ENTRY LoadInfo
-	t.Context () e.ModuleName =
-		<MSelfDiag::Log>
-		<MSelfDiag::Log 'LoadInfo t.Context () ' e.ModuleName>
-		<??OutLoadInfo <?LoadInfo t.Context () e.ModuleName>>;
-
-??OutLoadInfo {
-	t.Context SymInfoNotFound =
-		<MSelfDiag::Log '\t== t.Context SymInfoNotFound'>
-		t.Context SymInfoNotFound;
-
-	t.Context e.SymInfo =
-		<MSelfDiag::Log '\t== t.Context e.SymInfo'>
-		t.Context e.SymInfo;
-}
-
-$import MSelfDiag;
-
-CheckActual {
-	t.Context s.Known s.Status
-	(Sym e.SymFileName) t.OutFile t.SrcFile
-	(e.Directory) e.ModuleName =
-		<SwCheckActual
-			t.Context
-			<ActualStatus s.Known s.Status>
-			e.SymFileName
-		>;
-}
-
-ActualStatus {
-	Known s.Status = Actual;
-
-	NotKnown ModuleNotFound = NotActual;
-	NotKnown NeedRecompile = NotActual;
-	NotKnown Library = Actual;
-	NotKnown SrcNotUpdated = Actual;
-	NotKnown SystemLibrary = Actual;
-}
-
-SwCheckActual {
-	t.Context Actual e.SymFileName =
-		<ExtractSymInfo
-			t.Context
-			<MParser::SymModule e.SymFileName>
-		>;
-
-	t.Context NotActual = t.Context SymInfoNotFound;
-}
-
-/**
-	<LoadInfo1 t.Context e.ModuleName>
-		== t.UpdatedContext
+			( Module e.ModuleName )
 			( Functions ((e.Qualifier)(e.FnName))* )
 			( Imports (e.ModName)* )
 		== t.Context SymInfoNotFound
 */
-$ENTRY ?LoadInfo1
+$ENTRY LoadInfo
 	t.Context e.ModuleName =
 		<CheckActual-Old
 			<LookupSym t.Context e.ModuleName>
 		>;
-
-
-$ENTRY LoadInfo1
-	t.Context e.ModuleName =
-		<MSelfDiag::Log>
-		<MSelfDiag::Log 'LoadInfo1 t.Context ' e.ModuleName>
-		<??OutLoadInfo1 <?LoadInfo1 t.Context e.ModuleName>>;
-
-??OutLoadInfo1 {
-	t.Context SymInfoNotFound =
-		<MSelfDiag::Log '\t== t.Context SymInfoNotFound'>
-		t.Context SymInfoNotFound;
-
-	t.Context e.SymInfo =
-		<MSelfDiag::Log '\t== t.Context e.SymInfo'>
-		t.Context e.SymInfo;
-}
 
 /* В тех случаях, когда информация в sym-файле отсутствует
 или не актуальна, возвращаем SymInfoNotFound */
 
 CheckActual-Old {
 	(e.ModuleName) t.Context Known s.Status e.SymFName =
+		t.Context
 		<SymInfo-ToOld
 			<ExtractSymInfo
-				t.Context
 				<MParser::SymModule e.SymFName>
 			>
 		>;
 
 	(e.ModuleName) t.Context NotKnown s.Status e.SymFName =
+		t.Context
 		<SwCheckActual-Old
-			t.Context <ActualState-Old s.Status> e.SymFName
+			<ActualState-Old s.Status> e.SymFName
 		>;
 }
 
 SwCheckActual-Old {
-	t.Context Actual e.SymFName =
+	Actual e.SymFName =
 		<SymInfo-ToOld
 			<ExtractSymInfo
-				t.Context
 				<MParser::SymModule e.SymFName>
 			>
 		>;
 
-	t.Context NotActual e.SymName =
-		t.Context SymInfoNotFound;
+	NotActual e.SymName = SymInfoNotFound;
 }
 
 ActualState-Old {
@@ -154,23 +74,21 @@ ActualState-Old {
 }
 
 ExtractSymInfo {
-	t.Context t.IModule Success t.ErrorList =
+	t.IModule Success t.ErrorList =
 		<ExtractSymInfo--CreateResult
-			t.Context
 			<SymTableToSymInfo-T t.IModule>
-		> <MError::DestroyErrList t.ErrorList>;
+		>
+		<MError::DestroyErrList t.ErrorList>;
 
-	t.Context t.IModule s.ErrorResult t.ErrorList =
-		t.Context
+	t.IModule s.ErrorResult t.ErrorList =
 		<MIModule::Destroy t.IModule>
 		<MError::PrintErrors t.ErrorList>
 		SymInfoNotFound;
 }
 
 ExtractSymInfo--CreateResult
-	t.Context t.IModule (CurModule e.CurModule)
+	t.IModule (CurModule e.CurModule)
 	(Functions e.FnList) (Imports e.Imports) =
-		t.Context
 		<MIModule::Destroy t.IModule>
 		( Module () e.CurModule )
 		( Functions e.FnList )
@@ -185,16 +103,14 @@ AddEmptyDirectory {
 }
 
 SymInfo-ToOld {
-	t.Context
 	( Module () e.CurModule )
 	( Functions e.FnList )
 	( Imports e.Imports ) =
-		t.Context
+		( Module e.CurModule )
 		( Functions <ToQualified (e.CurModule) e.FnList> )
 		( Imports <RemoveEmptyDirectory e.Imports> );
 
-	t.Context SymInfoNotFound =
-		t.Context SymInfoNotFound;
+	SymInfoNotFound = SymInfoNotFound;
 }
 
 RemoveEmptyDirectory {
@@ -223,116 +139,89 @@ DoToQualified {
 * Сохранение символической информации
 *-------------------------------------------------------------------------------
 
-/**
-	<SaveInfo-T t.Context t.IModule>
-		== t.UpdatedContext t.IModule Success
-		== t.Context t.IModule Fail
-*/
-$ENTRY ?SaveInfo-T
-	t.Context t.IModule =
-		<RealSaveInfo
-			t.Context
-			<SymTableToSymInfo-T t.IModule>
+Generate
+	t.IModule e.FileName =
+		<SaveToFile
+			(e.FileName)
+			<GenerateLines t.IModule>
 		>;
 
-$ENTRY SaveInfo-T
-	t.Context t.IModule =
-		<MSelfDiag::Log>
-		<MSelfDiag::Log 'SaveInfo-T t.Context t.IModule'>
-		<??OutSaveInfo-T <?SaveInfo-T t.Context t.IModule>>;
+SaveToFile
+	(e.FileName) t.IModule e.Lines =
+		t.IModule
+		<FileIO::Save (e.FileName) e.Lines>;
 
-??OutSaveInfo-T {
-	t.Context t.IModule s.Result =
-		<MSelfDiag::Log
-			'\t== t.Context t.IModule '
-			<StrFromResult s.Result>
-		>
-		t.Context t.IModule s.Result;
-}
-
-StrFromResult { Success = 'Success'; Fails = 'Fails'; }
-
-RealSaveInfo
-	t.Context t.IModule (CurModule e.ModuleName) t.FnList t.ImportList =
-		<CheckDestination
-			<LookupSym t.Context e.ModuleName>
-			t.IModule t.FnList t.ImportList
+GenerateLines
+	t.IModule =
+		<GenerateBorders
+			<MIModule::GetModuleName t.IModule>
 		>;
 
-CheckDestination
-	(e.ModuleName) t.Context s.Known s.Status e.SymName
-	t.IModule t.FnList t.ImportList =
-		<SwCheckDestination
-			(e.ModuleName) t.Context
-			<DestStatus s.Known s.Status> e.SymName
-			t.IModule t.FnList t.ImportList
-		>;
+GenerateBorders {
+	t.IModule Unknown =
+		//Эта строчка не должна выполняться!!!
+		<MSelfDiag::Error 'MSymModule::GenerateBorders: Module name is unknown'>;
 
-DestStatus {
-	Known Library = NotAvail;
-	// Recompiled, Updated, InCompiling
-	Known s.Other = Avail;
-
-	NotKnown ModuleNotFound = NotAvail;
-	NotKnown Library = NotAvail;
-	NotKnown SystemLibrary = NotAvail;
-	// NeedRecompile, SrcNotUpdated
-	NotKnown s.Other = Avail;
-}
-
-SwCheckDestination {
-	(e.ModuleName) t.Context NotAvail e.SymName
-	t.IModule t.FnList t.ImportList =
-		t.Context t.IModule Fail;
-
-	(e.ModuleName) t.Context Avail e.SymName
-	t.IModule t.FnList t.ImportList =
-		t.Context t.IModule Success
-		<FileIO::Save
-			(e.SymName)
-			<GenerateSym
-				(e.ModuleName)
-				t.FnList t.ImportList
+	t.IModule e.ModuleName =
+		<MoveFirstLineToFront
+			<GenerateFunctions
+				<MIModule::GetFunctionList t.IModule>
 			>
+			('$module ' e.ModuleName ';')
+			('$end ' e.ModuleName '.')
 		>;
 }
 
-GenerateSym
-	(e.ModuleName) (Functions e.FnList) (Imports e.ImportList) =
-		('/* Automatically generated file, don\'t edit! */')
-		('$module ' e.ModuleName ';')
-		()
-		<GenImports e.ImportList>
-		<GenFuncDecl e.FnList>
-		('$end ' e.ModuleName '.');
+MoveFirstLineToFront
+	t.IModule e.Lines t.FirstLine t.LastLine =
+		t.IModule t.FirstLine () e.Lines t.LastLine;
 
-GenFuncDecl {
-	= ;
-	e.Funcs =
-		<DoGenFuncDecl <MOrder::Sort e.Funcs>> ();
-}
+GenerateFunctions
+	t.IModule e.Functions =
+		<GenerateImports
+			<MIModule::GetImportList t.IModule>
+		>
+		<TypeFunctions e.Functions>;
 
-DoGenFuncDecl {
-	(e.FuncName) e.Tail =
-		('$entry ' e.FuncName ';')
-		<DoGenFuncDecl e.Tail>;
+TypeFunctions {
+	t.OneName e.Names =
+		<DoTypeFunctions t.OneName e.Names> ();
 
 	= ;
 }
 
-GenImports {
-	= ;
-	e.ImportList =
-		<DoGenImports <MOrder::Sort e.ImportList>> ();
-}
-
-DoGenImports {
-	(e.ModuleName) e.Tail =
-		('$import ' e.ModuleName ';')
-		<DoGenImports e.Tail>;
+DoTypeFunctions {
+	(e.FnName) e.Tail =
+		('$entry ' e.FnName ';')
+		<DoTypeFunctions e.Tail>;
 
 	= ;
 }
+
+GenerateImports {
+	t.IModule = t.IModule;
+
+	t.IModule e.Imports =
+		t.IModule
+		<DoTypeImports e.Imports> ();
+}
+
+DoTypeImports {
+	(e.ImportName) e.Tail =
+		('$import ' e.ImportName ';')
+		<DoTypeImports e.Tail>;
+
+	= ;
+}
+
+/*------------------------------------------------------------------------------
+	Регистрация при загрузке модуля.
+------------------------------------------------------------------------------*/
+
+$ENTRY Init =
+	<MBE-Mgr::Register
+		SymInfo <FnPtr Generate> ('Defs') ('rsym')
+	>;
 
 *-------------------------------------------------------------------------------
 * Извлечение информации из таблицы символов

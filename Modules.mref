@@ -101,12 +101,6 @@ SwLookupLibrary {
 		ModuleNotFound;
 }
 
-$ENTRY LookupModule
-	e.ModuleName = <UnName <LookupModule-T e.ModuleName>>;
-
-UnName s.Status t.Sym t.Out t.Src e.ModuleName =
-	s.Status t.Sym t.Out t.Src;
-
 * <LookupModule-T e.ModuleName>
 *	== s.Status
 *		(Sym e.SymName)

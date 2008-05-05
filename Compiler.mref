@@ -18,10 +18,11 @@ $MODULE Compiler;
 ==============================================================================*/
 
 $IMPORT Context;
-$IMPORT MBackEnd;
+$IMPORT MBE-Mgr;
 $IMPORT MCheckNeedCompile;
 $IMPORT MError;
 $IMPORT MFrontEnd;
+$IMPORT MIModule;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOutModuleStatus;
@@ -137,8 +138,6 @@ Compile2 {
 	e.SymInfo =
 		<Generate
 			(e.ModuleName)
-			(Out e.OutName)
-			(Sym e.SymName)
 			<CheckFnCalls
 				<LoadImportInfo
 					<Context::UpdateModuleInfo
@@ -246,34 +245,28 @@ SwLoadFromOneModule {
 		>;
 
 	(e.ModuleName) t.Context Found Recompiled =
-		<FunctionsFromSym
-			<ReadSym t.Context e.ModuleName>
-		>;
+		<ReadFunctionsFromSym t.Context e.ModuleName>;
 
 	(e.ModuleName) t.Context Found Library =
-		<FunctionsFromSym
-			<ReadSym t.Context e.ModuleName>
-		>;
+		<ReadFunctionsFromSym t.Context e.ModuleName>;
 
 	(e.ModuleName) t.Context Found Updated =
-		<FunctionsFromSym
-			<ReadSym t.Context e.ModuleName>
-		>;
+		<ReadFunctionsFromSym t.Context e.ModuleName>;
 
 	(e.ModuleName) t.Context Found InCompiling =
-		<MError::Fatal
-			'Cyclic dependencies in module ' e.ModuleName
-		>;
+		<ReadFunctionsFromSym t.Context e.ModuleName>;
 }
 
-ReadSym
+ReadFunctionsFromSym
 	t.Context e.ModuleName =
-		<MSymModule::LoadInfo1 t.Context e.ModuleName>;
+		<FunctionsFromSym
+			<MSymModule::LoadInfo t.Context e.ModuleName>
+		>;
 
-* <FunctionsFromSym t.Context t.FnList t.ImportList>
+* <FunctionsFromSym t.Context t.ModuleName t.FnList t.ImportList>
 *	== t.Context ( ((e.Module) (e.FnName))* )
 FunctionsFromSym {
-	t.Context (Functions e.QualifiedList) t.ImportList =
+	t.Context t.ModuleName (Functions e.QualifiedList) t.ImportList =
 		t.Context (e.QualifiedList);
 }
 
@@ -367,20 +360,22 @@ SwCheckCompileIfNeed-Old {
 		<DoCheckCompileIfNeed-Old
 			(e.ModuleName)
 			s.Status
-			<ImportsFromSym
-				<ReadSym t.Context e.ModuleName>
-			>
+			<ReadImportsFromSym t.Context e.ModuleName>
 		>;
 
 	(e.ModuleName) t.Context ModuleInfoNotFound =
 		<DoCheckCompileIfNeed-Old
 			(e.ModuleName)
 			Updated
-			<ImportsFromSym
-				<ReadSym t.Context e.ModuleName>
-			>
+			<ReadImportsFromSym t.Context e.ModuleName>
 		>;
 }
+
+ReadImportsFromSym
+	t.Context e.ModuleName =
+		<ImportsFromSym
+			<MSymModule::LoadInfo t.Context e.ModuleName>
+		>;
 
 DoCheckCompileIfNeed-Old {
 	t.ModuleName s.Status t.Context (e.NextName) e.Tail =
@@ -452,18 +447,13 @@ SwDoCheckCompileIfNeed-Old {
 		t.ModuleName s.Status t.Context;
 }
 
-FunctionList {
-	( t.Idents t.CurModule t.Modules (Functions e.FnList) t.Variables ) =
-		e.FnList;
-}
-
-* <ImportsFromSym t.Context t.FnList t.ImportList>
+* <ImportsFromSym t.Context t.ModuleName t.FnList t.ImportList>
 *	== t.Context (e.ImportName)*
 ImportsFromSym {
 	t.Context SymInfoNotFound =
 		<MError::Fatal 'Broken sym-file'>;
 
-	t.Context t.FnList (Imports e.ImportList) =
+	t.Context t.ModuleName t.FnList (Imports e.ImportList) =
 		t.Context e.ImportList;
 }
 
@@ -536,20 +526,28 @@ PrintUnresolved {
 * Выполняет генерацию выходного и символического файлов
 *-------------------------------------------------------------------------------
 
-* <Generate (e.ModuleName) t.OutName t.FSym t.Context t.Module>
+* <Generate (e.ModuleName) t.Context t.Module>
 *	== t.UpdatedContext
-Generate {
-	(e.ModuleName) (Out e.OutName) (Sym e.SymName)
-	t.Context t.SymTable =
+Generate
+	(e.ModuleName) t.Context t.IModule =
 		<UpdateContext
-			<GenerateOut
-				(Out e.OutName)
-				<GenerateSym
-					t.Context
-					t.SymTable
+			<GuardResult
+				<MBE-Mgr::Generate
+					t.Context t.IModule
+					<MQualifiedName::Create (e.ModuleName)>
 				>
 			>
 			e.ModuleName
+		>;
+
+GuardResult {
+	t.Context t.IModule Success =
+		t.Context
+		<MIModule::Destroy t.IModule>;
+
+	t.Context t.IModule Fails =
+		<MSelfDiag::Error
+			'Compiler::Generate fails because MBE-Mgr::Generate fails'
 		>;
 }
 
@@ -563,31 +561,5 @@ UpdateContext {
 			(Status Recompiled)
 		>;
 }
-
-* <GenerateSym t.Context t.SymTable>
-*	== t.UpdatedContext t.SymTable
-GenerateSym {
-	t.Context t.SymTable =
-		<GuardResult
-			<MSymModule::SaveInfo-T t.Context t.SymTable>
-		>;
-}
-
-GuardResult
-	t.Context t.SymTable s.Result =
-		t.Context t.SymTable
-		<MSelfDiag::Assert-Eq
-			(s.Result) (Success)
-			'MSymModule::SaveInfo-T1 fails'
-		>;
-
-* <GenerateOut (Out e.OutName) t.Context t.SymTable t.Module>
-*	== t.UpdatedContext
-GenerateOut
-	(Out e.OutName) t.Context t.SymTable =
-		t.Context
-		<MBackEnd::Generate
-			t.SymTable e.OutName
-		>;
 
 $END Compiler.

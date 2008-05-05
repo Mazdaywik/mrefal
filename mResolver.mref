@@ -3,7 +3,6 @@ $MODULE MResolver;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
-$IMPORT MQualifiedSupport;
 $IMPORT MResolveTable;
 
 /**

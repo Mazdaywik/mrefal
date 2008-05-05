@@ -7,21 +7,6 @@ $IMPORT MQualifiedName;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
-/**
-	<Generate t.IModule e.OutName>
-		== empty
-*/
-$ENTRY Generate
-	t.IModule e.OutName =
-		<MIModule::Destroy
-			<Generate-T t.IModule e.OutName>
-		>;
-
-SaveModule
-	(e.OutName) e.Lines t.IModule =
-		<FileIO::Save (e.OutName) e.Lines>
-		t.IModule;
-
 /*
 	<Generate-T t.IModule e.OutName>
 		== t.IModule
@@ -35,6 +20,11 @@ Generate-T
 			()
 			<GenerateContent t.IModule>
 		>;
+
+SaveModule
+	(e.OutName) e.Lines t.IModule =
+		<FileIO::Save (e.OutName) e.Lines>
+		t.IModule;
 
 $ENTRY Init =
 	<MBE-Mgr::Register

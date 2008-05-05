@@ -1,5 +1,6 @@
 $PROGRAM MRefal;
 
+// Эти модули используются
 $IMPORT Context;
 $IMPORT Compiler;
 $IMPORT MError;
@@ -11,6 +12,9 @@ $IMPORT MStrings;
 $IMPORT MVersion;
 
 $IMPORT MSelfDiag;
+
+// Эти модули должны быть инициализированы
+$IMPORT MBackEnd;
 
 $ENTRY Go =
 	<MVersion::Show>

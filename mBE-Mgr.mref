@@ -22,22 +22,102 @@ $SWAP G_BackEnds;
 $ENTRY Register
 	s.Name s.Generator (e.Folder) (e.Ext) =
 		<G_BackEnds
-			<G_BackEnds> (s.Name s.Generator (e.Folder) e.Ext)
+			<G_BackEnds> (s.Name s.Generator (e.Folder) (e.Ext))
 		>;
 
 //------------------------------------------------------------------------------
 
 /**
-	<Generate t.Context t.QualifiedName>
-		== t.Context t.QualifiedName Success
-		== t.Context t.QualifiedName Fails
+	<Generate t.Context t.IModule t.QualifiedName>
+		== t.Context t.IModule Success
+		== t.Context t.IModule Fails
 */
 $ENTRY Generate
-	t.Context t.QualifiedName =
+	t.Context t.IModule t.QualifiedName =
+		<DoGenerate
+			Success t.Context t.IModule t.QualifiedName <GetBEList>
+		>;
+
+DoGenerate {
+	Fails t.Context t.IModule t.QualifiedName e.Tail =
 		<MQualifiedName::Destroy t.QualifiedName>
-		t.Context Fails;
+		t.Context t.IModule Fails;
+
+	Success t.Context t.IModule t.QualifiedName s.NextBackEnd e.Tail =
+		<DoGenerate
+			<GeneratePer
+				t.Context t.IModule t.QualifiedName s.NextBackEnd
+			> e.Tail
+		>;
+
+	Success t.Context t.IModule t.QualifiedName =
+		<MQualifiedName::Destroy t.QualifiedName>
+		t.Context t.IModule Success;
+}
+
+GeneratePer
+	t.Context t.IModule t.QualifiedName s.BackEndName =
+		<GeneratePer-Aux
+			t.Context t.IModule t.QualifiedName
+			<GetBEInfo s.BackEndName>
+		>;
+
+GeneratePer-Aux {
+	t.Context t.IModule t.QualifiedName InfoNotFound =
+		Fails t.Context t.IModule t.QualifiedName;
+
+	t.Context t.IModule t.QualifiedName s.FnGenerator (e.Folder) (e.Ext) =
+		<GeneratePer-Aux2
+			t.Context t.IModule s.FnGenerator
+			<MakeOutName t.QualifiedName (e.Folder) (e.Ext)>
+		>;
+}
+
+MakeOutName
+	t.QualifiedName (e.Folder) (e.Ext) =
+		<MakeOutName-Aux
+			<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
+			(e.Folder) (e.Ext)
+		>;
+
+MakeOutName-Aux
+	t.QualifiedName e.FSPath (e.Folder) (e.Ext) =
+		t.QualifiedName e.Folder '/' e.FSPath '.' e.Ext;
+
+GeneratePer-Aux2 {
+	t.Context t.IModule s.FnGenerator t.QualifiedName e.FileName =
+		Success t.Context
+		<s.FnGenerator t.IModule e.FileName>
+		t.QualifiedName;
+}
 
 //------------------------------------------------------------------------------
+
+GetBEList = <DoFindNames () () <G_BackEnds>>;
+
+DoFindNames {
+	(e.Names) (e.Scanned) (s.Name e.Info) e.Tail =
+		<DoFindNames
+			(e.Names s.Name)
+			(e.Scanned (s.Name e.Info))
+			e.Tail
+		>;
+
+	(e.Names) (e.Scanned) =
+		e.Names <G_BackEnds e.Scanned>;
+}
+
+GetBEInfo
+	s.Name =
+		<GetBEInfo-Aux s.Name <G_BackEnds>>;
+
+GetBEInfo-Aux {
+	s.Name e.BackEnds-B (s.Name e.Info) e.BackEnds-E =
+		e.Info
+		<G_BackEnds e.BackEnds-B (s.Name e.Info) e.BackEnds-E>;
+
+	s.Name e.BackEnds = InfoNotFound <G_BackEnds e.BackEnds>;
+}
 
 
 $END MBE-Mgr.

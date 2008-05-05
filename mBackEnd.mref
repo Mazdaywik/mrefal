@@ -38,7 +38,7 @@ Generate-T
 
 $ENTRY Init =
 	<MBE-Mgr::Register
-		Refal5BE <FnPtr Generate-T> ('ROut') ('.rout')
+		Refal5BE <FnPtr Generate-T> ('ROut') ('rout')
 	>;
 
 GenerateContent

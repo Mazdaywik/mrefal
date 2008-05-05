@@ -27,13 +27,31 @@ $IMPORT MParser;
 			( Imports ((e.ImportDirectory) e.ImportName)* )
 		== t.Context SymInfoNotFound
 */
-$ENTRY LoadInfo
+$ENTRY ?LoadInfo
 	t.Context (e.Directory) e.ModuleName =
 		<CheckActual
 			<MLocation::LookupModule-T
 				t.Context (e.Directory) e.ModuleName
 			>
 		>;
+
+$ENTRY LoadInfo
+	t.Context () e.ModuleName =
+		<MSelfDiag::Log>
+		<MSelfDiag::Log 'LoadInfo t.Context () ' e.ModuleName>
+		<??OutLoadInfo <?LoadInfo t.Context () e.ModuleName>>;
+
+??OutLoadInfo {
+	t.Context SymInfoNotFound =
+		<MSelfDiag::Log '\t== t.Context SymInfoNotFound'>
+		t.Context SymInfoNotFound;
+
+	t.Context e.SymInfo =
+		<MSelfDiag::Log '\t== t.Context e.SymInfo'>
+		t.Context e.SymInfo;
+}
+
+$import MSelfDiag;
 
 CheckActual {
 	t.Context s.Known s.Status
@@ -73,11 +91,28 @@ SwCheckActual {
 			( Imports (e.ModName)* )
 		== t.Context SymInfoNotFound
 */
-$ENTRY LoadInfo1
+$ENTRY ?LoadInfo1
 	t.Context e.ModuleName =
 		<CheckActual-Old
 			<LookupSym t.Context e.ModuleName>
 		>;
+
+
+$ENTRY LoadInfo1
+	t.Context e.ModuleName =
+		<MSelfDiag::Log>
+		<MSelfDiag::Log 'LoadInfo1 t.Context ' e.ModuleName>
+		<??OutLoadInfo1 <?LoadInfo1 t.Context e.ModuleName>>;
+
+??OutLoadInfo1 {
+	t.Context SymInfoNotFound =
+		<MSelfDiag::Log '\t== t.Context SymInfoNotFound'>
+		t.Context SymInfoNotFound;
+
+	t.Context e.SymInfo =
+		<MSelfDiag::Log '\t== t.Context e.SymInfo'>
+		t.Context e.SymInfo;
+}
 
 /* В тех случаях, когда информация в sym-файле отсутствует
 или не актуальна, возвращаем SymInfoNotFound */
@@ -193,12 +228,29 @@ DoToQualified {
 		== t.UpdatedContext t.IModule Success
 		== t.Context t.IModule Fail
 */
-$ENTRY SaveInfo-T
+$ENTRY ?SaveInfo-T
 	t.Context t.IModule =
 		<RealSaveInfo
 			t.Context
 			<SymTableToSymInfo-T t.IModule>
 		>;
+
+$ENTRY SaveInfo-T
+	t.Context t.IModule =
+		<MSelfDiag::Log>
+		<MSelfDiag::Log 'SaveInfo-T t.Context t.IModule'>
+		<??OutSaveInfo-T <?SaveInfo-T t.Context t.IModule>>;
+
+??OutSaveInfo-T {
+	t.Context t.IModule s.Result =
+		<MSelfDiag::Log
+			'\t== t.Context t.IModule '
+			<StrFromResult s.Result>
+		>
+		t.Context t.IModule s.Result;
+}
+
+StrFromResult { Success = 'Success'; Fails = 'Fails'; }
 
 RealSaveInfo
 	t.Context t.IModule (CurModule e.ModuleName) t.FnList t.ImportList =

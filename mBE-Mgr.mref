@@ -1,5 +1,6 @@
 $MODULE MBE-Mgr;
 
+$IMPORT MContext;
 $IMPORT MQualifiedName;
 
 /*==============================================================================
@@ -58,31 +59,44 @@ DoGenerate {
 GeneratePer
 	t.Context t.IModule t.QualifiedName s.BackEndName =
 		<GeneratePer-Aux
-			t.Context t.IModule t.QualifiedName
+			( <MContext::ExtractOption t.Context t.QualifiedName BaseDirectory> )
+			t.IModule t.QualifiedName
 			<GetBEInfo s.BackEndName>
 		>;
 
 GeneratePer-Aux {
-	t.Context t.IModule t.QualifiedName InfoNotFound =
+	( t.Context e.Info )
+	t.IModule t.QualifiedName InfoNotFound =
 		Fails t.Context t.IModule t.QualifiedName;
 
-	t.Context t.IModule t.QualifiedName s.FnGenerator (e.Folder) (e.Ext) =
+	( t.Context ModuleInfoNotFound )
+	t.IModule t.QualifiedName s.FnGenerator (e.Folder) (e.Ext) =
+		Fails t.Context t.IModule t.QualifiedName;
+
+	( t.Context Found e.BaseDirectory )
+	t.IModule t.QualifiedName s.FnGenerator (e.Folder) (e.Ext) =
 		<GeneratePer-Aux2
 			t.Context t.IModule s.FnGenerator
-			<MakeOutName t.QualifiedName (e.Folder) (e.Ext)>
+			<MakeOutName t.QualifiedName (e.BaseDirectory) (e.Folder) (e.Ext)>
 		>;
 }
 
 MakeOutName
-	t.QualifiedName (e.Folder) (e.Ext) =
+	t.QualifiedName (e.BaseDirectory) (e.Folder) (e.Ext) =
 		<MakeOutName-Aux
 			<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
-			(e.Folder) (e.Ext)
+			(e.BaseDirectory) (e.Folder) (e.Ext)
 		>;
 
-MakeOutName-Aux
-	t.QualifiedName e.FSPath (e.Folder) (e.Ext) =
-		t.QualifiedName e.Folder '/' e.FSPath '.' e.Ext;
+MakeOutName-Aux {
+	t.QualifiedName e.FSPath (Current) (e.Folder) (e.Ext) =
+		t.QualifiedName
+		e.Folder '/' e.FSPath '.' e.Ext;
+
+	t.QualifiedName e.FSPath (e.BaseDirectory) (e.Folder) (e.Ext) =
+		t.QualifiedName
+		e.BaseDirectory '/' e.Folder '/' e.FSPath '.' e.Ext;
+}
 
 GeneratePer-Aux2 {
 	t.Context t.IModule s.FnGenerator t.QualifiedName e.FileName =
@@ -93,7 +107,11 @@ GeneratePer-Aux2 {
 
 //------------------------------------------------------------------------------
 
-GetBEList = <DoFindNames () () <G_BackEnds>>;
+/**
+	<GetBEList> == s.BackEndName*
+*/
+
+$ENTRY GetBEList = <DoFindNames () () <G_BackEnds>>;
 
 DoFindNames {
 	(e.Names) (e.Scanned) (s.Name e.Info) e.Tail =
@@ -107,6 +125,8 @@ DoFindNames {
 		e.Names <G_BackEnds e.Scanned>;
 }
 
+//------------------------------------------------------------------------------
+
 GetBEInfo
 	s.Name =
 		<GetBEInfo-Aux s.Name <G_BackEnds>>;
@@ -119,5 +139,6 @@ GetBEInfo-Aux {
 	s.Name e.BackEnds = InfoNotFound <G_BackEnds e.BackEnds>;
 }
 
+//------------------------------------------------------------------------------
 
 $END MBE-Mgr.

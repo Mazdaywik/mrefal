@@ -32,8 +32,8 @@ $ENTRY Destroy
 
 /**
 	<UpdateInfo t.Context t.QualifiedName e.NewOptionList>
-		== Success t.UpdatedContext
-		== Fails t.Context
+		== t.UpdatedContext Success
+		== t.Context Fails
 */
 $ENTRY UpdateInfo
 	[Context e.Info] t.QualifiedName e.NewOptions =
@@ -75,7 +75,7 @@ UpdateInfo-UpdateOptions {
 DefaultOptions
 	= (Sym None) (Out None) (Src None) (Status Unknown)
 	(ModuleType Program) (CachedSym None) (BackFiles)
-	(SrcDirectory None);
+	(BaseDirectory Current);
 
 UpdateOptions
 	(e.OldOptions) e.NewOptions =

@@ -1,8 +1,14 @@
 ================================================================
-Module MBackEnd;
+Module MBE-Mgr;
 
-<Generate t.Module e.OutName>
+<Register s.Name s.Generator (e.Folder) (e.Ext)>
 	== empty
+
+<Generate t.Context t.IModule t.QualifiedName>
+	== t.Context t.IModule Success
+	== t.Context t.IModule Fails
+
+<GetBEList> == s.BackEndName*
 
 ================================================================
 Module MContext;
@@ -12,8 +18,8 @@ Module MContext;
 <Destroy t.Context> == empty
 
 <UpdateInfo t.Context t.QualifiedName e.NewOptionList>
-	== Success t.UpdatedContext
-	== Fails t.Context
+	== t.UpdatedContext Success
+	== t.Context Fails
 
 <ExtractOption t.Context t.QualifiedName s.Option>
 	== t.Context Found e.Option
@@ -66,6 +72,12 @@ Module MExeTyper;
 <TypeRenamed t.ExeTyper e.RenamedName> == t.ExeTyper
 
 <TypeComment t.ExeTyper e.Comment> == t.ExeTyper
+
+================================================================
+Module MFE-Mgr;
+
+<Register s.Name s.FnParser (e.Ext)>
+	== empty
 
 ================================================================
 Module MFileSystem;
@@ -326,22 +338,12 @@ Module MSymModule;
 на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
 линковщик.
 
-<LoadInfo t.Context (e.Directory) e.ModuleName>
+<LoadInfo t.Context e.ModuleName>
 	== t.UpdatedContext
-		( Module (e.Directory) e.ModuleName )
-		( Functions (e.FnName)* )
-		( Imports ((e.ImportDirectory) e.ImportName)* )
-	== t.Context SymInfoNotFound
-
-<LoadInfo1 t.Context e.ModuleName>
-	== t.UpdatedContext
+		( Module e.ModuleName )
 		( Functions ((e.Qualifier)(e.FnName))* )
 		( Imports (e.ModName)* )
 	== t.Context SymInfoNotFound
-
-<SaveInfo-T1 t.Context t.IModule>
-	== t.UpdatedContext t.IModule Success
-	== t.Context t.IModule Fail
 
 <SymTableToSymInfo-T t.IModule>
 	== t.IModule

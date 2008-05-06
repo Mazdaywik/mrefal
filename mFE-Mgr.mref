@@ -1,3 +1,25 @@
 $MODULE MFE-Mgr;
 
+/*==============================================================================
+	Внутренний формат хранилища:
+	(s.Name s.FnParser (e.Ext))*
+	s.Name ::= IDENTIFIER
+	s.FnParser ::= { t.QualifiedName = t.IModule; }
+	e.Ext -- Расширение файлов исходного текста
+==============================================================================*/
+
+$SWAP G_FrontEnds;
+
+//------------------------------------------------------------------------------
+
+/**
+	<Register s.Name s.FnParser (e.Ext)>
+		== empty
+*/
+$ENTRY Register
+	s.Name s.FnParser (e.Ext) =
+		<G_FrontEnds
+			<G_FrontEnds> (s.Name s.FnParser (e.Ext))
+		>;
+
 $END MFE-Mgr.

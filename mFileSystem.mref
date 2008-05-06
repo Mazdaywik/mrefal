@@ -2,11 +2,11 @@ $MODULE MFileSystem;
 
 $IMPORT MDosWinRecoder;
 $IMPORT MRefalRTS;
+$IMPORT MOrder;
 $IMPORT MOS;
 $IMPORT FileIO;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
-$IMPORT Math;
 
 $ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
 
@@ -52,8 +52,9 @@ CutDateTime
 		<CutSize <MStrings::First 19 e.SizeAndName>>;
 
 ParseDateTime (e.Date) e.Time =
-	<ParseDate <Trim e.Date>>
-	<ParseTime <Trim e.Time>>;
+	<ParseDate <MStrings::Trim e.Date>>
+	<ParseTime <MStrings::Trim e.Time>>
+	0; // поле секунд.
 
 CutSize (e.Size) e.Name =
 	(Size <ParseSize e.Size>)
@@ -63,12 +64,6 @@ ParseSize {
 	e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
 	'<' e.Catalog '>' = Directory;
 	e.Digits = <MStrings::Numb e.Digits>;
-}
-
-Trim {
-	' ' e.Line = <Trim e.Line>;
-	e.Line ' ' = <Trim e.Line>;
-	e.Line = e.Line;
 }
 
 ParseDate
@@ -116,15 +111,9 @@ ExtractAttrib {
 		>;
 }
 
-$ENTRY CompareFileTime {
-	(s.SameField e.First) (s.SameField e.Second) =
-		<CompareFileTime (e.First) (e.Second)>;
-
-	() () = '=';
-
-	(s.DiffField1 e.Tail1) (s.DiffField2 e.Tail2) =
-		<Math::Compare s.DiffField1 s.DiffField2>;
-}
+$ENTRY CompareFileTime
+	(e.Time1) (e.Time2) =
+		<MOrder::Compare (e.Time1) (e.Time2)>;
 
 /*
 *****Код для Win95
@@ -163,7 +152,7 @@ CutDateTime (e.DateTime ' ') e.LongName =
 	(DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
 	(LongName e.LongName);
 
-ParseDosName (e.Name) e.Ext = (<Trim e.Name>) <Trim e.Ext>;
+ParseDosName (e.Name) e.Ext = (<MStrings::Trim e.Name>) <MStrings::Trim e.Ext>;
 
 ParseSize {
 	e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
@@ -172,14 +161,8 @@ ParseSize {
 }
 
 ParseDateTime (e.Date) e.Time =
-	<ParseDate <Trim e.Date>>
-	<ParseTime <Trim e.Time>>;
-
-Trim {
-	' ' e.Line = <Trim e.Line>;
-	e.Line ' ' = <Trim e.Line>;
-	e.Line = e.Line;
-}
+	<ParseDate <MStrings::Trim e.Date>>
+	<ParseTime <MStrings::Trim e.Time>>;
 
 ParseDate
 	e.Day '.' e.Month '.' e.Year =

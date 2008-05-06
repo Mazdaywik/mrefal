@@ -443,20 +443,6 @@ DoLoadUnits-Aux {
 }
 		
 
-DoTypeContent {
-	t.Aliases t.ExeTyper =
-		t.Aliases t.ExeTyper;
-
-	t.Aliases t.ExeTyper (e.NextUnit) e.Units =
-		<DoTypeContent
-			<TypeUnit
-				<CreateUnitStorage>
-				t.Aliases t.ExeTyper e.NextUnit
-			>
-			e.Units
-		>;
-}
-
 TypeUnit {
 	t.UnitStorage t.Aliases t.ExeTyper (e.Banner) e.Lines =
 		<DoTypeUnits

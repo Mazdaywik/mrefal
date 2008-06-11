@@ -5,7 +5,8 @@ $IMPORT FileIO;
 $IMPORT Math;
 
 $ENTRY System
-	e.Command = <Nil <MRefalRTS::System e.Command> >;
+	e.Command =
+		<Nil <MRefalRTS::System e.Command> >;
 
 Nil e.Arg = ;
 

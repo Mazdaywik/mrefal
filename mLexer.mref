@@ -331,6 +331,9 @@ Escaped {
 			<MSymStream::NextChar t.SymStream>
 		>;
 
+	s.Quote (e.Scanned) t.SymStream s.Other =
+		t.SymStream (Error 'Unknown excaped symbol <' s.Other '>');
+
 	s.Quote (e.Scanned) t.SymStream CrLf =
 		t.SymStream (Error 'Unexpected end of file in quoted line');
 }

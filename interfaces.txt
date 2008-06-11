@@ -8,7 +8,11 @@ Module MBE-Mgr;
 	== t.Context t.IModule Success
 	== t.Context t.IModule Fails
 
-<GetBEList> == s.BackEndName*
+<GetList> == s.BackEndName*
+
+<GetOutPath-T s.BEName t.QualifiedName e.BaseFolder>
+	== Success t.QualifiedName e.OutPath
+	== Fails t.QualifiedName
 
 ================================================================
 Module MContext;
@@ -76,8 +80,15 @@ Module MExeTyper;
 ================================================================
 Module MFE-Mgr;
 
-<Register s.Name s.FnParser (e.Ext)>
+<Register s.FEName s.FnParser (e.Ext)>
 	== empty
+
+<Load s.FEName t.QualifiedName>
+	== Success t.IModule
+	== Fails
+
+<GetList>
+	== s.FrontEndName*
 
 ================================================================
 Module MFileSystem;

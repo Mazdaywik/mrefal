@@ -1,14 +1,13 @@
-/* Automatically generated file, don't edit! */
 $module MSelfDiag;
 
 $import MRefalRTS;
 
+$entry Assert-Eq;
+$entry Assert-Eq-T;
+$entry Assert-NE;
+$entry Assert-NE-T;
 $entry Error;
 $entry Log;
 $entry Log-T;
-$entry Assert-Eq-T;
-$entry Assert-NE-T;
-$entry Assert-Eq;
-$entry Assert-NE;
 
 $end MSelfDiag.

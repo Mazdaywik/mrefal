@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut\MSelfDiag.rout
+r file ROut/MSelfDiag.rout
 
 b Entry::MSelfDiag::Error
 c $Entry::MSelfDiag::Error$ {

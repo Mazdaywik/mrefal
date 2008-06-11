@@ -1,18 +1,17 @@
-/* Automatically generated file, don't edit! */
 $module FileIO;
 
-$import MSelfDiag;
 $import MRefalRTS;
+$import MSelfDiag;
 
-$entry Init;
-$entry Open;
 $entry Close;
+$entry ExtractFileName;
+$entry Init;
+$entry Load;
 $entry NulClose;
+$entry Open;
 $entry ReadLine;
+$entry Save;
 $entry WriteLine;
 $entry WriteLine-T;
-$entry ExtractFileName;
-$entry Load;
-$entry Save;
 
 $end FileIO.

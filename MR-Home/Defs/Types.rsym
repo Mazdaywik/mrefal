@@ -1,11 +1,10 @@
-/* Automatically generated file, don't edit! */
 $module Types;
 
-$entry OneOf;
-$entry FirstOneOf;
-$entry UpAlph;
-$entry LoAlph;
-$entry Digits;
 $entry CharType;
+$entry Digits;
+$entry FirstOneOf;
+$entry LoAlph;
+$entry OneOf;
+$entry UpAlph;
 
 $end Types.

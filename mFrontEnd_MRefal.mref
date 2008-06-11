@@ -1,0 +1,13 @@
+$MODULE MFrontEnd_MRefal;
+
+$IMPORT MFE-Mgr;
+$IMPORT MParser;
+
+$ENTRY Init =
+	<MFE-Mgr::Register
+		MRefal_FrontEnd
+		<FnPtr MParser LoadSource>
+		('mref')
+	>;
+
+$END MFrontEnd_MRefal.

@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut\MOS.rout
+r file ROut/MOS.rout
 
 b Entry::MOS::System
 c $Entry::MOS::System$ {

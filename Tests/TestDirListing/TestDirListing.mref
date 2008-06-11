@@ -1,0 +1,27 @@
+$PROGRAM TestDirListing;
+
+$IMPORT MDirList;
+$IMPORT InOut;
+
+$IMPORT FileIO;
+$IMPORT MSelfDiag;
+$IMPORT MOS;
+$IMPORT DWR = MDosWinRecoder;
+
+$ENTRY Go =
+	<PrintList
+		<MDirList::GetListRec '..\\..\\..'>
+	>;
+
+PrintList {
+	t.Next e.Tail =
+		<InOut::WriteLine
+			<MDirList::GetName t.Next> ' '
+			<MDirList::GetSize t.Next>
+		>
+		<PrintList e.Tail>;
+
+	= ;
+}
+
+$END TestDirListing.

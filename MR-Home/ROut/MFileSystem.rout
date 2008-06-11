@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut\MFileSystem.rout
+r file ROut/MFileSystem.rout
 
 b Entry::MFileSystem::ExistFile
 c $Entry::MFileSystem::ExistFile$ {
@@ -15,6 +15,22 @@ c }
 
 b Entry::MFileSystem::FilesInfo
 c $Entry::MFileSystem::FilesInfo$ {
+c 	e.$Index::Mask-B$ '\"' e.$Index::Mask-E$ =
+c 		<$Entry::MSelfDiag::Error$ 'MFileSystem::FilesInfo: argument must not have quotes' > ;
+c 	e.$Index::Mask$ =
+c 		<$Local::MFileSystem::DoFilesInfo$ <$Local::MFileSystem::Quoting$ e.$Index::Mask$ > > ;
+c }
+
+b Local::MFileSystem::Quoting
+c $Local::MFileSystem::Quoting$ {
+c 	e.$Index::Mask-B$ ' ' e.$Index::Mask-E$ =
+c 		'\"' e.$Index::Mask-B$ ' ' e.$Index::Mask-E$ '\"' ;
+c 	e.$Index::Mask$ =
+c 		e.$Index::Mask$ ;
+c }
+
+b Local::MFileSystem::DoFilesInfo
+c $Local::MFileSystem::DoFilesInfo$ {
 c 	e.$Index::Mask$ =
 c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > <$Local::MFileSystem::ParseListing$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
 c }
@@ -23,6 +39,8 @@ b Local::MFileSystem::ParseListing
 c $Local::MFileSystem::ParseListing$ {
 c 	t.$Index::?Hdr1$ t.$Index::?Hdr2$ ( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ e.$Index::?Text1$ s.$Index::Disk$ ':' e.$Index::Path$ ) ( $ADT::__StructureBrackets$ ) e.$Index::Tail$ =
 c 		<$Local::MFileSystem::ReadFileList$ ( $ADT::__StructureBrackets$ s.$Index::Disk$ ':' e.$Index::Path$ ) e.$Index::Tail$ > ;
+c 	=
+c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: out is empty' > ;
 c 	e.$Index::Other$ =
 c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: ' e.$Index::Other$ > ;
 c }
@@ -52,7 +70,7 @@ c }
 b Local::MFileSystem::ParseDateTime
 c $Local::MFileSystem::ParseDateTime$ {
 c 	( $ADT::__StructureBrackets$ e.$Index::Date$ ) e.$Index::Time$ =
-c 		<$Local::MFileSystem::ParseDate$ <$Local::MFileSystem::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Local::MFileSystem::Trim$ e.$Index::Time$ > > ;
+c 		<$Local::MFileSystem::ParseDate$ <$Entry::MStrings::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Entry::MStrings::Trim$ e.$Index::Time$ > > 0 ;
 c }
 
 b Local::MFileSystem::CutSize
@@ -69,16 +87,6 @@ c 	'<' e.$Index::Catalog$ '>' =
 c 		$Ident::Directory$ ;
 c 	e.$Index::Digits$ =
 c 		<$Entry::MStrings::Numb$ e.$Index::Digits$ > ;
-c }
-
-b Local::MFileSystem::Trim
-c $Local::MFileSystem::Trim$ {
-c 	' ' e.$Index::Line$ =
-c 		<$Local::MFileSystem::Trim$ e.$Index::Line$ > ;
-c 	e.$Index::Line$ ' ' =
-c 		<$Local::MFileSystem::Trim$ e.$Index::Line$ > ;
-c 	e.$Index::Line$ =
-c 		e.$Index::Line$ ;
 c }
 
 b Local::MFileSystem::ParseDate
@@ -127,12 +135,8 @@ c }
 
 b Entry::MFileSystem::CompareFileTime
 c $Entry::MFileSystem::CompareFileTime$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::SameField$ e.$Index::First$ ) ( $ADT::__StructureBrackets$ s.$Index::SameField$ e.$Index::Second$ ) =
-c 		<$Entry::MFileSystem::CompareFileTime$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) ( $ADT::__StructureBrackets$ e.$Index::Second$ ) > ;
-c 	( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ ) =
-c 		'=' ;
-c 	( $ADT::__StructureBrackets$ s.$Index::DiffField1$ e.$Index::Tail1$ ) ( $ADT::__StructureBrackets$ s.$Index::DiffField2$ e.$Index::Tail2$ ) =
-c 		<$Entry::Math::Compare$ s.$Index::DiffField1$ s.$Index::DiffField2$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) =
+c 		<$Entry::MOrder::Compare$ ( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) > ;
 c }
 
 b Entry::MFileSystem::ParseFileName

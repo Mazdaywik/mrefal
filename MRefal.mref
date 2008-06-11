@@ -14,7 +14,8 @@ $IMPORT MVersion;
 $IMPORT MSelfDiag;
 
 // Эти модули должны быть инициализированы
-$IMPORT MBackEnd;
+$IMPORT MBackEnd_Refal5;
+$IMPORT MFrontEnd_MRefal;
 
 $ENTRY Go =
 	<MVersion::Show>

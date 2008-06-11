@@ -38,12 +38,8 @@ c }
 
 b Entry::MFileSystem::CompareFileTime
 c $Entry::MFileSystem::CompareFileTime$ {
-c 	( $ADT::__StructureBrackets$ s.$Index::SameField$ e.$Index::First$ ) ( $ADT::__StructureBrackets$ s.$Index::SameField$ e.$Index::Second$ ) =
-c 		<$Entry::MFileSystem::CompareFileTime$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) ( $ADT::__StructureBrackets$ e.$Index::Second$ ) > ;
-c 	( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ ) =
-c 		'=' ;
-c 	( $ADT::__StructureBrackets$ s.$Index::DiffField1$ e.$Index::Tail1$ ) ( $ADT::__StructureBrackets$ s.$Index::DiffField2$ e.$Index::Tail2$ ) =
-c 		<$Entry::Math::Compare$ s.$Index::DiffField1$ s.$Index::DiffField2$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) =
+c 		<$Entry::MOrder::Compare$ ( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) > ;
 c }
 
 b Local::MFileSystem::ExtractAttrib
@@ -90,16 +86,6 @@ c 	e.$Index::Day$ '.' e.$Index::Month$ '.' e.$Index::Year$ =
 c 		<$Entry::MStrings::Numb$ e.$Index::Year$ > <$Entry::MStrings::Numb$ e.$Index::Month$ > <$Entry::MStrings::Numb$ e.$Index::Day$ > ;
 c }
 
-b Local::MFileSystem::Trim
-c $Local::MFileSystem::Trim$ {
-c 	' ' e.$Index::Line$ =
-c 		<$Local::MFileSystem::Trim$ e.$Index::Line$ > ;
-c 	e.$Index::Line$ ' ' =
-c 		<$Local::MFileSystem::Trim$ e.$Index::Line$ > ;
-c 	e.$Index::Line$ =
-c 		e.$Index::Line$ ;
-c }
-
 b Local::MFileSystem::ParseSize
 c $Local::MFileSystem::ParseSize$ {
 c 	e.$Index::Begin$ ' ' e.$Index::End$ =
@@ -119,7 +105,7 @@ c }
 b Local::MFileSystem::ParseDateTime
 c $Local::MFileSystem::ParseDateTime$ {
 c 	( $ADT::__StructureBrackets$ e.$Index::Date$ ) e.$Index::Time$ =
-c 		<$Local::MFileSystem::ParseDate$ <$Local::MFileSystem::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Local::MFileSystem::Trim$ e.$Index::Time$ > > ;
+c 		<$Local::MFileSystem::ParseDate$ <$Entry::MStrings::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Entry::MStrings::Trim$ e.$Index::Time$ > > 0 ;
 c }
 
 b Local::MFileSystem::CutDateTime
@@ -192,8 +178,6 @@ c 	$Ident::CutSize$ =
 c 		$Local::MFileSystem::CutSize$ ;
 c 	$Ident::ParseSize$ =
 c 		$Local::MFileSystem::ParseSize$ ;
-c 	$Ident::Trim$ =
-c 		$Local::MFileSystem::Trim$ ;
 c 	$Ident::ParseDate$ =
 c 		$Local::MFileSystem::ParseDate$ ;
 c 	$Ident::ParseTime$ =
@@ -264,6 +248,12 @@ c 	$Ident::MRefalRTS$ $Ident::Sub$ =
 c 		$Entry::MRefalRTS::Sub$ ;
 c 	$Ident::MRefalRTS$ $Ident::Compare$ =
 c 		$Entry::MRefalRTS::Compare$ ;
+c 	$Ident::MOrder$ $Ident::Compare-T$ =
+c 		$Entry::MOrder::Compare-T$ ;
+c 	$Ident::MOrder$ $Ident::Compare$ =
+c 		$Entry::MOrder::Compare$ ;
+c 	$Ident::MOrder$ $Ident::Sort$ =
+c 		$Entry::MOrder::Sort$ ;
 c 	$Ident::MOS$ $Ident::System$ =
 c 		$Entry::MOS::System$ ;
 c 	$Ident::MOS$ $Ident::Arg$ =
@@ -336,17 +326,5 @@ c 	$Ident::MStrings$ $Ident::Reverse$ =
 c 		$Entry::MStrings::Reverse$ ;
 c 	$Ident::MStrings$ $Ident::Trim$ =
 c 		$Entry::MStrings::Trim$ ;
-c 	$Ident::Math$ $Ident::Add$ =
-c 		$Entry::Math::Add$ ;
-c 	$Ident::Math$ $Ident::Sub$ =
-c 		$Entry::Math::Sub$ ;
-c 	$Ident::Math$ $Ident::Inc$ =
-c 		$Entry::Math::Inc$ ;
-c 	$Ident::Math$ $Ident::Dec$ =
-c 		$Entry::Math::Dec$ ;
-c 	$Ident::Math$ $Ident::Compare$ =
-c 		$Entry::Math::Compare$ ;
-c 	$Ident::Math$ $Ident::Compare-T$ =
-c 		$Entry::Math::Compare-T$ ;
 c }
 

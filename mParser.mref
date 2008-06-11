@@ -11,31 +11,74 @@ $IMPORT MVarTable;
 
 /**
 	<SrcModule e.SrcFileName>
-		== t.Module s.ErrorResult t.ErrorList
+		== t.IModule s.ErrorResult t.ErrorList
 	s.ErrorResult ::= Success | Warnings | Errors | Fatal
 */
 $ENTRY SrcModule
 	e.SrcFileName =
-		<ErrorResult
-			(e.SrcFileName)
-			<NModule <StartParsing e.SrcFileName> >
+		<LoadSource-Aux
+			<MError::CreateErrList>
+			<ExtractQualified-T e.SrcFileName>
 		>;
 
+ExtractQualified-T
+	e.FileName =
+		<ExtractQualified e.FileName> e.FileName;
+
+ExtractQualified
+	e.FileName =
+		<ExtractQualified-Aux
+			<MFileSystem::ParseFileName e.FileName>
+		>;
+
+ExtractQualified-Aux
+	(e.Directory) e.FileName (e.Ext) =
+		<MQualifiedName::Create (e.FileName)>;
+
 /**
-	<SymModule t.Context e.SymFileName>
+	<LoadSource t.ErrorList t.QualifiedName e.FileName>
+		== t.ErrorList Success t.IModule
+		== t.ErrorList Fails
+*/
+$ENTRY LoadSource
+	t.ErrorList t.Qualified e.FileName =
+		<ReduceSucFails
+			<LoadSource-Aux t.ErrorList t.Qualified e.FileName>
+		>;
+
+LoadSource-Aux
+	t.ErrorList t.QualifiedName e.FileName =
+		<ErrorResult
+			t.QualifiedName
+			<NModule t.ErrorList <StartParsing e.FileName>>
+		>;
+
+ReduceSucFails {
+	t.IModule Success t.ErrorList =
+		t.ErrorList Success t.IModule;
+
+	t.IModule s.ErrorResult t.ErrorList =
+		<MIModule::Destroy t.IModule>
+		t.ErrorList Fails;
+}
+		
+/**
+	<SymModule e.SymFileName>
 		== t.IModule s.ErrorResult t.ErrorList
 		s.ErrorResult ::= Success | Warnings | Errors | Fatal
 */
 $ENTRY SymModule
 	e.SymFileName =
 		<ErrorResult
-			(e.SymFileName)
-			<NSymModule <StartParsing e.SymFileName> >
+			<ExtractQualified e.SymFileName>
+			<NSymModule
+				<MError::CreateErrList>
+				<StartParsing e.SymFileName>
+			>
 		>;
 
 StartParsing
 	e.FullName =
-		<MError::CreateErrList>
 		<MIModule::Create>
 		()
 		<MLexer::NextToken
@@ -43,11 +86,11 @@ StartParsing
 		>;
 
 ErrorResult {
-	(e.FileName)
+	t.QualifiedName
 	t.ErrorList t.IModule =
 		<ErrorResult-Aux
 			<CheckInternalName
-				<MFileSystem::ParseFileName e.FileName>
+				<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
 				t.ErrorList
 				(<MIModule::GetModuleName t.IModule>)
 			>
@@ -55,8 +98,9 @@ ErrorResult {
 }
 
 CheckInternalName {
-	(e.Directory) e.Name (e.Ext)
+	t.QualifiedName e.Name
 	t.ErrorList (t.IModule e.ModuleName) =
+		<MQualifiedName::Destroy t.QualifiedName>
 		<SwCheckInternalName
 			(<MStrings::Lower e.Name>)
 			(<MStrings::Lower e.ModuleName>)
@@ -842,7 +886,7 @@ AddVariable {
 		( e.PatternExpr (s.VarType e.Index) t.ParentStack )
 		<MLexer::NextToken t.Lexer>;
 
-	t.IModule t.ErrorList t.VarTable Fail
+	t.IModule t.ErrorList t.VarTable Fails
 	( e.PatternExpr t.ParentStack )
 	t.Lexer t.VarToken =
 		t.ErrorList t.IModule t.VarTable
@@ -1075,7 +1119,7 @@ CheckVariable {
 		( e.ResultExpr (s.VarType e.Index) t.ParentStack )
 		<MLexer::NextToken t.Lexer>;
 
-	t.IModule t.ErrorList t.VarTable Fail
+	t.IModule t.ErrorList t.VarTable Fails
 	( e.ResultExpr t.ParentStack )
 	t.Lexer t.VarToken =
 		t.ErrorList t.IModule t.VarTable
@@ -1427,7 +1471,7 @@ CheckCallableVariable {
 		)
 		<MLexer::NextToken t.Lexer>;
 
-	t.IModule t.ErrorList t.VarTable Fail
+	t.IModule t.ErrorList t.VarTable Fails
 	( (e.ResultExpr t.UpParentStack) )
 	t.Lexer (Var t.SrcPos SVar e.Index) =
 		t.ErrorList

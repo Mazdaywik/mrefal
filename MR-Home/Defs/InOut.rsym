@@ -1,14 +1,13 @@
-/* Automatically generated file, don't edit! */
 $module InOut;
 
 $import MDosWinRecoder;
 $import MRefalRTS;
 
-$entry WriteLine;
-$entry WriteLine-T;
 $entry ReadLine;
 $entry Write;
 $entry Write-T;
+$entry WriteLine;
+$entry WriteLine-T;
 $entry WriteText;
 $entry WriteText-T;
 

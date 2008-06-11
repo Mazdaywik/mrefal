@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut\Types.rout
+r file ROut/Types.rout
 
 b Entry::Types::OneOf
 c $Entry::Types::OneOf$ {

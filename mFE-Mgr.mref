@@ -1,11 +1,19 @@
 $MODULE MFE-Mgr;
 
+$IMPORT MNameMaker;
+$IMPORT MQualifiedName;
+
 /*==============================================================================
 	Внутренний формат хранилища:
-	(s.Name s.FnParser (e.Ext))*
-	s.Name ::= IDENTIFIER
-	s.FnParser ::= { t.QualifiedName = t.IModule; }
+	(s.FEName s.FnParser (e.Ext))*
+	s.FEName ::= IDENTIFIER
+	s.FnParser ::= {
+		t.ErrorList t.QualifiedName e.FileName = t.ErrorList Success t.IModule;
+		t.ErrorList t.QualifiedName e.FileName = t.ErrorList Fails
+	}
 	e.Ext -- Расширение файлов исходного текста
+		Функция s.FnParser может предполагать, что файл с заданным именем
+	существует.
 ==============================================================================*/
 
 $SWAP G_FrontEnds;
@@ -13,7 +21,7 @@ $SWAP G_FrontEnds;
 //------------------------------------------------------------------------------
 
 /**
-	<Register s.Name s.FnParser (e.Ext)>
+	<Register s.FEName s.FnParser (e.Ext)>
 		== empty
 */
 $ENTRY Register
@@ -21,5 +29,148 @@ $ENTRY Register
 		<G_FrontEnds
 			<G_FrontEnds> (s.Name s.FnParser (e.Ext))
 		>;
+
+//------------------------------------------------------------------------------
+
+/**
+	<GetPath-T s.FEName t.QualifiedName e.BaseFolder>
+		== Success t.QualifiedName e.FilePath
+		== Fails t.QualifiedName
+*/
+$ENTRY GetPath-T
+	s.FEName t.QualifiedName e.BaseFolder =
+		<GetPath-Aux
+			( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
+			( <GetInfo s.FEName> )
+			e.BaseFolder
+		>;
+
+GetPath-Aux {
+	( t.QualifiedName e.Relative ) ( InfoNotFound ) e.BaseFolder =
+		Fails t.QualifiedName;
+
+	( t.QualifiedName e.Relative ) ( s.FnGenerator (e.Ext) ) Current =
+		Success t.QualifiedName
+		e.Relative '.' e.Ext;
+
+	( t.QualifiedName e.Relative ) ( s.FnGenerator (e.Ext) ) e.BaseFolder =
+		Succes t.QualifiedName
+		e.BaseFolder '/' e.Relative '.' e.Ext;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
+		== t.ErrorList Success t.IModule
+		== t.ErrorList Fails
+*/
+$ENTRY Load
+	s.FEName t.ErrorList t.QualifiedName e.BaseDir =
+		<Load-Aux
+			( <GetInfo s.FEName> )
+			t.ErrorList
+			<GetPath s.FEName t.QualifiedName e.BaseDir>
+		>;
+
+GetPath
+	s.FEName t.QualifiedName e.BaseDir =
+		<DestroyQName
+			<GetPath-T s.FEName t.QualifiedName e.BaseDir>
+		>;
+
+DestroyQName {
+	s.Result t.QualifiedName e.Tail =
+		<MQualifiedName::Destroy t.QualifiedName>
+		s.Result e.Tail;
+}
+
+Load-Aux {
+	( InfoNotFound ) t.ErrorList s.Result e.Tail =
+		Fails t.ErrorList;
+
+	( e.Info ) t.ErrorList Fails =
+		Fails t.ErrorList;
+
+	( s.FnParser (e.Ext) ) t.ErrorList Success e.FileName =
+		<s.FnParser t.ErrorList e.FileName>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<GetList>
+		== s.FrontEndName*
+*/
+$ENTRY GetList = <DoGetList () () <G_FrontEnds>>;
+
+DoGetList {
+	(e.Scanned) (e.Names) =
+		<G_FrontEnds e.Scanned>
+		e.Names;
+
+	(e.Scanned) (e.Names) (s.FEName s.FnParser (e.Ext)) e.Tail =
+		<DoGetList
+			(e.Scanned
+				(s.FEName s.FnParser (e.Ext))
+			)
+			(e.Names s.FEName)
+			e.Tail
+		>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<X_GetPath-T t.Context t.QualifiedName s.FEName>
+		== t.Context t.QualifiedName Success e.FileName
+		== t.Context t.QualifiedName Fails
+*/
+$ENTRY X_GetPath
+	t.Context t.QualifiedName s.FEName =
+		<MNameMaker::MakeName
+			t.Context t.QualifiedName s.FEName
+			<FnPtr MakeRelative>
+		>;
+
+MakeRelative
+	t.QualifiedName s.FEName =
+		<MakeRelative--SwExistInfo
+			(<GetInfo s.FEName>)
+			<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
+		>;
+
+MakeRelative--SwExistInfo {
+	(InfoNotFound) t.QualifiedName e.Path =
+		t.QualifiedName Fails;
+
+	( s.FnParser (e.Ext) ) t.QualifiedName e.Path =
+		t.QualifiedName Success e.Path '.';
+}
+
+//------------------------------------------------------------------------------
+
+/*
+	<GetInfo s.FEName>
+		== s.FnParser (e.Ext)
+		== InfoNotFound
+*/
+GetInfo
+	s.FEName =
+		<SwGetInfo s.FEName <G_FrontEnds> >;
+
+SwGetInfo {
+	s.FEName
+	e.FrontEnds-B (s.FEName e.Info) e.FrontEnds-E =
+		e.Info
+		<G_FrontEnds
+			e.FrontEnds-B (s.FEName e.Info) e.FrontEnds-E
+		>;
+
+	s.FEName e.FrontEnds =
+		InfoNotFound <G_FrontEnds e.FrontEnds>;
+}
+
+//------------------------------------------------------------------------------
 
 $END MFE-Mgr.

@@ -13,7 +13,24 @@ $ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
 $ENTRY ExistFile-T
 	e.FileName = <MRefalRTS::ExistFile e.FileName> e.FileName;
 
-$ENTRY FilesInfo
+$ENTRY FilesInfo {
+	e.Mask-B '"' e.Mask-E =
+		<MSelfDiag::Error
+			'MFileSystem::FilesInfo: argument must not have quotes'
+		>;
+
+	e.Mask = <DoFilesInfo
+		<Quoting e.Mask>
+	>;
+}
+
+Quoting {
+	e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
+
+	e.Mask = e.Mask;
+}
+
+DoFilesInfo
 	e.Mask =
 		<MOS::System
 			'dir ' e.Mask '>~dirlst.tmp 2>nul'
@@ -27,6 +44,8 @@ $ENTRY FilesInfo
 ParseListing {
 	t.?Hdr1 t.?Hdr2 () (e.?Text1 s.Disk ':' e.Path) () e.Tail =
 		<ReadFileList (s.Disk ':' e.Path) e.Tail>;
+
+	= <MSelfDiag::Error 'Directory listing error: out is empty'>;
 
 	e.Other = <MSelfDiag::Error 'Directory listing error: ' e.Other>;
 }

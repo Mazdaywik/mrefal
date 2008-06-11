@@ -1,11 +1,10 @@
-/* Automatically generated file, don't edit! */
 $module MOrder;
 
 $import MRefalRTS;
 $import Math;
 
-$entry Compare-T;
 $entry Compare;
+$entry Compare-T;
 $entry Sort;
 
 $end MOrder.

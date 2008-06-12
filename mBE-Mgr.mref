@@ -1,13 +1,13 @@
 $MODULE MBE-Mgr;
 
+$IMPORT MBEFE-Holder;
 $IMPORT MContext;
 $IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
 /*==============================================================================
-	Внутрення структура хранилища:
-		(s.Name s.FnGenerator s.FnLinker (e.Folder) (e.Ext))*
-		s.Name ::= IDENTIFIER
+	Параметры конкретного диспетчера:
+		s.Name ::= IDENTIFIER -- имя диспетчера
 		s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
 		s.FnLinker ::= {
 			t.Context (e.OutName) (e.ObjName)* = t.Context Success;
@@ -27,8 +27,10 @@ $SWAP G_BackEnds;
 */
 $ENTRY Register
 	s.Name s.Generator s.Linker (e.Folder) (e.Ext) =
-		<G_BackEnds
-			<G_BackEnds> (s.Name s.Generator s.Linker (e.Folder) (e.Ext))
+		<MBEFE-Holder::UpdateEntry
+			<FnPtr G_BackEnds> s.Name
+			(Generator s.Generator) (Linker s.Linker)
+			(Folder e.Folder) (Ext e.Ext)
 		>;
 
 //------------------------------------------------------------------------------
@@ -66,22 +68,23 @@ GeneratePer
 		<GeneratePer-Aux
 			( <MContext::ExtractOption t.Context t.QualifiedName BaseDirectory> )
 			t.IModule t.QualifiedName
-			s.BackEndName <GetBEInfo s.BackEndName>
+			s.BackEndName <GetInfo s.BackEndName Generator>
 		>;
 
 GeneratePer-Aux {
 	( t.Context e.Info )
-	t.IModule t.QualifiedName s.BackEndName InfoNotFound =
+	t.IModule t.QualifiedName s.BackEndName
+	Fails s.Error =
 		Fails t.Context t.IModule t.QualifiedName;
 
 	( t.Context ModuleInfoNotFound )
-	t.IModule t.QualifiedName
-	s.BackEndName s.FnGenerator s.FnLinker (e.Folder) (e.Ext) =
+	t.IModule t.QualifiedName s.BackEndName
+	Success s.FnGenerator =
 		Fails t.Context t.IModule t.QualifiedName;
 
 	( t.Context Found e.BaseDirectory )
-	t.IModule t.QualifiedName
-	s.BackEndName s.FnGenerator s.FnLinker (e.Folder) (e.Ext) =
+	t.IModule t.QualifiedName s.BackEndName
+	Success s.FnGenerator =
 		<GeneratePer-Aux2
 			t.Context t.IModule s.FnGenerator
 			<GetPath-T s.BackEndName t.QualifiedName e.BaseDirectory>
@@ -104,41 +107,41 @@ GeneratePer-Aux2 {
 //------------------------------------------------------------------------------
 
 /**
-	<Link (e.OutName) e.OrderedFiles>
-		== Success
-		== Fails
+	<Link t.Context (e.OutName) e.OrderedFiles>
+		== t.Context Success
+		== t.Context Fails
 	e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
 */
 $ENTRY Link
-	(e.OutName) e.OrderedFiles =
+	t.Context (e.OutName) e.OrderedFiles =
 		<DoLink
-			Success (e.OutName) (e.OrderedFiles)
+			t.Context Success (e.OutName) (e.OrderedFiles)
 			<ExtractLinkers <GetList>>
 		>;
 
 ExtractLinkers {
 	= ;
 	s.BEName e.Tail =
-		(s.BEName <ExtractLinker <GetBEInfo s.BEName>>)
+		(s.BEName <GetLinker s.BEName>)
 		<ExtractLinkers e.Tail>;
 }
 
-ExtractLinker
-	s.FnGenerator s.FnLinker (e.Folder) (e.Ext) =
-		s.FnLinker;
+GetLinker s.BEName = <DelSuccess <GetInfo s.BEName Linker>>;
+
+DelSuccess Success s.FnLinker = s.FnLinker;
 
 DoLink {
-	Fails (e.OutName) (e.OrderedFiles) e.Tail =
-		Fails;
+	t.Context Fails (e.OutName) (e.OrderedFiles) e.Tail =
+		t.Context Fails;
 
-	Success (e.OutName) (e.OrderedFiles) =
-		Success;
+	t.Context Success (e.OutName) (e.OrderedFiles) =
+		t.Context Success;
 
-	Success (e.OutName) (e.OrderedFiles) (s.BEName s.FnLinker) e.Tail =
+	t.Context Success (e.OutName) (e.OrderedFiles) (s.BEName s.FnLinker) e.Tail =
 		<DoLink
 			<s.FnLinker
-				(e.OutName)
-				<ToNames e.OrderedFiles>
+				t.Context (e.OutName)
+				<ToNames s.BEName e.OrderedFiles>
 			>
 			(e.OutName) (e.OrderedFiles) e.Tail
 		>;
@@ -153,7 +156,7 @@ ToNames {
 }
 
 PathOnly {
-	t.QualifiedName Success e.Path = e.Path;
+	t.QualifiedName Success e.Path = (e.Path);
 
 	// Ветвь с Fails не рассматриваем -- в именах мы полностью уверены.
 }
@@ -164,33 +167,13 @@ PathOnly {
 	<GetList> == s.BackEndName*
 */
 
-$ENTRY GetList = <DoFindNames () () <G_BackEnds>>;
-
-DoFindNames {
-	(e.Names) (e.Scanned) (s.Name e.Info) e.Tail =
-		<DoFindNames
-			(e.Names s.Name)
-			(e.Scanned (s.Name e.Info))
-			e.Tail
-		>;
-
-	(e.Names) (e.Scanned) =
-		e.Names <G_BackEnds e.Scanned>;
-}
+$ENTRY GetList = <MBEFE-Holder::GetMgrList <FnPtr G_BackEnds>>;
 
 //------------------------------------------------------------------------------
 
-GetBEInfo
-	s.Name =
-		<GetBEInfo-Aux s.Name <G_BackEnds>>;
-
-GetBEInfo-Aux {
-	s.Name e.BackEnds-B (s.Name e.Info) e.BackEnds-E =
-		e.Info
-		<G_BackEnds e.BackEnds-B (s.Name e.Info) e.BackEnds-E>;
-
-	s.Name e.BackEnds = InfoNotFound <G_BackEnds e.BackEnds>;
-}
+GetInfo
+	s.Name s.Option =
+		<MBEFE-Holder::GetInfo <FnPtr G_BackEnds> s.Name s.Option>;
 
 //------------------------------------------------------------------------------
 
@@ -209,15 +192,19 @@ $ENTRY X_GetPath-T
 MakeRelative
 	t.QualifiedName s.BEName =
 		<MakeRelative-Aux
-			( <GetBEInfo s.BEName> )
+			( <GetInfo s.BEName Folder> )
+			( <GetInfo s.BEName Ext> )
 			<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
 		>;
 
 MakeRelative-Aux {
-	( InfoNotFound ) t.QualifiedName e.Path =
+	( Fails s.Error ) ( e.ResultExt ) t.QualifiedName e.Path =
 		t.QualifiedName Fails;
 
-	( s.FnGenerator s.FnLinker (e.Folder) (e.Ext) )
+	( Success e.Folder ) ( Fails s.Error ) t.QualifiedName e.Path =
+		t.QualifiedName Fails;
+
+	( Success e.Folder ) ( Success e.Ext )
 	t.QualifiedName e.Path =
 		t.QualifiedName Success e.Folder '/' e.Path '.' e.Ext;
 }
@@ -232,21 +219,25 @@ MakeRelative-Aux {
 $ENTRY GetPath-T
 	s.BEName t.QualifiedName e.BaseFolder =
 		<GetPath-Aux
-			( <GetBEInfo s.BEName> )
+			( <GetInfo s.BEName Folder> ) ( <GetInfo s.BEName Ext> )
 			( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
 			e.BaseFolder
 		>;
 
 GetPath-Aux {
-	( InfoNotFound )
+	( Fails s.Error ) ( e.Result )
 	( t.QualifiedName e.RelativePath ) e.BaseFolder =
 		t.QualifiedName Fails;
 
-	( s.FnGenerator s.FnLinker (e.Folder) (e.Ext) )
+	( Success e.Folder ) ( Fails s.Error )
+	( t.QualifiedName e.RelativePath ) e.BaseFolder =
+		t.QualifiedName Fails;
+
+	( Success e.Folder ) (Success e.Ext )
 	( t.QualifiedName e.RelativePath ) Current =
 		t.QualifiedName Success e.Folder '/' e.RelativePath '.' e.Ext;
 
-	( s.FnGenerator s.FnLinker (e.Folder) (e.Ext) )
+	( Success e.Folder ) (Success e.Ext )
 	( t.QualifiedName e.RelativePath ) e.Base =
 		t.QualifiedName Success e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
 }

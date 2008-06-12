@@ -144,7 +144,7 @@ SwLookupAsSystemLibrary {
 		SystemLibrary (Sym e.SymName) (Out e.OutName) (Src None) e.ModuleName;
 }
 
-HomeDir = <MOS::Env 'MR_Home'>;
+$ENTRY HomeDir = <MOS::Env 'MR_Home'>;
 
 $ENTRY Init =
 	<CheckDefinedMRHome <HomeDir>>;

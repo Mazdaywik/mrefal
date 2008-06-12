@@ -1,8 +1,8 @@
 $PROGRAM MRefal;
 
 // Эти модули используются
-$IMPORT Context;
 $IMPORT Compiler;
+$IMPORT MContext;
 $IMPORT MError;
 $IMPORT MLinker;
 $IMPORT Modules;
@@ -14,7 +14,7 @@ $IMPORT MVersion;
 $IMPORT MSelfDiag;
 
 // Эти модули должны быть инициализированы
-$IMPORT MBackEnd_Refal5;
+$IMPORT MBackEnd_Refal5_init;
 $IMPORT MFrontEnd_MRefal;
 
 $ENTRY Go =
@@ -23,15 +23,19 @@ $ENTRY Go =
 
 StartCompiling {
 	= <Results
-		<MLinker::Link
-			<CompileList <Context::Create> <LoadModuleList> >
+		<MLinker::LinkAll
+			<CompileList <MContext::Create> <LoadModuleList> >
 		>
 	>;
 }
 
 Results {
-	t.Context =
-		<Context::Destroy t.Context>;
+	t.Context Success =
+		<MContext::Destroy t.Context>;
+
+	t.Context Fails =
+		<MContext::Destroy t.Context>
+		<MError::Fatal 'Unknown error'>;
 }
 
 LoadModuleList {

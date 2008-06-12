@@ -1,17 +1,16 @@
 $MODULE MBackEnd_Refal5;
 
 $IMPORT FileIO;
-$IMPORT MBE-Mgr;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
-/*
+/**
 	<Generate-T t.IModule e.OutName>
 		== t.IModule
 */
-Generate-T
+$ENTRY Generate-T
 	t.IModule e.OutName =
 		<SaveModule
 			(e.OutName)
@@ -25,13 +24,6 @@ SaveModule
 	(e.OutName) e.Lines t.IModule =
 		<FileIO::Save (e.OutName) e.Lines>
 		t.IModule;
-
-$ENTRY Init =
-	<MBE-Mgr::Register
-		Refal5BE
-		<FnPtr Generate-T> FnPtrLinker
-		('ROut') ('rout')
-	>;
 
 GenerateContent
 	t.IModule =

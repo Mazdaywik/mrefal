@@ -255,7 +255,7 @@ $ENTRY Init =
 		SymInfo <FnPtr Generate> <FnPtr Link> ('Defs') ('rsym')
 	>;
 
-Link (e.OutName) e.Modules = Success; // Не линкуем.
+Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.
 
 *-------------------------------------------------------------------------------
 * Извлечение информации из таблицы символов

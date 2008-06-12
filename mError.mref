@@ -46,12 +46,6 @@ OutError {
 		>;
 }
 
-$ENTRY Warning {
-	s.LineNumber e.Text =
-		<MOutModuleStatus::Flush>
-		<InOut::WriteLine 'WARNING in line ' s.LineNumber ': ' e.Text>;
-}
-
 $DATA ErrorList;
 
 $ENTRY CreateErrList = [ErrorList];

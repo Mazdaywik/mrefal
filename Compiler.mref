@@ -352,6 +352,7 @@ SwCompileIfNeed-Old {
 				(e.ModuleName)
 				(Sym e.SymFile) (Out e.OutFile) (Src None)
 				(Status Library)
+				(BaseDirectory <Modules::HomeDir>)
 			> e.ModuleName
 		>;
 

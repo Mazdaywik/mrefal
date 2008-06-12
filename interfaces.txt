@@ -1,18 +1,55 @@
 ================================================================
+Module MBackEnd_Refal5;
+
+<Generate-T t.IModule e.OutName>
+	== t.IModule
+
+================================================================
 Module MBE-Mgr;
 
-<Register s.Name s.Generator (e.Folder) (e.Ext)>
+<Register s.Name s.Generator s.Linker (e.Folder) (e.Ext)>
 	== empty
 
 <Generate t.Context t.IModule t.QualifiedName>
 	== t.Context t.IModule Success
 	== t.Context t.IModule Fails
 
+<Link t.Context (e.OutName) e.OrderedFiles>
+	== t.Context Success
+	== t.Context Fails
+e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
+
 <GetList> == s.BackEndName*
 
-<GetOutPath-T s.BEName t.QualifiedName e.BaseFolder>
-	== Success t.QualifiedName e.OutPath
-	== Fails t.QualifiedName
+<X_GetPath-T t.Context t.QualifiedName s.BEName>
+	== t.Context t.QualifiedName Success e.Path
+	== t.Context t.QualifiedName Fails
+
+<GetPath-T s.BEName t.QualifiedName e.BaseFolder>
+	== t.QualifiedName Success e.OutPath
+	== t.QualifiedName Fails
+
+=============================================================================
+Модуль реализует хранилище данных для диспетчеров входных и генерирующих
+частей. Работает по принципу атрибутной таблицы символов. Таблица индексируются
+двумя символами: именем диспетчера и именем атрибута.
+==============================================================================
+================================================================
+Module MBEFE-Holder;
+
+<UpdateEntry
+	s.FnSwap
+	s.MgrName
+	(s.Option e.Value)*
+> == empty
+
+<GetInfo s.FnSwap s.MgrName s.OptionName>
+	== Success e.Value
+	== Fails s.Error
+s.Error ::= InvalidMgr | InvalidOption
+
+<GetMgrList s.FnSwap>
+	== e<name>.MgrNames
 
 ================================================================
 Module MContext;
@@ -83,12 +120,20 @@ Module MFE-Mgr;
 <Register s.FEName s.FnParser (e.Ext)>
 	== empty
 
-<Load s.FEName t.QualifiedName>
-	== Success t.IModule
-	== Fails
+<GetPath-T s.FEName t.QualifiedName e.BaseFolder>
+	== Success t.QualifiedName e.FilePath
+	== Fails t.QualifiedName
+
+<Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
+	== t.ErrorList Success t.IModule
+	== t.ErrorList Fails
 
 <GetList>
 	== s.FrontEndName*
+
+<X_GetPath-T t.Context t.QualifiedName s.FEName>
+	== t.Context t.QualifiedName Success e.FileName
+	== t.Context t.QualifiedName Fails
 
 ================================================================
 Module MFileSystem;
@@ -98,19 +143,6 @@ Module MFileSystem;
 Пример:
 <ParseFileName 'c:\\Directory\\Document.doc'>
 	== ('c;\\Directory') 'Document' ('doc')
-
-================================================================
-Module MFrontEnd;
-
-<LoadModule e.SourceName>
-	== t.Module s.Status t.ErrorList
-s.Status ::= Success | Warnings | Errors | Fatal
-
-<SymInfo-Old t.Module>
-	== t.Module
-	( Module (e.Directory) e.ModuleName )
-	( Functions (e.FnName)* )
-	( Imports ((e.ImportDirectory) e.ImportName)* )
 
 ================================================================
 Module MIModule;
@@ -240,14 +272,32 @@ s.Status ::=
 	if NotKnown
 		ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 
+=============================================================================
+Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
+==============================================================================
+================================================================
+Module MNameMaker;
+
+<MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
+	== t.Context t.QualifiedName Success e.FilePath
+	== t.Context t.QualifiedName Fails
+
+<s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
+	== t.QualifiedName Success e.RelativeName
+	== t.QualifiedName Fails
+
 ================================================================
 Module MParser;
 
 <SrcModule e.SrcFileName>
-	== t.Module s.ErrorResult t.ErrorList
+	== t.IModule s.ErrorResult t.ErrorList
 s.ErrorResult ::= Success | Warnings | Errors | Fatal
 
-<SymModule t.Context e.SymFileName>
+<LoadSource t.ErrorList t.QualifiedName e.FileName>
+	== t.ErrorList Success t.IModule
+	== t.ErrorList Fails
+
+<SymModule e.SymFileName>
 	== t.IModule s.ErrorResult t.ErrorList
 	s.ErrorResult ::= Success | Warnings | Errors | Fatal
 
@@ -341,6 +391,44 @@ s.NFirst и s.NLast -- числа,
 при чём должно быть s.NFirst <= s.NLast
 
 <Reverse e.Line> == e.eniL
+
+================================================================
+Module MSwapSupport;
+=============================================================================
+Модуль предоставляет функции для наиболее распространённых функций с
+динамическими ящиками: чтение, запись, добавление терма в начало/конец,
+чтение терма с начала/конца.
+==============================================================================
+
+<Read s.FnSwap>
+	== e.Content
+Содержимое ящика не изменяется.
+
+<Write s.FnSwap e.NewContent>
+	== empty
+Ящик получает значение e.NewContent
+
+<PushFront s.FnSwap t.Info>
+	== empty
+Эквивалентно <s.FnSwap t.Info <s.FnSwap>>
+
+<PushBack s.FnSwap t.Info>
+	== empty
+Эквивалентно <s.FnSwap <s.FnSwap> t.Info>
+
+<PopFront s.FnSwap>
+	== Success t.Value
+	== Fails
+Если <s.FnSwap> :: t.Value e.Content То
+	<s.FnSwap e.Content>
+	Success t.Value
+Иначе
+	Fails
+
+<PopBack s.FnSwap>
+	== Success t.Value
+	== Fails
+См. описание функции PopFront.
 
 ================================================================
 Module MSymModule;

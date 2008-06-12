@@ -1,0 +1,546 @@
+$MODULE MLinker_Refal5;
+
+$IMPORT FileIO;
+$IMPORT MCreateDirIfNeed;
+$IMPORT MError;
+$IMPORT MExeTyper;
+$IMPORT MLinkerAliasTable;
+$IMPORT MOrder;
+$IMPORT MOS;
+$IMPORT MStartupSeqGenerator;
+$IMPORT MVersion;
+
+
+/**
+	<Link t.Context (e.ProgName) e.ROutName>
+		== t.Context Success
+		== t.Context Fails
+*/
+$ENTRY Link
+	t.Context (e.ProgName) e.ROutFiles =
+		<MSelfDiag::Log>
+		<MSelfDiag::Log 'Link'>
+		<MSelfDiag::Log 't.Context = ' t.Context>
+		<MSelfDiag::Log 'e.ProgName = ' e.ProgName>
+		<MSelfDiag::Log 'e.ROutFiles = ' e.ROutFiles>
+		<GuardLink
+			<Link1 t.Context (e.ProgName) e.ROutFiles>
+		>;
+
+GuardLink t.Context Success = t.Context Success;
+
+$import MSelfDiag;
+
+Link1 {
+	t.Context (e.ProgName) e.ROutFiles =
+		<StartLinkLoop
+			<MExeTyper::Create <DefLim> e.ProgName '.ref'>
+			<CreateUnitStorage>
+			t.Context
+			e.ROutFiles
+		>
+
+		<MOS::System 'refc ' e.ProgName '.ref'>
+		Success;
+}
+
+DefLim = 64;
+
+StartLinkLoop
+	t.ExeTyper t.UnitStorage t.Context e.Modules =
+		<StartLinkLoop-Aux
+			t.UnitStorage
+			<MLinkerAliasTable::Create>
+			t.ExeTyper
+			<CreateStartupUnitForLoop t.Context>
+			e.Modules
+		>;
+
+/**
+	<CreateStartupUnit t.Context>
+		== t.Context (t.StartupUnit)
+*/
+CreateStartupUnitForLoop
+	t.Context =
+		<CreateStartupUnitForLoop-Aux
+			<MStartupSeqGenerator::GetFnList t.Context>
+		>;
+
+CreateStartupUnitForLoop-Aux
+	t.Context e.FnList =
+		t.Context
+		(<CreateStartUnit e.FnList>);
+
+StartLinkLoop-Aux
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context t.StartUnit e.Modules =
+		<LinkLoop
+			Continue
+			<AddUnit
+				<AddRequest t.UnitStorage 'Starter'>
+				t.StartUnit
+			> t.AliasTable t.ExeTyper
+			t.Context e.Modules
+		>;
+
+LinkLoop {
+	Continue t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context e.Modules =
+		<LinkLoop
+			<LinkNextUnit
+				t.UnitStorage t.AliasTable t.ExeTyper
+			> t.Context e.Modules
+		>;
+
+	Finish t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context e.Modules =
+		<PrintUnresolvedUnits t.UnitStorage e.Modules>
+		<MLinkerAliasTable::Destroy
+			<MLinkerAliasTable::OutAliases t.AliasTable>
+		>
+		<MExeTyper::Destroy t.ExeTyper>
+		t.Context;
+
+	LoadModule t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context (e.NextModule) e.Modules =
+		<LinkLoop
+			Continue
+			<AddNextModuleToUnitStorage
+				t.UnitStorage t.AliasTable t.ExeTyper
+				t.Context e.NextModule
+			> e.Modules
+		>;
+
+	LoadModule t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context =
+		<MError::LinkError
+			'Unresolved name '
+			<NextRequestedName-D t.UnitStorage>
+		>;
+}
+
+
+LinkNextUnit
+	t.UnitStorage t.AliasTable t.ExeTyper =
+		<SwLinkNextUnit
+			<GetNextUnit t.UnitStorage>
+			t.AliasTable t.ExeTyper
+		>;
+
+SwLinkNextUnit {
+	t.UnitStorage Finish t.AliasTable t.ExeTyper =
+		Finish t.UnitStorage t.AliasTable t.ExeTyper;
+
+	t.UnitStorage None t.AliasTable t.ExeTyper =
+		LoadModule t.UnitStorage t.AliasTable t.ExeTyper;
+
+	t.UnitStorage (e.Unit) t.AliasTable t.ExeTyper =
+		Continue
+		<TypeUnit
+			t.UnitStorage t.AliasTable t.ExeTyper e.Unit
+		>;
+}
+
+AddNextModuleToUnitStorage
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context e.NextModule =
+		<DoAddUnits
+			t.UnitStorage t.AliasTable t.ExeTyper t.Context
+			<LoadUnits e.NextModule>
+		>;
+
+DoAddUnits {
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context t.NextUnit e.Units =
+		<DoAddUnits
+			<AddUnit t.UnitStorage t.NextUnit>
+			t.AliasTable t.ExeTyper t.Context e.Units
+		>;
+
+	t.UnitStorage t.AliasTable t.ExeTyper
+	t.Context =
+		t.UnitStorage t.AliasTable t.ExeTyper
+		t.Context;
+}
+
+CreateStartUnit {
+	GoNotFound =
+		<MError::LinkError 'Go function not found'>;
+
+	MultipleGo e.GoList =
+		<MError::LinkError
+			'Multiple go functions: '
+			<TypeMultiplyGoList e.GoList>
+		>;
+
+	e.FunList =
+		('Starter')
+		('$ENTRY Go { =')
+		<DoCreateCallSeq e.FunList>
+		(';}');
+}
+
+TypeMultiplyGoList {
+	(e.Go1) (e.Go2) =
+		e.Go1 ' and ' e.Go2;
+
+	(e.NextGo) e.GoFunctions =
+		e.NextGo ', '
+		<TypeMultiplyGoList e.GoFunctions>;
+}
+
+DoCreateCallSeq {
+	(e.NextFunc) e.Funcs =
+		('\t<$' e.NextFunc '$>')
+		<DoCreateCallSeq e.Funcs>;
+
+	= ;
+}
+
+PrintUnresolvedUnits
+	t.UnitStorage e.Modules =
+		//<DestroyUnitStorage t.UnitStorage>;
+		<CreateNotLinkedFile
+			(e.Modules)
+			<NotLinkedList t.UnitStorage>
+		>;
+
+CreateNotLinkedFile
+	(e.Modules) t.UnitStorage e.UnitNames =
+		<DestroyUnitStorage t.UnitStorage>
+		<FileIO::Save
+			(<MCreateDirIfNeed::InfoDir> '/Not linked.txt')
+			('Not linked modules')
+			<ListNames e.Modules>
+			()
+			('Not linked units')
+			<ListNames e.UnitNames>
+		>;
+
+ListNames
+	e.Names =
+		<DoListNames <MOrder::Sort e.Names>>;
+
+DoListNames {
+	(e.Name) e.Tail =
+		('\t' e.Name)
+		<DoListNames e.Tail>;
+
+	= ;
+}
+
+/*------------------------------------------------------------------------------
+ Хранилище единиц компоновки.
+
+ Внутреннее устройство:
+ t.UnitStorage ::=
+ 	[UnitStorage (Requests e.Requests) (Units e.Units) (Linked e.Linked)]
+ e.Requests ::= (e.UnitName)*
+ e.Units ::= t.LinkUnit*
+ e.Linked ::= (e.UnitName)*
+------------------------------------------------------------------------------*/
+
+$DATA UnitStorage;
+
+/**
+	<CreateUnitStorage> == t.UnitStorage
+*/
+CreateUnitStorage =
+	[UnitStorage (Requests) (Units) (Linked)];
+
+/**
+	<AddUnit t.UnitStorage t.Unit>
+		== t.UnitStorage
+*/
+AddUnit
+	[UnitStorage t.Request (Units e.Units) t.Linked]
+	t.Unit =
+		[UnitStorage
+			t.Request (Units e.Units t.Unit) t.Linked
+		];
+
+/**
+	<AddRequest t.UnitStorage e.Name>
+		== t.UnitStorage
+*/
+AddRequest {
+	t.UnitStorage 'Entry::' e.Name =
+		<AddRequestAux t.UnitStorage 'Entry::' e.Name>;
+
+	t.UnitStorage 'Local::' e.Name =
+		<AddRequestAux t.UnitStorage 'Local::' e.Name>;
+
+	t.UnitStorage 'Swap::' e.Name =
+		<AddRequestAux t.UnitStorage 'Swap::' e.Name>;
+
+	t.UnitStorage 'Starter' =
+		<AddRequestAux t.UnitStorage 'Starter'>;
+
+	t.UnitStorage e.OtherName =
+		t.UnitStorage;
+}
+
+AddRequestAux {
+	[UnitStorage
+		t.Request t.Units (Linked e.Linked-B (e.Name) e.Linked-E)
+	] e.Name =
+		[UnitStorage
+			t.Request t.Units
+			(Linked e.Linked-B (e.Name) e.Linked-E)
+		];
+
+	[UnitStorage
+		(Requests e.Requests-B (e.Name) e.Requests-E) t.Units t.Linked
+	] e.Name =
+		[UnitStorage
+			(Requests e.Requests-B (e.Name) e.Requests-E)
+			t.Units t.Linked
+		];
+
+	[UnitStorage
+		(Requests e.Requests) t.Units t.Linked
+	]
+	e.Name =
+		[UnitStorage
+			(Requests e.Requests (e.Name)) t.Units t.Linked
+		];
+}
+
+/**
+	<AddLinked t.UnitStorage e.Name>
+		== t.UnitStorage
+*/
+AddLinked
+	[UnitStorage t.Requests t.Units (Linked e.Linked)]
+	e.Name =
+		[UnitStorage
+			t.Requests t.Units (Linked e.Linked (e.Name))
+		];
+
+/**
+	<GetNextUnit t.UnitStorage>
+		== t.UnitStorage t.Unit
+		== t.UnitStorage None
+		== t.UnitStorage Finish
+*/
+GetNextUnit {
+	[UnitStorage (Requests) t.Units t.Linked] =
+		[UnitStorage (Requests) t.Units t.Linked]
+		Finish;
+
+	[UnitStorage
+		(Requests e.Requests-B (e.NextName) e.Requests-E)
+		(Units e.Units-B ((e.NextName) e.Body) e.Units-E)
+		t.Linked
+	] =
+		[UnitStorage
+			(Requests e.Requests-B e.Requests-E)
+			(Units e.Units-B e.Units-E)
+			t.Linked
+		] ((e.NextName) e.Body);
+
+	[UnitStorage t.Requests t.Units t.Linked] =
+		[UnitStorage t.Requests t.Units t.Linked] None;
+}
+
+/**
+	<DestroyUnitStorage t.UnitStorage> == empty
+*/
+DestroyUnitStorage
+	[UnitStorage
+		(Requests e.Requests)
+		(Units e.Units)
+		(Linked e.Linked)
+	] = ;
+
+/**
+	<NextRequestedName-D t.UnitStorage>
+		== e.Name
+*/
+NextRequestedName-D {
+	[UnitStorage
+		(Requests (e.NextName) e.Requests) t.Units t.Linked
+	] = e.NextName;
+
+	t.UnitStorage = 'Unknown';
+}
+
+/**
+	<NotLinkedList t.UnitStorage>
+		== t.UnitStorage (e.NotLinkedUnitName)*
+*/
+NotLinkedList
+	[UnitStorage t.Requests (Units e.Units) t.Linked] =
+		[UnitStorage t.Requests (Units e.Units) t.Linked]
+		<NameFromUnit e.Units>;
+
+NameFromUnit {
+	((e.Name) e.Content) e.Tail =
+		(e.Name) <NameFromUnit e.Tail>;
+
+	= ;
+}
+
+/*------------------------------------------------------------------------------
+ Последующие Type-фукции выполняют вывод содержимого единиц компоновки в выход-
+ ной файл.
+------------------------------------------------------------------------------*/
+
+LoadUnits
+	e.FileName =
+		<GroupLinkUnits
+			(e.FileName)
+			(<MVersion::ROut>)
+			<DoLoadUnits
+				<FileIO::Load e.FileName>
+			>
+		>;
+
+GroupLinkUnits {
+	(e.?FileName) (e.ValidVersion) (Version e.ValidVersion)
+	e.Lines =
+		<DoGroupLinkUnits e.Lines>;
+
+	(e.FileName) (e.ValidVersion) (Version e.InvalidVersion)
+	e.?Lines =
+		<MError::LinkError
+			'Invalid version in .rout-file `' e.FileName '\''
+		>;
+
+	(e.FileName) (e.?ValidVersion) e.?OtherLines =
+		<MError::LinkError
+			'Invalid .rout-file `' e.FileName '\' -- missed version tag'
+		>;
+}
+
+DoGroupLinkUnits {
+	(Banner e.Banner) e.Lines =
+		<GroupOneLinkUnit
+			((e.Banner)) e.Lines
+		>;
+
+	= ;
+}
+
+GroupOneLinkUnit {
+	(e.Unit) (Code e.CodeLine) e.Lines =
+		<GroupOneLinkUnit
+			(e.Unit (e.CodeLine)) e.Lines
+		>;
+
+	(e.Unit) (Banner e.Banner) e.Lines =
+		(e.Unit)
+		<DoGroupLinkUnits (Banner e.Banner) e.Lines>;
+
+	(e.Unit) = (e.Unit);
+}
+
+DoLoadUnits {
+	= ;
+
+	(e.NextLine) e.Lines =
+		<AnalyseLine (e.NextLine)>
+		<DoLoadUnits e.Lines>;
+}
+		
+
+TypeUnit {
+	t.UnitStorage t.Aliases t.ExeTyper (e.Banner) e.Lines =
+		<DoTypeUnits
+			<AddLinked t.UnitStorage e.Banner>
+			t.Aliases
+			<MExeTyper::TypeComment t.ExeTyper e.Banner>
+			e.Lines
+		>;
+}
+
+DoTypeUnits {
+	t.UnitStorage t.Aliases t.ExeTyper =
+		//<DestroyUnitStorage t.UnitStorage>
+		t.UnitStorage
+		t.Aliases t.ExeTyper;
+
+	t.UnitStorage t.Aliases t.ExeTyper (e.NextLine) e.Lines =
+		<DoTypeUnits
+			<TypeLine t.UnitStorage t.Aliases t.ExeTyper e.NextLine>
+			e.Lines
+		>;
+}
+
+AnalyseLine {
+	('v ' e.Version) = (Version e.Version);
+
+	('b ' e.BannerLine) = (Banner e.BannerLine);
+
+	('r ' e.?RemarkLine) = ;
+
+	('c ' e.CodeLine) = (Code <HideQuotes e.CodeLine>);
+
+	() = ;
+}
+
+HideQuotes {
+	'\'' e.Tail = <StartHidingQuote ('\'') e.Tail>;
+	'\"' e.Tail = <StartHidingQuote ('\"') e.Tail>;
+	s.Other e.Tail = s.Other <HideQuotes e.Tail>;
+	= ;
+}
+
+StartHidingQuote {
+	(s.Quote e.Hidden) '\\' s.Escaped e.Tail =
+		<StartHidingQuote (s.Quote e.Hidden '\\' s.Escaped) e.Tail>;
+
+	(s.Quote e.Hidden) s.Quote e.Tail =
+		(s.Quote e.Hidden) <HideQuotes e.Tail>;
+
+	(s.Quote e.Hidden) s.Other e.Tail =
+		<StartHidingQuote (s.Quote e.Hidden s.Other) e.Tail>;
+
+	(s.Quote e.Hidden) =
+		<MError::LinkError
+			'May be unballanced quote in StartHidingQoute'
+		>;
+}
+
+TypeLine {
+	t.UnitStorage t.Aliases t.ExeTyper =
+		t.UnitStorage t.Aliases t.ExeTyper;
+
+	t.UnitStorage t.Aliases t.ExeTyper e.Line =
+		<TypeLine
+			<SwTypeContent
+				t.UnitStorage t.Aliases t.ExeTyper e.Line
+			>
+		>;
+}
+
+SwTypeContent {
+	t.UnitStorage t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
+		t.UnitStorage t.Aliases
+		<MExeTyper::TypeQuoted
+			t.ExeTyper s.Quote e.HiddenQuote
+		> e.Raw;
+
+	t.UnitStorage t.Aliases t.ExeTyper '$$' e.Raw =
+		t.UnitStorage t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> e.Raw;
+
+	t.UnitStorage t.Aliases t.ExeTyper '$' e.FnName '$' e.Raw =
+		<AddRequest t.UnitStorage e.FnName>
+		<TypeRenamed
+			( <MLinkerAliasTable::Lookup t.Aliases e.FnName> )
+			t.ExeTyper e.Raw
+		>;
+
+	t.UnitStorage t.Aliases t.ExeTyper s.Char e.Raw =
+		t.UnitStorage t.Aliases
+		<MExeTyper::TypeChar t.ExeTyper s.Char>
+		e.Raw;
+}
+
+TypeRenamed
+	(t.Aliases e.FnAlias) t.ExeTyper e.Raw =
+		t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> e.Raw;
+
+
+
+$END MLinker_Refal5.

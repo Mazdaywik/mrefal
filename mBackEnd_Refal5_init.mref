@@ -1,0 +1,15 @@
+$MODULE MBackEnd_Refal5_init;
+
+$IMPORT MBE-Mgr;
+$IMPORT MBackEnd_Refal5;
+$IMPORT MLinker_Refal5;
+
+$ENTRY Init =
+	<MBE-Mgr::Register
+		Refal5BE
+		<FnPtr MBackEnd_Refal5 Generate-T>
+		<FnPtr MLinker_Refal5 Link>
+		('ROut') ('rout')
+	>;
+
+$END MBackEnd_Refal5_init.

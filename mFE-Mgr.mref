@@ -1,12 +1,13 @@
 $MODULE MFE-Mgr;
 
+$IMPORT MBEFE-Holder;
 $IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
 /*==============================================================================
-	Внутренний формат хранилища:
-	(s.FEName s.FnParser (e.Ext))*
-	s.FEName ::= IDENTIFIER
+	Опции front-end-диспетчера:
+
+	s.FEName ::= IDENTIFIER -- Имя
 	s.FnParser ::= {
 		t.ErrorList t.QualifiedName e.FileName = t.ErrorList Success t.IModule;
 		t.ErrorList t.QualifiedName e.FileName = t.ErrorList Fails
@@ -26,8 +27,8 @@ $SWAP G_FrontEnds;
 */
 $ENTRY Register
 	s.Name s.FnParser (e.Ext) =
-		<G_FrontEnds
-			<G_FrontEnds> (s.Name s.FnParser (e.Ext))
+		<MBEFE-Holder::UpdateEntry
+			<FnPtr G_FrontEnds> s.Name (FnParser s.FnParser) (Ext e.Ext)
 		>;
 
 //------------------------------------------------------------------------------
@@ -41,19 +42,19 @@ $ENTRY GetPath-T
 	s.FEName t.QualifiedName e.BaseFolder =
 		<GetPath-Aux
 			( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
-			( <GetInfo s.FEName> )
+			( <GetInfo s.FEName Ext> )
 			e.BaseFolder
 		>;
 
 GetPath-Aux {
-	( t.QualifiedName e.Relative ) ( InfoNotFound ) e.BaseFolder =
+	( t.QualifiedName e.Relative ) ( Fails s.Error ) e.BaseFolder =
 		Fails t.QualifiedName;
 
-	( t.QualifiedName e.Relative ) ( s.FnGenerator (e.Ext) ) Current =
+	( t.QualifiedName e.Relative ) ( Success e.Ext ) Current =
 		Success t.QualifiedName
 		e.Relative '.' e.Ext;
 
-	( t.QualifiedName e.Relative ) ( s.FnGenerator (e.Ext) ) e.BaseFolder =
+	( t.QualifiedName e.Relative ) ( Success e.Ext ) e.BaseFolder =
 		Succes t.QualifiedName
 		e.BaseFolder '/' e.Relative '.' e.Ext;
 }
@@ -68,7 +69,7 @@ GetPath-Aux {
 $ENTRY Load
 	s.FEName t.ErrorList t.QualifiedName e.BaseDir =
 		<Load-Aux
-			( <GetInfo s.FEName> )
+			( <GetInfo s.FEName FnParser> )
 			t.ErrorList
 			<GetPath s.FEName t.QualifiedName e.BaseDir>
 		>;
@@ -86,13 +87,13 @@ DestroyQName {
 }
 
 Load-Aux {
-	( InfoNotFound ) t.ErrorList s.Result e.Tail =
+	( Fails s.Error ) t.ErrorList s.Result e.Tail =
 		Fails t.ErrorList;
 
-	( e.Info ) t.ErrorList Fails =
+	( e.Returned ) t.ErrorList Fails =
 		Fails t.ErrorList;
 
-	( s.FnParser (e.Ext) ) t.ErrorList Success e.FileName =
+	( Success s.FnParser ) t.ErrorList Success e.FileName =
 		<s.FnParser t.ErrorList e.FileName>;
 }
 
@@ -102,22 +103,7 @@ Load-Aux {
 	<GetList>
 		== s.FrontEndName*
 */
-$ENTRY GetList = <DoGetList () () <G_FrontEnds>>;
-
-DoGetList {
-	(e.Scanned) (e.Names) =
-		<G_FrontEnds e.Scanned>
-		e.Names;
-
-	(e.Scanned) (e.Names) (s.FEName s.FnParser (e.Ext)) e.Tail =
-		<DoGetList
-			(e.Scanned
-				(s.FEName s.FnParser (e.Ext))
-			)
-			(e.Names s.FEName)
-			e.Tail
-		>;
-}
+$ENTRY GetList = <MBEFE-Holder::GetMgrList <FnPtr G_FrontEnds>>;
 
 //------------------------------------------------------------------------------
 
@@ -136,16 +122,16 @@ $ENTRY X_GetPath
 MakeRelative
 	t.QualifiedName s.FEName =
 		<MakeRelative--SwExistInfo
-			(<GetInfo s.FEName>)
+			(<GetInfo s.FEName Ext>)
 			<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
 		>;
 
 MakeRelative--SwExistInfo {
-	(InfoNotFound) t.QualifiedName e.Path =
+	(Fails s.Error) t.QualifiedName e.Path =
 		t.QualifiedName Fails;
 
-	( s.FnParser (e.Ext) ) t.QualifiedName e.Path =
-		t.QualifiedName Success e.Path '.';
+	( Success e.Ext ) t.QualifiedName e.Path =
+		t.QualifiedName Success e.Path '.' e.Ext;
 }
 
 //------------------------------------------------------------------------------
@@ -156,20 +142,8 @@ MakeRelative--SwExistInfo {
 		== InfoNotFound
 */
 GetInfo
-	s.FEName =
-		<SwGetInfo s.FEName <G_FrontEnds> >;
-
-SwGetInfo {
-	s.FEName
-	e.FrontEnds-B (s.FEName e.Info) e.FrontEnds-E =
-		e.Info
-		<G_FrontEnds
-			e.FrontEnds-B (s.FEName e.Info) e.FrontEnds-E
-		>;
-
-	s.FEName e.FrontEnds =
-		InfoNotFound <G_FrontEnds e.FrontEnds>;
-}
+	s.FEName s.Option =
+		<MBEFE-Holder::GetInfo <FnPtr G_FrontEnds> s.FEName s.Option>;
 
 //------------------------------------------------------------------------------
 

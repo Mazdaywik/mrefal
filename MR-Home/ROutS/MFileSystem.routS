@@ -134,14 +134,32 @@ b Local::MFileSystem::ParseListing
 c $Local::MFileSystem::ParseListing$ {
 c 	t.$Index::?Hdr1$ t.$Index::?Hdr2$ ( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ e.$Index::?Text1$ s.$Index::Disk$ ':' e.$Index::Path$ ) ( $ADT::__StructureBrackets$ ) e.$Index::Tail$ =
 c 		<$Local::MFileSystem::ReadFileList$ ( $ADT::__StructureBrackets$ s.$Index::Disk$ ':' e.$Index::Path$ ) e.$Index::Tail$ > ;
+c 	=
+c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: out is empty' > ;
 c 	e.$Index::Other$ =
 c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: ' e.$Index::Other$ > ;
 c }
 
-b Entry::MFileSystem::FilesInfo
-c $Entry::MFileSystem::FilesInfo$ {
+b Local::MFileSystem::DoFilesInfo
+c $Local::MFileSystem::DoFilesInfo$ {
 c 	e.$Index::Mask$ =
 c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > <$Local::MFileSystem::ParseListing$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
+c }
+
+b Local::MFileSystem::Quoting
+c $Local::MFileSystem::Quoting$ {
+c 	e.$Index::Mask-B$ ' ' e.$Index::Mask-E$ =
+c 		'\"' e.$Index::Mask-B$ ' ' e.$Index::Mask-E$ '\"' ;
+c 	e.$Index::Mask$ =
+c 		e.$Index::Mask$ ;
+c }
+
+b Entry::MFileSystem::FilesInfo
+c $Entry::MFileSystem::FilesInfo$ {
+c 	e.$Index::Mask-B$ '\"' e.$Index::Mask-E$ =
+c 		<$Entry::MSelfDiag::Error$ 'MFileSystem::FilesInfo: argument must not have quotes' > ;
+c 	e.$Index::Mask$ =
+c 		<$Local::MFileSystem::DoFilesInfo$ <$Local::MFileSystem::Quoting$ e.$Index::Mask$ > > ;
 c }
 
 b Entry::MFileSystem::ExistFile-T
@@ -164,6 +182,10 @@ c 	$Ident::ExistFile-T$ =
 c 		$Entry::MFileSystem::ExistFile-T$ ;
 c 	$Ident::FilesInfo$ =
 c 		$Entry::MFileSystem::FilesInfo$ ;
+c 	$Ident::Quoting$ =
+c 		$Local::MFileSystem::Quoting$ ;
+c 	$Ident::DoFilesInfo$ =
+c 		$Local::MFileSystem::DoFilesInfo$ ;
 c 	$Ident::ParseListing$ =
 c 		$Local::MFileSystem::ParseListing$ ;
 c 	$Ident::ReadFileList$ =

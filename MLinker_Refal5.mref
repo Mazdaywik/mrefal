@@ -10,28 +10,12 @@ $IMPORT MOS;
 $IMPORT MStartupSeqGenerator;
 $IMPORT MVersion;
 
-
 /**
 	<Link t.Context (e.ProgName) e.ROutName>
 		== t.Context Success
 		== t.Context Fails
 */
-$ENTRY Link
-	t.Context (e.ProgName) e.ROutFiles =
-		<MSelfDiag::Log>
-		<MSelfDiag::Log 'Link'>
-		<MSelfDiag::Log 't.Context = ' t.Context>
-		<MSelfDiag::Log 'e.ProgName = ' e.ProgName>
-		<MSelfDiag::Log 'e.ROutFiles = ' e.ROutFiles>
-		<GuardLink
-			<Link1 t.Context (e.ProgName) e.ROutFiles>
-		>;
-
-GuardLink t.Context Success = t.Context Success;
-
-$import MSelfDiag;
-
-Link1 {
+$ENTRY Link {
 	t.Context (e.ProgName) e.ROutFiles =
 		<StartLinkLoop
 			<MExeTyper::Create <DefLim> e.ProgName '.ref'>

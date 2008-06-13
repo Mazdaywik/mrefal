@@ -5,8 +5,6 @@ $IMPORT MSelfDiag;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 
-$ENTRY Create = <MContext::Create>;
-
 * <UpdateModuleInfo t.Context (e.ModName) e.NewOptionsList>
 *	== t.UpdatedContext
 $ENTRY UpdateModuleInfo
@@ -43,9 +41,6 @@ LastModule-Guard {
 	t.Context Fails =
 		<MSelfDiag::Error 'Context::LastModule: module name not found'>;
 }
-
-$ENTRY Destroy
-	t.Context = <MContext::Destroy t.Context>;
 
 * <ExtractOption t.Context s.Option e.ModName>
 *	== t.Context Found e.Option

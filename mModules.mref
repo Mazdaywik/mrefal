@@ -1,0 +1,7 @@
+$MODULE MModules;
+
+$IMPORT MBE-Mgr;
+$IMPORT MContext;
+$IMPORT MFE-Mgr;
+
+$END MModules.

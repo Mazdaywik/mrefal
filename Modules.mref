@@ -1,10 +1,12 @@
 $MODULE Modules;
 
 $IMPORT MCreateDirIfNeed;
-$IMPORT MStrings;
-$IMPORT MFileSystem;
-$IMPORT MOS;
 $IMPORT MError;
+$IMPORT MFileSystem;
+$IMPORT MOrder;
+$IMPORT MOS;
+$IMPORT MModules;
+$IMPORT MStrings;
 
 $ENTRY CanonicalModuleName {
 	s.Initial e.Tail =
@@ -31,7 +33,8 @@ GetTime {
 	e.FileName = <MFileSystem::FileAttribute DateTime e.FileName>;
 }
 
-$ENTRY SourceState-T
+//$ENTRY
+SourceState-T
 	e.ModName = <SourceState e.ModName> e.ModName;
 
 * <SourceState e.ModName>
@@ -39,7 +42,8 @@ $ENTRY SourceState-T
 *	== Library
 *	== NeedRecompile
 *	== SrcNotUpdated
-$ENTRY SourceState
+//$ENTRY
+SourceState
 	e.ModName =
 		<ThreeFilesState
 			( <SymName e.ModName> )
@@ -68,10 +72,10 @@ CompareMTimes {
 	e.Times-B FileNotFound e.Times-E t.SrcTime =
 		NeedRecompile;
 
-	t.SymTime t.OutTime t.SrcTime =
+	(e.SymTime) (e.OutTime) (e.SrcTime) =
 		<SwCompareMTimes
-			<MFileSystem::CompareFileTime t.SymTime t.SrcTime>
-			<MFileSystem::CompareFileTime t.OutTime t.SrcTime>
+			<MOrder::Compare (e.SymTime) (e.SrcTime)>
+			<MOrder::Compare (e.OutTime) (e.SrcTime)>
 		>;
 }
 

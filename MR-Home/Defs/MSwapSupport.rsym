@@ -1,0 +1,21 @@
+/* Automatically generated file, don't edit! */
+$module MSwapSupport;
+
+$entry Read;
+$entry Write;
+$entry PushFront;
+$entry PushBack;
+$entry PopFront;
+$entry PopBack;
+$entry Br;
+$entry Bury;
+$entry Dg;
+$entry Cp;
+$entry Rp;
+$entry Replace;
+$entry Dgall;
+$entry DigAll;
+$entry Cpall;
+$entry CopyAll;
+
+$end MSwapSupport.

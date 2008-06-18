@@ -2,26 +2,18 @@ $MODULE FileIO;
 
 
 $IMPORT MSelfDiag;
+$IMPORT MSwapSupport;
 $IMPORT MRefalRTS;
 
 $SWAP G_Handles;
 
 $ENTRY Init = <G_Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18>;
 
-GetHandle {
-	= <SwGetHandle <G_Handles> >;
-}
-
-SwGetHandle {
-	= None;
-
-	s.Handle e.OtherHandles =
-		s.Handle <G_Handles e.OtherHandles>;
-}
+GetHandle = <MSwapSupport::PopFront <FnPtr G_Handles>>;
 
 ReleaseHandle {
 	s.Handle =
-		<G_Handles <G_Handles> s.Handle>;
+		<MSwapSupport::PushFront <FnPtr G_Handles> s.Handle>;
 }
 
 $DATA File;
@@ -54,13 +46,13 @@ CheckExistAndOpenForRead {
 }
 
 SwOpen {
-	None s.Mode e.FileName =
+	Success s.Handle s.Mode e.FileName =
+		[File s.Handle e.FileName] <MRefalRTS::Open s.Mode s.Handle e.FileName>;
+
+	Fails s.Mode e.FileName =
 		<MSelfDiag::Error
 			'Can\'t open file ' e.FileName ': no free handles'
 		>;
-
-	s.Handle s.Mode e.FileName =
-		[File s.Handle e.FileName] <MRefalRTS::Open s.Mode s.Handle e.FileName>;
 }
 
 $ENTRY Close {

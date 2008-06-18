@@ -9,9 +9,13 @@ $IMPORT MQualifiedName;
 
 	s.FEName ::= IDENTIFIER -- Имя
 	s.FnParser ::= {
-		t.ErrorList t.QualifiedName e.FileName = t.ErrorList Success t.IModule;
-		t.ErrorList t.QualifiedName e.FileName = t.ErrorList Fails
+		t.ErrorList t.QualifiedName e.FileName =
+			t.ErrorList Success s.Result t.IModule;
+
+		t.ErrorList t.QualifiedName e.FileName =
+			t.ErrorList Fails;
 	}
+	s.Result ::= Success | Warnings | Errors
 	e.Ext -- Расширение файлов исходного текста
 		Функция s.FnParser может предполагать, что файл с заданным именем
 	существует.
@@ -63,8 +67,9 @@ GetPath-Aux {
 
 /**
 	<Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
-		== t.ErrorList Success t.IModule
+		== t.ErrorList Success s.Result t.IModule
 		== t.ErrorList Fails
+	s.Result ::= Success | Warnings | Errors
 */
 $ENTRY Load
 	s.FEName t.ErrorList t.QualifiedName e.BaseDir =
@@ -76,9 +81,7 @@ $ENTRY Load
 
 GetPath
 	s.FEName t.QualifiedName e.BaseDir =
-		<DestroyQName
-			<GetPath-T s.FEName t.QualifiedName e.BaseDir>
-		>;
+		<GetPath-T s.FEName t.QualifiedName e.BaseDir>;
 
 DestroyQName {
 	s.Result t.QualifiedName e.Tail =
@@ -87,14 +90,16 @@ DestroyQName {
 }
 
 Load-Aux {
-	( Fails s.Error ) t.ErrorList s.Result e.Tail =
+	( Fails s.Error ) t.ErrorList s.Result t.QualifiedName e.Tail =
+		<MQualifiedName::Destroy t.QualifiedName>
 		Fails t.ErrorList;
 
-	( e.Returned ) t.ErrorList Fails =
+	( e.Returned ) t.ErrorList Fails t.QualifiedName =
+		<MQualifiedName::Destroy t.QualifiedName>
 		Fails t.ErrorList;
 
-	( Success s.FnParser ) t.ErrorList Success e.FileName =
-		<s.FnParser t.ErrorList e.FileName>;
+	( Success s.FnParser ) t.ErrorList Success t.QualifiedName e.FileName =
+		<s.FnParser t.ErrorList t.QualifiedName e.FileName>;
 }
 
 //------------------------------------------------------------------------------

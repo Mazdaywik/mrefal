@@ -1,0 +1,148 @@
+$MODULE MLambda;
+
+$DATA L-Lambda, R-Lambda;
+
+/*------------------------------------------------------------------------------
+	Внутреннее представление
+	[L-Lambda t.Lambda e.LeftLinked]
+	[R-Lambda t.Lambda e.RightLinked]
+------------------------------------------------------------------------------*/
+
+/**
+	<Apply t.Lambda e.Arg>
+		== e.Result
+*/
+$ENTRY Apply {
+	[L-Lambda t.Lambda e.LeftLinked] e.Argument =
+		<Apply t.Lambda e.LeftLinked e.Argument>;
+
+	[R-Lambda t.Lambda e.RightLinked] e.Argument =
+		<Apply t.Lambda e.Argument e.RightLinked>;
+
+	s.FnPtr e.Argument = <s.FnPtr e.Argument>;
+}
+
+/**
+	<BindLeft t.Lambda e.Left>
+		== t.Lambda'
+	<Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Left e.Arg>
+*/
+$ENTRY BindLeft {
+	[L-Lambda t.Lambda e.Left1] e.Left2 =
+		[L-Lambda t.Lambda e.Left1 e.Left2];
+
+	t.Lambda e.Left =
+		[L-Lambda t.Lambda e.Left];
+}
+
+/**
+	<BindRight t.Lambda e.Right>
+		== t.Lambda'
+	<Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Arg e.Right>
+*/
+$ENTRY BindRight {
+	[R-Lambda t.Lambda e.Right1] e.Right2 =
+		[R-Lambda t.Lambda e.Right2 e.Right1];
+
+	t.Lambda e.Right =
+		[R-Lambda t.Lambda e.Right];
+}
+
+/**
+	<Map t.Lambda t.Src*>
+		== e.Result*
+	<Apply t.Lambda t.Src> == e.Result
+*/
+$ENTRY Map {
+	t.Lambda t.Next e.Tail =
+		<Apply t.Lambda t.Next>
+		<Map t.Lambda e.Tail>;
+
+	t.Lambda = ;
+}
+
+/**
+	<Reduce t.Lambda t.Accum t.Src*>
+		== t.Accum'
+	<Apply t.Lambda t.Accum t.Src> == t.Accum'
+*/
+$ENTRY Reduce {
+	t.Lambda t.Accum t.Next e.Tail =
+		<Reduce
+			t.Lambda
+			<GuardTerm <Apply t.Lambda t.Accum t.Next>>
+			e.Tail
+		>;
+
+	t.Lambda t.Accum = t.Accum;
+}
+
+GuardTerm {
+	t.OneTerm = t.OneTerm;
+
+	//Если функция на входе Reduce нарушает соглашение -- сама виновата.
+}
+
+/**
+	<Reduce-R t.Lambda t.Accum t.Src*>
+		== t.Accum'
+	<Apply t.Lambda t.Accum t.Src> == t.Accum'
+*/
+$ENTRY Reduce-R {
+	t.Lambda t.Accum e.AntiTail t.Last =
+		<Reduce
+			t.Lambda
+			<GuardTerm <Apply t.Lambda t.Accum t.Last>>
+			e.AntiTail
+		>;
+
+	t.Lambda t.Accum = t.Accum;
+}
+	
+/**
+	<MapReduce t.Lambda t.Accum t.Src*>
+		== t.Accum' e.Result*
+	<Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+*/
+$ENTRY MapReduce {
+	t.Lambda t.Accum e.Src =
+		<UnBracket
+			<Reduce
+				<BindLeft <FnPtr MapReducer> t.Lambda>
+				(t.Accum) e.Src
+			>
+		>;
+}
+
+UnBracket (t.Accum e.Result) = t.Accum e.Result;
+
+MapReducer
+	t.LLambda (t.Accum e.Scanned) t.Next =
+		<MapReducer-Aux
+			(<Apply t.LLambda t.Accum t.Next>)
+			e.Scanned
+		>;
+
+MapReducer-Aux
+	(t.Accum e.Result) e.Scanned =
+		(t.Accum e.Scanned e.Result);
+
+/**
+	<MapReduce-R t.Lambda t.Accum t.Src*>
+		== t.Accum' e.Result*
+	<Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+*/
+$ENTRY MapReduce-R
+	t.Lambda t.Accum e.Src =
+		<UnBracket
+			<Reduce-R
+				<BindLeft <FnPtr MapReducer-R> t.Lambda>
+				(t.Accum) e.Src
+			>
+		>;
+
+MapReducer-R
+	t.LLambda (t.Accum e.Result) t.Src =
+		( <Apply t.LLambda t.Accum t.Src> e.Result );
+
+$END MLambda.

@@ -215,6 +215,7 @@ RealExtract-SwFirst {
 	t.SymStream ']' = t.SymStream (CloseSquare);
 
 	t.SymStream '&' = t.SymStream (Ampersand);
+	t.SymStream '*' = t.SymStream (Asterisk);
 	t.SymStream ':' = <Colon <MSymStream::NextChar t.SymStream>>;
 	t.SymStream ',' = t.SymStream (Comma);
 	t.SymStream '.' = t.SymStream (Dot);

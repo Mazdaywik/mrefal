@@ -222,10 +222,10 @@ c 	$Ident::DoParseDirectory$ =
 c 		$Local::MFileSystem::DoParseDirectory$ ;
 c 	$Ident::FnPtr$ =
 c 		$Local::MFileSystem::FnPtr$ ;
-c 	$Ident::MDosWinRecoder$ $Ident::WinToDos$ =
-c 		$Entry::MDosWinRecoder::WinToDos$ ;
 c 	$Ident::MDosWinRecoder$ $Ident::DosToWin$ =
 c 		$Entry::MDosWinRecoder::DosToWin$ ;
+c 	$Ident::MDosWinRecoder$ $Ident::WinToDos$ =
+c 		$Entry::MDosWinRecoder::WinToDos$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =
@@ -270,10 +270,10 @@ c 	$Ident::MRefalRTS$ $Ident::Sub$ =
 c 		$Entry::MRefalRTS::Sub$ ;
 c 	$Ident::MRefalRTS$ $Ident::Compare$ =
 c 		$Entry::MRefalRTS::Compare$ ;
-c 	$Ident::MOrder$ $Ident::Compare-T$ =
-c 		$Entry::MOrder::Compare-T$ ;
 c 	$Ident::MOrder$ $Ident::Compare$ =
 c 		$Entry::MOrder::Compare$ ;
+c 	$Ident::MOrder$ $Ident::Compare-T$ =
+c 		$Entry::MOrder::Compare-T$ ;
 c 	$Ident::MOrder$ $Ident::Sort$ =
 c 		$Entry::MOrder::Sort$ ;
 c 	$Ident::MOS$ $Ident::System$ =
@@ -310,43 +310,43 @@ c 	$Ident::FileIO$ $Ident::Load$ =
 c 		$Entry::FileIO::Load$ ;
 c 	$Ident::FileIO$ $Ident::Save$ =
 c 		$Entry::FileIO::Save$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
+c 		$Entry::MSelfDiag::Assert-Eq$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq-T$ =
+c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
+c 		$Entry::MSelfDiag::Assert-NE$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE-T$ =
+c 		$Entry::MSelfDiag::Assert-NE-T$ ;
 c 	$Ident::MSelfDiag$ $Ident::Error$ =
 c 		$Entry::MSelfDiag::Error$ ;
 c 	$Ident::MSelfDiag$ $Ident::Log$ =
 c 		$Entry::MSelfDiag::Log$ ;
 c 	$Ident::MSelfDiag$ $Ident::Log-T$ =
 c 		$Entry::MSelfDiag::Log-T$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-Eq-T$ =
-c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-NE-T$ =
-c 		$Entry::MSelfDiag::Assert-NE-T$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
-c 		$Entry::MSelfDiag::Assert-Eq$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
-c 		$Entry::MSelfDiag::Assert-NE$ ;
-c 	$Ident::MStrings$ $Ident::Numb$ =
-c 		$Entry::MStrings::Numb$ ;
-c 	$Ident::MStrings$ $Ident::Symb$ =
-c 		$Entry::MStrings::Symb$ ;
-c 	$Ident::MStrings$ $Ident::Ord$ =
-c 		$Entry::MStrings::Ord$ ;
 c 	$Ident::MStrings$ $Ident::Chr$ =
 c 		$Entry::MStrings::Chr$ ;
+c 	$Ident::MStrings$ $Ident::First$ =
+c 		$Entry::MStrings::First$ ;
 c 	$Ident::MStrings$ $Ident::Length$ =
 c 		$Entry::MStrings::Length$ ;
 c 	$Ident::MStrings$ $Ident::Length-T$ =
 c 		$Entry::MStrings::Length-T$ ;
-c 	$Ident::MStrings$ $Ident::Upper$ =
-c 		$Entry::MStrings::Upper$ ;
 c 	$Ident::MStrings$ $Ident::Lower$ =
 c 		$Entry::MStrings::Lower$ ;
-c 	$Ident::MStrings$ $Ident::First$ =
-c 		$Entry::MStrings::First$ ;
-c 	$Ident::MStrings$ $Ident::Seq$ =
-c 		$Entry::MStrings::Seq$ ;
+c 	$Ident::MStrings$ $Ident::Numb$ =
+c 		$Entry::MStrings::Numb$ ;
+c 	$Ident::MStrings$ $Ident::Ord$ =
+c 		$Entry::MStrings::Ord$ ;
 c 	$Ident::MStrings$ $Ident::Reverse$ =
 c 		$Entry::MStrings::Reverse$ ;
+c 	$Ident::MStrings$ $Ident::Seq$ =
+c 		$Entry::MStrings::Seq$ ;
+c 	$Ident::MStrings$ $Ident::Symb$ =
+c 		$Entry::MStrings::Symb$ ;
 c 	$Ident::MStrings$ $Ident::Trim$ =
 c 		$Entry::MStrings::Trim$ ;
+c 	$Ident::MStrings$ $Ident::Upper$ =
+c 		$Entry::MStrings::Upper$ ;
 c }
 

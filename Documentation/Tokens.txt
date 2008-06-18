@@ -16,6 +16,7 @@ OpenSquare		нет					'['
 CloseSquare		нет					']'
 
 Ampersand		нет					'&'
+Asterisk		нет					'*'
 Colon			нет					':'
 Comma			нет					','
 Dot				нет					'.'

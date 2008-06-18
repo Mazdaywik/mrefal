@@ -17,21 +17,13 @@ c }
 b Local::FileIO::GetHandle
 c $Local::FileIO::GetHandle$ {
 c 	=
-c 		<$Local::FileIO::SwGetHandle$ <$Swap::FileIO::G_Handles$ > > ;
-c }
-
-b Local::FileIO::SwGetHandle
-c $Local::FileIO::SwGetHandle$ {
-c 	=
-c 		$Ident::None$ ;
-c 	s.$Index::Handle$ e.$Index::OtherHandles$ =
-c 		s.$Index::Handle$ <$Swap::FileIO::G_Handles$ e.$Index::OtherHandles$ > ;
+c 		<$Entry::MSwapSupport::PopFront$ $Swap::FileIO::G_Handles$ > ;
 c }
 
 b Local::FileIO::ReleaseHandle
 c $Local::FileIO::ReleaseHandle$ {
 c 	s.$Index::Handle$ =
-c 		<$Swap::FileIO::G_Handles$ <$Swap::FileIO::G_Handles$ > s.$Index::Handle$ > ;
+c 		<$Entry::MSwapSupport::PushFront$ $Swap::FileIO::G_Handles$ s.$Index::Handle$ > ;
 c }
 
 b Entry::FileIO::Open
@@ -54,10 +46,10 @@ c }
 
 b Local::FileIO::SwOpen
 c $Local::FileIO::SwOpen$ {
-c 	$Ident::None$ s.$Index::Mode$ e.$Index::FileName$ =
-c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
-c 	s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
+c 	$Ident::Success$ s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
 c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Open$ s.$Index::Mode$ s.$Index::Handle$ e.$Index::FileName$ > ;
+c 	$Ident::Fails$ s.$Index::Mode$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
 c }
 
 b Entry::FileIO::Close

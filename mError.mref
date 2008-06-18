@@ -2,9 +2,11 @@ $MODULE MError;
 
 $IMPORT InOut;
 $IMPORT MOS;
+$IMPORT MLambda;
 $IMPORT MLexer;
 $IMPORT MOrder;
 $IMPORT MOutModuleStatus;
+$IMPORT MQualifiedName;
 $IMPORT MSymStream;
 
 $ENTRY Fatal
@@ -65,6 +67,22 @@ $ENTRY EmptyList {
 		[ErrorList e.Errors] NotEmpty;
 }
 
+/**
+	<ContentLevel t.ErrorList>
+		== t.ErrorList Empty
+		== t.ErrorList Warnings
+		== t.ErrorList Errors
+*/
+$ENTRY ContentLevel
+	t.ErrorList =
+		<SwContentLevel <EmptyList t.ErrorList>>;
+
+SwContentLevel {
+	t.ErrorList Empty = t.ErrorList Empty;
+	
+	t.ErrorList NotEmpty = t.ErrorList Errors;
+}
+
 AddToList {
 	[ErrorList e.Errors-B t.Error e.Errors-E]
 	t.Error =
@@ -73,6 +91,14 @@ AddToList {
 	[ErrorList e.Errors] t.Error =
 		[ErrorList e.Errors t.Error];
 }
+
+/**
+	<MergeLists t.List1 t.List2>
+		== t.MergedList
+*/
+$ENTRY MergeLists
+	t.List1 [ErrorList e.Errors2] =
+		<MLambda::Reduce <FnPtr AddToList> t.List1 e.Errors2>;
 
 /**
 	<AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
@@ -113,15 +139,27 @@ $ENTRY AddNamesMismatch
 			)
 		>;
 
-$ENTRY AddMismatchModuleAndFile
-	t.ErrorList
-	t.SrcPos (e.InSrc) (e.InFS) =
+/**
+	<AddMismatchInternalAndExternalNames
+		t.ErrorList t.SrcPos t.InternalName t.ExternalName
+	>
+		== t.ErrorList
+*/
+$ENTRY AddMismatchInternalAndExternalNames
+	t.ErrorList t.SrcPos t.InternalName t.ExternalName =
 		<AddToList
 			t.ErrorList
 			( Semantics t.SrcPos
-				'Mismatch module name \'' e.InSrc '\' and file name \'' e.InFS '\''
+				'Mismatch internal module name '
+				<QualifiedNameToString t.InternalName>
+				' and external name '
+				<QualifiedNameToString t.ExternalName>
 			)
 		>;
+
+QualifiedNameToString
+	t.QualifiedName =
+		<TypeQualified <MQualifiedName::Parse t.QualifiedName>>;
 
 * <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
 *	== t.UpdatedErrorList

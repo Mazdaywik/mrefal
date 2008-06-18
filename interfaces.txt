@@ -91,10 +91,23 @@ Module MError;
 	== t.ErrorList Empty
 	== t.ErrorList NotEmpty
 
+<ContentLevel t.ErrorList>
+	== t.ErrorList Empty
+	== t.ErrorList Warnings
+	== t.ErrorList Errors
+
+<MergeLists t.List1 t.List2>
+	== t.MergedList
+
 <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
 	== t.UpdatedErrorList
 
 <AddNamesMismatch t.ErrorList t.TailPos (e.InHead) (e.InTail)>
+	== t.ErrorList
+
+<AddMismatchInternalAndExternalNames
+	t.ErrorList t.SrcPos t.InternalName t.ExternalName
+>
 	== t.ErrorList
 
 ================================================================
@@ -125,8 +138,9 @@ Module MFE-Mgr;
 	== Fails t.QualifiedName
 
 <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
-	== t.ErrorList Success t.IModule
+	== t.ErrorList Success s.Result t.IModule
 	== t.ErrorList Fails
+s.Result ::= Success | Warnings | Errors
 
 <GetList>
 	== s.FrontEndName*
@@ -226,7 +240,45 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 	== t.IModule (e.ADT)
 
 ================================================================
-Module MLinker;
+Module MLambda;
+
+<Apply t.Lambda e.Arg>
+	== e.Result
+
+<BindLeft t.Lambda e.Left>
+	== t.Lambda'
+<Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Left e.Arg>
+
+<BindRight t.Lambda e.Right>
+	== t.Lambda'
+<Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Arg e.Right>
+
+<Map t.Lambda t.Src*>
+	== e.Result*
+<Apply t.Lambda t.Src> == e.Result
+
+<Reduce t.Lambda t.Accum t.Src*>
+	== t.Accum'
+<Apply t.Lambda t.Accum t.Src> == t.Accum'
+
+<Reduce-R t.Lambda t.Accum t.Src*>
+	== t.Accum'
+<Apply t.Lambda t.Accum t.Src> == t.Accum'
+
+<MapReduce t.Lambda t.Accum t.Src*>
+	== t.Accum' e.Result*
+<Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+
+<MapReduce-R t.Lambda t.Accum t.Src*>
+	== t.Accum' e.Result*
+<Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+
+================================================================
+Module MLinker_Refal5;
+
+<Link t.Context (e.ProgName) e.ROutName>
+	== t.Context Success
+	== t.Context Fails
 
 <CreateStartupUnit t.Context>
 	== t.Context (t.StartupUnit)
@@ -289,13 +341,15 @@ Module MNameMaker;
 ================================================================
 Module MParser;
 
-<SrcModule e.SrcFileName>
-	== t.IModule s.ErrorResult t.ErrorList
-s.ErrorResult ::= Success | Warnings | Errors | Fatal
-
-<LoadSource t.ErrorList t.QualifiedName e.FileName>
-	== t.ErrorList Success t.IModule
+<SrcModule_New t.ErrorList t.QualifiedName e.FileName>
+	== t.ErrorList Success s.Result t.IModule
 	== t.ErrorList Fails
+s.Result ::= Success | Warnings | Errors
+
+<SymModule_New t.ErrorList t.QualifiedName e.FileName>
+	== t.ErrorList Success s.Result t.IModule
+	== t.ErrorList Fails
+s.Reslult ::= Success | Warnings | Errors
 
 <SymModule e.SymFileName>
 	== t.IModule s.ErrorResult t.ErrorList
@@ -397,7 +451,7 @@ Module MSwapSupport;
 =============================================================================
 Модуль предоставляет функции для наиболее распространённых функций с
 динамическими ящиками: чтение, запись, добавление терма в начало/конец,
-чтение терма с начала/конца.
+чтение терма с начала/конца, операции с копилкой.
 ==============================================================================
 
 <Read s.FnSwap>
@@ -430,6 +484,26 @@ Module MSwapSupport;
 	== Fails
 См. описание функции PopFront.
 
+<Br s.FnSwap e.Key '=' e.Value> == empty
+
+<Bury s.FnSwap (e.Key) e.Value> == empty
+
+<Dg s.FnSwap e.Key> == e.Value
+
+<Cp s.FnSwap e.Key> == e.Value
+
+<Rp s.FnSwap e.Key '=' e.Value> == empty
+
+<Replace s.FnSwap (e.Key) e.Value> == empty
+
+<Dgall s.FnSwap> == (e.Key '=' e.Value)*
+
+<DigAll s.FnSwap> == ((e.Key) e.Value)*
+
+<Cpall s.FnSwap> == (e.Key '=' e.Value)*
+
+<CopyAll s.FnSwap> == ((e.Key) e.Value)*
+
 ================================================================
 Module MSymModule;
 
@@ -437,12 +511,17 @@ Module MSymModule;
 на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
 линковщик.
 
+<LoadInfo_New t.Context t.ModuleName>
+	== t.Context Success t.IModule
+	== t.Context Fails
+t.ModuleName ::= t.QualifiedName
+
 <LoadInfo t.Context e.ModuleName>
 	== t.UpdatedContext
 		( Module e.ModuleName )
 		( Functions ((e.Qualifier)(e.FnName))* )
 		( Imports (e.ModName)* )
-	== t.Context SymInfoNotFound
+	== t.C ontext SymInfoNotFound
 
 <SymTableToSymInfo-T t.IModule>
 	== t.IModule

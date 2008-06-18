@@ -75,10 +75,10 @@ c }
 
 b Local::FileIO::SwOpen
 c $Local::FileIO::SwOpen$ {
-c 	$Ident::None$ s.$Index::Mode$ e.$Index::FileName$ =
-c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
-c 	s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
+c 	$Ident::Success$ s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
 c 		( $ADT::__StructureBrackets$ $Ident::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Open$ s.$Index::Mode$ s.$Index::Handle$ e.$Index::FileName$ > ;
+c 	$Ident::Fails$ s.$Index::Mode$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
 c }
 
 b Local::FileIO::CheckExistAndOpenForRead
@@ -102,21 +102,13 @@ c }
 b Local::FileIO::ReleaseHandle
 c $Local::FileIO::ReleaseHandle$ {
 c 	s.$Index::Handle$ =
-c 		<$Swap::FileIO::G_Handles$ <$Swap::FileIO::G_Handles$ > s.$Index::Handle$ > ;
-c }
-
-b Local::FileIO::SwGetHandle
-c $Local::FileIO::SwGetHandle$ {
-c 	=
-c 		$Ident::None$ ;
-c 	s.$Index::Handle$ e.$Index::OtherHandles$ =
-c 		s.$Index::Handle$ <$Swap::FileIO::G_Handles$ e.$Index::OtherHandles$ > ;
+c 		<$Entry::MSwapSupport::PushFront$ <$Local::FileIO::FnPtr$ $Ident::G_Handles$ > s.$Index::Handle$ > ;
 c }
 
 b Local::FileIO::GetHandle
 c $Local::FileIO::GetHandle$ {
 c 	=
-c 		<$Local::FileIO::SwGetHandle$ <$Swap::FileIO::G_Handles$ > > ;
+c 		<$Entry::MSwapSupport::PopFront$ <$Local::FileIO::FnPtr$ $Ident::G_Handles$ > > ;
 c }
 
 b Entry::FileIO::Init
@@ -133,8 +125,6 @@ c 	$Ident::Init$ =
 c 		$Entry::FileIO::Init$ ;
 c 	$Ident::GetHandle$ =
 c 		$Local::FileIO::GetHandle$ ;
-c 	$Ident::SwGetHandle$ =
-c 		$Local::FileIO::SwGetHandle$ ;
 c 	$Ident::ReleaseHandle$ =
 c 		$Local::FileIO::ReleaseHandle$ ;
 c 	$Ident::Open$ =
@@ -165,20 +155,52 @@ c 	$Ident::DoSave$ =
 c 		$Local::FileIO::DoSave$ ;
 c 	$Ident::FnPtr$ =
 c 		$Local::FileIO::FnPtr$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
+c 		$Entry::MSelfDiag::Assert-Eq$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-Eq-T$ =
+c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
+c 		$Entry::MSelfDiag::Assert-NE$ ;
+c 	$Ident::MSelfDiag$ $Ident::Assert-NE-T$ =
+c 		$Entry::MSelfDiag::Assert-NE-T$ ;
 c 	$Ident::MSelfDiag$ $Ident::Error$ =
 c 		$Entry::MSelfDiag::Error$ ;
 c 	$Ident::MSelfDiag$ $Ident::Log$ =
 c 		$Entry::MSelfDiag::Log$ ;
 c 	$Ident::MSelfDiag$ $Ident::Log-T$ =
 c 		$Entry::MSelfDiag::Log-T$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-Eq-T$ =
-c 		$Entry::MSelfDiag::Assert-Eq-T$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-NE-T$ =
-c 		$Entry::MSelfDiag::Assert-NE-T$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-Eq$ =
-c 		$Entry::MSelfDiag::Assert-Eq$ ;
-c 	$Ident::MSelfDiag$ $Ident::Assert-NE$ =
-c 		$Entry::MSelfDiag::Assert-NE$ ;
+c 	$Ident::MSwapSupport$ $Ident::Read$ =
+c 		$Entry::MSwapSupport::Read$ ;
+c 	$Ident::MSwapSupport$ $Ident::Write$ =
+c 		$Entry::MSwapSupport::Write$ ;
+c 	$Ident::MSwapSupport$ $Ident::PushFront$ =
+c 		$Entry::MSwapSupport::PushFront$ ;
+c 	$Ident::MSwapSupport$ $Ident::PushBack$ =
+c 		$Entry::MSwapSupport::PushBack$ ;
+c 	$Ident::MSwapSupport$ $Ident::PopFront$ =
+c 		$Entry::MSwapSupport::PopFront$ ;
+c 	$Ident::MSwapSupport$ $Ident::PopBack$ =
+c 		$Entry::MSwapSupport::PopBack$ ;
+c 	$Ident::MSwapSupport$ $Ident::Br$ =
+c 		$Entry::MSwapSupport::Br$ ;
+c 	$Ident::MSwapSupport$ $Ident::Bury$ =
+c 		$Entry::MSwapSupport::Bury$ ;
+c 	$Ident::MSwapSupport$ $Ident::Dg$ =
+c 		$Entry::MSwapSupport::Dg$ ;
+c 	$Ident::MSwapSupport$ $Ident::Cp$ =
+c 		$Entry::MSwapSupport::Cp$ ;
+c 	$Ident::MSwapSupport$ $Ident::Rp$ =
+c 		$Entry::MSwapSupport::Rp$ ;
+c 	$Ident::MSwapSupport$ $Ident::Replace$ =
+c 		$Entry::MSwapSupport::Replace$ ;
+c 	$Ident::MSwapSupport$ $Ident::Dgall$ =
+c 		$Entry::MSwapSupport::Dgall$ ;
+c 	$Ident::MSwapSupport$ $Ident::DigAll$ =
+c 		$Entry::MSwapSupport::DigAll$ ;
+c 	$Ident::MSwapSupport$ $Ident::Cpall$ =
+c 		$Entry::MSwapSupport::Cpall$ ;
+c 	$Ident::MSwapSupport$ $Ident::CopyAll$ =
+c 		$Entry::MSwapSupport::CopyAll$ ;
 c 	$Ident::MRefalRTS$ $Ident::Prout$ =
 c 		$Entry::MRefalRTS::Prout$ ;
 c 	$Ident::MRefalRTS$ $Ident::Card$ =

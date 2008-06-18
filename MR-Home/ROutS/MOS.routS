@@ -154,15 +154,15 @@ c 	$Ident::FileIO$ $Ident::Save$ =
 c 		$Entry::FileIO::Save$ ;
 c 	$Ident::Math$ $Ident::Add$ =
 c 		$Entry::Math::Add$ ;
-c 	$Ident::Math$ $Ident::Sub$ =
-c 		$Entry::Math::Sub$ ;
-c 	$Ident::Math$ $Ident::Inc$ =
-c 		$Entry::Math::Inc$ ;
-c 	$Ident::Math$ $Ident::Dec$ =
-c 		$Entry::Math::Dec$ ;
 c 	$Ident::Math$ $Ident::Compare$ =
 c 		$Entry::Math::Compare$ ;
 c 	$Ident::Math$ $Ident::Compare-T$ =
 c 		$Entry::Math::Compare-T$ ;
+c 	$Ident::Math$ $Ident::Dec$ =
+c 		$Entry::Math::Dec$ ;
+c 	$Ident::Math$ $Ident::Inc$ =
+c 		$Entry::Math::Inc$ ;
+c 	$Ident::Math$ $Ident::Sub$ =
+c 		$Entry::Math::Sub$ ;
 c }
 

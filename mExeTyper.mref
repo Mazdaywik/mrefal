@@ -27,10 +27,10 @@ $ENTRY Destroy
 			<FileIO::WriteLine t.FOut e.Converted>
 		>;
 
-/**
+/*
 	<Flush t.ExeTyper> == t.ExeTyper
 */
-$ENTRY Flush {
+/*$ENTRY Flush {
 	[ExeTyper s.Limit s.Free t.FOut] =
 		[ExeTyper s.Limit s.Limit t.FOut];
 
@@ -39,7 +39,7 @@ $ENTRY Flush {
 			s.Limit s.Limit
 			<FileIO::WriteLine t.FOut e.Converted>
 		];
-}
+}*/
 
 Dec {
 	Limit = Limit;
@@ -54,12 +54,12 @@ Dec2 s.Size = <Dec <Dec s.Size>>;
 // Средняя длина переименного элемента <= 3: XA2
 Dec3 s.Size = <Dec <Dec2 s.Size>>;
 
-Dec4 s.Size = <Dec2 <Dec2 s.Size>>;
+//Dec4 s.Size = <Dec2 <Dec2 s.Size>>;
 
-Inc {
+/*Inc {
 	Limit = Limit;
 	s.Other = <Math::Inc s.Other>;
-}
+}*/
 
 // Перед этими символами пробелы не нужны
 SingleChars = '=<>;(){}';

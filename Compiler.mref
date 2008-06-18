@@ -52,24 +52,35 @@ ParseAndCompile {
 	(Sym e.SymName) (Out e.OutName) (Src e.SrcName)
 	(e.Directory) e.Name =
 		<MOutModuleStatus::Compiling e.SrcName>
-		<Compile
+		<Compile-SwParseResult
 			(File e.SrcName)
 			t.Context
-			<MParser::SrcModule e.SrcName>
+			<MParser::SrcModule
+				<MError::CreateErrList>
+				<CreateQualifiedName e.SrcName>
+				e.SrcName
+			>
 		>
  		<MOutModuleStatus::Compiled e.SrcName>;
 }
 
-Compile {
-	t.FileName t.Context t.Module Success t.ErrorList =
+CreateQualifiedName
+	e.FileName s.Dot s.M s.R s.E s.F =
+		<MQualifiedName::Create (e.FileName)>;
+
+Compile-SwParseResult {
+	t.FileName t.Context t.ErrorList Success Success t.IModule =
 		<MError::DestroyErrList t.ErrorList>
-		<Compile0 t.FileName t.Context t.Module>;
+		<Compile0 t.FileName t.Context t.IModule>;
 
-	t.FileName t.Context t.Module Warnings t.ErrorList =
+	t.FileName t.Context t.ErrorList Success Warnings t.IModule =
 		<MError::PrintErrors t.ErrorList>
-		<Compile0 t.FileName t.Context t.Module>;
+		<Compile0 t.FileName t.Context t.IModule>;
 
-	t.FileName t.Context t.Module Errors t.ErrorList =
+	t.FileName t.Context t.ErrorList Success Errors t.IModule =
+		<MError::PrintErrorsAndStop t.ErrorList>;
+
+	t.FileName t.Context t.ErrorList Fails =
 		<MError::PrintErrorsAndStop t.ErrorList>;
 }
 

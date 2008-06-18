@@ -1,15 +1,16 @@
+/* Automatically generated file, don't edit! */
 $module MOS;
 
-$import FileIO;
 $import MRefalRTS;
+$import FileIO;
 $import Math;
 
+$entry System;
 $entry Arg;
 $entry ArgList;
-$entry Env;
-$entry EnvList;
-$entry Exit;
 $entry ProgName;
-$entry System;
+$entry Exit;
+$entry EnvList;
+$entry Env;
 
 $end MOS.

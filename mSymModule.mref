@@ -10,11 +10,13 @@ $IMPORT Context;
 $IMPORT FileIO;
 $IMPORT MBE-Mgr;
 $IMPORT MError;
+$IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOrder;
 $IMPORT MParser;
+$IMPORT MQualifiedName;
 $IMPORT MSelfDiag;
 
 *-------------------------------------------------------------------------------
@@ -22,12 +24,58 @@ $IMPORT MSelfDiag;
 *-------------------------------------------------------------------------------
 
 /**
+	<LoadInfo_New t.Context t.ModuleName>
+		== t.Context Success t.IModule
+		== t.Context Fails
+	t.ModuleName ::= t.QualifiedName
+*/
+$ENTRY LoadInfo_New
+	t.Context t.ModuleName =
+		<LoadInfo_New-SwGetName
+			<MBE-Mgr::X_GetPath-T t.Context t.ModuleName SymInfo>
+		>;
+
+LoadInfo_New-SwGetName {
+	t.Context t.ModuleName Success e.FilePath =
+		t.Context
+		<LoadInfo_New-SwParseFile
+			<MParser::SymModule
+				<MError::CreateErrList>
+				t.ModuleName e.FilePath
+			>
+		>;
+
+	t.Context t.ModuleName Fails =
+		<MQualifiedName::Destroy t.ModuleName>
+		t.Context Fails;
+}
+
+LoadInfo_New-SwParseFile {
+	t.ErrorList Success Success t.IModule =
+		<MError::DestroyErrList t.ErrorList>
+		Success t.IModule;
+
+	t.ErrorList Success Warnings t.IModule =
+		<MError::PrintErrors t.ErrorList>
+		Success t.IModule;
+
+	t.ErrorList Success Errors t.IModule =
+		<MError::PrintErrors t.ErrorList>
+		<MIModule::Destroy t.IModule>
+		Fails;
+
+	t.ErrorList Fails =
+		<MError::PrintErrors t.ErrorList>
+		Fails;
+}
+
+/**
 	<LoadInfo t.Context e.ModuleName>
 		== t.UpdatedContext
 			( Module e.ModuleName )
 			( Functions ((e.Qualifier)(e.FnName))* )
 			( Imports (e.ModName)* )
-		== t.Context SymInfoNotFound
+		== t.C ontext SymInfoNotFound
 */
 $ENTRY LoadInfo
 	t.Context e.ModuleName =
@@ -40,30 +88,43 @@ $ENTRY LoadInfo
 
 CheckActual-Old {
 	(e.ModuleName) t.Context Known s.Status e.SymFName =
-		t.Context
 		<SymInfo-ToOld
 			<ExtractSymInfo
-				<MParser::SymModule e.SymFName>
+				<LoadInfo_New
+					t.Context <MakeQualified e.SymFName>
+				>
 			>
 		>;
 
 	(e.ModuleName) t.Context NotKnown s.Status e.SymFName =
-		t.Context
 		<SwCheckActual-Old
+			t.Context
 			<ActualState-Old s.Status> e.SymFName
 		>;
 }
 
 SwCheckActual-Old {
-	Actual e.SymFName =
+	t.Context Actual e.SymFName =
 		<SymInfo-ToOld
 			<ExtractSymInfo
-				<MParser::SymModule e.SymFName>
+				<LoadInfo_New
+					t.Context <MakeQualified e.SymFName>
+				>
 			>
 		>;
 
-	NotActual e.SymName = SymInfoNotFound;
+	t.Context NotActual e.SymName = t.Context SymInfoNotFound;
 }
+
+MakeQualified
+	e.SymFileName =
+		<MakeQualified-Aux
+			<MFileSystem::ParseFileName e.SymFileName>
+		>;
+
+MakeQualified-Aux
+	(e.Directory) e.ModuleName (e.Ext) =
+		<MQualifiedName::Create (e.ModuleName)>;
 
 ActualState-Old {
 	ModuleNotFound = NotActual;
@@ -74,16 +135,14 @@ ActualState-Old {
 }
 
 ExtractSymInfo {
-	t.IModule Success t.ErrorList =
+	t.Context Success t.IModule =
+		t.Context
 		<ExtractSymInfo--CreateResult
 			<SymTableToSymInfo-T t.IModule>
-		>
-		<MError::DestroyErrList t.ErrorList>;
+		>;
 
-	t.IModule s.ErrorResult t.ErrorList =
-		<MIModule::Destroy t.IModule>
-		<MError::PrintErrors t.ErrorList>
-		SymInfoNotFound;
+	t.Context Fails =
+		t.Context SymInfoNotFound;
 }
 
 ExtractSymInfo--CreateResult
@@ -103,9 +162,11 @@ AddEmptyDirectory {
 }
 
 SymInfo-ToOld {
+	t.Context
 	( Module () e.CurModule )
 	( Functions e.FnList )
 	( Imports e.Imports ) =
+		t.Context
 		( Module e.CurModule )
 		( Functions <ToQualified (e.CurModule) e.FnList> )
 		( Imports <RemoveEmptyDirectory e.Imports> );

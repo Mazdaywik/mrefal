@@ -12,7 +12,6 @@ $IMPORT MBE-Mgr;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MIModule;
-$IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOrder;
 $IMPORT MParser;

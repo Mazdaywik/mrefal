@@ -117,8 +117,6 @@ Module MExeTyper;
 
 <Destroy t.ExeTyper> == empty
 
-<Flush t.ExeTyper> == t.ExeTyper
-
 <TypeChar t.ExeTyper s.Char> = t.ExeTyper
 
 <TypeQuoted t.ExeTyper s.Quote e.Text> == t.ExeTyper
@@ -159,7 +157,7 @@ Module MFileSystem;
 	== ('c;\\Directory') 'Document' ('doc')
 
 ================================================================
-Module MIModule;
+Module MIModule_;
 
 <Create> == t.IModule
 
@@ -351,10 +349,6 @@ s.Result ::= Success | Warnings | Errors
 	== t.ErrorList Fails
 s.Reslult ::= Success | Warnings | Errors
 
-<SymModule e.SymFileName>
-	== t.IModule s.ErrorResult t.ErrorList
-	s.ErrorResult ::= Success | Warnings | Errors | Fatal
-
 ================================================================
 Module MQualifiedName;
 
@@ -389,12 +383,6 @@ Module MQualifiedName;
 
 ================================================================
 Module MQualifiedSupport;
-
-<DirNameToQualifiedName (e.Directory) e.Name>
-	== t.QualifiedName
-
-<QualifiedNameToDirName-T t.QualifiedName>
-	== t.QualifiedName (e.Directory) e.Name
 
 <UnQualify t.QualifiedName>
 	== e.Name

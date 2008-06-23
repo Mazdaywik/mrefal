@@ -28,7 +28,7 @@ $SWAP G_BackEnds;
 $ENTRY Register
 	s.Name s.Generator s.Linker (e.Folder) (e.Ext) =
 		<MBEFE-Holder::UpdateEntry
-			<FnPtr G_BackEnds> s.Name
+			& G_BackEnds s.Name
 			(Generator s.Generator) (Linker s.Linker)
 			(Folder e.Folder) (Ext e.Ext)
 		>;
@@ -167,13 +167,13 @@ PathOnly {
 	<GetList> == s.BackEndName*
 */
 
-$ENTRY GetList = <MBEFE-Holder::GetMgrList <FnPtr G_BackEnds>>;
+$ENTRY GetList = <MBEFE-Holder::GetMgrList & G_BackEnds>;
 
 //------------------------------------------------------------------------------
 
 GetInfo
 	s.Name s.Option =
-		<MBEFE-Holder::GetInfo <FnPtr G_BackEnds> s.Name s.Option>;
+		<MBEFE-Holder::GetInfo & G_BackEnds s.Name s.Option>;
 
 //------------------------------------------------------------------------------
 
@@ -186,7 +186,7 @@ $ENTRY X_GetPath-T
 	t.Context t.QualifiedName s.BEName =
 		<MNameMaker::MakeName
 			t.Context t.QualifiedName s.BEName
-			<FnPtr MakeRelative>
+			& MakeRelative
 		>;
 
 MakeRelative

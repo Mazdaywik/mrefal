@@ -7,11 +7,11 @@ Fn2 e.Arg = <InOut::WriteLine 'Fn2 => ' e.Arg>;
 
 $ENTRY GetPtr {
 	'One' = & Fn1;
-	'Two' = <FnPtr Fn2>;
+	'Two' = & Fn2;
 	'Three' = YYYY.WriteLine;
 	'Four' = & YYYY.WriteLine;
 	e.Other =
-		<FnPtr YYYY WriteLine-T>
+		YYYY.WriteLine-T
 		<InOut.WriteLine 'Invalid argument'>;
 }
 

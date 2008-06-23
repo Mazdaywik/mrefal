@@ -3,6 +3,10 @@ $MODULE MStrings;
 $IMPORT MRefalRTS;
 $IMPORT Math;
 
+//------------------------------------------------------------------------------
+
+// Вызовы встроенных функций.
+
 $ENTRY Numb e.Digits = <MRefalRTS::Numb e.Digits>;
 
 $ENTRY Symb s.Num = <MRefalRTS::Symb s.Num>;
@@ -10,6 +14,12 @@ $ENTRY Symb s.Num = <MRefalRTS::Symb s.Num>;
 $ENTRY Ord e.Line = <MRefalRTS::Ord e.Line>;
 
 $ENTRY Chr e.Line = <MRefalRTS::Chr e.Line>;
+
+$ENTRY Upper e.Expr = <MRefalRTS::Upper e.Expr>;
+
+$ENTRY Lower e.Expr = <MRefalRTS::Lower e.Expr>;
+
+//------------------------------------------------------------------------------
 
 $ENTRY Length e.Expr = <UnLen <Length-T e.Expr> >;
 
@@ -29,9 +39,7 @@ DoLength-T {
 		s.Length e.Scanned;
 }
 
-$ENTRY Upper e.Expr = <MRefalRTS::Upper e.Expr>;
-
-$ENTRY Lower e.Expr = <MRefalRTS::Lower e.Expr>;
+//------------------------------------------------------------------------------
 
 $ENTRY First s.Count e.Expr = <DoFirst s.Count () e.Expr>;
 
@@ -41,6 +49,8 @@ DoFirst {
 	s.Num (e.First) t.Next e.Last =
 		<DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
 }
+
+//------------------------------------------------------------------------------
 
 /**
 	<Seq s.NFirst s.NLast>
@@ -54,6 +64,8 @@ $ENTRY Seq {
 		s.First <Seq <Math::Inc s.First> s.Last>;
 }
 
+//------------------------------------------------------------------------------
+
 /**
 	<Reverse e.Line> == e.eniL
 */
@@ -64,6 +76,8 @@ $ENTRY Reverse {
 	// t.One или empty
 	e.Other = e.Other;
 }
+
+//------------------------------------------------------------------------------
 
 $ENTRY Trim {
 	' ' e.Line = <Trim e.Line>;
@@ -79,6 +93,23 @@ Trim-R {
 	e.Line '\n' = <Trim-R e.Line>;
 
 	e.Line = e.Line;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+	<Repeat s.Num e.Expr>
+		== e.Expr e.Expr ... e.Expr
+	<Length <Repeat s.Num e.Expr>> == s.Num
+	s.Num >= 0
+*/
+$ENTRY Repeat {
+	0 e.Expr = ;
+
+	1 e.Expr = e.Expr;
+
+	s.Num e.Expr =
+		e.Expr <Repeat <Math::Dec s.Num> e.Expr>;
 }
 
 $END MStrings.

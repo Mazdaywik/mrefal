@@ -2,6 +2,7 @@ $MODULE MOutModuleStatus;
 
 $IMPORT InOut;
 $IMPORT Math;
+$IMPORT MSwapSupport;
 
 $ENTRY Updated
 	e.ModuleName =
@@ -78,13 +79,15 @@ DoCheckLength {
 		>;
 }
 
-WriteLine
+WriteLine {
 	s.Status e.Name =
 		<NewLine>
-		<Nil <G_OldStatus s.Status>>
-		<G_Buffer
+		<MSwapSupport::Write & G_OldStatus s.Status>
+		<MSwapSupport::Write
+			& G_Buffer
 			<StatusStr s.Status> e.Name
 		>;
+}
 
 NewLine = <SwNewLine <G_Buffer>>;
 
@@ -92,8 +95,6 @@ SwNewLine {
 	= /* <InOut::WriteLine> */;
 	e.Line = <InOut::WriteLine e.Line '.'>;
 }
-
-Nil e.X = ;
 
 Write
 	e.Name =

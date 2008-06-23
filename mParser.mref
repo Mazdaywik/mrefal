@@ -18,7 +18,7 @@ $ENTRY SrcModule
 		<GeneralizeInfo
 			t.ErrorList
 			t.QualifiedName
-			<Parse <FnPtr NModule> e.FileName>
+			<Parse &NModuleBody e.FileName>
 		>;
 
 /**
@@ -32,23 +32,18 @@ $ENTRY SymModule
 		<GeneralizeInfo
 			t.ErrorList
 			t.QualifiedName
-			<Parse <FnPtr NSymModule> e.FileName>
+			<Parse &NSymModuleBody e.FileName>
 		>;
 
 Parse
-	s.FnMainNeterminal e.FileName =
-		<Parse-Aux
-			<s.FnMainNeterminal
-				<MIModule::Create>
-				<MError::CreateErrList>
-				<MLexer::NextToken
-					<MLexer::Create e.FileName>
-				>
+	s.FnModuleBody e.FileName =
+		<NGenericModule
+			s.FnModuleBody
+			<MError::CreateErrList>
+			<MLexer::NextToken
+				<MLexer::Create e.FileName>
 			>
 		>;
-
-Parse-Aux
-	t.IModule t.ErrorList = t.ErrorList Success t.IModule;
 
 GeneralizeInfo {
 	t.GenericErrorList t.QualifiedName
@@ -132,14 +127,6 @@ CompareQNames
 		>;
 
 CompareQNames-Aux {
-	( t.ExternalName e.Segments )
-	t.ErrorList t.IModule Unknown =
-		<MQualifiedName::Destroy t.ExternalName>
-		<MIModule::Destroy t.IModule>
-		// В список ошибок ничего не добавляем, т.к. подобное состояние модуля
-		// уже должно быть отловлено.
-		t.ErrorList Fails;
-
 	( t.ExternalName (e.Name) )
 	t.ErrorList t.IModule e.Name =
 		<MQualifiedName::Destroy t.ExternalName>
@@ -233,49 +220,97 @@ CheckRedeclaration {
 }
 
 //------------------------------------------------------------------------------
-// Синтаксический анализ модуля
+// Общие нетерминалы
 //------------------------------------------------------------------------------
 
-// Module = ModuleHeader ModuleBody ModuleTailer .
-NModule
-	t.IModule t.ErrorList t.Lexer t.NextToken =
-		<NModuleBody
+/*
+	<NGenericModule s.FnBody t.ErrorList t.Lexer t.NextToken>
+		== t.ErrorList Success t.IModule
+		== t.ErrorList Fails
+*/
+NGenericModule
+	s.FnBody t.ErrorList t.Lexer t.NextToken =
+		<NGenericModule-SwParseHeader
+			s.FnBody
 			<NModuleHeader
-				t.IModule t.ErrorList t.Lexer t.NextToken
+				t.ErrorList t.Lexer t.NextToken
 			>
 		>;
+
+NGenericModule-SwParseHeader {
+	s.FnBody
+	t.ErrorList Success t.IModule t.Lexer t.NextToken =
+		<s.FnBody
+			t.IModule t.ErrorList t.Lexer t.NextToken
+		>;
+
+	s.FnBody t.ErrorList Fails =
+		t.ErrorList Fails;
+}
 
 //-------------------------------------------------------------------------------
 
 // ModuleHeader = '$module' ModuleName ';' .
-NModuleHeader {
-	t.IModule t.ErrorList t.Lexer (Directive t.SrcPos Module) =
+
+NModuleHeader
+	t.ErrorList t.Lexer t.NextToken =
 		<NModuleHeader-ModuleName
-			t.IModule Regular
-			t.ErrorList <MLexer::NextToken t.Lexer>
+			<NModuleHeader-Directive
+				t.ErrorList t.Lexer t.NextToken
+			>
 		>;
 
-	t.IModule t.ErrorList t.Lexer (Directive t.SrcPos Program) =
-		<NModuleHeader-ModuleName
-			t.IModule Main
-			t.ErrorList <MLexer::NextToken t.Lexer>
-		>;
+NModuleHeader-Directive {
+	t.ErrorList t.Lexer (Directive t.SrcPos Module) =
+		Regular
+		t.ErrorList <MLexer::NextToken t.Lexer>;
 
-	t.IModule t.ErrorList t.Lexer (Directive t.SrcPos ClearModule) =
-		<NModuleHeader-ModuleName
-			t.IModule Clear
-			t.ErrorList <MLexer::NextToken t.Lexer>
-		>;
+	t.ErrorList t.Lexer (Directive t.SrcPos Program) =
+		Main
+		t.ErrorList <MLexer::NextToken t.Lexer>;
+
+	t.ErrorList t.Lexer (Directive t.SrcPos ClearModule) =
+		Clear
+		t.ErrorList <MLexer::NextToken t.Lexer>;
 
 	/* Обработка ошибок в данном случае -- добавляем в список ошибок неожиданный
 	символ, считаем, что прочли текущую лексему как '$module' и продолжаем
 	дальнейший разбор.
 	*/
-	t.IModule t.ErrorList t.Lexer t.OtherToken =
+	t.ErrorList t.Lexer t.OtherToken =
+		Regular
+		<MError::AddUnexpected
+			t.ErrorList t.OtherToken 'directive \'$MODULE\''
+		>
+		<MLexer::NextToken t.Lexer>;
+}
+
+NModuleHeader-ModuleName {
+	s.ModuleType
+	t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+		<NModuleHeader-ModuleName-CheckQualified
+			s.ModuleType t.SrcPos
+			<NQuadQualifiedName
+				t.ErrorList
+				t.Lexer (Identifier t.SrcPos e.Name)
+			>
+		>;
+
+	/* Здесь мы пропускаем текущую неопознанную лексему до тех пор, пока
+	не встретим идентификатор или конец ввода */
+	s.ModuleType
+	t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+		<MError::AddUnexpected
+			t.ErrorList (EndOfText t.SrcPos) 'module name'
+		>
+		Fails
+		<MLexer::Destroy t.Lexer>;
+
+	s.ModuleType t.ErrorList t.Lexer t.OtherToken =
 		<NModuleHeader-ModuleName
-			t.IModule Regular
+			s.ModuleType
 			<MError::AddUnexpected
-				t.ErrorList t.OtherToken 'directive \'$MODULE\''
+				t.ErrorList t.OtherToken 'module name'
 			>
 			<MLexer::NextToken t.Lexer>
 		>;
@@ -289,42 +324,40 @@ CheckSuccess {
 	e.FnName -- это позволяет отловить место вылета ошибки */
 }
 
-NModuleHeader-ModuleName {
-	t.IModule s.ModuleType
-	t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
-		<ExpectEndSent-Section
+NModuleHeader-ModuleName-CheckQualified {
+	s.ModuleType t.SrcPos Success t.QualifiedName
+	t.ErrorList t.Lexer t.NextToken =
+		<NModuleHeader-ExpectEndSent
 			<CheckSuccess
-				('NModuleHeader-ModuleName')
-				<MIModule::UpdateModule
-					<CheckSuccess
-						('NMH-MN: SetModuleName')
-						<MIModule::SetModuleName t.IModule e.Name>
-					>
+				('NMH-MN-CQ')
+				<MIModule::Create
+					t.QualifiedName
 					(Position t.SrcPos)
 					(ModuleType s.ModuleType)
 				>
 			>
-			t.ErrorList <MLexer::NextToken t.Lexer>
+			t.ErrorList t.Lexer t.NextToken
 		>;
 
-	/* Здесь мы пропускаем текущую неопознанную лексему до тех пор, пока
-	не встретим идентификатор или конец ввода */
-	t.IModule s.ModuleType
-	t.ErrorList t.Lexer (EndOfText t.SrcPos) =
-		t.IModule
+	/* Вообще-то эта ветвь не должна выполняться, т.к.
+	функция NQuadQualifiedName возвращает Fails только если на входе
+	она не получает идентификатор. А мы ей именно идентификатор посылаем. */
+	s.ModuleType t.SrcPos Fails
+	t.ErrorList t.Lexer t.NextToken =
+		t.ErrorList Fails
+		<MLexer::Destroy t.Lexer>;
+}
+
+NModuleHeader-ExpectEndSent {
+	t.IModule t.ErrorList t.Lexer (EndSent t.SrcPos) =
+		t.ErrorList
+		Success t.IModule <MLexer::NextToken t.Lexer>;
+
+	t.IModule t.ErrorList t.Lexer t.OtherToken =
 		<MError::AddUnexpected
-			t.ErrorList (EndOfText t.SrcPos) 'module name'
+			t.ErrorList t.OtherToken 'semicolon'
 		>
-		t.Lexer (EndOfText t.SrcPos);
-
-	t.IModule s.ModuleType t.ErrorList t.Lexer t.OtherToken =
-		<NModuleHeader-ModuleName
-			t.IModule s.ModuleType
-			<MError::AddUnexpected
-				t.ErrorList
-			>
-			<MLexer::NextToken t.Lexer>
-		>;
+		Success t.IModule t.Lexer t.OtherToken;
 }
 
 //------------------------------------------------------------------------------
@@ -352,6 +385,7 @@ NModuleHeader-ModuleName {
 */
 NAnyQualifiedName {
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+		Success
 		<NAnyQualifiedName-AfterName
 			<MQualifiedName::Create (e.Name)>
 			t.ErrorList <MLexer::NextToken t.Lexer>
@@ -379,22 +413,24 @@ NAnyQualifiedName-AfterName {
 		>;
 
 	t.StartName t.ErrorList t.Lexer t.OtherToken =
-		Success t.StartName
+		t.StartName
 		t.ErrorList t.Lexer t.OtherToken;
 }
 
 NQuadQualifiedName {
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+		Success
 		<NQuadQualifiedName-AfterName
 			<MQualifiedName::Create (e.Name)>
 			t.ErrorList <MLexer::NextToken t.Lexer>
 		>;
 
 	t.ErrorList t.Lexer t.Unexpected =
+		Fails
 		<MError::AddUnexpected
-			t.Unexpected 'identifier'
+			t.ErrorList t.Unexpected 'identifier'
 		>
-		t.ErrorList t.Lexer t.Unexpected;
+		t.Lexer t.Unexpected;
 }
 
 NQuadQualifiedName-AfterName {
@@ -405,7 +441,7 @@ NQuadQualifiedName-AfterName {
 		>;
 
 	t.PartOfName t.ErrorList t.Lexer t.Unexpected =
-		Success t.PartOfName
+		t.PartOfName
 		t.ErrorList t.Lexer t.Unexpected;
 }
 
@@ -419,7 +455,7 @@ NQuadQualifiedName-Loop {
 		>;
 
 	t.PartOfName t.ErrorList t.Lexer t.Unexpected =
-		Success t.PartOfName
+		t.PartOfName
 		<MError::AddUnexpected
 			t.ErrorList t.Unexpected 'identifier'
 		>
@@ -428,6 +464,7 @@ NQuadQualifiedName-Loop {
 
 NDotQualifiedName {
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+		Success
 		<NDotQualifiedName-AfterName
 			<MQualifiedName::Create (e.Name)>
 			t.ErrorList <MLexer::NextToken t.Lexer>
@@ -449,7 +486,7 @@ NDotQualifiedName-AfterName {
 		>;
 
 	t.PartOfName t.ErrorList t.Lexer t.Unexpected =
-		Success t.PartOfName
+		t.PartOfName
 		t.ErrorList t.Lexer t.Unexpected;
 }
 
@@ -463,7 +500,7 @@ NDotQualifiedName-Loop {
 		>;
 
 	t.PartOfName t.ErrorList t.Lexer t.Unexpected =
-		Success t.PartOfName
+		t.PartOfName
 		<MError::AddUnexpected
 			t.ErrorList t.Unexpected 'identifier'
 		>
@@ -500,6 +537,13 @@ ExpectEndSent {
 
 //------------------------------------------------------------------------------
 
+/*
+	<NModuleTailer
+		t.IModule t.ErrorList t.Lexer t.NextToken
+	>
+		== t.ErrorList Success t.IModule
+		== t.ErrorList Fails
+*/
 NModuleTailer {
 	t.IModule t.ErrorList t.Lexer (Directive t.SrcPos End) =
 		<NModuleTailer-ModuleName
@@ -511,31 +555,33 @@ NModuleTailer {
 NModuleTailer-ModuleName {
 	(t.IModule e.ModuleName)
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.ModuleName) =
-		t.IModule
 		<NModuleTailer-Dot
 			t.ErrorList <MLexer::NextToken t.Lexer>
-		>;
+		>
+		Success
+		t.IModule;
 
 	(t.IModule e.ModuleName-Head)
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.ModuleName-Tail) =
-		t.IModule
 		<NModuleTailer-Dot
 			<MError::AddNamesMismatch
 				t.ErrorList t.SrcPos
 				(e.ModuleName-Head) (e.ModuleName-Tail)
 			>
 			<MLexer::NextToken t.Lexer>
-		>;
+		>
+		Success
+		t.IModule;
 
 	/* Пропускаем следующую лексему, до тех пор, пока не встретим
 	конец файла или идентификатор */
 	(t.IModule e.ModuleName)
 	t.ErrorList t.Lexer (EndOfText t.SrcPos) =
-		t.IModule
 		<MError::AddUnexpected
 			t.ErrorList (EndOfText t.SrcPos) 'repeat of module name'
 		>
-		t.Lexer (EndOfText t.SrcPos);
+		Success
+		t.IModule;
 
 	(t.IModule e.ModuleName)
 	t.ErrorList t.Lexer t.OtherToken =
@@ -548,6 +594,10 @@ NModuleTailer-ModuleName {
 		>;
 }
 
+/*
+	<NModuleTailer-Dot t.ErrorList t.Lexer t.NextToken>
+		== t.ErrorList
+*/
 NModuleTailer-Dot {
 	t.ErrorList t.Lexer (Dot t.SrcPos) =
 		<NModuleTailer-EOF
@@ -578,10 +628,17 @@ NModuleTailer-EOF {
 		>;
 }
 
-
+//------------------------------------------------------------------------------
+// Синтаксический анализ модуля
 //------------------------------------------------------------------------------
 
-/* ModuleBody = { ImportBlock | FunctionDefinition | SwapDefinition }* . */
+/*
+	ModuleBody = { ImportBlock | FunctionDefinition | SwapDefinition }* .
+
+	<NModuleBody t.IModule t.ErrorList t.Lexer t.NextToken >
+		== t.ErrorList Success t.IModule
+		== t.ErrorList Fails
+*/
 NModuleBody {
 	t.IModule
 	t.ErrorList t.Lexer (Directive t.SrcPos Import) =
@@ -648,12 +705,13 @@ NModuleBody {
 	/* При обнаружении конца файла завершаем анализ */
 	t.IModule
 	t.ErrorList t.Lexer (EndOfText t.SrcPos) =
-		t.IModule
 		<MError::AddUnexpected
 			t.ErrorList
 			(EndOfText t.SrcPos)
 			'$entry, $import, $swap or local function definition'
 		>
+		Success
+		t.IModule
 		<MLexer::Destroy t.Lexer>;
 
 	/* Любая другая лексема пропускается */
@@ -1495,11 +1553,12 @@ NResultExpr {
 	( ('>' e.MultiBracket) (FnCall t.Callable) e.ResultExprFnArgument t.ParentStack )
 	t.ErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
 		<NResultExpr
-			<MakeFnCallTerm
-				t.VarTable ( e.MultiBracket t.ParentStack )
-				t.Callable e.ResultExprFnArgument
-				t.ErrorList
-			>
+			t.VarTable
+			( e.MultiBracket
+				( Function t.Callable e.ResultExprFnArgument )
+				t.ParentStack
+			)
+			t.ErrorList
 			<MLexer::NextToken t.Lexer>
 		>;
 
@@ -1550,95 +1609,6 @@ NResultExpr {
 			'result expression or \';\'.'
 		>
 		t.Lexer t.Unexpected;
-}
-
-//------------------------------------------------------------------------------
-
-MakeFnCallTerm {
-	t.VarTable ( e.MultiBracket t.ParentStack )
-	( Qualified t.SrcPos t.QualifiedName )
-	e.Argument t.ErrorList =
-		<SwMakeFnCallTerm
-			t.VarTable
-			( e.MultiBracket t.ParentStack )
-			( Qualified t.SrcPos <MQualifiedName::Parse-T t.QualifiedName> )
-			e.Argument t.ErrorList
-		>;
-}
-
-SwMakeFnCallTerm {
-	t.VarTable ( e.MultiBracket t.ParentStack )
-	( Qualified t.SrcPos t.QualifiedName ('FnPtr') )
-	e.Argument t.ErrorList =
-		<MQualifiedName::Destroy t.QualifiedName>
-		<CheckArgumentFnPtr
-			t.VarTable
-			( e.MultiBracket t.ParentStack )
-			t.SrcPos e.Argument t.ErrorList
-		>;
-
-	t.VarTable ( e.MultiBracket t.ParentStack )
-	( Qualified t.SrcPos t.QualifiedName e.Segments )
-	e.Argument t.ErrorList =
-		t.VarTable
-		( e.MultiBracket
-			(Function
-				( Qualified t.SrcPos t.QualifiedName )
-				e.Argument
-			)
-			t.ParentStack
-		) t.ErrorList;
-}
-
-CheckArgumentFnPtr {
-	t.VarTable
-	( e.MultiBracket t.ParentStack )
-	t.SrcPos e.Argument t.ErrorList =
-		<DoCheckArgumentFnPtr
-			t.VarTable
-			( e.MultiBracket t.ParentStack )
-			<MQualifiedName::Create>
-			t.SrcPos e.Argument t.ErrorList
-		>;
-}
-
-DoCheckArgumentFnPtr {
-	t.VarTable
-	( e.MultiBracket t.ParentStack )
-	t.QualifiedName t.SrcPos
-	(Identifier e.Content) e.Tail t.ErrorList =
-		<DoCheckArgumentFnPtr
-			t.VarTable
-			( e.MultiBracket t.ParentStack )
-			<MQualifiedName::AddSubName t.QualifiedName e.Content>
-			t.SrcPos e.Tail t.ErrorList
-		>;
-
-	t.VarTable
-	( e.MultiBracket t.ParentStack )
-	t.QualifiedName t.SrcPos t.ErrorList =
-		t.VarTable
-		( e.MultiBracket
-			(FnPtr
-				(Qualified
-					t.SrcPos t.QualifiedName
-				)
-			)
-			t.ParentStack
-		) t.ErrorList;
-
-	t.VarTable
-	( e.MultiBracket t.ParentStack )
-	t.QualifiedName t.SrcPos
-	t.OtherTerm e.Tail t.ErrorList =
-		<DoCheckArgumentFnPtr
-			t.VarTable
-			( e.MultiBracket t.ParentStack )
-			t.QualifiedName t.SrcPos e.Tail
-			<MError::FnPtrError
-				t.ErrorList t.SrcPos
-			>
-		>;
 }
 
 //------------------------------------------------------------------------------
@@ -1724,17 +1694,6 @@ CheckCallableVariable {
 // Синтаксический анализ sym-модуля
 //------------------------------------------------------------------------------
 
-NSymModule {
-	t.IModule t.ErrorList t.Lexer t.NextToken =
-		<NSymModuleBody
-			<NModuleHeader
-				t.IModule t.ErrorList t.Lexer t.NextToken
-			>
-		>;
-}
-
-//------------------------------------------------------------------------------
-
 NFunctionDeclaration {
 	t.IModule t.ErrorList t.Lexer (Identifier t.SrcPos e.FnName) =
 		<ExpectEndSent-Section
@@ -1757,6 +1716,13 @@ NFunctionDeclaration {
 
 //------------------------------------------------------------------------------
 
+/*
+	<NSymModuleBody
+		t.IModule t.ErrorList t.Lexer t.NextToken
+	>
+		== t.ErrorList Success t.IModule
+		== t.ErrorList Fails
+*/
 NSymModuleBody {
 	t.IModule
 	t.ErrorList t.Lexer (Directive t.SrcPos Import) =
@@ -1785,11 +1751,12 @@ NSymModuleBody {
 
 	t.IModule
 	t.ErrorList t.Lexer (EndOfText t.SrcPos) =
-		t.IModule
 		<MError::AddUnexpected
 			t.ErrorList (EndOfText t.SrcPos)
 			'import or function declaration'
 		>
+		Success
+		t.IModule
 		<MLexer::Destroy t.Lexer>;
 
 	t.IModule

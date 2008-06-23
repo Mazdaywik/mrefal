@@ -108,7 +108,7 @@ $ENTRY MapReduce {
 	t.Lambda t.Accum e.Src =
 		<UnBracket
 			<Reduce
-				<BindLeft <FnPtr MapReducer> t.Lambda>
+				<BindLeft & MapReducer t.Lambda>
 				(t.Accum) e.Src
 			>
 		>;
@@ -136,7 +136,7 @@ $ENTRY MapReduce-R
 	t.Lambda t.Accum e.Src =
 		<UnBracket
 			<Reduce-R
-				<BindLeft <FnPtr MapReducer-R> t.Lambda>
+				<BindLeft & MapReducer-R t.Lambda>
 				(t.Accum) e.Src
 			>
 		>;

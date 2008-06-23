@@ -157,19 +157,28 @@ Module MFileSystem;
 	== ('c;\\Directory') 'Document' ('doc')
 
 ================================================================
-Module MIModule_;
+Module MIModule;
 
-<Create> == t.IModule
+<Create
+	t.QualifiedName
+	(s.Attrib e.Value)*
+>
+	== t.IModule
 
 <Destroy t.IModule> == empty
 
+---------------------------------------------------------------------------
+
 <GetModuleName t.IModule>
 	== t.IModule e.Name
-	== t.IModule Unknown
 
-<SetModuleName t.IModule e.Name>
-	== t.UpdatedIModule Success
-	== t.IModule Fails
+---------------------------------------------------------------------------
+
+<UpdateModule t.IModule e.Attribs>
+	== t.IModule s.Status
+
+s.Status ::=
+	Success | InvalidAttrib | InvariantError
 
 <UpdateFunction
 	t.IModule
@@ -181,6 +190,12 @@ Module MIModule_;
 s.Status ::=
 	Success | InvalidKind | InvalidAttrib | InvariantError
 
+<UpdateImport t.IModule (e.Import) e.Attribs>
+	== t.IModule s.Status
+
+<UpdateADT t.IModule (e.Name) e.Attribs>
+	== t.IModule s.Status
+
 <UpdateEntity
 	t.IModule s.Kind (e.EntityName) e.Attribs
 >
@@ -189,17 +204,27 @@ s.Status ::=
 s.Status ::=
 	Success | InvalidKind | InvalidAttrib | InvariantError
 
-<UpdateModule t.IModule e.Attribs>
-	== t.IModule s.Status
+---------------------------------------------------------------------------
 
-s.Status ::=
-	Success | InvalidAttrib | InvariantError
+<GetModuleAttribute t.IModule s.Attribute>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
+
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 
 <GetFucntionAttribute t.IModule s.Attrib e.FnName>
 	== t.IModule Found e.Value
 	== t.IModule s.ErrorStatus
 
 s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+
+<GetImportAttribute t.IModule s.Attrib e.Import>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
+
+<GetADTAttributes t.IModule s.Attrib e.Name>
+	== t.IModule Found e.Value
+	== t.IModule s.ErrorStatus
 
 <GetEntityAttribute
 	t.IModule s.Kind s.Attrib e.Name
@@ -209,24 +234,7 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
 s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
-<GetModuleAttribute t.IModule s.Attribute>
-	== t.IModule Found e.Value
-	== t.IModule s.ErrorStatus
-
-s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
-
-<UpdateImport t.IModule (e.Import) e.Attribs>
-	== t.IModule s.Status
-
-<GetImportAttribute t.IModule s.Attrib e.Import>
-	== t.IModule Found e.Value
-	== t.IModule s.ErrorStatus
-
-<UpdateADT t.IModule (e.Name) e.Attribs>
-	== то же самое
-
-<GetADTAttributes t.IModule s.Attrib e.Name>
-	== то же самое
+---------------------------------------------------------------------------
 
 <GetFunctionList t.IModule>
 	== t.IModule (e.FnName)*
@@ -235,7 +243,7 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 	== t.IModule (e.ImportName)*
 
 <GetADTList t.IModule>
-	== t.IModule (e.ADT)
+	== t.IModule (e.ADT)*
 
 ================================================================
 Module MLambda;
@@ -347,7 +355,7 @@ s.Result ::= Success | Warnings | Errors
 <SymModule_New t.ErrorList t.QualifiedName e.FileName>
 	== t.ErrorList Success s.Result t.IModule
 	== t.ErrorList Fails
-s.Reslult ::= Success | Warnings | Errors
+s.Result ::= Success | Warnings | Errors
 
 ================================================================
 Module MQualifiedName;

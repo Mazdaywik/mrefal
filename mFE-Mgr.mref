@@ -32,7 +32,7 @@ $SWAP G_FrontEnds;
 $ENTRY Register
 	s.Name s.FnParser (e.Ext) =
 		<MBEFE-Holder::UpdateEntry
-			<FnPtr G_FrontEnds> s.Name (FnParser s.FnParser) (Ext e.Ext)
+			& G_FrontEnds s.Name (FnParser s.FnParser) (Ext e.Ext)
 		>;
 
 //------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ Load-Aux {
 	<GetList>
 		== s.FrontEndName*
 */
-$ENTRY GetList = <MBEFE-Holder::GetMgrList <FnPtr G_FrontEnds>>;
+$ENTRY GetList = <MBEFE-Holder::GetMgrList & G_FrontEnds>;
 
 //------------------------------------------------------------------------------
 
@@ -121,7 +121,7 @@ $ENTRY X_GetPath
 	t.Context t.QualifiedName s.FEName =
 		<MNameMaker::MakeName
 			t.Context t.QualifiedName s.FEName
-			<FnPtr MakeRelative>
+			& MakeRelative
 		>;
 
 MakeRelative
@@ -148,7 +148,7 @@ MakeRelative--SwExistInfo {
 */
 GetInfo
 	s.FEName s.Option =
-		<MBEFE-Holder::GetInfo <FnPtr G_FrontEnds> s.FEName s.Option>;
+		<MBEFE-Holder::GetInfo & G_FrontEnds s.FEName s.Option>;
 
 //------------------------------------------------------------------------------
 

@@ -7,8 +7,8 @@ $IMPORT MLinker_Refal5;
 $ENTRY Init =
 	<MBE-Mgr::Register
 		Refal5BE
-		<FnPtr MBackEnd_Refal5 Generate-T>
-		<FnPtr MLinker_Refal5 Link>
+		& MBackEnd_Refal5.Generate-T
+		& MLinker_Refal5.Link
 		('ROut') ('rout')
 	>;
 

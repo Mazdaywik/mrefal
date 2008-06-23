@@ -6,7 +6,7 @@ $IMPORT MParser;
 $ENTRY Init =
 	<MFE-Mgr::Register
 		MRefal_FrontEnd
-		<FnPtr MParser SrcModule>
+		& MParser.SrcModule
 		('mref')
 	>;
 

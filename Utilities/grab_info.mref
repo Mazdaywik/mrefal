@@ -1,6 +1,6 @@
 $MODULE Grab_info;
 
-$IMPORT InOut, FileIO, MOS, MUtilitiesBanner;
+$IMPORT InOut, FileIO, MOS, MUtilitiesBanner, MStrings;
 
 $ENTRY Go =
 	<MUtilitiesBanner::Type 'Grab_info'>
@@ -70,7 +70,7 @@ CheckEmpty {
 ModuleToInterface {
 	('$MODULE ' e.ModuleName)
 	e.ModuleContent =
-		('================================================================')
+		(<MStrings::Repeat 80 '#'>)
 		('Module ' e.ModuleName)
 		<ModuleToInterface e.ModuleContent>;
 

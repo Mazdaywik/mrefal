@@ -98,7 +98,7 @@ AddToList {
 */
 $ENTRY MergeLists
 	t.List1 [ErrorList e.Errors2] =
-		<MLambda::Reduce <FnPtr AddToList> t.List1 e.Errors2>;
+		<MLambda::Reduce & AddToList t.List1 e.Errors2>;
 
 /**
 	<AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
@@ -266,13 +266,6 @@ DoPrintErrors {
 		<DoPrintErrors e.Errors>;
 
 	= ;
-}
-
-TokenToLine {
-	( s.Type t.Pos ) =
-		s.Type ' at ' t.Pos;
-	( s.Type t.Pos e.Info ) =
-		s.Type '(' e.Info ') at ' t.Pos;
 }
 
 $END MError.

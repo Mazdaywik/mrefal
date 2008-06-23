@@ -1,0 +1,177 @@
+v ROUT3 Module Refal 0.1
+r file ROutS/MFileSystem.srout
+
+b Entry::MFileSystem::ExistFile
+c $Entry::MFileSystem::ExistFile$ {
+c 	e.$Index::FileName$ =
+c 		<$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > ;
+c }
+
+b Entry::MFileSystem::ExistFile-T
+c $Entry::MFileSystem::ExistFile-T$ {
+c 	e.$Index::FileName$ =
+c 		<$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > e.$Index::FileName$ ;
+c }
+
+b Entry::MFileSystem::FilesInfo
+c $Entry::MFileSystem::FilesInfo$ {
+c 	e.$Index::Mask-B$ '\"' e.$Index::Mask-E$ =
+c 		<$Entry::MSelfDiag::Error$ 'MFileSystem::FilesInfo: argument must not have quotes' > ;
+c 	e.$Index::Mask$ =
+c 		<$Local::MFileSystem::DoFilesInfo$ <$Local::MFileSystem::Quoting$ e.$Index::Mask$ > > ;
+c }
+
+b Local::MFileSystem::Quoting
+c $Local::MFileSystem::Quoting$ {
+c 	e.$Index::Mask-B$ ' ' e.$Index::Mask-E$ =
+c 		'\"' e.$Index::Mask-B$ ' ' e.$Index::Mask-E$ '\"' ;
+c 	e.$Index::Mask$ =
+c 		e.$Index::Mask$ ;
+c }
+
+b Local::MFileSystem::DoFilesInfo
+c $Local::MFileSystem::DoFilesInfo$ {
+c 	e.$Index::Mask$ =
+c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > <$Local::MFileSystem::ParseListing$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
+c }
+
+b Local::MFileSystem::ParseListing
+c $Local::MFileSystem::ParseListing$ {
+c 	t.$Index::?Hdr1$ t.$Index::?Hdr2$ ( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ e.$Index::?Text1$ s.$Index::Disk$ ':' e.$Index::Path$ ) ( $ADT::__StructureBrackets$ ) e.$Index::Tail$ =
+c 		<$Local::MFileSystem::ReadFileList$ ( $ADT::__StructureBrackets$ s.$Index::Disk$ ':' e.$Index::Path$ ) e.$Index::Tail$ > ;
+c 	=
+c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: out is empty' > ;
+c 	e.$Index::Other$ =
+c 		<$Entry::MSelfDiag::Error$ 'Directory listing error: ' e.$Index::Other$ > ;
+c }
+
+b Local::MFileSystem::ReadFileList
+c $Local::MFileSystem::ReadFileList$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) ( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
+c 		<$Local::MFileSystem::AppendPath$ ( $ADT::__StructureBrackets$ e.$Index::Path$ ) <$Local::MFileSystem::ParseLine$ e.$Index::Line$ > > <$Local::MFileSystem::ReadFileList$ ( $ADT::__StructureBrackets$ e.$Index::Path$ ) e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) =
+c 		;
+c }
+
+b Local::MFileSystem::ParseLine
+c $Local::MFileSystem::ParseLine$ {
+c 	'   ' e.$Index::Tail$ =
+c 		;
+c 	e.$Index::Line$ =
+c 		<$Local::MFileSystem::CutDateTime$ <$Entry::MStrings::First$ 17 e.$Index::Line$ > > ;
+c }
+
+b Local::MFileSystem::CutDateTime
+c $Local::MFileSystem::CutDateTime$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::DateTime$ ) e.$Index::SizeAndName$ =
+c 		( $ADT::__StructureBrackets$ $Ident::DateTime$ <$Local::MFileSystem::ParseDateTime$ <$Entry::MStrings::First$ 10 e.$Index::DateTime$ > > ) <$Local::MFileSystem::CutSize$ <$Entry::MStrings::First$ 19 e.$Index::SizeAndName$ > > ;
+c }
+
+b Local::MFileSystem::ParseDateTime
+c $Local::MFileSystem::ParseDateTime$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Date$ ) e.$Index::Time$ =
+c 		<$Local::MFileSystem::ParseDate$ <$Entry::MStrings::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Entry::MStrings::Trim$ e.$Index::Time$ > > 0 ;
+c }
+
+b Local::MFileSystem::CutSize
+c $Local::MFileSystem::CutSize$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Size$ ) e.$Index::Name$ =
+c 		( $ADT::__StructureBrackets$ $Ident::Size$ <$Local::MFileSystem::ParseSize$ e.$Index::Size$ > ) ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) ;
+c }
+
+b Local::MFileSystem::ParseSize
+c $Local::MFileSystem::ParseSize$ {
+c 	e.$Index::Begin$ ' ' e.$Index::End$ =
+c 		<$Local::MFileSystem::ParseSize$ e.$Index::Begin$ e.$Index::End$ > ;
+c 	'<' e.$Index::Catalog$ '>' =
+c 		$Ident::Directory$ ;
+c 	e.$Index::Digits$ =
+c 		<$Entry::MStrings::Numb$ e.$Index::Digits$ > ;
+c }
+
+b Local::MFileSystem::ParseDate
+c $Local::MFileSystem::ParseDate$ {
+c 	e.$Index::Day$ '.' e.$Index::Month$ '.' e.$Index::Year$ =
+c 		<$Entry::MStrings::Numb$ e.$Index::Year$ > <$Entry::MStrings::Numb$ e.$Index::Month$ > <$Entry::MStrings::Numb$ e.$Index::Day$ > ;
+c }
+
+b Local::MFileSystem::ParseTime
+c $Local::MFileSystem::ParseTime$ {
+c 	e.$Index::Hours$ ':' e.$Index::Minutes$ =
+c 		<$Entry::MStrings::Numb$ e.$Index::Hours$ > <$Entry::MStrings::Numb$ e.$Index::Minutes$ > ;
+c }
+
+b Local::MFileSystem::AppendPath
+c $Local::MFileSystem::AppendPath$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) e.$Index::OtherInfo$ ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) =
+c 		( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Path$ '\\' e.$Index::Name$ ) e.$Index::OtherInfo$ ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) ) ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) =
+c 		;
+c }
+
+b Entry::MFileSystem::FileAttribute
+c $Entry::MFileSystem::FileAttribute$ {
+c 	s.$Index::Attribute$ e.$Index::FileName$ =
+c 		<$Local::MFileSystem::CheckExistAndGetAttrib$ s.$Index::Attribute$ <$Entry::MFileSystem::ExistFile-T$ e.$Index::FileName$ > > ;
+c }
+
+b Local::MFileSystem::CheckExistAndGetAttrib
+c $Local::MFileSystem::CheckExistAndGetAttrib$ {
+c 	s.$Index::Attribute$ $Ident::False$ e.$Index::FileName$ =
+c 		$Ident::FileNotFound$ ;
+c 	s.$Index::Attribute$ $Ident::True$ e.$Index::FileName$ =
+c 		<$Local::MFileSystem::ExtractAttrib$ s.$Index::Attribute$ <$Entry::MFileSystem::FilesInfo$ e.$Index::FileName$ > > ;
+c }
+
+b Local::MFileSystem::ExtractAttrib
+c $Local::MFileSystem::ExtractAttrib$ {
+c 	s.$Index::Attrib$ ( $ADT::__StructureBrackets$ t.$Index::Path$ e.$Index::Att-B$ ( $ADT::__StructureBrackets$ s.$Index::Attrib$ e.$Index::Value$ ) e.$Index::Att-E$ ) =
+c 		( $ADT::__StructureBrackets$ e.$Index::Value$ ) ;
+c 	s.$Index::Attrib$ ( $ADT::__StructureBrackets$ t.$Index::Path$ e.$Index::Attribs$ ) =
+c 		<$Entry::MSelfDiag::Error$ 'Unknown file attribute ' s.$Index::Attrib$ > ;
+c 	s.$Index::Attrib$ t.$Index::OneFile$ e.$Index::Tail$ =
+c 		<$Entry::MSelfDiag::Error$ 'Found many files in ExtractAttrib ' t.$Index::OneFile$ e.$Index::Tail$ > ;
+c }
+
+b Entry::MFileSystem::CompareFileTime
+c $Entry::MFileSystem::CompareFileTime$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) =
+c 		<$Entry::MOrder::Compare$ ( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) > ;
+c }
+
+b Entry::MFileSystem::ParseFileName
+c $Entry::MFileSystem::ParseFileName$ {
+c 	e.$Index::FileName$ =
+c 		<$Local::MFileSystem::DoParseExt$ e.$Index::FileName$ ( $ADT::__StructureBrackets$ ) > ;
+c }
+
+b Local::MFileSystem::DoParseExt
+c $Local::MFileSystem::DoParseExt$ {
+c 	e.$Index::FileName$ '.' ( $ADT::__StructureBrackets$ e.$Index::Ext$ ) =
+c 		<$Local::MFileSystem::DoParseDirectory$ ( $ADT::__StructureBrackets$ e.$Index::FileName$ ) > ( $ADT::__StructureBrackets$ e.$Index::Ext$ ) ;
+c 	e.$Index::FileName$ '/' ( $ADT::__StructureBrackets$ e.$Index::Ext$ ) =
+c 		( $ADT::__StructureBrackets$ e.$Index::FileName$ '/' ) e.$Index::Ext$ ( $ADT::__StructureBrackets$ ) ;
+c 	e.$Index::FileName$ '\\' ( $ADT::__StructureBrackets$ e.$Index::Ext$ ) =
+c 		( $ADT::__StructureBrackets$ e.$Index::FileName$ '\\' ) e.$Index::Ext$ ( $ADT::__StructureBrackets$ ) ;
+c 	e.$Index::FileName$ ':' ( $ADT::__StructureBrackets$ e.$Index::Ext$ ) =
+c 		( $ADT::__StructureBrackets$ e.$Index::FileName$ ':' ) e.$Index::Ext$ ( $ADT::__StructureBrackets$ ) ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Ext$ ) =
+c 		( $ADT::__StructureBrackets$ ) e.$Index::Ext$ ( $ADT::__StructureBrackets$ ) ;
+c 	e.$Index::FileName$ s.$Index::Next$ ( $ADT::__StructureBrackets$ e.$Index::Ext$ ) =
+c 		<$Local::MFileSystem::DoParseExt$ e.$Index::FileName$ ( $ADT::__StructureBrackets$ s.$Index::Next$ e.$Index::Ext$ ) > ;
+c }
+
+b Local::MFileSystem::DoParseDirectory
+c $Local::MFileSystem::DoParseDirectory$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Directory$ '/' ) e.$Index::Name$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Directory$ '/' ) e.$Index::Name$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Directory$ '\\' ) e.$Index::Name$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Directory$ '\\' ) e.$Index::Name$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Directory$ ':' ) e.$Index::Name$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Directory$ ':' ) e.$Index::Name$ ;
+c 	( $ADT::__StructureBrackets$ ) e.$Index::Name$ =
+c 		( $ADT::__StructureBrackets$ ) e.$Index::Name$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Directory$ s.$Index::Next$ ) e.$Index::Name$ =
+c 		<$Local::MFileSystem::DoParseDirectory$ ( $ADT::__StructureBrackets$ e.$Index::Directory$ ) s.$Index::Next$ e.$Index::Name$ > ;
+c }
+

@@ -44,6 +44,7 @@ ResultTerm =
 	| FunctionCall .
 FunctionCall = '<' Callable ResultExpr '>' .
 Callable = QualifiedName | SwapName | S-VARIABLE | FnPtr .
+FnPtr = '&' IDENTIFIER | ['&'] DotQualified .
 
 ADTDefinition = '$data' ADTList .
 ADTList = ADTName | ADTName ',' ADTList .

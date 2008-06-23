@@ -1,19 +1,18 @@
-/* Automatically generated file, don't edit! */
 $module MFileSystem;
 
-$import MDosWinRecoder;
-$import MRefalRTS;
-$import MOrder;
-$import MOS;
 $import FileIO;
+$import MDosWinRecoder;
+$import MOS;
+$import MOrder;
+$import MRefalRTS;
 $import MSelfDiag;
 $import MStrings;
 
+$entry CompareFileTime;
 $entry ExistFile;
 $entry ExistFile-T;
-$entry FilesInfo;
 $entry FileAttribute;
-$entry CompareFileTime;
+$entry FilesInfo;
 $entry ParseFileName;
 
 $end MFileSystem.

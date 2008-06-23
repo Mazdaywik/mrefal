@@ -1064,8 +1064,11 @@ NPatternExpr {
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.Identifier) =
 		<NPatternExpr
 			t.VarTable
-			( e.PatternExpr (Identifier e.Identifier) t.ParentStack )
-			t.ErrorList <MLexer::NextToken t.Lexer>
+			<AnyExpr-AnalyzeStartOfQualifiedName
+				( e.PatternExpr t.ParentStack )
+				(e.Identifier)
+				t.ErrorList <MLexer::NextToken t.Lexer>
+			>
 		>;
 
 	t.VarTable ( e.PatternExpr t.ParentStack )
@@ -1239,6 +1242,47 @@ NPatternExpr {
 
 //------------------------------------------------------------------------------
 
+AnyExpr-AnalyzeStartOfQualifiedName {
+	(e.Expression t.ParentStack) (e.Name)
+	t.ErrorList t.Lexer (Dot t.SrcPos) =
+		<ConcatQualified
+			(e.Name)
+			t.SrcPos (e.Expression t.ParentStack)
+			<NDotQualifiedName
+				t.ErrorList <MLexer::NextToken t.Lexer>
+			>
+		>;
+
+	(e.Expression t.ParentStack) (e.Name)
+	t.ErrorList t.Lexer t.NextToken =
+		(e.Expression (Identifier e.Name) t.ParentStack)
+		t.ErrorList t.Lexer t.NextToken;
+}
+
+ConcatQualified {
+	(e.Name) t.SrcPos (e.Expression t.ParentStack)
+	Success t.QualifiedName
+	t.ErrorList t.Lexer t.NextToken =
+		(e.Expression
+			(FnPtr
+				(Qualified
+					t.SrcPos
+					<MQualifiedName::AddSuperName t.QualifiedName e.Name>
+				)
+			)
+			t.ParentStack
+		)
+		t.ErrorList t.Lexer t.NextToken;
+
+	(e.Name) t.SrcPos (e.Expression t.ParentStack)
+	Fails
+	t.ErrorList t.Lexer t.NextToken =
+		(e.Expression (Identifier e.Name) t.ParentStack)
+		t.ErrorList t.Lexer t.NextToken;
+}
+
+//------------------------------------------------------------------------------
+
 QualifiedSuccessed {
 	t.SrcPos ( e.Expression t.ParentStack)
 	Success t.QualifiedName
@@ -1246,7 +1290,8 @@ QualifiedSuccessed {
 		(e.Expression
 			(FnPtr (Qualified t.SrcPos t.QualifiedName))
 			t.ParentStack
-		) t.ErrorList t.Lexer t.NextToken;
+		)
+		t.ErrorList t.Lexer t.NextToken;
 
 	t.SrcPos ( e.Expression t.ParentStack )
 	Fails
@@ -1313,8 +1358,11 @@ NResultExpr {
 	t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
 		<NResultExpr
 			t.VarTable
-			( e.ResultExpr (Identifier e.Ident) t.ParentStack )
-			t.ErrorList <MLexer::NextToken t.Lexer>
+			<AnyExpr-AnalyzeStartOfQualifiedName
+				( e.ResultExpr t.ParentStack )
+				(e.Ident)
+				t.ErrorList <MLexer::NextToken t.Lexer>
+			>
 		>;
 
 	t.VarTable (e.ResultExpr t.ParentStack)
@@ -1603,6 +1651,16 @@ NCallable {
 			t.SrcPos ( t.ParentStack )
 			<NAnyQualifiedName
 				t.ErrorList t.Lexer (Identifier t.SrcPos e.Name)
+			>
+		>;
+
+	t.VarTable ( t.ParentStack )
+	t.ErrorList t.Lexer (Ampersand t.SrcPos) =
+		t.VarTable
+		<NCallable-ReadQualifiedName
+			t.SrcPos ( t.ParentStack )
+			<NAnyQualifiedName
+				t.ErrorList <MLexer::NextToken t.Lexer>
 			>
 		>;
 

@@ -1,7 +1,9 @@
 $MODULE Modules;
 
+$IMPORT MBE-Mgr;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
+$IMPORT MFE-Mgr;
 $IMPORT MFileSystem;
 $IMPORT MOrder;
 $IMPORT MOS;

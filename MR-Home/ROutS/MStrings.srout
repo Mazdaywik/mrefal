@@ -1,0 +1,121 @@
+v ROUT3 Module Refal 0.1
+r file ROutS/MStrings.srout
+
+b Entry::MStrings::Numb
+c $Entry::MStrings::Numb$ {
+c 	e.$Index::Digits$ =
+c 		<$Entry::MRefalRTS::Numb$ e.$Index::Digits$ > ;
+c }
+
+b Entry::MStrings::Symb
+c $Entry::MStrings::Symb$ {
+c 	s.$Index::Num$ =
+c 		<$Entry::MRefalRTS::Symb$ s.$Index::Num$ > ;
+c }
+
+b Entry::MStrings::Ord
+c $Entry::MStrings::Ord$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Ord$ e.$Index::Line$ > ;
+c }
+
+b Entry::MStrings::Chr
+c $Entry::MStrings::Chr$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::MRefalRTS::Chr$ e.$Index::Line$ > ;
+c }
+
+b Entry::MStrings::Length
+c $Entry::MStrings::Length$ {
+c 	e.$Index::Expr$ =
+c 		<$Local::MStrings::UnLen$ <$Entry::MStrings::Length-T$ e.$Index::Expr$ > > ;
+c }
+
+b Local::MStrings::UnLen
+c $Local::MStrings::UnLen$ {
+c 	s.$Index::Length$ e.$Index::Expr$ =
+c 		s.$Index::Length$ ;
+c }
+
+b Entry::MStrings::Length-T
+c $Entry::MStrings::Length-T$ {
+c 	e.$Index::Expr$ =
+c 		<$Local::MStrings::DoLength-T$ 0 ( $ADT::__StructureBrackets$ ) e.$Index::Expr$ > ;
+c }
+
+b Local::MStrings::DoLength-T
+c $Local::MStrings::DoLength-T$ {
+c 	s.$Index::Length$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) t.$Index::Next$ e.$Index::Tail$ =
+c 		<$Local::MStrings::DoLength-T$ <$Entry::Math::Inc$ s.$Index::Length$ > ( $ADT::__StructureBrackets$ e.$Index::Scanned$ t.$Index::Next$ ) e.$Index::Tail$ > ;
+c 	s.$Index::Length$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) =
+c 		s.$Index::Length$ e.$Index::Scanned$ ;
+c }
+
+b Entry::MStrings::Upper
+c $Entry::MStrings::Upper$ {
+c 	e.$Index::Expr$ =
+c 		<$Entry::MRefalRTS::Upper$ e.$Index::Expr$ > ;
+c }
+
+b Entry::MStrings::Lower
+c $Entry::MStrings::Lower$ {
+c 	e.$Index::Expr$ =
+c 		<$Entry::MRefalRTS::Lower$ e.$Index::Expr$ > ;
+c }
+
+b Entry::MStrings::First
+c $Entry::MStrings::First$ {
+c 	s.$Index::Count$ e.$Index::Expr$ =
+c 		<$Local::MStrings::DoFirst$ s.$Index::Count$ ( $ADT::__StructureBrackets$ ) e.$Index::Expr$ > ;
+c }
+
+b Local::MStrings::DoFirst
+c $Local::MStrings::DoFirst$ {
+c 	0 ( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Last$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Last$ ;
+c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) =
+c 		e.$Index::First$ ;
+c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) t.$Index::Next$ e.$Index::Last$ =
+c 		<$Local::MStrings::DoFirst$ <$Entry::Math::Dec$ s.$Index::Num$ > ( $ADT::__StructureBrackets$ e.$Index::First$ t.$Index::Next$ ) e.$Index::Last$ > ;
+c }
+
+b Entry::MStrings::Seq
+c $Entry::MStrings::Seq$ {
+c 	s.$Index::Last$ s.$Index::Last$ =
+c 		s.$Index::Last$ ;
+c 	s.$Index::First$ s.$Index::Last$ =
+c 		s.$Index::First$ <$Entry::MStrings::Seq$ <$Entry::Math::Inc$ s.$Index::First$ > s.$Index::Last$ > ;
+c }
+
+b Entry::MStrings::Reverse
+c $Entry::MStrings::Reverse$ {
+c 	t.$Index::First$ e.$Index::Mid$ t.$Index::Tail$ =
+c 		t.$Index::Tail$ <$Entry::MStrings::Reverse$ e.$Index::Mid$ > t.$Index::First$ ;
+c 	e.$Index::Other$ =
+c 		e.$Index::Other$ ;
+c }
+
+b Entry::MStrings::Trim
+c $Entry::MStrings::Trim$ {
+c 	' ' e.$Index::Line$ =
+c 		<$Entry::MStrings::Trim$ e.$Index::Line$ > ;
+c 	'\t' e.$Index::Line$ =
+c 		<$Entry::MStrings::Trim$ e.$Index::Line$ > ;
+c 	'\n' e.$Index::Line$ =
+c 		<$Entry::MStrings::Trim$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c }
+
+b Local::MStrings::Trim-R
+c $Local::MStrings::Trim-R$ {
+c 	e.$Index::Line$ ' ' =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ '\t' =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ '\n' =
+c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
+c 	e.$Index::Line$ =
+c 		e.$Index::Line$ ;
+c }
+

@@ -26,7 +26,7 @@ $IMPORT MIModule;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOutModuleStatus;
-$IMPORT MParser;
+$IMPORT MParser_MRefal;
 $IMPORT MQualifiedName;
 $IMPORT MResolver;
 $IMPORT MResolveTable;
@@ -55,7 +55,7 @@ ParseAndCompile {
 		<Compile-SwParseResult
 			(File e.SrcName)
 			t.Context
-			<MParser::SrcModule
+			<MParser_MRefal::SrcModule
 				<MError::CreateErrList>
 				<CreateQualifiedName e.SrcName>
 				e.SrcName

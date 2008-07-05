@@ -57,6 +57,21 @@ $ENTRY GetModuleName
 	[IModule (Name e.Name) t.SymTable] =
 		[IModule (Name e.Name) t.SymTable] e.Name;
 
+/**
+	<GetModuleName_Q t.IModule>
+		== t.IModule t.QualifiedName
+*/
+$ENTRY GetModuleName_Q
+	t.IModule =
+		<GetModuleName_Q-Qualify
+			<GetModuleName t.IModule>
+		>;
+
+GetModuleName_Q-Qualify
+	t.IModule e.Name =
+		t.IModule
+		<MQualifiedName::Create (e.Name)>;
+
 /**---------------------------------------------------------------------------*/
 
 /**

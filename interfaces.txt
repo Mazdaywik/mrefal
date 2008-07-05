@@ -102,7 +102,10 @@ Module MError;
 <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
 	== t.UpdatedErrorList
 
-<AddNamesMismatch t.ErrorList t.TailPos (e.InHead) (e.InTail)>
+<AddNamesMismatch
+	t.ErrorList t.TailPos
+	t.InHead t.InTail
+>
 	== t.ErrorList
 
 <AddMismatchInternalAndExternalNames
@@ -163,7 +166,7 @@ Module MIModule;
 	t.QualifiedName
 	(s.Attrib e.Value)*
 >
-	== t.IModule
+	== t.IModule s.Status
 
 <Destroy t.IModule> == empty
 
@@ -171,6 +174,9 @@ Module MIModule;
 
 <GetModuleName t.IModule>
 	== t.IModule e.Name
+
+<GetModuleName_Q t.IModule>
+	== t.IModule t.QualifiedName
 
 ---------------------------------------------------------------------------
 
@@ -345,14 +351,65 @@ Module MNameMaker;
 	== t.QualifiedName Fails
 
 ================================================================
-Module MParser;
+Module MParser_Common;
 
-<SrcModule_New t.ErrorList t.QualifiedName e.FileName>
+<Parse s.FnModuleBody e.FileName>
+	== t.ErrorList Success t.IModule
+	== t.ErrorList Fails
+
+<GeneralizeInfo
+	t.GenericErrorList t.QualifiedName
+	t.LocalErrorList {Maybe t.IModule}
+>
+	== t.ErrorList Success s.ErrorsLevel t.IModule
+	== t.ErrorList Fails
+s.ErrorsLevel ::= Success | Warnings | Errors
+
+-----------------------------------------------------------------------------
+Функции синтаксического анализа делятся на три категории:
+(1) Функции, распознающие основные секции файла: начало, конец, объявления,
+импорты, определения. Эти функции после себя на стеке ничего не оставляют.
+Даже в формате этих функций стек отсутствует.
+После распознавания глобальной структуры эта информация сразу помещается
+в IModule, поэтому после работы этих функций стека не остаётся.
+(2) Функции, распознающие остальные нетерминалы. Эти функции активно рабо-
+тают со стеком. Эти функции после распознавания оставляют на стеке распознан-
+ный нетерминал.
+(3) Промежуточные функции. Они могут работать так, как хотят.
+------------------------------------------------------------------------------
+
+AnyQualifiedName = DotQualifiedName | QuadQualifiedName .
+DotQualifiedName =
+	IDENTIFIER | DotQualifiedName '.' IDENTIFIER .
+QuadQualifiedName =
+	IDENTIFIER | QuadQualifiedName '::' IDENTIFIER .
+
+<N***QualifiedName
+	t.ErrorList t.Lexer t.NextToken
+>
+	== e.ScannedQName t.ErrorList t.Lexer t.NextToken
+
+e.ScannedQName ::=
+	Success t<MQualifiedName::QName>.QualifiedName | Fails
+
+В случае ошибки на стеке оставляется первый неожиданный терм.
+Если имя было частично определено, например так:
+	'PackageName::ModuleName::222',
+то имя считается распознанным успешно. Информация об ошибке
+падает в t.ErrorList, но синтаксически инвариант соблюдётся.
+
+================================================================
+Module MParser_MRefal;
+
+<SrcModule t.ErrorList t.QualifiedName e.FileName>
 	== t.ErrorList Success s.Result t.IModule
 	== t.ErrorList Fails
 s.Result ::= Success | Warnings | Errors
 
-<SymModule_New t.ErrorList t.QualifiedName e.FileName>
+================================================================
+Module MParser_Sym;
+
+<SymModule t.ErrorList t.QualifiedName e.FileName>
 	== t.ErrorList Success s.Result t.IModule
 	== t.ErrorList Fails
 s.Result ::= Success | Warnings | Errors
@@ -360,17 +417,27 @@ s.Result ::= Success | Warnings | Errors
 ================================================================
 Module MQualifiedName;
 
-<Destroy t.QualifiedName> == empty
-
 <Create (e.Segment)*>
 	== t.QualifiedName
 обратна Parse
+
+<Destroy t.QualifiedName> == empty
+
+--------------------------------------------------------------------------
 
 <AddSubName t.QualifiedName e.SubName>
 	== t.UpdatedQualifiedName
 
 <AddSuperName t.QualifiedName e.SuperName>
 	== t.UpdatedQualifiedName
+
+<Append t.QualifiedAcceptor t.QualifiedForAppend>
+	== t.UpdatedQualifierAcceptor
+
+<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
+	== t.UpdatedQualifierAcceptor t.QualifierForAppend
+
+--------------------------------------------------------------------------
 
 <Parse t.QualifiedName>
 	== (e.SegmentName)*
@@ -379,15 +446,20 @@ Module MQualifiedName;
 <Parse-T t.QualifiedName>
 	== t.QualifiedName (e.SegmentName)*
 
+--------------------------------------------------------------------------
+
 <ToRelativeFSPath-T t.QualifiedName>
 	== t.QualifiedName
 		e.Segment '/' e.Segment '/' ... '/' e.Segment
 
-<Append t.QualifiedAcceptor t.QualifiedForAppend>
-	== t.UpdatedQualifierAcceptor
+--------------------------------------------------------------------------
 
-<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
-	== t.UpdatedQualifierAcceptor t.QualifierForAppend
+<Equals t.QName1 t.QName2>
+	== True | False
+
+<Equals-T t.QName1 t.QName2>
+	== s.Result t.QName1 t.QName2
+s.Result ::= True | False
 
 ================================================================
 Module MQualifiedSupport;
@@ -441,6 +513,11 @@ s.NFirst и s.NLast -- числа,
 при чём должно быть s.NFirst <= s.NLast
 
 <Reverse e.Line> == e.eniL
+
+<Repeat s.Num e.Expr>
+	== e.Expr e.Expr ... e.Expr
+<Length <Repeat s.Num e.Expr>> == s.Num
+s.Num >= 0
 
 ================================================================
 Module MSwapSupport;

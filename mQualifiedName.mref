@@ -16,12 +16,6 @@ $IMPORT MSelfDiag;
 $DATA QName;
 
 /**
-	<Destroy t.QualifiedName> == empty
-*/
-$ENTRY Destroy
-	[QName e.Segments] = ;
-
-/**
 	<Create (e.Segment)*>
 		== t.QualifiedName
 	обратна Parse
@@ -37,6 +31,14 @@ CheckSegments {
 		(<CheckSegment e.Segment>)
 		<CheckSegments e.Tail>;
 }
+
+/**
+	<Destroy t.QualifiedName> == empty
+*/
+$ENTRY Destroy
+	[QName e.Segments] = ;
+
+/**--------------------------------------------------------------------------*/
 
 /**
 	<AddSubName t.QualifiedName e.SubName>
@@ -68,6 +70,24 @@ CheckSegment {
 }
 
 /**
+	<Append t.QualifiedAcceptor t.QualifiedForAppend>
+		== t.UpdatedQualifierAcceptor
+*/
+$ENTRY Append
+	[QName e.AcceptorSegments] [QName e.ForAppendSegments] =
+		[QName e.AcceptorSegments e.ForAppendSegments];
+
+/**
+	<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
+		== t.UpdatedQualifierAcceptor t.QualifierForAppend
+*/
+$ENTRY Append-T
+	t.Acceptor t.ForAppend =
+		<Append t.Acceptor t.ForAppend> t.ForAppend;
+
+/**--------------------------------------------------------------------------*/
+
+/**
 	<Parse t.QualifiedName>
 		== (e.SegmentName)*
 	обратна Create
@@ -83,6 +103,8 @@ $ENTRY Parse
 $ENTRY Parse-T
 	[QName e.Qualifiers] =
 		[QName e.Qualifiers] e.Qualifiers;
+
+/**--------------------------------------------------------------------------*/
 
 /**
 	<ToRelativeFSPath-T t.QualifiedName>
@@ -100,20 +122,28 @@ CreatePath {
 		e.NextSegment '/' <CreatePath e.Tail>;
 }
 
-/**
-	<Append t.QualifiedAcceptor t.QualifiedForAppend>
-		== t.UpdatedQualifierAcceptor
-*/
-$ENTRY Append
-	[QName e.AcceptorSegments] [QName e.ForAppendSegments] =
-		[QName e.AcceptorSegments e.ForAppendSegments];
+/**--------------------------------------------------------------------------*/
 
 /**
-	<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
-		== t.UpdatedQualifierAcceptor t.QualifierForAppend
+	<Equals t.QName1 t.QName2>
+		== True | False
 */
-$ENTRY Append-T
-	t.Acceptor t.ForAppend =
-		<Append t.Acceptor t.ForAppend> t.ForAppend;
+$ENTRY Equals {
+	[QName e.Segments] [QName e.Segments] = True;
+
+	t.QName1 t.QName2 = Fails;
+}
+
+/**
+	<Equals-T t.QName1 t.QName2>
+		== s.Result t.QName1 t.QName2
+	s.Result ::= True | False
+*/
+$ENTRY Equals-T {
+	[QName e.Segments] [QName e.Segments] =
+		True [QName e.Segments] [QName e.Segments];
+
+	t.QName1 t.QName2 = False t.QName1 t.QName2;
+}
 
 $END MQualifiedName.

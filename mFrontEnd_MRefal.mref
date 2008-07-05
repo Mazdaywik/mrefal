@@ -1,12 +1,12 @@
 $MODULE MFrontEnd_MRefal;
 
 $IMPORT MFE-Mgr;
-$IMPORT MParser;
+$IMPORT MParser_MRefal;
 
 $ENTRY Init =
 	<MFE-Mgr::Register
 		MRefal_FrontEnd
-		& MParser.SrcModule
+		& MParser_MRefal.SrcModule
 		('mref')
 	>;
 

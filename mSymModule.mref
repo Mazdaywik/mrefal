@@ -14,7 +14,7 @@ $IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT Modules;
 $IMPORT MOrder;
-$IMPORT MParser;
+$IMPORT MParser_Sym;
 $IMPORT MQualifiedName;
 $IMPORT MSelfDiag;
 
@@ -38,7 +38,7 @@ LoadInfo_New-SwGetName {
 	t.Context t.ModuleName Success e.FilePath =
 		t.Context
 		<LoadInfo_New-SwParseFile
-			<MParser::SymModule
+			<MParser_Sym::SymModule
 				<MError::CreateErrList>
 				t.ModuleName e.FilePath
 			>

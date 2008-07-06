@@ -1,296 +1,344 @@
 $MODULE MFileSystem;
 
-$IMPORT MDosWinRecoder;
 $IMPORT MRefalRTS;
+
+$IMPORT MDosWinRecoder;
+$IMPORT MLambda;
 $IMPORT MOrder;
 $IMPORT MOS;
 $IMPORT FileIO;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
+$IMPORT MSwapSupport;
+$IMPORT Types;
+
+$SWAP G_TempFileName;
+
+$ENTRY Init
+  = <MOS::System 'echo %random%>~suf.tmp'>
+  <G_TempFileName
+    <MOS::Env 'TEMP'> '\\~dirlist_'
+    <UnBracket <FileIO::Load '~suf.tmp'>>
+    '.tmp'
+  >
+  <MOS::System 'del ~suf.tmp'>;
+
+UnBracket (e.Expr) = e.Expr;
+
+$ENTRY Final
+  = <MOS::System 'del ' <TempName>>;
+
+TempName = <MSwapSupport::Read &G_TempFileName>;
 
 $ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
 
 $ENTRY ExistFile-T
-	e.FileName = <MRefalRTS::ExistFile e.FileName> e.FileName;
+  e.FileName = <MRefalRTS::ExistFile e.FileName> e.FileName;
 
 $ENTRY FilesInfo {
-	e.Mask-B '"' e.Mask-E =
-		<MSelfDiag::Error
-			'MFileSystem::FilesInfo: argument must not have quotes'
-		>;
+  e.Mask-B '"' e.Mask-E =
+    <MSelfDiag::Error
+      'MFileSystem::FilesInfo: argument must not have quotes'
+    >;
 
-	e.Mask = <DoFilesInfo
-		<Quoting e.Mask>
-	>;
+  e.Mask = <DoFilesInfo
+    <Quoting e.Mask>
+  >;
 }
 
 Quoting {
-	e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
+  e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
 
-	e.Mask = e.Mask;
+  e.Mask = e.Mask;
 }
 
 DoFilesInfo
-	e.Mask =
-		<MOS::System
-			'dir ' e.Mask '>~dirlst.tmp 2>nul'
-		>
-		<ParseListing
-			<MDosWinRecoder::DosToWin
-				<FileIO::Load '~dirlst.tmp'>
-			>
-		> <MOS::System 'del ~dirlst.tmp'>;
+  e.Mask =
+    <MOS::System
+      'dir ' e.Mask '>' <TempName> ' 2>nul'
+    >
+    <ParseListing
+      <MDosWinRecoder::DosToWin
+        <FileIO::Load <TempName>>
+      >
+    >;
 
 ParseListing {
-	t.?Hdr1 t.?Hdr2 () (e.?Text1 s.Disk ':' e.Path) () e.Tail =
-		<ReadFileList (s.Disk ':' e.Path) e.Tail>;
+  t.?Hdr1 t.?Hdr2 () (e.?Text1 s.Disk ':' e.Path) () e.Tail =
+    <ReadFileList (s.Disk ':' e.Path) e.Tail>;
 
-	= <MSelfDiag::Error 'Directory listing error: out is empty'>;
+  = <MSelfDiag::Error 'Directory listing error: out is empty'>;
 
-	e.Other = <MSelfDiag::Error 'Directory listing error: ' e.Other>;
+  e.Other = <MSelfDiag::Error 'Directory listing error: ' e.Other>;
 }
 
-ReadFileList {
-	(e.Path) (e.Line) e.Tail =
-		<AppendPath
-			(e.Path)
-			<ParseLine e.Line>
-		> <ReadFileList (e.Path) e.Tail>;
-
-	(e.Path) = ;
-}
-
-ParseLine {
-	'   ' e.Tail = ;
-	e.Line = <CutDateTime <MStrings::First 17 e.Line>>;
-}
-
-CutDateTime
-	(e.DateTime) e.SizeAndName =
-		(DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
-		<CutSize <MStrings::First 19 e.SizeAndName>>;
-
-ParseDateTime (e.Date) e.Time =
-	<ParseDate <MStrings::Trim e.Date>>
-	<ParseTime <MStrings::Trim e.Time>>
-	0; // поле секунд.
-
-CutSize (e.Size) e.Name =
-	(Size <ParseSize e.Size>)
-	(LongName e.Name);
-
-ParseSize {
-	e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
-	'<' e.Catalog '>' = Directory;
-	e.Digits = <MStrings::Numb e.Digits>;
-}
-
-ParseDate
-	e.Day '.' e.Month '.' e.Year =
-		<MStrings::Numb e.Year>
-		<MStrings::Numb e.Month>
-		<MStrings::Numb e.Day>;
-
-ParseTime e.Hours ':' e.Minutes =
-	<MStrings::Numb e.Hours>
-	<MStrings::Numb e.Minutes>;
+ReadFileList
+  (e.Path) e.Lines =
+    <MLambda::Map
+      <MLambda::BindLeft & AppendPath (e.Path)>
+      <MLambda::Map
+        & ParseLine
+        e.Lines
+      >
+    >;
 
 AppendPath {
-	(e.Path) e.OtherInfo (LongName e.Name) =
-		( (e.Path '\\' e.Name) e.OtherInfo (LongName e.Name) );
+  (e.L_Path)
+  ( e.OtherInfo (LongName e.Name) ) =
+    (
+      (e.L_Path '\\' e.Name)
+      e.OtherInfo
+      (LongName e.Name)
+    );
 
-	(e.Path) = ;
+  (e.L_Path) = ;
+}
+
+/*
+  Формат строки:
+    10 Дата
+    7  Время
+    19 Размер
+    Остальное -- длинное имя.
+*/
+ParseLine {
+  ('   ' e.Tail) = ;
+  (e.Line) =
+    <ProcessFields
+      <MLambda::Map
+        & MStrings.Trim
+        <MStrings::Fields (10 7 19) e.Line>
+      >
+    >;
+}
+
+ProcessFields
+  (e.Date '.' e.Month '.' e.Year)
+  (e.Hours ':' e.Minutes)
+  (e.Size) (e.LongName) =
+    (
+      (DateTime
+        <MStrings::Numb e.Year>
+        <MStrings::Numb e.Month>
+        <MStrings::Numb e.Date>
+        <MStrings::Numb e.Hours>
+        <MStrings::Numb e.Minutes>
+        0 // Секунды
+      )
+      (Size <ParseSize e.Size>)
+      (LongName e.LongName)
+    );
+
+ParseSize {
+  e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
+  '<' e.Catalog '>' = Directory;
+  e.Digits =
+    <MStrings::Numb
+      <DigitsOnly e.Digits>
+    >;
+}
+
+DigitsOnly
+  e.Line =
+    <MLambda::Map
+      <MLambda::BindLeft & DigitOnly (<Types::Digits>)>
+      e.Line
+    >;
+
+DigitOnly {
+  (e.L_Dig-B s.Dig e.L_Dig-E) s.Dig = s.Dig;
+  (e.L_Digs) s.NoDig = ;
 }
 
 $ENTRY FileAttribute
-	s.Attribute e.FileName =
-		<CheckExistAndGetAttrib
-			s.Attribute
-			<ExistFile-T e.FileName>
-		>;
+  s.Attribute e.FileName =
+    <CheckExistAndGetAttrib
+      s.Attribute
+      <ExistFile-T e.FileName>
+    >;
 
 CheckExistAndGetAttrib {
-	s.Attribute False e.FileName = FileNotFound;
-	s.Attribute True e.FileName =
-		<ExtractAttrib s.Attribute <FilesInfo e.FileName>>;
+  s.Attribute False e.FileName = FileNotFound;
+  s.Attribute True e.FileName =
+    <ExtractAttrib s.Attribute <FilesInfo e.FileName>>;
 }
 
 ExtractAttrib {
-	s.Attrib ( t.Path e.Att-B (s.Attrib e.Value) e.Att-E ) =
-		(e.Value);
+  s.Attrib ( t.Path e.Att-B (s.Attrib e.Value) e.Att-E ) =
+    (e.Value);
 
-	s.Attrib ( t.Path e.Attribs ) =
-		<MSelfDiag::Error
-			'Unknown file attribute ' s.Attrib
-		>;
+  s.Attrib ( t.Path e.Attribs ) =
+    <MSelfDiag::Error
+      'Unknown file attribute ' s.Attrib
+    >;
 
-	s.Attrib t.OneFile e.Tail =
-		<MSelfDiag::Error
-			'Found many files in ExtractAttrib ' t.OneFile e.Tail
-		>;
+  s.Attrib t.OneFile e.Tail =
+    <MSelfDiag::Error
+      'Found many files in ExtractAttrib ' t.OneFile e.Tail
+    >;
 }
 
 $ENTRY CompareFileTime
-	(e.Time1) (e.Time2) =
-		<MOrder::Compare (e.Time1) (e.Time2)>;
+  (e.Time1) (e.Time2) =
+    <MOrder::Compare (e.Time1) (e.Time2)>;
 
 /*
 *****Код для Win95
 
 ParseListing {
-	() t.Hdr1 t.Hdr2 (e.Text1 s.Disk ':' e.Path) () e.Tail =
-		<ReadFileList (s.Disk ':' e.Path) e.Tail>;
+  () t.Hdr1 t.Hdr2 (e.Text1 s.Disk ':' e.Path) () e.Tail =
+    <ReadFileList (s.Disk ':' e.Path) e.Tail>;
 
-	e.Other = <MIntError::Error 'Directory listing error: ' e.Other>;
+  e.Other = <MIntError::Error 'Directory listing error: ' e.Other>;
 }
 
 ReadFileList {
-	(e.Path) (e.Line) e.Tail =
-		<AppendPath
-			(e.Path)
-			<ParseLine e.Line>
-		> <ReadFileList (e.Path) e.Tail>;
+  (e.Path) (e.Line) e.Tail =
+    <AppendPath
+      (e.Path)
+      <ParseLine e.Line>
+    > <ReadFileList (e.Path) e.Tail>;
 
-	(e.Path) = ;
+  (e.Path) = ;
 }
 
 ParseLine {
-	'   ' e.Tail = ;
-	e.Line = <Cut8-3 <MStrings::First 12 e.Line>>;
+  '   ' e.Tail = ;
+  e.Line = <Cut8-3 <MStrings::First 12 e.Line>>;
 }
 
 Cut8-3 (e.DosName) e.Tail =
-	(DosName <ParseDosName <MStrings::First 8 e.DosName>>)
-	<CutSize <MStrings::First 14 e.Tail>>;
+  (DosName <ParseDosName <MStrings::First 8 e.DosName>>)
+  <CutSize <MStrings::First 14 e.Tail>>;
 
 CutSize (e.Size) e.Tail =
-	(Size <ParseSize e.Size>)
-	<CutDateTime <MStrings::First 18 e.Tail>>;
+  (Size <ParseSize e.Size>)
+  <CutDateTime <MStrings::First 18 e.Tail>>;
 
 CutDateTime (e.DateTime ' ') e.LongName =
-	(DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
-	(LongName e.LongName);
+  (DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
+  (LongName e.LongName);
 
 ParseDosName (e.Name) e.Ext = (<MStrings::Trim e.Name>) <MStrings::Trim e.Ext>;
 
 ParseSize {
-	e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
-	'<' e.Catalog '>' = Directory;
-	e.Digits = <MStrings::Numb e.Digits>;
+  e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
+  '<' e.Catalog '>' = Directory;
+  e.Digits = <MStrings::Numb e.Digits>;
 }
 
 ParseDateTime (e.Date) e.Time =
-	<ParseDate <MStrings::Trim e.Date>>
-	<ParseTime <MStrings::Trim e.Time>>;
+  <ParseDate <MStrings::Trim e.Date>>
+  <ParseTime <MStrings::Trim e.Time>>;
 
 ParseDate
-	e.Day '.' e.Month '.' e.Year =
-		<ParseYear e.Year>
-		<MStrings::Numb e.Month>
-		<MStrings::Numb e.Day>;
+  e.Day '.' e.Month '.' e.Year =
+    <ParseYear e.Year>
+    <MStrings::Numb e.Month>
+    <MStrings::Numb e.Day>;
 
 ParseTime e.Hours ':' e.Minutes =
-	<MStrings::Numb e.Hours>
-	<MStrings::Numb e.Minutes>;
+  <MStrings::Numb e.Hours>
+  <MStrings::Numb e.Minutes>;
 
 ParseYear {
-	'0' s.Year = <MStrings::Numb '200' s.Year>;
-	e.Year = <MStrings::Numb '19' e.Year>;
+  '0' s.Year = <MStrings::Numb '200' s.Year>;
+  e.Year = <MStrings::Numb '19' e.Year>;
 }
 
 AppendPath {
-	(e.Path) e.OtherInfo (LongName e.Name) =
-		( (e.Path '\\' e.Name) e.OtherInfo (LongName e.Name) );
+  (e.Path) e.OtherInfo (LongName e.Name) =
+    ( (e.Path '\\' e.Name) e.OtherInfo (LongName e.Name) );
 
-	(e.Path) = ;
+  (e.Path) = ;
 }
 
 $ENTRY FileAttribute
-	s.Attribute e.FileName =
-		<CheckExistAndGetAttrib
-			s.Attribute
-			<ExistFile-T e.FileName>
-		>;
+  s.Attribute e.FileName =
+    <CheckExistAndGetAttrib
+      s.Attribute
+      <ExistFile-T e.FileName>
+    >;
 
 CheckExistAndGetAttrib {
-	s.Attribute False e.FileName = FileNotFound;
-	s.Attribute True e.FileName =
-		<ExtractAttrib s.Attribute <FilesInfo e.FileName>>;
+  s.Attribute False e.FileName = FileNotFound;
+  s.Attribute True e.FileName =
+    <ExtractAttrib s.Attribute <FilesInfo e.FileName>>;
 }
 
 ExtractAttrib {
-	s.Attrib ( t.Path e.Att-B (s.Attrib e.Value) e.Att-E ) =
-		(e.Value);
+  s.Attrib ( t.Path e.Att-B (s.Attrib e.Value) e.Att-E ) =
+    (e.Value);
 
-	s.Attrib ( t.Path e.Attribs ) =
-		<MIntError::Error
-			'Unknown file attribute ' s.Attrib
-		>;
+  s.Attrib ( t.Path e.Attribs ) =
+    <MIntError::Error
+      'Unknown file attribute ' s.Attrib
+    >;
 
-	s.Attrib t.OneFile e.Tail =
-		<MIntError::Error
-			'Found many files in ExtractAttrib ' t.OneFile e.Tail
-		>;
+  s.Attrib t.OneFile e.Tail =
+    <MIntError::Error
+      'Found many files in ExtractAttrib ' t.OneFile e.Tail
+    >;
 }
 
 $ENTRY CompareFileTime {
-	(s.SameField e.First) (s.SameField e.Second) =
-		<CompareFileTime (e.First) (e.Second)>;
+  (s.SameField e.First) (s.SameField e.Second) =
+    <CompareFileTime (e.First) (e.Second)>;
 
-	() () = '=';
+  () () = '=';
 
-	(s.DiffField1 e.Tail1) (s.DiffField2 e.Tail2) =
-		<Math::Compare s.DiffField1 s.DiffField2>;
+  (s.DiffField1 e.Tail1) (s.DiffField2 e.Tail2) =
+    <Math::Compare s.DiffField1 s.DiffField2>;
 }
  ^ Код для Windows 95*/
 
 /**
-	<ParseFileName e.FileName>
-		== (e.Directory) e.FileNameNoExt (e.Ext)
-	Пример:
-	<ParseFileName 'c:\\Directory\\Document.doc'>
-		== ('c;\\Directory') 'Document' ('doc')
+  <ParseFileName e.FileName>
+    == (e.Directory) e.FileNameNoExt (e.Ext)
+  Пример:
+  <ParseFileName 'c:\\Directory\\Document.doc'>
+    == ('c;\\Directory') 'Document' ('doc')
 */
 $ENTRY ParseFileName
-	e.FileName =
-		<DoParseExt e.FileName ()>;
+  e.FileName =
+    <DoParseExt e.FileName ()>;
 
 DoParseExt {
-	e.FileName '.' (e.Ext) =
-		<DoParseDirectory (e.FileName)> (e.Ext);
+  e.FileName '.' (e.Ext) =
+    <DoParseDirectory (e.FileName)> (e.Ext);
 
-	// Файл без расширения
-	e.FileName '/' (e.Ext) =
-		(e.FileName '/') e.Ext ();
+  // Файл без расширения
+  e.FileName '/' (e.Ext) =
+    (e.FileName '/') e.Ext ();
 
-	e.FileName '\\' (e.Ext) =
-		(e.FileName '\\') e.Ext ();
+  e.FileName '\\' (e.Ext) =
+    (e.FileName '\\') e.Ext ();
 
-	e.FileName ':' (e.Ext) =
-		(e.FileName ':') e.Ext ();
+  e.FileName ':' (e.Ext) =
+    (e.FileName ':') e.Ext ();
 
-	(e.Ext) =
-		() e.Ext ();
+  (e.Ext) =
+    () e.Ext ();
 
-	// Добавляем символ к расширению
-	e.FileName s.Next (e.Ext) =
-		<DoParseExt e.FileName (s.Next e.Ext)>;
+  // Добавляем символ к расширению
+  e.FileName s.Next (e.Ext) =
+    <DoParseExt e.FileName (s.Next e.Ext)>;
 }
 
 DoParseDirectory {
-	(e.Directory '/') e.Name =
-		(e.Directory '/') e.Name;
+  (e.Directory '/') e.Name =
+    (e.Directory '/') e.Name;
 
-	(e.Directory '\\') e.Name =
-		(e.Directory '\\') e.Name;
+  (e.Directory '\\') e.Name =
+    (e.Directory '\\') e.Name;
 
-	(e.Directory ':') e.Name =
-		(e.Directory ':') e.Name;
+  (e.Directory ':') e.Name =
+    (e.Directory ':') e.Name;
 
-	() e.Name = () e.Name;
+  () e.Name = () e.Name;
 
-	(e.Directory s.Next) e.Name =
-		<DoParseDirectory (e.Directory) s.Next e.Name>;
+  (e.Directory s.Next) e.Name =
+    <DoParseDirectory (e.Directory) s.Next e.Name>;
 }
 
 $END MFileSystem.

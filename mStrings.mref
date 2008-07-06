@@ -2,6 +2,7 @@ $MODULE MStrings;
 
 $IMPORT MRefalRTS;
 $IMPORT Math;
+$IMPORT MLambda;
 
 //------------------------------------------------------------------------------
 
@@ -26,17 +27,17 @@ $ENTRY Length e.Expr = <UnLen <Length-T e.Expr> >;
 UnLen s.Length e.Expr = s.Length;
 
 $ENTRY Length-T
-	e.Expr = <DoLength-T 0 () e.Expr>;
+  e.Expr = <DoLength-T 0 () e.Expr>;
 
 DoLength-T {
-	s.Length (e.Scanned) t.Next e.Tail =
-		<DoLength-T
-			<Math::Inc s.Length>
-			(e.Scanned t.Next) e.Tail
-		>;
+  s.Length (e.Scanned) t.Next e.Tail =
+    <DoLength-T
+      <Math::Inc s.Length>
+      (e.Scanned t.Next) e.Tail
+    >;
 
-	s.Length (e.Scanned) =
-		s.Length e.Scanned;
+  s.Length (e.Scanned) =
+    s.Length e.Scanned;
 }
 
 //------------------------------------------------------------------------------
@@ -44,72 +45,100 @@ DoLength-T {
 $ENTRY First s.Count e.Expr = <DoFirst s.Count () e.Expr>;
 
 DoFirst {
-	0 (e.First) e.Last = (e.First) e.Last;
-	s.Num (e.First) = e.First;
-	s.Num (e.First) t.Next e.Last =
-		<DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
+  0 (e.First) e.Last = (e.First) e.Last;
+  s.Num (e.First) = (e.First);
+  s.Num (e.First) t.Next e.Last =
+    <DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
 }
 
 //------------------------------------------------------------------------------
 
 /**
-	<Seq s.NFirst s.NLast>
-		== s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
-	s.NFirst и s.NLast -- числа,
-	при чём должно быть s.NFirst <= s.NLast
+  <Seq s.NFirst s.NLast>
+    == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
+  s.NFirst и s.NLast -- числа,
+  при чём должно быть s.NFirst <= s.NLast
 */
 $ENTRY Seq {
-	s.Last s.Last = s.Last;
-	s.First s.Last =
-		s.First <Seq <Math::Inc s.First> s.Last>;
+  s.Last s.Last = s.Last;
+  s.First s.Last =
+    s.First <Seq <Math::Inc s.First> s.Last>;
 }
 
 //------------------------------------------------------------------------------
 
 /**
-	<Reverse e.Line> == e.eniL
+  <Reverse e.Line> == e.eniL
 */
 $ENTRY Reverse {
-	t.First e.Mid t.Tail =
-		t.Tail <Reverse e.Mid> t.First;
+  t.First e.Mid t.Tail =
+    t.Tail <Reverse e.Mid> t.First;
 
-	// t.One или empty
-	e.Other = e.Other;
+  // t.One или empty
+  e.Other = e.Other;
 }
 
 //------------------------------------------------------------------------------
 
 $ENTRY Trim {
-	' ' e.Line = <Trim e.Line>;
-	'\t' e.Line = <Trim e.Line>;
-	'\n' e.Line = <Trim e.Line>;
+  ' ' e.Line = <Trim e.Line>;
+  '\t' e.Line = <Trim e.Line>;
+  '\n' e.Line = <Trim e.Line>;
 
-	e.Line = <Trim-R e.Line>;
+  e.Line = <Trim-R e.Line>;
 }
 
 Trim-R {
-	e.Line ' ' = <Trim-R e.Line>;
-	e.Line '\t' = <Trim-R e.Line>;
-	e.Line '\n' = <Trim-R e.Line>;
+  e.Line ' ' = <Trim-R e.Line>;
+  e.Line '\t' = <Trim-R e.Line>;
+  e.Line '\n' = <Trim-R e.Line>;
 
-	e.Line = e.Line;
+  e.Line = e.Line;
 }
 
 //------------------------------------------------------------------------------
 
 /**
-	<Repeat s.Num e.Expr>
-		== e.Expr e.Expr ... e.Expr
-	<Length <Repeat s.Num e.Expr>> == s.Num
-	s.Num >= 0
+  <Repeat s.Num e.Expr>
+    == e.Expr e.Expr ... e.Expr
+  <Length <Repeat s.Num e.Expr>> == s.Num
+  s.Num >= 0
 */
 $ENTRY Repeat {
-	0 e.Expr = ;
+  0 e.Expr = ;
 
-	1 e.Expr = e.Expr;
+  1 e.Expr = e.Expr;
 
-	s.Num e.Expr =
-		e.Expr <Repeat <Math::Dec s.Num> e.Expr>;
+  s.Num e.Expr =
+    e.Expr <Repeat <Math::Dec s.Num> e.Expr>;
 }
+
+//------------------------------------------------------------------------------
+
+/**
+  <Fields (e.Fields) e.Line>
+    == (e.SubField)*
+  e.Fields = s<num>*
+*/
+$ENTRY Fields
+  (e.Fields) e.Line =
+    <Fields-Rot
+      <MLambda::MapReduce
+        & FindField
+        (e.Line) e.Fields
+      >
+    >;
+
+Fields-Rot
+  (e.Tail) e.Fields = e.Fields (e.Tail);
+
+FindField
+  (e.Line) s.Length =
+    <FindField-Aux
+      <First s.Length e.Line>
+    >;
+
+FindField-Aux
+  (e.First) e.Rest = (e.Rest) (e.First);
 
 $END MStrings.

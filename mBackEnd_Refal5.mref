@@ -41,7 +41,8 @@ GenerateElement
     <GenerateElement-Aux
       <MIModule::GetFunctionAttribute
         t.IModule Qualified e.NextFnName
-      > (e.NextFnName)
+      >
+      (e.NextFnName)
     >;
 
 GenerateElement-Aux

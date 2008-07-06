@@ -1,10 +1,10 @@
 $MODULE Test;
 
-$IMPORT P = MPtrs, IO = InOut;
+$IMPORT MPtrs, IO = InOut;
 
 $ENTRY Go =
   <IndirectCall
-    <P::GetPtr <IO::ReadLine>>
+    <MPtrs::GetPtr <IO::ReadLine>>
   >;
 
 IndirectCall

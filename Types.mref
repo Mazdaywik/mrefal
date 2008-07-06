@@ -1,13 +1,8 @@
 $MODULE Types;
 
 $ENTRY OneOf {
-	t.X (e.1 t.X e.2) = T;
-	t.X (e.1) = F;
-}
-
-$ENTRY FirstOneOf {
-	(e.Pat) t.First e.Tail =
-		<OneOf t.First (e.Pat)> t.First e.Tail;
+  t.X (e.1 t.X e.2) = T;
+  t.X (e.1) = F;
 }
 
 $ENTRY UpAlph = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -17,20 +12,20 @@ $ENTRY LoAlph = 'abcdefghijklmnopqrstuvwxyz';
 $ENTRY Digits = '01234567890';
 
 $ENTRY CharType {
-	s.Char e.Tail = <SwCharType s.Char UpAlph <OneOf s.Char (<UpAlph>)> e.Tail>;
-	= '*';
+  s.Char e.Tail = <SwCharType s.Char UpAlph <OneOf s.Char (<UpAlph>)> e.Tail>;
+  = '*';
 }
 
 SwCharType {
-	s.Char s.Type T e.Tail = s.Type s.Char e.Tail;
+  s.Char s.Type T e.Tail = s.Type s.Char e.Tail;
 
-	s.Char UpAlph F e.Tail
-		= <SwCharType s.Char LoAlph <OneOf s.Char (<LoAlph>)> e.Tail>;
+  s.Char UpAlph F e.Tail
+    = <SwCharType s.Char LoAlph <OneOf s.Char (<LoAlph>)> e.Tail>;
 
-	s.Char LoAlph F e.Tail
-		= <SwCharType s.Char Digit <OneOf s.Char (<Digits>)> e.Tail>;
+  s.Char LoAlph F e.Tail
+    = <SwCharType s.Char Digit <OneOf s.Char (<Digits>)> e.Tail>;
 
-	s.Char Digit F e.Tail = Other s.Char e.Tail;
+  s.Char Digit F e.Tail = Other s.Char e.Tail;
 }
 
 $END Types.

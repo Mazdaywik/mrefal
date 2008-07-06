@@ -5,14 +5,16 @@ $IMPORT YYYY = InOut;
 Fn1 e.Arg = <InOut::WriteLine 'Fn1 => ' e.Arg>;
 Fn2 e.Arg = <InOut::WriteLine 'Fn2 => ' e.Arg>;
 
+$ENTRY InOut = ;
+
 $ENTRY GetPtr {
-	'One' = & Fn1;
-	'Two' = & Fn2;
-	'Three' = YYYY.WriteLine;
-	'Four' = & YYYY.WriteLine;
-	e.Other =
-		YYYY.WriteLine-T
-		<InOut.WriteLine 'Invalid argument'>;
+  'One' = & Fn1;
+  'Two' = & Fn2;
+  'Three' = YYYY.WriteLine;
+  'Four' = & YYYY.WriteLine;
+  e.Other =
+    YYYY.WriteLine-T
+    <InOut.WriteLine 'Invalid argument'>;
 }
 
 

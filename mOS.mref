@@ -5,8 +5,8 @@ $IMPORT FileIO;
 $IMPORT Math;
 
 $ENTRY System
-	e.Command =
-		<Nil <MRefalRTS::System e.Command> >;
+  e.Command =
+    <Nil <MRefalRTS::System e.Command> >;
 
 Nil e.Arg = ;
 
@@ -15,10 +15,10 @@ $ENTRY Arg s.Num = <MRefalRTS::Arg s.Num>;
 $ENTRY ArgList = <DoArgList 1 <Arg 0>>;
 
 DoArgList {
-	s.NextArg = ;
-	s.NextArg e.Argument =
-		(e.Argument)
-		<DoArgList <Math::Inc s.NextArg> <Arg s.NextArg>>;
+  s.NextArg = ;
+  s.NextArg e.Argument =
+    (e.Argument)
+    <DoArgList <Math::Inc s.NextArg> <Arg s.NextArg>>;
 }
 
 $ENTRY ProgName = <Arg 0>;
@@ -26,26 +26,26 @@ $ENTRY ProgName = <Arg 0>;
 $ENTRY Exit s.RetCode = <MRefalRTS::Exit s.RetCode>;
 
 $ENTRY EnvList
-	= <System 'set > ~setlst.tmp'>
-	<DoEnvList
-		<FileIO::ReadLine
-			<FileIO::Open 'r' '~setlst.tmp'>
-		>
-	>;
+  = <System 'set > ~setlst.tmp'>
+  <DoEnvList
+    <FileIO::ReadLine
+      <FileIO::Open 'r' '~setlst.tmp'>
+    >
+  >;
 
 DoEnvList {
-	t.FList 0 =
-		<FileIO::NulClose t.FList>
-		<System 'del ~setlst.tmp'>;
+  t.FList 0 =
+    <FileIO::NulClose t.FList>
+    <System 'del ~setlst.tmp'>;
 
-	t.FList e.Name '=' e.Value =
-		((e.Name) <Env e.Name>)
-		<DoEnvList
-			<FileIO::ReadLine t.FList>
-		>;
+  t.FList e.Name '=' e.Value =
+    ((e.Name) <Env e.Name>)
+    <DoEnvList
+      <FileIO::ReadLine t.FList>
+    >;
 }
 
 $ENTRY Env
-	e.Name = <MRefalRTS::Env e.Name>;
+  e.Name = <MRefalRTS::Env e.Name>;
 
 $END MOS.

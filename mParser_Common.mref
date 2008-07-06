@@ -4,6 +4,7 @@ $IMPORT MLexer;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
+$IMPORT MQualifiedSupport;
 
 //==============================================================================
 // Служебные функции
@@ -156,14 +157,15 @@ CompareQNames-AddErrorInfo {
 //------------------------------------------------------------------------------
 
 $ENTRY AddNewImport
-  t.IModule t.SrcPos (e.NewName) e.Attribs t.ErrorList =
-    <CheckRedeclaration
+  t.IModule t.SrcPos t.NewName e.Attribs t.ErrorList =
+    <CheckRedeclaration-Import
       t.ErrorList
-      <MIModule::UpdateImport
-        t.IModule (e.NewName)
-        e.Attribs (Position t.SrcPos)
+      <MIModule::UpdateImport_New
+        t.IModule t.NewName
+        e.Attribs
+        (Position t.SrcPos)
       >
-      t.SrcPos e.NewName
+      t.SrcPos t.NewName
     >;
 
 $ENTRY AddNewFunction
@@ -196,6 +198,23 @@ CheckRedeclaration {
     t.IModule
     <MError::AddRedeclaredIdentifier
       t.ErrorList t.SrcPos e.NewName
+    >;
+
+  /*
+    Две другие ошибки -- InvalidKind и InvariantError означают
+    нарушение инварианта. Программа автоматически умрёт.
+  */
+}
+
+CheckRedeclaration-Import {
+  t.ErrorList t.IModule Success t.SrcPos t.NewName =
+    t.IModule t.ErrorList;
+
+  t.ErrorList t.IModule InvalidKind t.SrcPos t.NewName =
+    t.IModule
+    <MError::AddRedeclaredIdentifier
+      t.ErrorList t.SrcPos
+      <MQualifiedSupport::LastSegment t.NewName>
     >;
 
   /*
@@ -479,12 +498,44 @@ NModuleTailer-EOF {
   символических файлах.
 ------------------------------------------------------------------------------*/
 
+/*
+  ImportBlock = ModuleImport { ',' ModuleImport } ';' .
+  ModuleImport = [ ModuleAlias '=' ] ModuleName .
+  Последнюю строчку для удобства разбора преобразуем:
+  ModuleImport =
+    IDENTIFIER '::' QuadQualifiedName |
+    IDENTIFIER '=' QuadQualifiedName |
+    IDENTIFIER .
+
+  Таким образом, получим почти автоматную грамматику:
+  ImportBlock =
+    IDENTIFIER ImportBlock-AfterName .
+  ImportBlock-AfterName =
+    '::' ImportBlock-Qualified |
+    '=' ImportBlock-ModuleRenaming |
+    ',' ImportBlock |
+    ';' . // конец
+  ImportBlock-Qualified =
+    QuadQualifiedName ImportBlock-AfterQualified .
+  ImportBlock-AfterQualified =
+    ',' ImportBlock |
+    ';' . // конец
+  ImportBlock-ModuleRenaming =
+    QuadQualifiedName ImportBlock-AfterModuleRenaming
+  ImportBlock-AfterModuleRenaming =
+    ',' ImportBlock |
+    ';' . // конец
+
+  Не смотря на то, что описание грамматики для нетерминалов
+  ImportBlock-Qualified и ImportBlock-ModuleRenaming
+  одинаковы, записаны они отдельно, т.к. семантически они различаются.
+*/
 $ENTRY NImportBlock {
   t.IModule
   t.ErrorList t.Lexer (Identifier t.SrcPos e.ModuleName) =
     <NImportBlock-AfterName
       t.IModule
-      ( Import e.ModuleName )
+      ( Import t.SrcPos e.ModuleName )
       t.ErrorList <MLexer::NextToken t.Lexer>
     >;
 
@@ -498,36 +549,54 @@ $ENTRY NImportBlock {
 }
 
 NImportBlock-AfterName {
-  t.IModule (Import e.ModuleName)
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer (DoubleColon t.SrcPos) =
+    <NImportBlock-Qualified
+      t.IModule
+      (Import t.ImportPos e.ModuleName)
+      <NQuadQualifiedName
+        t.ErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer (Replaces t.SrcPos) =
+    <NImportBlock-ModuleRenaming
+      t.IModule
+      (Alias t.ImportPos e.ModuleName)
+      <NQuadQualifiedName
+        t.ErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
+  t.IModule (Import t.ImportPos e.ModuleName)
   t.ErrorList t.Lexer (EndSent t.SrcPos) =
     <AddNewImport
-      t.IModule t.SrcPos (e.ModuleName)
-      (Alias e.ModuleName)
+      t.IModule t.ImportPos
+      <MQualifiedName::Create (e.ModuleName)>
+      (RealName
+        <MQualifiedName::Create (e.ModuleName)>
+      )
       t.ErrorList
     >
     <MLexer::NextToken t.Lexer>;
 
-  t.IModule (Import e.ModuleName)
-  t.ErrorList t.Lexer (Replaces t.SrcPos) =
-    <NImportBlock-ModuleRenaming
-      t.IModule
-      (Alias e.ModuleName)
-      t.ErrorList <MLexer::NextToken t.Lexer>
-    >;
-
-  t.IModule (Import e.ModuleName)
+  t.IModule (Import t.ImportPos e.ModuleName)
   t.ErrorList t.Lexer (Comma t.SrcPos) =
     <NImportBlock
       <AddNewImport
-        t.IModule t.SrcPos (e.ModuleName)
-        (Alias e.ModuleName)
+        t.IModule t.ImportPos
+        <MQualifiedName::Create (e.ModuleName)>
+        (RealName
+          <MQualifiedName::Create (e.ModuleName)>
+        )
         t.ErrorList
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   // Считаем, что пользователь пропустил точку с запятой
-  t.IModule (Import e.ModuleName)
+  t.IModule (Import t.ImportPos e.ModuleName)
   t.ErrorList t.Lexer t.OtherToken =
     t.IModule
     <MError::AddUnexpected
@@ -536,31 +605,83 @@ NImportBlock-AfterName {
     t.Lexer t.OtherToken;
 }
 
-NImportBlock-ModuleRenaming {
-  t.IModule
-  (Alias e.Alias)
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.ModuleName) =
-    <NImportBlock-AfterAlias
+NImportBlock-Qualified {
+  t.IModule (Import t.ImportPos e.FirstSegment)
+  Success t.QualifiedName
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterQualified
       <AddNewImport
-        t.IModule t.SrcPos (e.ModuleName)
-        (Alias e.Alias)
+        t.IModule t.ImportPos
+        <MQualifiedName::AddSuperName t.QualifiedName e.FirstSegment>
+        (RealName
+          <MQualifiedName::AddSuperName t.QualifiedName e.FirstSegment>
+        )
         t.ErrorList
       >
+      t.Lexer t.NextToken
+    >;
+
+  t.IModule (Import t.ImportPos e.FirstSegment)
+  Fails
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterQualified
+      t.IModule
+      <MError::AddUnexpected
+        t.ErrorList t.NextToken 'import name'
+      >
+      t.Lexer t.NextToken
+    >;
+}
+
+NImportBlock-AfterQualified {
+  t.IModule t.ErrorList
+  t.Lexer (EndSent t.SrcPos) =
+    t.IModule t.ErrorList
+    <MLexer::NextToken t.Lexer>;
+
+  t.IModule t.ErrorList
+  t.Lexer (Comma t.SrcPos) =
+    <NImportBlock
+      t.IModule t.ErrorList
       <MLexer::NextToken t.Lexer>
     >;
 
-  //Считаем, что попытки переименования не было
-  t.IModule
-  (Alias e.Alias)
-  t.ErrorList t.Lexer t.OtherToken =
+  t.IModule t.ErrorList
+  t.Lexer t.OtherToken =
     t.IModule
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'module name'
+      t.ErrorList t.OtherToken 'comma or semicolon'
     >
     t.Lexer t.OtherToken;
 }
 
-NImportBlock-AfterAlias {
+NImportBlock-ModuleRenaming {
+  t.IModule (Alias t.AliasPos e.Alias)
+  Success t.QualifiedName
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterModuleRenaming
+      <AddNewImport
+        t.IModule t.AliasPos
+        <MQualifiedName::Create (e.Alias)>
+        (RealName t.QualifiedName)
+        t.ErrorList
+      >
+      t.Lexer t.NextToken
+    >;
+
+  t.IModule (Alias t.AliasPos e.Alias)
+  Fails
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterModuleRenaming
+      t.IModule
+      <MError::AddUnexpected
+        t.ErrorList t.NextToken 'import name'
+      >
+      t.Lexer t.NextToken
+    >;
+}
+
+NImportBlock-AfterModuleRenaming {
   t.IModule
   t.ErrorList t.Lexer (Comma t.SrcPos) =
     <NImportBlock

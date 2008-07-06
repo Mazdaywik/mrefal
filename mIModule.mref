@@ -1,5 +1,6 @@
 $MODULE MIModule;
 
+$IMPORT MLambda;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 $IMPORT MSymTable;
@@ -55,8 +56,7 @@ $ENTRY Destroy
   <GetModuleName t.IModule>
     == t.IModule t.QualifiedName
 */
-$ENTRY
-GetModuleName
+$ENTRY GetModuleName
   [IModule (Name e.Name) t.SymTable] =
     [IModule (Name e.Name) t.SymTable]
     <MQualifiedName::Create (e.Name)>;
@@ -112,7 +112,7 @@ $ENTRY UpdateFunction
   <UpdateImport t.IModule (e.Import) e.Attribs>
     == t.IModule s.Status
 */
-$ENTRY
+//$ENTRY
 UpdateImport
   t.IModule (e.Import) e.Attribs =
     <UpdateEntity
@@ -123,7 +123,7 @@ $ENTRY UpdateImport_New
   t.IModule t.Import e.Attribs =
     <UpdateImport
       t.IModule
-      <MQualifiedSupport::LastSegment t.Import>
+      (<MQualifiedSupport::LastSegment t.Import>)
       e.Attribs
     >;
 
@@ -164,7 +164,7 @@ UpdateEntity
 ValidAttribs {
   Function = ScopeClass Position Body Qualified;
   ModuleName = Position FsName ModuleType;
-  ImportName = Position Alias;
+  ImportName = Position RealName;
   ADT = Position;
 }
 
@@ -289,7 +289,7 @@ $ENTRY GetFunctionAttribute {
     == t.IModule Found e.Value
     == t.IModule s.ErrorStatus
 */
-$ENTRY
+//$ENTRY
 GetImportAttribute
   t.IModule s.Attrib e.Import =
     <GetEntityAttribute
@@ -398,9 +398,23 @@ $ENTRY GetFunctionList
   <GetImportList t.IModule>
     == t.IModule (e.ImportName)*
 */
-$ENTRY GetImportList
+//$ENTRY
+GetImportList
   t.IModule =
     <FindEntityByKind t.IModule ImportName>;
+
+$ENTRY GetImportList_New
+  t.IModule =
+    // Хакерство: MapReduce особым образом работает с первым термом
+    <MLambda::MapReduce
+      & Qualify
+      <GetImportList t.IModule>
+    >;
+
+Qualify {
+  t.IModule (e.NextName) =
+    t.IModule <MQualifiedName::Create (e.NextName)>;
+}
 
 //------------------------------------------------------------------------------
 

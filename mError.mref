@@ -10,42 +10,42 @@ $IMPORT MQualifiedName;
 $IMPORT MSymStream;
 
 $ENTRY Fatal
-	e.Message =
-		<MOutModuleStatus::Flush>
-		<InOut::WriteLine 'FATAL ERROR: ' e.Message>
-		<MOS::Exit 1>;
+  e.Message =
+    <MOutModuleStatus::Flush>
+    <InOut::WriteLine 'FATAL ERROR: ' e.Message>
+    <MOS::Exit 1>;
 
 $ENTRY LinkError
-	e.Message =
-		<MOutModuleStatus::Flush>
-		<InOut::WriteLine 'LINKER ERROR: ' e.Message>
-		<MOS::Exit 1>;
+  e.Message =
+    <MOutModuleStatus::Flush>
+    <InOut::WriteLine 'LINKER ERROR: ' e.Message>
+    <MOS::Exit 1>;
 
 PrintError {
-	LexerError t.SrcPos e.Message =
-		<OutError t.SrcPos ('LEXER') e.Message>;
+  LexerError t.SrcPos e.Message =
+    <OutError t.SrcPos ('LEXER') e.Message>;
 
-	LexerUndefined t.SrcPos e.Text =
-		<OutError t.SrcPos ('LEXER') 'undefined text ' e.Text>;
+  LexerUndefined t.SrcPos e.Text =
+    <OutError t.SrcPos ('LEXER') 'undefined text ' e.Text>;
 
-	Unexpected (s.Type t.SrcPos e.Info) e.Expected =
-		<OutError
-			t.SrcPos ('SYNTAX') 'Expected ' e.Expected ', got '
-			<MLexer::TokenToString (s.Type e.Info)>
-		>;
+  Unexpected (s.Type t.SrcPos e.Info) e.Expected =
+    <OutError
+      t.SrcPos ('SYNTAX') 'Expected ' e.Expected ', got '
+      <MLexer::TokenToString (s.Type e.Info)>
+    >;
 
-	Semantics t.SrcPos e.Message =
-		<OutError t.SrcPos ('SEMANTICS') e.Message>;
+  Semantics t.SrcPos e.Message =
+    <OutError t.SrcPos ('SEMANTICS') e.Message>;
 }
 
 OutError {
-	t.SrcPos (e.Kind) e.Message =
-		<MOutModuleStatus::Flush>
-		<InOut::WriteLine
-			e.Kind ' ERROR ('
-			<MSymStream::SrcPosToString t.SrcPos>
-			'): ' e.Message
-		>;
+  t.SrcPos (e.Kind) e.Message =
+    <MOutModuleStatus::Flush>
+    <InOut::WriteLine
+      e.Kind ' ERROR ('
+      <MSymStream::SrcPosToString t.SrcPos>
+      '): ' e.Message
+    >;
 }
 
 $DATA ErrorList;
@@ -53,225 +53,218 @@ $DATA ErrorList;
 $ENTRY CreateErrList = [ErrorList];
 
 $ENTRY DestroyErrList
-	[ErrorList e.Errors] = ;
+  [ErrorList e.Errors] = ;
 
 /**
-	<EmptyList t.ErrorList>
-		== t.ErrorList Empty
-		== t.ErrorList NotEmpty
+  <EmptyList t.ErrorList>
+    == t.ErrorList Empty
+    == t.ErrorList NotEmpty
 */
 $ENTRY EmptyList {
-	[ErrorList] = [ErrorList] Empty;
+  [ErrorList] = [ErrorList] Empty;
 
-	[ErrorList e.Errors] =
-		[ErrorList e.Errors] NotEmpty;
+  [ErrorList e.Errors] =
+    [ErrorList e.Errors] NotEmpty;
 }
 
 /**
-	<ContentLevel t.ErrorList>
-		== t.ErrorList Empty
-		== t.ErrorList Warnings
-		== t.ErrorList Errors
+  <ContentLevel t.ErrorList>
+    == t.ErrorList Empty
+    == t.ErrorList Warnings
+    == t.ErrorList Errors
 */
 $ENTRY ContentLevel
-	t.ErrorList =
-		<SwContentLevel <EmptyList t.ErrorList>>;
+  t.ErrorList =
+    <SwContentLevel <EmptyList t.ErrorList>>;
 
 SwContentLevel {
-	t.ErrorList Empty = t.ErrorList Empty;
-	
-	t.ErrorList NotEmpty = t.ErrorList Errors;
+  t.ErrorList Empty = t.ErrorList Empty;
+  
+  t.ErrorList NotEmpty = t.ErrorList Errors;
 }
 
 AddToList {
-	[ErrorList e.Errors-B t.Error e.Errors-E]
-	t.Error =
-		[ErrorList e.Errors-B t.Error e.Errors-E];
+  [ErrorList e.Errors-B t.Error e.Errors-E]
+  t.Error =
+    [ErrorList e.Errors-B t.Error e.Errors-E];
 
-	[ErrorList e.Errors] t.Error =
-		[ErrorList e.Errors t.Error];
+  [ErrorList e.Errors] t.Error =
+    [ErrorList e.Errors t.Error];
 }
 
 /**
-	<MergeLists t.List1 t.List2>
-		== t.MergedList
+  <MergeLists t.List1 t.List2>
+    == t.MergedList
 */
 $ENTRY MergeLists
-	t.List1 [ErrorList e.Errors2] =
-		<MLambda::Reduce & AddToList t.List1 e.Errors2>;
+  t.List1 [ErrorList e.Errors2] =
+    <MLambda::Reduce & AddToList t.List1 e.Errors2>;
 
 /**
-	<AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
-		== t.UpdatedErrorList
+  <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
+    == t.UpdatedErrorList
 */
 $ENTRY AddUnexpected {
-	t.ErrorList
-	(Error t.SrcPos e.Message) e.ExpectedText =
-		<AddToList
-			t.ErrorList (LexerError t.SrcPos e.Message )
-		>;
+  t.ErrorList
+  (Error t.SrcPos e.Message) e.ExpectedText =
+    <AddToList
+      t.ErrorList (LexerError t.SrcPos e.Message )
+    >;
 
-	t.ErrorList
-	(Undefined t.SrcPos e.Text) e.ExpectedText =
-		<AddToList
-			t.ErrorList (LexerUndefined t.SrcPos e.Text )
-		>;
+  t.ErrorList
+  (Undefined t.SrcPos e.Text) e.ExpectedText =
+    <AddToList
+      t.ErrorList (LexerUndefined t.SrcPos e.Text )
+    >;
 
-	t.ErrorList
-	t.Unexpected e.ExpectedText =
-		<AddToList
-			t.ErrorList (Unexpected t.Unexpected e.ExpectedText)
-		>;
+  t.ErrorList
+  t.Unexpected e.ExpectedText =
+    <AddToList
+      t.ErrorList (Unexpected t.Unexpected e.ExpectedText)
+    >;
 }
 
 /**
-	<AddNamesMismatch
-		t.ErrorList t.TailPos
-		t.InHead t.InTail
-	>
-		== t.ErrorList
+  <AddNamesMismatch
+    t.ErrorList t.TailPos
+    t.InHead t.InTail
+  >
+    == t.ErrorList
 */
 $ENTRY AddNamesMismatch
-	t.ErrorList t.TailPos
-	t.InHead t.InTail =
-		<AddToList
-			t.ErrorList
-			( Semantics t.TailPos
-				'Mismatch module names in head \''
-				<QualifiedNameToString t.InHead>
-				'\' and in tail \''
-				<QualifiedNameToString t.InTail>
-				'\''
-			)
-		>;
+  t.ErrorList t.TailPos
+  t.InHead t.InTail =
+    <AddToList
+      t.ErrorList
+      ( Semantics t.TailPos
+        'Mismatch module names in head \''
+        <QualifiedNameToString t.InHead>
+        '\' and in tail \''
+        <QualifiedNameToString t.InTail>
+        '\''
+      )
+    >;
 
 /**
-	<AddMismatchInternalAndExternalNames
-		t.ErrorList t.SrcPos t.InternalName t.ExternalName
-	>
-		== t.ErrorList
+  <AddMismatchInternalAndExternalNames
+    t.ErrorList t.SrcPos t.InternalName t.ExternalName
+  >
+    == t.ErrorList
 */
 $ENTRY AddMismatchInternalAndExternalNames
-	t.ErrorList t.SrcPos t.InternalName t.ExternalName =
-		<AddToList
-			t.ErrorList
-			( Semantics t.SrcPos
-				'Mismatch internal module name '
-				<QualifiedNameToString t.InternalName>
-				' and external name '
-				<QualifiedNameToString t.ExternalName>
-			)
-		>;
+  t.ErrorList t.SrcPos t.InternalName t.ExternalName =
+    <AddToList
+      t.ErrorList
+      ( Semantics t.SrcPos
+        'Mismatch internal module name '
+        <QualifiedNameToString t.InternalName>
+        ' and external name '
+        <QualifiedNameToString t.ExternalName>
+      )
+    >;
 
 QualifiedNameToString
-	t.QualifiedName =
-		<TypeQualified <MQualifiedName::Parse t.QualifiedName>>;
+  t.QualifiedName =
+    <TypeQualified <MQualifiedName::Parse t.QualifiedName>>;
 
 * <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
-*	== t.UpdatedErrorList
+* == t.UpdatedErrorList
 $ENTRY AddRedeclaredIdentifier
-	t.ErrorList t.SrcPos e.Identifier =
-		<AddToList
-			t.ErrorList
-			( Semantics t.SrcPos 'Identifier redeclared ' e.Identifier )
-		>;
+  t.ErrorList t.SrcPos e.Identifier =
+    <AddToList
+      t.ErrorList
+      ( Semantics t.SrcPos 'Identifier redeclared ' e.Identifier )
+    >;
 
 $ENTRY AddVarTypeMismatch
-	t.ErrorList t.SrcPos e.VarName =
-		<AddToList
-			t.ErrorList
-			( Semantics
-				t.SrcPos 'Two different variables has same index ' e.VarName
-			)
-		>;
+  t.ErrorList t.SrcPos e.VarName =
+    <AddToList
+      t.ErrorList
+      ( Semantics
+        t.SrcPos 'Two different variables has same index ' e.VarName
+      )
+    >;
 
 $ENTRY AddUndeclaredVariable
-	t.ErrorList t.SrcPos s.VarType e.Index =
-		<AddToList
-			t.ErrorList
-			( Semantics
-				t.SrcPos
-				'Undeclared variable ' <VarTypeToPrefix s.VarType> e.Index
-			)
-		>;
+  t.ErrorList t.SrcPos s.VarType e.Index =
+    <AddToList
+      t.ErrorList
+      ( Semantics
+        t.SrcPos
+        'Undeclared variable ' <VarTypeToPrefix s.VarType> e.Index
+      )
+    >;
 
 VarTypeToPrefix {
-	EVar = 'e.'; SVar = 's.'; TVar = 't.';
+  EVar = 'e.'; SVar = 's.'; TVar = 't.';
 }
 
 $ENTRY AddUnresolvedFunction {
-	t.ErrorList
-	t.SrcPos Local e.FnName =
-		<AddToList
-			t.ErrorList
-			( Semantics
-				t.SrcPos 'Undeclared local function \'' e.FnName '\''
-			)
-		>;
+  t.ErrorList
+  t.SrcPos Local e.FnName =
+    <AddToList
+      t.ErrorList
+      ( Semantics
+        t.SrcPos 'Undeclared local function \'' e.FnName '\''
+      )
+    >;
 
-	t.ErrorList
-	t.SrcPos QualifiedModule (e.ModName) e.FnName =
-		<AddToList
-			t.ErrorList
-			( Semantics
-				t.SrcPos
-				'Undeclared module in <' e.ModName '::' e.FnName ' ... >'
-			)
-		>;
+  t.ErrorList
+  t.SrcPos QualifiedModule (e.ModName) e.FnName =
+    <AddToList
+      t.ErrorList
+      ( Semantics
+        t.SrcPos
+        'Undeclared module in <' e.ModName '::' e.FnName ' ... >'
+      )
+    >;
 
-	t.ErrorList
-	t.SrcPos QualifiedFunction (e.Module) e.FnName =
-		<AddToList
-			t.ErrorList
-			( Semantics
-				t.SrcPos
-				'Module \'' e.Module '\' not contain entry function \'' e.FnName '\''
-			)
-		>;
+  t.ErrorList
+  t.SrcPos QualifiedFunction (e.Module) e.FnName =
+    <AddToList
+      t.ErrorList
+      ( Semantics
+        t.SrcPos
+        'Module \'' e.Module '\' not contain entry function \'' e.FnName '\''
+      )
+    >;
 
-	t.ErrorList
-	t.SrcPos GenericQualified e.QualifiedName =
-		<AddToList
-			t.ErrorList
-			( Semantics
-				t.SrcPos
-				'Unresolved calling <' <TypeQualified e.QualifiedName> '... >'
-			)
-		>;
+  t.ErrorList
+  t.SrcPos GenericQualified e.QualifiedName =
+    <AddToList
+      t.ErrorList
+      ( Semantics
+        t.SrcPos
+        'Unresolved calling <' <TypeQualified e.QualifiedName> '... >'
+      )
+    >;
 }
 
-$ENTRY FnPtrError
-	t.ErrorList t.SrcPos =
-		<AddToList
-			t.ErrorList
-			( Semantics t.SrcPos 'FnPtr calling error: identifier expected')
-		>;
-
 TypeQualified {
-	(e.Qualifed) (e.SubQualified) e.Rest =
-		e.Qualifed '::'
-		<TypeQualified (e.SubQualified) e.Rest>;
+  (e.Qualifed) (e.SubQualified) e.Rest =
+    e.Qualifed '::'
+    <TypeQualified (e.SubQualified) e.Rest>;
 
-	(e.Name) = e.Name;
+  (e.Name) = e.Name;
 }
 
 $ENTRY PrintErrorsAndStop
-	t.ErrorList =
-		<PrintErrors t.ErrorList>
-		<MOS::Exit 1>;
+  t.ErrorList =
+    <PrintErrors t.ErrorList>
+    <MOS::Exit 1>;
 
 $ENTRY PrintErrors
-	[ErrorList e.Errors] =
-		<DoPrintErrors
-			<MOrder::Sort e.Errors>
-		>;
+  [ErrorList e.Errors] =
+    <DoPrintErrors
+      <MOrder::Sort e.Errors>
+    >;
 
 DoPrintErrors {
-	(e.Error) e.Errors =
-		<PrintError e.Error>
-		<DoPrintErrors e.Errors>;
+  (e.Error) e.Errors =
+    <PrintError e.Error>
+    <DoPrintErrors e.Errors>;
 
-	= ;
+  = ;
 }
 
 $END MError.

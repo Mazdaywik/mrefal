@@ -12,106 +12,106 @@ $ENTRY Init = <G_Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18>;
 GetHandle = <MSwapSupport::PopFront & G_Handles>;
 
 ReleaseHandle {
-	s.Handle =
-		<MSwapSupport::PushFront & G_Handles s.Handle>;
+  s.Handle =
+    <MSwapSupport::PushFront & G_Handles s.Handle>;
 }
 
 $DATA File;
 
 $ENTRY Open {
-	'r' e.FileName =
-		<CheckExistAndOpenForRead
-			<MRefalRTS::ExistFile e.FileName>
-			e.FileName
-		>;
+  'r' e.FileName =
+    <CheckExistAndOpenForRead
+      <MRefalRTS::ExistFile e.FileName>
+      e.FileName
+    >;
 
-	'w' e.FileName =
-		<SwOpen <GetHandle> 'w' e.FileName>;
+  'w' e.FileName =
+    <SwOpen <GetHandle> 'w' e.FileName>;
 
-	s.OtherMode e.FileName =
-		<MSelfDiag::Error
-			s.OtherMode ' -- unknown open file mode ('
-			'file \'' e.FileName '\')'
-		>;
+  s.OtherMode e.FileName =
+    <MSelfDiag::Error
+      s.OtherMode ' -- unknown open file mode ('
+      'file \'' e.FileName '\')'
+    >;
 }
 
 CheckExistAndOpenForRead {
-	True e.FileName =
-		<SwOpen <GetHandle> 'r' e.FileName>;
+  True e.FileName =
+    <SwOpen <GetHandle> 'r' e.FileName>;
 
-	False e.FileName =
-		<MSelfDiag::Error
-			'Can\'t open file \'' e.FileName '\' for reading'
-		>;
+  False e.FileName =
+    <MSelfDiag::Error
+      'Can\'t open file \'' e.FileName '\' for reading'
+    >;
 }
 
 SwOpen {
-	Success s.Handle s.Mode e.FileName =
-		[File s.Handle e.FileName] <MRefalRTS::Open s.Mode s.Handle e.FileName>;
+  Success s.Handle s.Mode e.FileName =
+    [File s.Handle e.FileName] <MRefalRTS::Open s.Mode s.Handle e.FileName>;
 
-	Fails s.Mode e.FileName =
-		<MSelfDiag::Error
-			'Can\'t open file ' e.FileName ': no free handles'
-		>;
+  Fails s.Mode e.FileName =
+    <MSelfDiag::Error
+      'Can\'t open file ' e.FileName ': no free handles'
+    >;
 }
 
 $ENTRY Close {
-	[File s.Handle e.FileName] =
-		<MRefalRTS::Open 'r' s.Handle e.FileName>
-		<ReleaseHandle s.Handle>;
+  [File s.Handle e.FileName] =
+    <MRefalRTS::Open 'r' s.Handle e.FileName>
+    <ReleaseHandle s.Handle>;
 }
 
 $ENTRY NulClose
-	[File s.Handle e.FileName] =
-		<MRefalRTS::Open 'r' s.Handle 'nul'>
-		<ReleaseHandle s.Handle>;
+  [File s.Handle e.FileName] =
+    <MRefalRTS::Open 'r' s.Handle 'nul'>
+    <ReleaseHandle s.Handle>;
 
 $ENTRY ReadLine {
-	[File s.Handle e.FileName] =
-		[File s.Handle e.FileName] <MRefalRTS::Get s.Handle>;
+  [File s.Handle e.FileName] =
+    [File s.Handle e.FileName] <MRefalRTS::Get s.Handle>;
 }
 
 $ENTRY WriteLine {
-	[File s.Handle e.FileName] e.Line =
-		[File s.Handle e.FileName] <MRefalRTS::Putout s.Handle e.Line>;
+  [File s.Handle e.FileName] e.Line =
+    [File s.Handle e.FileName] <MRefalRTS::Putout s.Handle e.Line>;
 }
 
 $ENTRY WriteLine-T {
-	[File s.Handle e.FileName] e.Line =
-		[File s.Handle e.FileName]
-		<MRefalRTS::Putout s.Handle e.Line>
-		e.Line;
+  [File s.Handle e.FileName] e.Line =
+    [File s.Handle e.FileName]
+    <MRefalRTS::Putout s.Handle e.Line>
+    e.Line;
 }
 
 $ENTRY ExtractFileName {
-	[File s.Handle e.FileName] =
-		[File s.Handle e.FileName] e.FileName;
+  [File s.Handle e.FileName] =
+    [File s.Handle e.FileName] e.FileName;
 }
 
 $ENTRY Load
-	e.FileName =
-		<DoLoad
-			<ReadLine <Open 'r' e.FileName> >
-		>;
+  e.FileName =
+    <DoLoad
+      <ReadLine <Open 'r' e.FileName> >
+    >;
 
 DoLoad {
-	t.File 0 = <NulClose t.File>;
-	t.File e.Line 0 = (e.Line) <NulClose t.File>;
-	t.File e.Line = (e.Line) <DoLoad <ReadLine t.File>>;
+  t.File 0 = <NulClose t.File>;
+  t.File e.Line 0 = (e.Line) <NulClose t.File>;
+  t.File e.Line = (e.Line) <DoLoad <ReadLine t.File>>;
 }
 
 $ENTRY Save
-	(e.FileName) e.Content =
-		<DoSave <Open 'w' e.FileName> e.Content>;
+  (e.FileName) e.Content =
+    <DoSave <Open 'w' e.FileName> e.Content>;
 
 DoSave {
-	t.File (e.NextLine) e.Tail =
-		<DoSave
-			<WriteLine t.File e.NextLine>
-			e.Tail
-		>;
+  t.File (e.NextLine) e.Tail =
+    <DoSave
+      <WriteLine t.File e.NextLine>
+      e.Tail
+    >;
 
-	t.File = <NulClose t.File>;
+  t.File = <NulClose t.File>;
 }
 
 $END FileIO.

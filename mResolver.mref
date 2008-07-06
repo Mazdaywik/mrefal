@@ -120,41 +120,44 @@ AddLocalScopeElem {
 
 FillModuleAliases
   t.ResolveTable t.IModule t.ErrorList =
-    <DoFillModuleAliases
+    <FillModuleAliases-Aux
       t.ResolveTable
-      ( <MIModule::GetImportList t.IModule> )
+      <MIModule::GetImportList_New t.IModule>
     >
     t.ErrorList;
 
-/*
-  Инвариант:
-  <DoFillModuleAliases t.ResolveTable (t.IModule (e.ImportName)*)>
-    == t.ResolveTable t.IModule
-*/
-DoFillModuleAliases {
-  t.ResolveTable ( t.IModule ) =
-    t.ResolveTable t.IModule;
-
-  t.ResolveTable ( t.IModule (e.NextName) e.Tail ) =
-    <DoFillModuleAliases
-      <AddAlias
-        t.ResolveTable
-        ( <MIModule::GetImportAttribute t.IModule Alias e.NextName> )
-        (e.NextName) e.Tail
+FillModuleAliases-Aux
+  t.ResolveTable t.IModule e.ImportNames =
+    <UnBracketResult
+      <MLambda::MapReduce
+        & AddAlias
+        (t.ResolveTable t.IModule)
+        e.ImportNames
       >
     >;
-}
+
+UnBracketResult
+  (t.ResolveTable t.IModule) = t.ResolveTable t.IModule;
 
 AddAlias
-  t.ResolveTable
-  ( t.IModule Found e.Alias ) (e.NextName) e.Tail =
-    <MResolveTable::Add
+  (t.ResolveTable t.IModule) t.NextAliasName =
+    <AddAlias-Aux
       t.ResolveTable
-      <MQualifiedName::Create (e.Alias)>
-      ModuleAlias
-      <MQualifiedName::Create (e.NextName)>
-    >
-    (t.IModule e.Tail);
+      t.NextAliasName
+      <MIModule::GetImportAttribute_New
+        t.IModule RealName t.NextAliasName
+      >
+    >;
+
+AddAlias-Aux
+  t.ResolveTable t.AliasName
+  t.IModule Found t.RealName =
+    (
+      <MResolveTable::Add
+        t.ResolveTable t.AliasName ModuleAlias t.RealName
+      >
+      t.IModule
+    );
 
 ResolvingElements
   t.ResolveTable t.IModule t.ErrorList =
@@ -177,7 +180,8 @@ DoResolvingFunctions {
       <ResolvingFunction
         t.IModule t.ErrorList t.ResolveTable
         e.NextFunction
-      > e.Tail
+      >
+      e.Tail
     >;
 
   t.IModule t.ErrorList t.ResolveTable =
@@ -196,9 +200,11 @@ ResolvingFunction
     >;
 
 ResolvingFunction-ScopeClass {
+  /*
   t.IModule Found Swap
   t.ErrorList t.ResolveTable e.Function =
     t.IModule t.ErrorList t.ResolveTable;
+  */
 
   t.IModule Found s.ScopeClass
   t.ErrorList t.ResolveTable e.Function =
@@ -222,7 +228,28 @@ ResolvingFunction-Qualified
       e.Function
     >;
 
+/*
+  <SwResolvedFunction-Qualified
+    s.ScopeClass t.IModule t.ErrorList
+    t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+    e.FunctionName
+  >
+    == t.IModule t.ErrorList t.ResolveTable
+*/
 SwResolvingFunction-Qualified {
+  Swap
+  t.IModule t.ErrorList
+  t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+  e.Function =
+    <CheckSuccess
+      <MIModule::UpdateFunction
+        t.IModule (e.Function)
+        (ScopeClass Swap)
+        (Qualified t.ExternalQualifier)
+      >
+    >
+    t.ErrorList t.ResolveTable;
+
   s.ScopeClass
   t.IModule t.ErrorList
   t.ResolveTable Found s.ScopeClass t.ExternalQualifier
@@ -245,6 +272,13 @@ SwResolvingFunction-Qualified {
 CheckSuccess
   t.IModule Success = t.IModule;
 
+/*
+  <ResolvingFunction-Body
+    t.IModule Found (e.Sentences)
+    t.ErrorList t.ResolveTable e.FnName
+  >
+    == t.IModule t.ErrorList t.ResolveTable
+*/
 ResolvingFunction-Body
   t.IModule Found (e.Sentences)
   t.ErrorList t.ResolveTable e.FnName =

@@ -282,9 +282,11 @@ MoveFirstLineToFront
 
 GenerateFunctions
   t.IModule e.Functions =
-    <GenerateImports
-      <MIModule::GetImportList t.IModule>
+    <MLambda::MapReduce
+      & GenerateImport 
+      <MIModule::GetImportList_New t.IModule>
     >
+    ()
     <MLambda::Map
       & TypeFunction
       <MOrder::Sort e.Functions>
@@ -293,6 +295,35 @@ GenerateFunctions
 
 TypeFunction
   (e.FnName) = ( '$entry ' e.FnName ';' );
+
+GenerateImport
+  t.IModule t.NextImport =
+    <GenerateImport-Aux
+      t.NextImport
+      <MIModule::GetImportAttribute_New
+        t.IModule RealName t.NextImport
+      >
+    >;
+
+GenerateImport-Aux
+  t.Alias t.IModule Found t.RealName =
+    t.IModule
+    <SwGenerateImport-Aux
+      <MQualifiedName::Equals-T t.Alias t.RealName>
+    >;
+
+SwGenerateImport-Aux {
+  True t.Alias t.RealName =
+    ('$import ' <StringFromQualified t.Alias> ';');
+
+  False t.Alias t.RealName =
+    ('$import '
+      <StringFromQualified t.Alias>
+      ' = '
+      <StringFromQualified t.RealName>
+      ';'
+    );
+}
 
 GenerateImports {
   t.IModule = t.IModule;
@@ -335,14 +366,38 @@ Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем
 SymTableToSymInfo-T
   t.IModule =
     <SymTableToSymInfo--Imports
-      <MIModule::GetImportList t.IModule>
+      <MLambda::MapReduce
+        & RealNameFromAlias
+        <MIModule::GetImportList_New t.IModule>
+      >
     >;
+
+RealNameFromAlias
+  t.IModule t.Alias =
+    <RealNameFromAlias-Aux
+      <MIModule::GetImportAttribute_New
+        t.IModule RealName t.Alias
+      >
+    >;
+
+RealNameFromAlias-Aux
+  t.IModule Found t.RealName =
+    t.IModule t.RealName;
 
 SymTableToSymInfo--Imports
   t.IModule e.Imports =
     <SymTableToSymInfo--Functions
       <FilterEntry <MIModule::GetFunctionList t.IModule>>
-    > ( Imports e.Imports );
+    >
+    ( Imports
+      <MLambda::Map
+        & UnQualifyBrackets
+        e.Imports
+      >
+    );
+
+UnQualifyBrackets
+  t.Name = ( <MQualifiedSupport::UnQualify t.Name> );
 
 FilterEntry
   t.IModule e.FnList =

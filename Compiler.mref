@@ -20,9 +20,11 @@ $MODULE Compiler;
 $IMPORT Context;
 $IMPORT MBE-Mgr;
 $IMPORT MCheckNeedCompile;
+$IMPORT MContext;
 $IMPORT MError;
 $IMPORT MFE-Mgr;
 $IMPORT MIModule;
+$IMPORT MLambda;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOutModuleStatus;
@@ -127,7 +129,10 @@ To_OldSymTable-T
   t.Module =
     <Rotate
       <SymInfo-Imports
-        <MIModule::GetImportList t.Module>
+        <MLambda::MapReduce
+          & AliasToRealName
+          <MIModule::GetImportList_New t.Module>
+        >
       >
     >;
 
@@ -145,7 +150,19 @@ SymInfo-Imports
     <SymInfo-Functions
       <MIModule::GetFunctionList t.Module>
     >
-    <MakeImports e.Imports>;
+    (Modules e.Imports);
+
+AliasToRealName
+  t.IModule t.AliasName =
+    <AliasToRealName-Aux
+      <MIModule::GetImportAttribute_New
+        t.IModule RealName t.AliasName
+      >
+    >;
+
+AliasToRealName-Aux
+  t.IModule Found t.RealName =
+    t.IModule t.RealName;
 
 SymInfo-Functions
   t.Module e.Functions =
@@ -188,10 +205,6 @@ MakeEntries
   e.Entries =
     (Functions e.Entries);
 
-MakeImports
-  e.Imports =
-    (Modules e.Imports);
-    
 Compile2 {
   (Module e.ModuleName)
   (File e.FileName) 
@@ -292,19 +305,24 @@ DoLoadQFunc-SwapArgs {
 * <LoadFromOneModule t.Context (e.ModuleName)>
 * == t.Context (e.QualifiedList)
 LoadFromOneModule
-  t.Context (e.ModuleName) =
+  t.Context t.ModuleName =
     <SwLoadFromOneModule
-      (e.ModuleName)
-      <Context::ExtractOption t.Context Status e.ModuleName>
+      ( <MQualifiedSupport::UnQualify t.ModuleName> )
+      <MContext::ExtractOption t.Context t.ModuleName Status>
     >;
 
 SwLoadFromOneModule {
-  (e.ModuleName) t.Context ModuleInfoNotFound =
+  (e.ModuleName) t.Context ModuleNotFound =
     /* Перекомпиляция модуля и повторная попытка загрузки информации */
     <LoadFromOneModule
       <CompileIfNeed-Old t.Context e.ModuleName>
-      (e.ModuleName)
+      <MQualifiedName::Create (e.ModuleName)>
     >;
+
+  /*
+    Проверку на OptionNotFound не делаем. Это нарушение инварианта,
+    программа должна вылететь с ошибкой.
+  */
 
   (e.ModuleName) t.Context Found Recompiled =
     <ReadFunctionsFromSym t.Context e.ModuleName>;
@@ -441,17 +459,17 @@ ReadImportsFromSym
     >;
 
 DoCheckCompileIfNeed-Old {
-  t.ModuleName s.Status t.Context (e.NextName) e.Tail =
+  t.ModuleName s.Status t.Context t.NextName e.Tail =
     <DoCheckCompileIfNeed-Old
       <SwDoCheckCompileIfNeed-Old
         t.ModuleName
         s.Status
-        <Context::ExtractOption
+        <MContext::ExtractOption
           t.Context
+          t.NextName
           Status
-          e.NextName
         >
-        (e.NextName)
+        t.NextName
       >
       e.Tail
     >;
@@ -480,33 +498,36 @@ DoCheckCompileIfNeed-Old {
 }
 
 SwDoCheckCompileIfNeed-Old {
-  t.ModuleName s.Status t.Context ModuleInfoNotFound (e.NextName) =
+  t.ModuleName s.Status t.Context ModuleNotFound t.NextName =
     <SwDoCheckCompileIfNeed-Old
       t.ModuleName s.Status
-      <Context::ExtractOption
-        <CompileIfNeed-Old t.Context e.NextName>
+      <MContext::ExtractOption
+        <CompileIfNeed-Old
+          t.Context
+          <MQualifiedSupport::UnQualify t.NextName>
+        >
+        t.NextName
         Status
-        e.NextName
       >
-      (e.NextName)
+      t.NextName
     >;
 
-  t.ModuleName Library t.Context Found Library (e.NextName) =
+  t.ModuleName Library t.Context Found Library t.NextName =
     t.ModuleName Library t.Context;
 
-  t.ModuleName Library t.Context Found s.Other (e.NextName) =
+  t.ModuleName Library t.Context Found s.Other t.NextName =
     <MError::Fatal
       'Modules, dependeds from library, must be library modules '
       '(library module may be redefined)'
     >;
 
-  t.ModuleName s.Status t.Context Found Recompiled (e.NextName) =
+  t.ModuleName s.Status t.Context Found Recompiled t.NextName =
     t.ModuleName Recompiled t.Context;
 
-  t.ModuleName s.Status t.Context Found Library (e.NextName) =
+  t.ModuleName s.Status t.Context Found Library t.NextName =
     t.ModuleName s.Status t.Context;
 
-  t.ModuleName s.Status t.Context Found Updated (e.NextName) =
+  t.ModuleName s.Status t.Context Found Updated t.NextName =
     t.ModuleName s.Status t.Context;
 }
 
@@ -517,7 +538,11 @@ ImportsFromSym {
     <MError::Fatal 'Broken sym-file'>;
 
   t.Context t.ModuleName t.FnList (Imports e.ImportList) =
-    t.Context e.ImportList;
+    t.Context
+    <MLambda::Map
+      & MQualifiedName.Create
+      e.ImportList
+    >;
 }
 
 /* Разрешает вызовы функций. */

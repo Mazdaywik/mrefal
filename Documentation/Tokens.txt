@@ -1,46 +1,46 @@
 Внутренний формат лексем.
 (s.Type t.PositionInSrc e.Info)
 
-Тип				Информация			Представление
+Тип       Информация      Представление
 =========================================
-OpenBlock		нет					'{'
-CloseBlock		нет					'}'
+OpenBlock    нет              '{'
+CloseBlock   нет              '}'
 
-OpenFnCall		нет					'<'
-CloseFnCall		нет					'>'
+OpenFnCall   нет              '<'
+CloseFnCall  нет              '>'
 
-OpenBrac		нет					'('
-CloseBrac		нет					')'
+OpenBrac     нет              '('
+CloseBrac    нет              ')'
 
-OpenSquare		нет					'['
-CloseSquare		нет					']'
+OpenSquare   нет              '['
+CloseSquare  нет              ']'
 
-Ampersand		нет					'&'
-Asterisk		нет					'*'
-Colon			нет					':'
-Comma			нет					','
-Dot				нет					'.'
-DoubleColon		нет					'::'
-EndSent			нет					';'
-Replaces		нет					'='
+Ampersand    нет              '&'
+Asterisk     нет              '*'
+Colon        нет              ':'
+Comma        нет              ','
+Dot          нет              '.'
+DoubleColon  нет              '::'
+EndSent      нет              ';'
+Replaces     нет              '='
 
-Directive		ClearModule			'$CLEARMODULE', '$clearmodule'
-				Data				'$DATA', '$data'
-				End					'$END', '$end'
-				Entry				'$ENTRY', '$entry'
-				Import				'$IMPORT', '$import'
-				Module				'$MODULE', '$module'
-				Swap				'$SWAP', '$swap'
-				Program				'$PROGRAM', '$program'
+Directive    ClearModule      '$CLEARMODULE', '$clearmodule'
+             Data             '$DATA', '$data'
+             End              '$END', '$end'
+             Entry            '$ENTRY', '$entry'
+             Import           '$IMPORT', '$import'
+             Module           '$MODULE', '$module'
+             Swap             '$SWAP', '$swap'
+             Program          '$PROGRAM', '$program'
 
-DQWord			e.Content			'\"' e.EscapedContent '\"'
-Identifier		e.Name				e.Name
-Literal			e.Content			'\'' e.EscapedContent '\''
-Macro			s.Value				s.Digit*
+DQWord       e.Content        '\"' e.EscapedContent '\"'
+Identifier   e.Name           e.Name
+Literal      e.Content        '\'' e.EscapedContent '\''
+Macro        s.Value          s.Digit*
 
-Var				s.VarType e.Index	s.VarType ::= EVar | SVar | TVar
-									e.Index ::= s.OneLitera | '.' { s.Letter s.UpLetter s.Digit }+
+Var         s.VarType e.Index s.VarType ::= EVar | SVar | TVar
+                              e.Index ::= s.OneLitera | '.' { s.Letter s.UpLetter s.Digit }+
 
-Undefined		e.ErrSeq			неверная последовательность символов
-Error			e.ErrorMessage		-- ошибка при синтаксическом анализе
-EndOfText		нет
+Undefined   e.ErrSeq          неверная последовательность символов
+Error       e.ErrorMessage    -- ошибка при синтаксическом анализе
+EndOfText   нет

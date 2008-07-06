@@ -1,17 +1,17 @@
 $MODULE Compiler;
 
 /*==============================================================================
-	Модуль реализует трансляцию отдельных модулей исходного текста Модульного
+  Модуль реализует трансляцию отдельных модулей исходного текста Модульного
 Рефала. Точки входа в модуль -- функции CompileByModuleName и CompileByFileName
 выполняют компиляцию указанного модуля по заданному имени файла (имя в файло-
 вой системе) или модуля (указанного после директивы $MODULE). Сигнатуры этих
 функций следующие:
-	<CompileBy***Name t.Context e.***Name> == t.UpdatedContext
-	В процессе компиляции функции возвращают контекст с обновлённой информацией
+  <CompileBy***Name t.Context e.***Name> == t.UpdatedContext
+  В процессе компиляции функции возвращают контекст с обновлённой информацией
 о скомпилированных модулях или завершают выполнение программы аварийно вызовом
 функции из модуля Error. Функции также при необходимости рекурсивно перекомпи-
 лируют модули указанные в директивах $IMPORT указанных модулей.
-	Для простоты потребуем в данной версии, чтобы имя модуля совпадало с именем
+  Для простоты потребуем в данной версии, чтобы имя модуля совпадало с именем
 файла. Поиск исходных файлов осуществляется в текущей директории, поиск библио-
 течных файлов осуществляется сначала в текущей директории, затем по алгоритму,
 находящемуся в модуле Modules вызовом Modules::LookupLibrary.
@@ -26,8 +26,8 @@ $IMPORT MIModule;
 $IMPORT MLocation;
 $IMPORT Modules;
 $IMPORT MOutModuleStatus;
-$IMPORT MParser_MRefal;
 $IMPORT MQualifiedName;
+$IMPORT MQualifiedSupport;
 $IMPORT MResolver;
 $IMPORT MResolveTable;
 $IMPORT MSelfDiag;
@@ -35,229 +35,241 @@ $IMPORT MSymModule;
 
 
 $ENTRY CompileByModuleName
-	t.Context e.ModuleName =
-		<ParseAndCompile
-			<MLocation::LookupModule-T
-				t.Context () e.ModuleName
-			>
-		>;
+  t.Context e.ModuleName =
+    <ParseAndCompile
+      <MLocation::LookupModule-T
+        t.Context () e.ModuleName
+      >
+    >;
 
 ParseAndCompile {
-	t.Context NotKnown ModuleNotFound
-	t.SymName t.OutName t.SrcName (e.Directory) e.ModuleName =
-		<MError::Fatal 'Module `' e.ModuleName '` not found'>;
+  t.Context NotKnown ModuleNotFound
+  t.SymName t.OutName t.SrcName (e.Directory) e.ModuleName =
+    <MError::Fatal 'Module `' e.ModuleName '` not found'>;
 
-	t.Context
-	s.Known s.Status
-	(Sym e.SymName) (Out e.OutName) (Src e.SrcName)
-	(e.Directory) e.Name =
-		<MOutModuleStatus::Compiling e.SrcName>
-		<Compile-SwParseResult
-			(File e.SrcName)
-			t.Context
-			<MParser_MRefal::SrcModule
-				<MError::CreateErrList>
-				<CreateQualifiedName e.SrcName>
-				e.SrcName
-			>
-		>
- 		<MOutModuleStatus::Compiled e.SrcName>;
+  t.Context
+  s.Known s.Status
+  (Sym e.SymName) (Out e.OutName) (Src e.SrcName)
+  (e.Directory) e.Name =
+    <MOutModuleStatus::Compiling e.SrcName>
+    <Compile-SwParseResult
+      (File e.SrcName)
+      t.Context
+      <MFE-Mgr::Load MRefal_FrontEnd
+        <MError::CreateErrList>
+        <CreateQualifiedName e.SrcName>
+        Current
+      >
+    >
+    <MOutModuleStatus::Compiled e.SrcName>;
 }
 
 CreateQualifiedName
-	e.FileName s.Dot s.M s.R s.E s.F =
-		<MQualifiedName::Create (e.FileName)>;
+  e.FileName s.Dot s.M s.R s.E s.F =
+    <MQualifiedName::Create (e.FileName)>;
 
 Compile-SwParseResult {
-	t.FileName t.Context t.ErrorList Success Success t.IModule =
-		<MError::DestroyErrList t.ErrorList>
-		<Compile0 t.FileName t.Context t.IModule>;
+  t.FileName t.Context t.ErrorList Success Success t.IModule =
+    <MError::DestroyErrList t.ErrorList>
+    <Compile0 t.FileName t.Context t.IModule>;
 
-	t.FileName t.Context t.ErrorList Success Warnings t.IModule =
-		<MError::PrintErrors t.ErrorList>
-		<Compile0 t.FileName t.Context t.IModule>;
+  t.FileName t.Context t.ErrorList Success Warnings t.IModule =
+    <MError::PrintErrors t.ErrorList>
+    <Compile0 t.FileName t.Context t.IModule>;
 
-	t.FileName t.Context t.ErrorList Success Errors t.IModule =
-		<MError::PrintErrorsAndStop t.ErrorList>;
+  t.FileName t.Context t.ErrorList Success Errors t.IModule =
+    <MError::PrintErrorsAndStop t.ErrorList>;
 
-	t.FileName t.Context t.ErrorList Fails =
-		<MError::PrintErrorsAndStop t.ErrorList>;
+  t.FileName t.Context t.ErrorList Fails =
+    <MError::PrintErrorsAndStop t.ErrorList>;
 }
 
 Compile0 {
-	(File e.FileName)
-	t.Context
-	t.IModule =
-		<Compile1
-			(File e.FileName)
-			t.Context
-			<MIModule::GetModuleName t.IModule>
-		>;
+  (File e.FileName)
+  t.Context
+  t.IModule =
+    <Compile1
+      (File e.FileName)
+      t.Context
+      <MIModule::GetModuleName t.IModule>
+    >;
 }
 
 Compile1 {
-	(File e.FileName)
-	t.Context
-	t.IModule
-	e.ModuleName =
-		<Context::LastModule
-			<Compile2
-				(Module e.ModuleName)
-				(File e.FileName)
-				(Sym <Modules::SymName e.ModuleName>)
-				(Out <Modules::OutName e.ModuleName>)
-				t.Context
-				<To_OldSymTable-T t.IModule>
-			>
-			e.ModuleName
-		>;
+  (File e.FileName)
+  t.Context
+  t.IModule
+  t.ModuleName =
+    <Context::LastModule
+      <Compile2
+        (Module
+          <MQualifiedSupport::UnQualify t.ModuleName>
+        )
+        (File e.FileName)
+        (Sym
+          <Modules::SymName
+            <MQualifiedSupport::UnQualify t.ModuleName>
+          >
+        )
+        (Out
+          <Modules::OutName
+            <MQualifiedSupport::UnQualify t.ModuleName>
+          >
+        )
+        t.Context
+        <To_OldSymTable-T t.IModule>
+      >
+      <MQualifiedSupport::UnQualify t.ModuleName>
+    >;
 }
 
 To_OldSymTable-T
-	t.Module =
-		<Rotate
-			<SymInfo-Imports
-				<MIModule::GetImportList t.Module>
-			>
-		>;
+  t.Module =
+    <Rotate
+      <SymInfo-Imports
+        <MIModule::GetImportList t.Module>
+      >
+    >;
 
 Rotate
-	t.IModule
-	(CurModule e.ModuleName) (Functions e.FnList) (Modules e.ModuleList) =
-		t.IModule
-		( (CurModule e.ModuleName)
-			(Modules e.ModuleList)
-			(Functions e.FnList)
-		);
+  t.IModule
+  (CurModule e.ModuleName) (Functions e.FnList) (Modules e.ModuleList) =
+    t.IModule
+    ( (CurModule e.ModuleName)
+      (Modules e.ModuleList)
+      (Functions e.FnList)
+    );
 
 SymInfo-Imports
-	t.Module e.Imports =
-		<SymInfo-Functions
-			<MIModule::GetFunctionList t.Module>
-		>
-		<MakeImports e.Imports>;
+  t.Module e.Imports =
+    <SymInfo-Functions
+      <MIModule::GetFunctionList t.Module>
+    >
+    <MakeImports e.Imports>;
 
 SymInfo-Functions
-	t.Module e.Functions =
-		<FilterEntry
-			t.Module () e.Functions
-		>;
+  t.Module e.Functions =
+    <FilterEntry
+      t.Module () e.Functions
+    >;
 
 FilterEntry {
-	t.Module (e.Entries) (e.NextFn) e.Tail =
-		<FilterEntry
-			<CheckEntry
-				<MIModule::GetFunctionAttribute t.Module ScopeClass e.NextFn>
-				(e.Entries) e.NextFn
-			>
-		>;
+  t.Module (e.Entries) (e.NextFn) e.Tail =
+    <FilterEntry
+      <CheckEntry
+        <MIModule::GetFunctionAttribute t.Module ScopeClass e.NextFn>
+        (e.Entries) e.NextFn
+      >
+    >;
 
-	t.Module (e.Entries) =
-		<SymInfo-ModuleName
-			<MIModule::GetModuleName t.Module>
-		>
-		<MakeEntries e.Entries>;
+  t.Module (e.Entries) =
+    <SymInfo-ModuleName
+      <MIModule::GetModuleName t.Module>
+    >
+    <MakeEntries e.Entries>;
 }
 
 CheckEntry {
-	t.Module Found Entry (e.Entries) e.Name =
-		t.Module (e.Entries (Entry e.Name));
+  t.Module Found Entry (e.Entries) e.Name =
+    t.Module (e.Entries (Entry e.Name));
 
-	t.Module Found s.Other (e.Entries) e.Name =
-		t.Module (e.Entries);
+  t.Module Found s.Other (e.Entries) e.Name =
+    t.Module (e.Entries);
 }
 
 SymInfo-ModuleName
-	t.Module e.ModuleName =
-		t.Module
-		(CurModule e.ModuleName);
+  t.Module t.ModuleName =
+    t.Module
+    (CurModule
+      <MQualifiedSupport::UnQualify t.ModuleName>
+    );
 
 MakeEntries
-	e.Entries =
-		(Functions e.Entries);
+  e.Entries =
+    (Functions e.Entries);
 
 MakeImports
-	e.Imports =
-		(Modules e.Imports);
-		
+  e.Imports =
+    (Modules e.Imports);
+    
 Compile2 {
-	(Module e.ModuleName)
-	(File e.FileName) 
-	(Sym e.SymName)
-	(Out e.OutName)
-	t.Context
-	t.Module
-	e.SymInfo =
-		<Generate
-			(e.ModuleName)
-			<CheckFnCalls
-				<LoadImportInfo
-					<Context::UpdateModuleInfo
-						t.Context
-						(e.ModuleName)
-						(Sym e.SymName)
-						(Out e.OutName)
-						(Src e.FileName)
-						(Status InCompiling)
-					>
-					e.SymInfo
-				>
-				t.Module
-			>
-		>;
+  (Module e.ModuleName)
+  (File e.FileName) 
+  (Sym e.SymName)
+  (Out e.OutName)
+  t.Context
+  t.Module
+  e.SymInfo =
+    <Generate
+      (e.ModuleName)
+      <CheckFnCalls
+        <LoadImportInfo
+          <Context::UpdateModuleInfo
+            t.Context
+            (e.ModuleName)
+            (Sym e.SymName)
+            (Out e.OutName)
+            (Src e.FileName)
+            (Status InCompiling)
+          >
+          e.SymInfo
+        >
+        t.Module
+      >
+    >;
 }
 
 * <LoadImportInfo t.Context t.SymTable-Old>
-*	== t.UpdatedContext t.UpdatedSymTable-Old'
+* == t.UpdatedContext t.UpdatedSymTable-Old'
 LoadImportInfo {
-	t.Context ( t.CurModule t.Modules t.Functions ) =
-		<LoadImportInfo-SwapArgs
-			( t.CurModule t.Modules t.Functions )
-			<LoadQualifiedFunctions
-				t.Context t.Modules
-			>
-		>;
+  t.Context ( t.CurModule t.Modules t.Functions ) =
+    <LoadImportInfo-SwapArgs
+      ( t.CurModule t.Modules t.Functions )
+      <LoadQualifiedFunctions
+        t.Context t.Modules
+      >
+    >;
 }
 
 LoadImportInfo-SwapArgs {
-	(t.CurModule t.Modules t.Functions)
-	t.Context e.QualifiedList =
-		t.Context
-		((Idents) t.CurModule t.Modules t.Functions
-			(Qualified e.QualifiedList)
-		);
+  (t.CurModule t.Modules t.Functions)
+  t.Context e.QualifiedList =
+    t.Context
+    ((Idents) t.CurModule t.Modules t.Functions
+      (Qualified e.QualifiedList)
+    );
 }
 
 * <LoadQualifiedFunctions t.Context (Modules e.Modules)>
-*	== t.Context e.QualifiedList
+* == t.Context e.QualifiedList
 LoadQualifiedFunctions {
-	t.Context (Modules e.ModulesList) =
-		<DoLoadQFunc t.Context () e.ModulesList>;
+  t.Context (Modules e.ModulesList) =
+    <DoLoadQFunc t.Context () e.ModulesList>;
 }
 
 DoLoadQFunc {
-	t.Context (e.QList) = t.Context e.QList;
+  t.Context (e.QList) = t.Context e.QList;
 
-	t.Context (e.QList) t.NextModule e.RestModules =
-		<DoLoadQFunc-SwapArgs
-			<LoadFromOneModule
-				t.Context t.NextModule
-			>
-			(e.QList) e.RestModules
-		>;
+  t.Context (e.QList) t.NextModule e.RestModules =
+    <DoLoadQFunc-SwapArgs
+      <LoadFromOneModule
+        t.Context t.NextModule
+      >
+      (e.QList) e.RestModules
+    >;
 }
 
 DoLoadQFunc-SwapArgs {
-	t.Context (e.QListFromNextModule) (e.CommonQList) e.RestModules =
-		<DoLoadQFunc
-			t.Context
-			(e.CommonQList e.QListFromNextModule)
-			e.RestModules
-		>;
+  t.Context (e.QListFromNextModule) (e.CommonQList) e.RestModules =
+    <DoLoadQFunc
+      t.Context
+      (e.CommonQList e.QListFromNextModule)
+      e.RestModules
+    >;
 }
 
 /*
-	Функция LoadFromOneModule подгружает из модуля список экспортируемых функций
+  Функция LoadFromOneModule подгружает из модуля список экспортируемых функций
 в виде квалифицированного списка (для удобства дальнейшей работы). Если модуль необходимо
 перекомпилировать, то модуль перекомпилируется перед загрузкой. Перекомпиляцию при необ-
 ходимости осуществляет функция <CompileIfNeed>. В результате перекомпиляции функция
@@ -269,307 +281,307 @@ DoLoadQFunc-SwapArgs {
 вается, если исходный файл не найден, но найдены выходные файлы. В том случае, если
 модуль, который должен быть при необходимости перекомпилирован внутри CompileIfNeed
 не найден, то программа завершается выдачей сообщения об ошибке.
-	Функции LoadFromOneModule глубоко пофиг, что устанавливает CompileIfNeed, поскольку
+  Функции LoadFromOneModule глубоко пофиг, что устанавливает CompileIfNeed, поскольку
 все три результата говорят о том, что файл перекомпилирован, т.е. можно подгружать
 информацию из sym-файла и связывать out-файл.
-	Проверка на необходимость перекомпиляции осуществляется только если информация
+  Проверка на необходимость перекомпиляции осуществляется только если информация
 о модуле отсутствует в контексте.
-	^ Комментарий кривой, при первой же необходимости переписать.
+  ^ Комментарий кривой, при первой же необходимости переписать.
 */
 
 * <LoadFromOneModule t.Context (e.ModuleName)>
-*	== t.Context (e.QualifiedList)
+* == t.Context (e.QualifiedList)
 LoadFromOneModule
-	t.Context (e.ModuleName) =
-		<SwLoadFromOneModule
-			(e.ModuleName)
-			<Context::ExtractOption t.Context Status e.ModuleName>
-		>;
+  t.Context (e.ModuleName) =
+    <SwLoadFromOneModule
+      (e.ModuleName)
+      <Context::ExtractOption t.Context Status e.ModuleName>
+    >;
 
 SwLoadFromOneModule {
-	(e.ModuleName) t.Context ModuleInfoNotFound =
-		/* Перекомпиляция модуля и повторная попытка загрузки информации */
-		<LoadFromOneModule
-			<CompileIfNeed-Old t.Context e.ModuleName>
-			(e.ModuleName)
-		>;
+  (e.ModuleName) t.Context ModuleInfoNotFound =
+    /* Перекомпиляция модуля и повторная попытка загрузки информации */
+    <LoadFromOneModule
+      <CompileIfNeed-Old t.Context e.ModuleName>
+      (e.ModuleName)
+    >;
 
-	(e.ModuleName) t.Context Found Recompiled =
-		<ReadFunctionsFromSym t.Context e.ModuleName>;
+  (e.ModuleName) t.Context Found Recompiled =
+    <ReadFunctionsFromSym t.Context e.ModuleName>;
 
-	(e.ModuleName) t.Context Found Library =
-		<ReadFunctionsFromSym t.Context e.ModuleName>;
+  (e.ModuleName) t.Context Found Library =
+    <ReadFunctionsFromSym t.Context e.ModuleName>;
 
-	(e.ModuleName) t.Context Found Updated =
-		<ReadFunctionsFromSym t.Context e.ModuleName>;
+  (e.ModuleName) t.Context Found Updated =
+    <ReadFunctionsFromSym t.Context e.ModuleName>;
 
-	(e.ModuleName) t.Context Found InCompiling =
-		<ReadFunctionsFromSym t.Context e.ModuleName>;
+  (e.ModuleName) t.Context Found InCompiling =
+    <ReadFunctionsFromSym t.Context e.ModuleName>;
 }
 
 ReadFunctionsFromSym
-	t.Context e.ModuleName =
-		<FunctionsFromSym
-			<MSymModule::LoadInfo t.Context e.ModuleName>
-		>;
+  t.Context e.ModuleName =
+    <FunctionsFromSym
+      <MSymModule::LoadInfo t.Context e.ModuleName>
+    >;
 
 * <FunctionsFromSym t.Context t.ModuleName t.FnList t.ImportList>
-*	== t.Context ( ((e.Module) (e.FnName))* )
+* == t.Context ( ((e.Module) (e.FnName))* )
 FunctionsFromSym {
-	t.Context t.ModuleName (Functions e.QualifiedList) t.ImportList =
-		t.Context (e.QualifiedList);
+  t.Context t.ModuleName (Functions e.QualifiedList) t.ImportList =
+    t.Context (e.QualifiedList);
 }
 
 * <CompileIfNeed t.Context e.ModuleName>
-*	== t.UpdatedContext
+* == t.UpdatedContext
 CompileIfNeed-Old {
-	t.Context e.ModuleName =
-		<SwCompileIfNeed-Old
-			t.Context
-			<Modules::LookupModule-T
-				e.ModuleName
-			>
-		>;
+  t.Context e.ModuleName =
+    <SwCompileIfNeed-Old
+      t.Context
+      <Modules::LookupModule-T
+        e.ModuleName
+      >
+    >;
 }
 
 SwCompileIfNeed-Old {
-	t.Context ModuleNotFound
-	(Sym None) (Out None) (Src None)
-	e.ModuleName =
-		<MError::Fatal
-			'Module ' e.ModuleName ' not found'
-		>;
+  t.Context ModuleNotFound
+  (Sym None) (Out None) (Src None)
+  e.ModuleName =
+    <MError::Fatal
+      'Module ' e.ModuleName ' not found'
+    >;
 
-	t.Context Library
-	(Sym e.SymFile) (Out e.OutFile) (Src None)
-	e.ModuleName =
-		<MOutModuleStatus::Library e.ModuleName>
-		<CheckCompileIfNeed-Old
-			<Context::UpdateModuleInfo
-				t.Context
-				(e.ModuleName)
-				(Sym e.SymFile) (Out e.OutFile) (Src None)
-				(Status Library)
-			> e.ModuleName
-		>;
+  t.Context Library
+  (Sym e.SymFile) (Out e.OutFile) (Src None)
+  e.ModuleName =
+    <MOutModuleStatus::Library e.ModuleName>
+    <CheckCompileIfNeed-Old
+      <Context::UpdateModuleInfo
+        t.Context
+        (e.ModuleName)
+        (Sym e.SymFile) (Out e.OutFile) (Src None)
+        (Status Library)
+      > e.ModuleName
+    >;
 
-	t.Context SystemLibrary
-	(Sym e.SymFile) (Out e.OutFile) (Src None)
-	e.ModuleName =
-		<MOutModuleStatus::SystemLibrary e.ModuleName>
-		<CheckCompileIfNeed-Old
-			<Context::UpdateModuleInfo
-				t.Context
-				(e.ModuleName)
-				(Sym e.SymFile) (Out e.OutFile) (Src None)
-				(Status Library)
-				(BaseDirectory <Modules::HomeDir>)
-			> e.ModuleName
-		>;
+  t.Context SystemLibrary
+  (Sym e.SymFile) (Out e.OutFile) (Src None)
+  e.ModuleName =
+    <MOutModuleStatus::SystemLibrary e.ModuleName>
+    <CheckCompileIfNeed-Old
+      <Context::UpdateModuleInfo
+        t.Context
+        (e.ModuleName)
+        (Sym e.SymFile) (Out e.OutFile) (Src None)
+        (Status Library)
+        (BaseDirectory <Modules::HomeDir>)
+      > e.ModuleName
+    >;
 
-	t.Context NeedRecompile
-	(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-	e.ModuleName =
-		<Context::UpdateModuleInfo
-			<CompileByModuleName t.Context e.ModuleName>
-			(e.ModuleName)
-			(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-			(Status Recompiled)
-		>;
+  t.Context NeedRecompile
+  (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+  e.ModuleName =
+    <Context::UpdateModuleInfo
+      <CompileByModuleName t.Context e.ModuleName>
+      (e.ModuleName)
+      (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+      (Status Recompiled)
+    >;
 
 
-	t.Context SrcNotUpdated
-	(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-	e.ModuleName =
-		<CheckCompileIfNeed-Old
-			<Context::UpdateModuleInfo
-				t.Context
-				(e.ModuleName)
-				(Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-				(Status Updated)
-			>
-			e.ModuleName
-		>;
+  t.Context SrcNotUpdated
+  (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+  e.ModuleName =
+    <CheckCompileIfNeed-Old
+      <Context::UpdateModuleInfo
+        t.Context
+        (e.ModuleName)
+        (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
+        (Status Updated)
+      >
+      e.ModuleName
+    >;
 }
 
 * <CheckCompileIfNeed t.Context e.ModuleName>
-*	== t.UpdatedContext
+* == t.UpdatedContext
 CheckCompileIfNeed-Old {
-	t.Context e.ModuleName =
-		<SwCheckCompileIfNeed-Old
-			(e.ModuleName)
-			<Context::ExtractOption
-				t.Context
-				Status
-				e.ModuleName
-			>
-		>;
+  t.Context e.ModuleName =
+    <SwCheckCompileIfNeed-Old
+      (e.ModuleName)
+      <Context::ExtractOption
+        t.Context
+        Status
+        e.ModuleName
+      >
+    >;
 }
 
 SwCheckCompileIfNeed-Old {
-	(e.ModuleName) t.Context Found s.Status =
-		<DoCheckCompileIfNeed-Old
-			(e.ModuleName)
-			s.Status
-			<ReadImportsFromSym t.Context e.ModuleName>
-		>;
+  (e.ModuleName) t.Context Found s.Status =
+    <DoCheckCompileIfNeed-Old
+      (e.ModuleName)
+      s.Status
+      <ReadImportsFromSym t.Context e.ModuleName>
+    >;
 
-	(e.ModuleName) t.Context ModuleInfoNotFound =
-		<DoCheckCompileIfNeed-Old
-			(e.ModuleName)
-			Updated
-			<ReadImportsFromSym t.Context e.ModuleName>
-		>;
+  (e.ModuleName) t.Context ModuleInfoNotFound =
+    <DoCheckCompileIfNeed-Old
+      (e.ModuleName)
+      Updated
+      <ReadImportsFromSym t.Context e.ModuleName>
+    >;
 }
 
 ReadImportsFromSym
-	t.Context e.ModuleName =
-		<ImportsFromSym
-			<MSymModule::LoadInfo t.Context e.ModuleName>
-		>;
+  t.Context e.ModuleName =
+    <ImportsFromSym
+      <MSymModule::LoadInfo t.Context e.ModuleName>
+    >;
 
 DoCheckCompileIfNeed-Old {
-	t.ModuleName s.Status t.Context (e.NextName) e.Tail =
-		<DoCheckCompileIfNeed-Old
-			<SwDoCheckCompileIfNeed-Old
-				t.ModuleName
-				s.Status
-				<Context::ExtractOption
-					t.Context
-					Status
-					e.NextName
-				>
-				(e.NextName)
-			>
-			e.Tail
-		>;
+  t.ModuleName s.Status t.Context (e.NextName) e.Tail =
+    <DoCheckCompileIfNeed-Old
+      <SwDoCheckCompileIfNeed-Old
+        t.ModuleName
+        s.Status
+        <Context::ExtractOption
+          t.Context
+          Status
+          e.NextName
+        >
+        (e.NextName)
+      >
+      e.Tail
+    >;
 
-	(e.ModuleName) Updated t.Context =
-		<MOutModuleStatus::Updated e.ModuleName>
-		<Context::UpdateModuleInfo
-			t.Context
-			(e.ModuleName)
-			(Sym <Modules::SymName e.ModuleName>)
-			(Out <Modules::OutName e.ModuleName>)
-			(Status Updated)
-		>;
+  (e.ModuleName) Updated t.Context =
+    <MOutModuleStatus::Updated e.ModuleName>
+    <Context::UpdateModuleInfo
+      t.Context
+      (e.ModuleName)
+      (Sym <Modules::SymName e.ModuleName>)
+      (Out <Modules::OutName e.ModuleName>)
+      (Status Updated)
+    >;
 
-	(e.ModuleName) Recompiled t.Context =
-		<Context::UpdateModuleInfo
-			<CompileByModuleName t.Context e.ModuleName>
-			(e.ModuleName)
-			(Sym <Modules::SymName e.ModuleName>)
-			(Out <Modules::OutName e.ModuleName>)
-			(Status Recompiled)
-		>;
+  (e.ModuleName) Recompiled t.Context =
+    <Context::UpdateModuleInfo
+      <CompileByModuleName t.Context e.ModuleName>
+      (e.ModuleName)
+      (Sym <Modules::SymName e.ModuleName>)
+      (Out <Modules::OutName e.ModuleName>)
+      (Status Recompiled)
+    >;
 
-	(e.ModuleName) Library t.Context =
-		t.Context;
+  (e.ModuleName) Library t.Context =
+    t.Context;
 }
 
 SwDoCheckCompileIfNeed-Old {
-	t.ModuleName s.Status t.Context ModuleInfoNotFound (e.NextName) =
-		<SwDoCheckCompileIfNeed-Old
-			t.ModuleName s.Status
-			<Context::ExtractOption
-				<CompileIfNeed-Old t.Context e.NextName>
-				Status
-				e.NextName
-			>
-			(e.NextName)
-		>;
+  t.ModuleName s.Status t.Context ModuleInfoNotFound (e.NextName) =
+    <SwDoCheckCompileIfNeed-Old
+      t.ModuleName s.Status
+      <Context::ExtractOption
+        <CompileIfNeed-Old t.Context e.NextName>
+        Status
+        e.NextName
+      >
+      (e.NextName)
+    >;
 
-	t.ModuleName Library t.Context Found Library (e.NextName) =
-		t.ModuleName Library t.Context;
+  t.ModuleName Library t.Context Found Library (e.NextName) =
+    t.ModuleName Library t.Context;
 
-	t.ModuleName Library t.Context Found s.Other (e.NextName) =
-		<MError::Fatal
-			'Modules, dependeds from library, must be library modules '
-			'(library module may be redefined)'
-		>;
+  t.ModuleName Library t.Context Found s.Other (e.NextName) =
+    <MError::Fatal
+      'Modules, dependeds from library, must be library modules '
+      '(library module may be redefined)'
+    >;
 
-	t.ModuleName s.Status t.Context Found Recompiled (e.NextName) =
-		t.ModuleName Recompiled t.Context;
+  t.ModuleName s.Status t.Context Found Recompiled (e.NextName) =
+    t.ModuleName Recompiled t.Context;
 
-	t.ModuleName s.Status t.Context Found Library (e.NextName) =
-		t.ModuleName s.Status t.Context;
+  t.ModuleName s.Status t.Context Found Library (e.NextName) =
+    t.ModuleName s.Status t.Context;
 
-	t.ModuleName s.Status t.Context Found Updated (e.NextName) =
-		t.ModuleName s.Status t.Context;
+  t.ModuleName s.Status t.Context Found Updated (e.NextName) =
+    t.ModuleName s.Status t.Context;
 }
 
 * <ImportsFromSym t.Context t.ModuleName t.FnList t.ImportList>
-*	== t.Context (e.ImportName)*
+* == t.Context (e.ImportName)*
 ImportsFromSym {
-	t.Context SymInfoNotFound =
-		<MError::Fatal 'Broken sym-file'>;
+  t.Context SymInfoNotFound =
+    <MError::Fatal 'Broken sym-file'>;
 
-	t.Context t.ModuleName t.FnList (Imports e.ImportList) =
-		t.Context e.ImportList;
+  t.Context t.ModuleName t.FnList (Imports e.ImportList) =
+    t.Context e.ImportList;
 }
 
 /* Разрешает вызовы функций. */
 
 * <CheckFnCalls t.Context t.SymTable-Old t.Module>
-*	== t.Context t.ConvertedModule
+* == t.Context t.ConvertedModule
 CheckFnCalls
-	t.Context t.SymTable-Old t.Module =
-		t.Context
-		<PrintUnresolved
-			<MResolver::Resolve
-				t.Module
-				<MError::CreateErrList>
-				<FillQualified
-					<MResolveTable::Create>
-					<OldSymTableToQualifiedList t.SymTable-Old>
-				>
-			>
-		>;
+  t.Context t.SymTable-Old t.Module =
+    t.Context
+    <PrintUnresolved
+      <MResolver::Resolve
+        t.Module
+        <MError::CreateErrList>
+        <FillQualified
+          <MResolveTable::Create>
+          <OldSymTableToQualifiedList t.SymTable-Old>
+        >
+      >
+    >;
 
 FillQualified {
-	t.ResolveTable
-	( (() e.ModuleName) (e.Function) e.Functions ) e.Modules =
-		<FillQualified
-			<MResolveTable::Add
-				t.ResolveTable
-				<MQualifiedName::Create (e.ModuleName) (e.Function)>
-				Entry
-				<MQualifiedName::Create (e.ModuleName) (e.Function)>
-			>
-			( (() e.ModuleName) e.Functions ) e.Modules
-		>;
+  t.ResolveTable
+  ( (() e.ModuleName) (e.Function) e.Functions ) e.Modules =
+    <FillQualified
+      <MResolveTable::Add
+        t.ResolveTable
+        <MQualifiedName::Create (e.ModuleName) (e.Function)>
+        Entry
+        <MQualifiedName::Create (e.ModuleName) (e.Function)>
+      >
+      ( (() e.ModuleName) e.Functions ) e.Modules
+    >;
 
-	t.ResolveTable
-	( (() e.ModuleName) ) e.Modules =
-		<FillQualified t.ResolveTable e.Modules>;
+  t.ResolveTable
+  ( (() e.ModuleName) ) e.Modules =
+    <FillQualified t.ResolveTable e.Modules>;
 
-	t.ResolveTable = t.ResolveTable;
+  t.ResolveTable = t.ResolveTable;
 }
 
 OldSymTableToQualifiedList
-	( t.Idents t.CurModule t.Imports t.Functions
-		(Qualified e.QualifiedList-Old)
-	) = <ConvertQualified e.QualifiedList-Old>;
+  ( t.Idents t.CurModule t.Imports t.Functions
+    (Qualified e.QualifiedList-Old)
+  ) = <ConvertQualified e.QualifiedList-Old>;
 
 ConvertQualified {
-	((e.ModuleName) (e.FnName)) e.Tail =
-		( (() e.ModuleName) (e.FnName) )
-		<ConvertQualified e.Tail>;
+  ((e.ModuleName) (e.FnName)) e.Tail =
+    ( (() e.ModuleName) (e.FnName) )
+    <ConvertQualified e.Tail>;
 
-	= ;
+  = ;
 }
 
 PrintUnresolved {
-	t.ResolvedModule Success t.ErrorList =
-		<MError::DestroyErrList t.ErrorList>
-		t.ResolvedModule;
+  t.ResolvedModule Success t.ErrorList =
+    <MError::DestroyErrList t.ErrorList>
+    t.ResolvedModule;
 
-	t.ResolvedModule Warnings t.ErrorList =
-		<MError::PrintErrors t.ErrorList>
-		t.ResolvedModule;
+  t.ResolvedModule Warnings t.ErrorList =
+    <MError::PrintErrors t.ErrorList>
+    t.ResolvedModule;
 
-	t.ResolvedModule Errors t.ErrorList =
-		<MError::PrintErrorsAndStop t.ErrorList>;
+  t.ResolvedModule Errors t.ErrorList =
+    <MError::PrintErrorsAndStop t.ErrorList>;
 }
 
 
@@ -578,39 +590,39 @@ PrintUnresolved {
 *-------------------------------------------------------------------------------
 
 * <Generate (e.ModuleName) t.Context t.Module>
-*	== t.UpdatedContext
+* == t.UpdatedContext
 Generate
-	(e.ModuleName) t.Context t.IModule =
-		<UpdateContext
-			<GuardResult
-				<MBE-Mgr::Generate
-					t.Context t.IModule
-					<MQualifiedName::Create (e.ModuleName)>
-				>
-			>
-			e.ModuleName
-		>;
+  (e.ModuleName) t.Context t.IModule =
+    <UpdateContext
+      <GuardResult
+        <MBE-Mgr::Generate
+          t.Context t.IModule
+          <MQualifiedName::Create (e.ModuleName)>
+        >
+      >
+      e.ModuleName
+    >;
 
 GuardResult {
-	t.Context t.IModule Success =
-		t.Context
-		<MIModule::Destroy t.IModule>;
+  t.Context t.IModule Success =
+    t.Context
+    <MIModule::Destroy t.IModule>;
 
-	t.Context t.IModule Fails =
-		<MSelfDiag::Error
-			'Compiler::Generate fails because MBE-Mgr::Generate fails'
-		>;
+  t.Context t.IModule Fails =
+    <MSelfDiag::Error
+      'Compiler::Generate fails because MBE-Mgr::Generate fails'
+    >;
 }
 
 * <UpdateContext t.Context t.ModuleName>
-*	== t.UpdatedContext
+* == t.UpdatedContext
 UpdateContext {
-	t.Context e.ModuleName =
-		<Context::UpdateModuleInfo
-			t.Context
-			(e.ModuleName)
-			(Status Recompiled)
-		>;
+  t.Context e.ModuleName =
+    <Context::UpdateModuleInfo
+      t.Context
+      (e.ModuleName)
+      (Status Recompiled)
+    >;
 }
 
 $END Compiler.

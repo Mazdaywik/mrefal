@@ -5,20 +5,20 @@ Module = ModuleHeader ModuleBody ModuleTailer .
 ModuleHeader = ModuleType ModuleName ';' .
 ModuleType = '$module' | '$program' | '$clearmodule' .
 ModuleTailer = '$end' ModuleName '.' .
-ModuleName = QualifiedName .
+ModuleName = QuadQualifiedName .
 ModuleBody = ModuleElement* .
 
 QualifiedName = IDENTIFIER | QuadQualified | DotQualified .
 QuadQualified =
-	IDENTIFIER '::' IDENTIFIER | QuadQualified '::' IDENTIFIER .
+  IDENTIFIER '::' IDENTIFIER | QuadQualified '::' IDENTIFIER .
 DotQualified =
-	IDENTIFIER '.' IDENTIFIER | DotQualifier '.' IDENTIFIER .
+  IDENTIFIER '.' IDENTIFIER | DotQualifier '.' IDENTIFIER .
 
 ModuleElement = ImportBlock | FunctionDefinition | SwapDefinition
-	| ADTDefinition | ';' .
+  | ADTDefinition | ';' .
 
 ImportBlock =
-	'$import' ModuleImport { ',' ModuleImport } ';' .
+  '$import' ModuleImport { ',' ModuleImport } ';' .
 ModuleImport = [ ModuleAlias '=' ] ModuleName .
 ModuleAlias = IDENTIFIER .
 
@@ -34,14 +34,14 @@ Block = '{' Sentence* '}' .
 Sentence = PatternExpr '=' ResultExpr ';' .
 
 CommonTerm =
-	IDENTIFIER | VARIABLE | LITERAL | MACRO | DQWORD | FnPtr .
+  IDENTIFIER | VARIABLE | LITERAL | MACRO | DQWORD | FnPtr .
 PatternExpr = PatternTerm* .
 PatternTerm =
-	CommonTerm | '(' PatternExpr ')' | '[' ADTName PatternExpr ']' .
+  CommonTerm | '(' PatternExpr ')' | '[' ADTName PatternExpr ']' .
 ResultExpr = ResultTerm* .
 ResultTerm =
-	CommonTerm | '(' ResultExpr ')' | '[' ADTName ResultTerm ']'
-	| FunctionCall .
+  CommonTerm | '(' ResultExpr ')' | '[' ADTName ResultTerm ']'
+  | FunctionCall .
 FunctionCall = '<' Callable ResultExpr '>' .
 Callable = QualifiedName | SwapName | S-VARIABLE | FnPtr .
 FnPtr = '&' IDENTIFIER | ['&'] DotQualified .

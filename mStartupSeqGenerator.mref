@@ -4,144 +4,140 @@ $IMPORT Context;
 $IMPORT MSymModule;
 
 /**
-	<Generate t.Context>
-		== t.Context e.FnList
-		== t.Context GoNotFound
-		== t.Context MultipleGo e.FnList--GoFunctions
-	e.FnList = (e.Function)*
+  <GetFnList t.Context>
+    == t.Context e.FnList
+    == t.Context GoNotFound
+    == t.Context MultipleGo e.FnList--GoFunctions
+  e.FnList = (e.Function)*
 */
 $ENTRY GetFnList
-	t.Context =
-		<CollectStartFunctions
-			<NewStartInfo>
-			<Context::ExtractModulesList t.Context>
-		>;
+  t.Context =
+    <CollectStartFunctions
+      <NewStartInfo>
+      <Context::ExtractModulesList t.Context>
+    >;
 
 CollectStartFunctions {
-	t.StartInfo t.Context (e.NextModuleName) e.Modules =
-		<CollectStartFunctions
-			<UpdateStartInfo
-				t.StartInfo
-				t.Context
-				e.NextModuleName
-			>
-			e.Modules
-		>;
+  t.StartInfo t.Context (e.NextModuleName) e.Modules =
+    <CollectStartFunctions
+      <UpdateStartInfo
+        t.StartInfo
+        t.Context
+        e.NextModuleName
+      >
+      e.Modules
+    >;
 
-	t.StartInfo t.Context =
-		t.Context
-		<ExtractFunctionsAndDestroy t.StartInfo>;
+  t.StartInfo t.Context =
+    t.Context
+    <ExtractFunctionsAndDestroy t.StartInfo>;
 }
 
 NewStartInfo {
-	= ( (/* InitList */) (/* Go */) (/* FinalList */) );
+  = ( (/* InitList */) (/* Go */) (/* FinalList */) );
 }
 
 /**
-	<UpdateStartInfo t.StartInfo t.Context e.ModuleName>
-		== t.StartInfo t.Context
+  <UpdateStartInfo t.StartInfo t.Context e.ModuleName>
+    == t.StartInfo t.Context
 */
 UpdateStartInfo {
-	t.StartInfo t.Context e.ModuleName =
-		<UpdateInitList
-			t.StartInfo
-			<MSymModule::LoadInfo t.Context e.ModuleName>
-		>;
+  t.StartInfo t.Context e.ModuleName =
+    <UpdateInitList
+      t.StartInfo
+      <MSymModule::LoadInfo t.Context e.ModuleName>
+    >;
 }
 
 UpdateInitList {
-	( (e.InitList) t.GoInfo t.FinalList )
-	t.Context
-	( Module e.ModuleName )
-	( Functions e.Fn-B (t.Qualifier ('Init')) e.Fn-E )
-	( Imports e.Imports ) =
-		<UpdateGoInfo
-			( (e.InitList ('Entry::' e.ModuleName '::Init')) t.GoInfo t.FinalList )
-			( e.ModuleName )
-			( Functions e.Fn-B e.Fn-E )
-		> t.Context;
+  ( (e.InitList) t.GoInfo t.FinalList )
+  t.Context
+  ( Module e.ModuleName )
+  ( Functions e.Fn-B (t.Qualifier ('Init')) e.Fn-E )
+  ( Imports e.Imports ) =
+    <UpdateGoInfo
+      ( (e.InitList ('Entry::' e.ModuleName '::Init')) t.GoInfo t.FinalList )
+      ( e.ModuleName )
+      ( Functions e.Fn-B e.Fn-E )
+    > t.Context;
 
-	t.StartInfo t.Context
-	( Module e.ModuleName )
-	( Functions e.FnList )
-	( Imports e.Imports ) =
-		<UpdateGoInfo
-			t.StartInfo
-			( e.ModuleName )
-			( Functions e.FnList )
-		> t.Context;
+  t.StartInfo t.Context
+  ( Module e.ModuleName )
+  ( Functions e.FnList )
+  ( Imports e.Imports ) =
+    <UpdateGoInfo
+      t.StartInfo
+      ( e.ModuleName )
+      ( Functions e.FnList )
+    > t.Context;
 }
 
 UpdateGoInfo {
-	( t.Inits () t.Finals )
-	( e.ModuleName )
-	( Functions e.Fn-B (t.Qualifier ('Go')) e.Fn-E ) =
-		<UpdateFinalList
-			( t.Inits (SingleGo 'Entry::' e.ModuleName '::Go') t.Finals )
-			( e.ModuleName )
-			( Functions e.Fn-B e.Fn-E )
-		>;
+  ( t.Inits () t.Finals )
+  ( e.ModuleName )
+  ( Functions e.Fn-B (t.Qualifier ('Go')) e.Fn-E ) =
+    <UpdateFinalList
+      ( t.Inits (SingleGo 'Entry::' e.ModuleName '::Go') t.Finals )
+      ( e.ModuleName )
+      ( Functions e.Fn-B e.Fn-E )
+    >;
 
-	( t.Inits (MultipleGo e.GoFuncs) t.Finals )
-	( e.ModuleName )
-	( Functions e.Fn-B (t.Qualifier ('Go')) e.Fn-E ) =
-		<UpdateFinalList
-			( t.Inits
-				(MultipleGo e.GoFuncs ('Entry::' e.ModuleName '::Go'))
-				t.Finals
-			)
-			( e.ModuleName )
-			( Functions e.Fn-B e.Fn-E )
-		>;
+  ( t.Inits (MultipleGo e.GoFuncs) t.Finals )
+  ( e.ModuleName )
+  ( Functions e.Fn-B (t.Qualifier ('Go')) e.Fn-E ) =
+    <UpdateFinalList
+      ( t.Inits
+        (MultipleGo e.GoFuncs ('Entry::' e.ModuleName '::Go'))
+        t.Finals
+      )
+      ( e.ModuleName )
+      ( Functions e.Fn-B e.Fn-E )
+    >;
 
-	( t.Inits (SingleGo e.OtherGo) t.Finals )
-	( e.ModuleName )
-	( Functions e.Fn-B (t.Qualifier ('Go')) e.Fn-E ) =
-		<UpdateFinalList
-			( t.Inits
-				(MultipleGo (e.OtherGo) ('Entry::' e.ModuleName '::Go'))
-				t.Finals
-			)
-			( e.ModuleName )
-			( Functions e.Fn-B e.Fn-E )
-		>;
+  ( t.Inits (SingleGo e.OtherGo) t.Finals )
+  ( e.ModuleName )
+  ( Functions e.Fn-B (t.Qualifier ('Go')) e.Fn-E ) =
+    <UpdateFinalList
+      ( t.Inits
+        (MultipleGo (e.OtherGo) ('Entry::' e.ModuleName '::Go'))
+        t.Finals
+      )
+      ( e.ModuleName )
+      ( Functions e.Fn-B e.Fn-E )
+    >;
 
-	( t.Inits (e.GoInfo) t.Finals )
-	( e.ModuleName )
-	( Functions e.FnList ) =
-		<UpdateFinalList
-			( t.Inits (e.GoInfo) t.Finals )
-			( e.ModuleName )
-			( Functions e.FnList )
-		>;
+  ( t.Inits (e.GoInfo) t.Finals )
+  ( e.ModuleName )
+  ( Functions e.FnList ) =
+    <UpdateFinalList
+      ( t.Inits (e.GoInfo) t.Finals )
+      ( e.ModuleName )
+      ( Functions e.FnList )
+    >;
 }
 
 UpdateFinalList {
-	( t.Inits t.GoInfo (e.Finals) )
-	( e.ModuleName )
-	( Functions e.Fn-B (t.Qualifier ('Final')) e.Fn-E ) =
-		// Финализаторы выполняются в порядке, обратном инициализаторам
-		( t.Inits t.GoInfo (('Entry::' e.ModuleName '::Final') e.Finals) );
+  ( t.Inits t.GoInfo (e.Finals) )
+  ( e.ModuleName )
+  ( Functions e.Fn-B (t.Qualifier ('Final')) e.Fn-E ) =
+    // Финализаторы выполняются в порядке, обратном инициализаторам
+    ( t.Inits t.GoInfo (('Entry::' e.ModuleName '::Final') e.Finals) );
 
-	( t.Inits t.GoInfo t.Finals )
-	( e.ModuleName )
-	( Functions e.FnList ) =
-		( t.Inits t.GoInfo t.Finals );
+  ( t.Inits t.GoInfo t.Finals )
+  ( e.ModuleName )
+  ( Functions e.FnList ) =
+    ( t.Inits t.GoInfo t.Finals );
 }
 
 ExtractFunctionsAndDestroy {
-	( t.InitFuncs () t.FinalFuncs ) =
-		GoNotFound
-		<InOut::WriteLine t.InitFuncs t.FinalFuncs>
-		;
+  ( t.InitFuncs () t.FinalFuncs ) =
+    GoNotFound;
 
-	( t.InitFuncs (MultipleGo e.GoFunctions) t.FinalFuncs ) =
-		MultipleGo e.GoFunctions;
+  ( t.InitFuncs (MultipleGo e.GoFunctions) t.FinalFuncs ) =
+    MultipleGo e.GoFunctions;
 
-	( (e.InitFuncs) (SingleGo e.GoName) (e.FinalFuncs) ) =
-		e.InitFuncs (e.GoName) e.FinalFuncs;
+  ( (e.InitFuncs) (SingleGo e.GoName) (e.FinalFuncs) ) =
+    e.InitFuncs (e.GoName) e.FinalFuncs;
 }
-
-$import MSelfDiag, InOut;
 
 $END MStartupSeqGenerator.

@@ -1,497 +1,494 @@
 $MODULE MResolver;
 
 $IMPORT MError;
+$IMPORT MLambda;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
 $IMPORT MResolveTable;
 
 /**
-	<Resolve t.Module t.ErrorList t.ResolveTable>
-		== t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+  <Resolve t.Module t.ErrorList t.ResolveTable>
+    == t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
 */
 $ENTRY Resolve
-	t.IModule t.ErrorList t.ResolveTable =
-		<Resolve-Aux
-			t.IModule
-			t.ResolveTable t.ErrorList
-		>;
+  t.IModule t.ErrorList t.ResolveTable =
+    <Resolve-Aux
+      t.IModule
+      t.ResolveTable t.ErrorList
+    >;
 
 Resolve-Aux
-	t.IModule t.ResolveTable t.ErrorList =
-		<StartResolving
-			t.ResolveTable
-			<ExtractLocalInfo t.IModule>
-			t.ErrorList
-		>;
+  t.IModule t.ResolveTable t.ErrorList =
+    <StartResolving
+      t.ResolveTable
+      <ExtractLocalInfo t.IModule>
+      t.ErrorList
+    >;
 
 ExtractLocalInfo
-	t.IModule =
-		<ExtractLocalInfo-ADT
-			<AddScopes
-				<MIModule::GetFunctionList t.IModule>
-			>
-		>;
+  t.IModule =
+    <ExtractLocalInfo-ADT
+      <AddScopes
+        <MIModule::GetFunctionList t.IModule>
+      >
+    >;
 
 AddScopes
-	t.IModule e.FnList =
-		<DoAddScope t.IModule e.FnList>;
+  t.IModule e.FnList =
+    <DoAddScope t.IModule e.FnList>;
 
 DoAddScope {
-	t.IModule e.FnList (e.Next) =
-		<SwDoAddScope
-			<MIModule::GetFunctionAttribute
-				t.IModule ScopeClass e.Next
-			>
-			e.FnList (e.Next)
-		>;
+  t.IModule e.FnList (e.Next) =
+    <SwDoAddScope
+      <MIModule::GetFunctionAttribute
+        t.IModule ScopeClass e.Next
+      >
+      e.FnList (e.Next)
+    >;
 
-	t.IModule = t.IModule;
+  t.IModule = t.IModule;
 }
 
 SwDoAddScope {
-	t.IModule Found s.ScopeClass e.FnList (e.Next) =
-		<DoAddScope t.IModule e.FnList>
-		(s.ScopeClass e.Next);
+  t.IModule Found s.ScopeClass e.FnList (e.Next) =
+    <DoAddScope t.IModule e.FnList>
+    (s.ScopeClass e.Next);
 
-	/*
-		Другие ошибки являются нарушением инварианта. В этом случае программа
-		должна молча умереть.
-	*/
+  /*
+    Другие ошибки являются нарушением инварианта. В этом случае программа
+    должна молча умереть.
+  */
 }
 
 ExtractLocalInfo-ADT
-	t.IModule e.LocalFunctions =
-		<DoExtractLocalInfo-ADT
-			<MIModule::GetADTList t.IModule>
-			(e.LocalFunctions)
-		>;
+  t.IModule e.LocalFunctions =
+    <DoExtractLocalInfo-ADT
+      <MIModule::GetADTList t.IModule>
+      (e.LocalFunctions)
+    >;
 
 DoExtractLocalInfo-ADT {
-	t.IModule (e.ADTName) e.ADTs (e.LocalScope) =
-		<DoExtractLocalInfo-ADT
-			t.IModule e.ADTs
-			(e.LocalScope (ADT e.ADTName))
-		>;
+  t.IModule (e.ADTName) e.ADTs (e.LocalScope) =
+    <DoExtractLocalInfo-ADT
+      t.IModule e.ADTs
+      (e.LocalScope (ADT e.ADTName))
+    >;
 
-	t.IModule (e.LocalScope) =
-		t.IModule (e.LocalScope);
+  t.IModule (e.LocalScope) =
+    t.IModule (e.LocalScope);
 }
 
 StartResolving
-	t.ResolveTable
-	t.IModule ( e.LocalScope )
-	t.ErrorList =
-		<ResolvingElements
-			<FillTable
-				t.ResolveTable
-				( <MIModule::GetModuleName t.IModule> )
-				t.ErrorList
-				e.LocalScope
-			>
-		>;
+  t.ResolveTable
+  t.IModule ( e.LocalScope )
+  t.ErrorList =
+    <ResolvingElements
+      <FillTable
+        t.ResolveTable
+        <MIModule::GetModuleName t.IModule>
+        t.ErrorList
+        e.LocalScope
+      >
+    >;
 
 FillTable {
-	t.ResolveTable
-	( t.IModule e.CurrentModule )
-	t.ErrorList
-	e.LocalScope =
-		<FillModuleAliases
-			<FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
-			t.IModule t.ErrorList
-		>;
+  t.ResolveTable
+  t.IModule t.CurrentModule
+  t.ErrorList
+  e.LocalScope =
+    <FillModuleAliases
+      <MLambda::Reduce
+        <MLambda::BindLeft &AddLocalScopeElem t.CurrentModule>
+        t.ResolveTable e.LocalScope
+      >
+      t.IModule t.ErrorList
+    >;
 }
 
-/*
-	Инвариант: <FillLocal t.ResolveTable (e.CurrentModule) e.LocalScope>
-		e.LocalScope ::= (s.ScopeClass e.FnName)*
-*/
-FillLocal {
-	t.ResolveTable (e.CurrentModule)
-	(s.ScopeClass e.Function) e.Functions =
-		<FillLocal
-			<MResolveTable::Add
-				t.ResolveTable
-				<MQualifiedName::Create (e.Function)>
-				s.ScopeClass
-				<MQualifiedName::Create (e.CurrentModule)(e.Function)>
-			> (e.CurrentModule) e.Functions
-		>;
-
-	t.ResolveTable (e.CurrentModule) =
-		t.ResolveTable;
+AddLocalScopeElem {
+  t.L_CurrentModule t.ResolveTable
+  (s.ScopeClass e.FunctionName) =
+    <MResolveTable::Add
+      t.ResolveTable
+      <MQualifiedName::Create (e.FunctionName)>
+      s.ScopeClass
+      <MQualifiedName::AddSubName
+        t.L_CurrentModule e.FunctionName
+      >
+    >;
 }
 
 FillModuleAliases
-	t.ResolveTable t.IModule t.ErrorList =
-		<DoFillModuleAliases
-			t.ResolveTable
-			( <MIModule::GetImportList t.IModule> )
-		>
-		t.ErrorList;
+  t.ResolveTable t.IModule t.ErrorList =
+    <DoFillModuleAliases
+      t.ResolveTable
+      ( <MIModule::GetImportList t.IModule> )
+    >
+    t.ErrorList;
 
 /*
-	Инвариант:
-	<DoFillModuleAliases t.ResolveTable	(t.IModule (e.ImportName)*)>
-		== t.ResolveTable t.IModule
+  Инвариант:
+  <DoFillModuleAliases t.ResolveTable (t.IModule (e.ImportName)*)>
+    == t.ResolveTable t.IModule
 */
 DoFillModuleAliases {
-	t.ResolveTable ( t.IModule ) =
-		t.ResolveTable t.IModule;
+  t.ResolveTable ( t.IModule ) =
+    t.ResolveTable t.IModule;
 
-	t.ResolveTable ( t.IModule (e.NextName) e.Tail ) =
-		<DoFillModuleAliases
-			<AddAlias
-				t.ResolveTable
-				( <MIModule::GetImportAttribute t.IModule Alias e.NextName> )
-				(e.NextName) e.Tail
-			>
-		>;
+  t.ResolveTable ( t.IModule (e.NextName) e.Tail ) =
+    <DoFillModuleAliases
+      <AddAlias
+        t.ResolveTable
+        ( <MIModule::GetImportAttribute t.IModule Alias e.NextName> )
+        (e.NextName) e.Tail
+      >
+    >;
 }
 
 AddAlias
-	t.ResolveTable
-	( t.IModule Found e.Alias ) (e.NextName) e.Tail =
-		<MResolveTable::Add
-			t.ResolveTable
-			<MQualifiedName::Create (e.Alias)>
-			ModuleAlias
-			<MQualifiedName::Create (e.NextName)>
-		>
-		(t.IModule e.Tail);
+  t.ResolveTable
+  ( t.IModule Found e.Alias ) (e.NextName) e.Tail =
+    <MResolveTable::Add
+      t.ResolveTable
+      <MQualifiedName::Create (e.Alias)>
+      ModuleAlias
+      <MQualifiedName::Create (e.NextName)>
+    >
+    (t.IModule e.Tail);
 
 ResolvingElements
-	t.ResolveTable t.IModule t.ErrorList =
-		<ResolvingElements-Aux
-			<MIModule::GetFunctionList t.IModule>
-			t.ErrorList
-			t.ResolveTable
-		>;
+  t.ResolveTable t.IModule t.ErrorList =
+    <ResolvingElements-Aux
+      <MIModule::GetFunctionList t.IModule>
+      t.ErrorList
+      t.ResolveTable
+    >;
 
 ResolvingElements-Aux
-	t.IModule e.Functions t.ErrorList t.ResolveTable=
-		<DoResolvingFunctions
-			t.IModule t.ErrorList t.ResolveTable e.Functions
-		>;
+  t.IModule e.Functions t.ErrorList t.ResolveTable=
+    <DoResolvingFunctions
+      t.IModule t.ErrorList t.ResolveTable e.Functions
+    >;
 
 DoResolvingFunctions {
-	t.IModule t.ErrorList t.ResolveTable
-	(e.NextFunction) e.Tail =
-		<DoResolvingFunctions
-			<ResolvingFunction
-				t.IModule t.ErrorList t.ResolveTable
-				e.NextFunction
-			> e.Tail
-		>;
+  t.IModule t.ErrorList t.ResolveTable
+  (e.NextFunction) e.Tail =
+    <DoResolvingFunctions
+      <ResolvingFunction
+        t.IModule t.ErrorList t.ResolveTable
+        e.NextFunction
+      > e.Tail
+    >;
 
-	t.IModule t.ErrorList t.ResolveTable =
-		t.IModule
-		<MResolveTable::Destroy t.ResolveTable>
-		<CheckErrors t.ErrorList>;
+  t.IModule t.ErrorList t.ResolveTable =
+    t.IModule
+    <MResolveTable::Destroy t.ResolveTable>
+    <CheckErrors t.ErrorList>;
 }
 
 ResolvingFunction
-	t.IModule t.ErrorList t.ResolveTable
-	e.Function =
-		<ResolvingFunction-ScopeClass
-			<MIModule::GetFunctionAttribute t.IModule ScopeClass e.Function>
-			t.ErrorList t.ResolveTable
-			e.Function
-		>;
+  t.IModule t.ErrorList t.ResolveTable
+  e.Function =
+    <ResolvingFunction-ScopeClass
+      <MIModule::GetFunctionAttribute t.IModule ScopeClass e.Function>
+      t.ErrorList t.ResolveTable
+      e.Function
+    >;
 
 ResolvingFunction-ScopeClass {
-	t.IModule Found Swap
-	t.ErrorList t.ResolveTable e.Function =
-		t.IModule t.ErrorList t.ResolveTable;
+  t.IModule Found Swap
+  t.ErrorList t.ResolveTable e.Function =
+    t.IModule t.ErrorList t.ResolveTable;
 
-	t.IModule Found s.ScopeClass
-	t.ErrorList t.ResolveTable e.Function =
-		<ResolvingFunction-Qualified
-			s.ScopeClass
-			<MIModule::GetFunctionAttribute t.IModule Qualified e.Function>
-			t.ErrorList t.ResolveTable e.Function
-		>;
+  t.IModule Found s.ScopeClass
+  t.ErrorList t.ResolveTable e.Function =
+    <ResolvingFunction-Qualified
+      s.ScopeClass
+      <MIModule::GetFunctionAttribute t.IModule Qualified e.Function>
+      t.ErrorList t.ResolveTable e.Function
+    >;
 }
 
 ResolvingFunction-Qualified
-	s.ScopeClass
-	t.IModule Found t.QualifiedName
-	t.ErrorList t.ResolveTable e.Function =
-		<SwResolvingFunction-Qualified
-			s.ScopeClass
-			t.IModule t.ErrorList
-			<MResolveTable::Lookup
-				t.ResolveTable (s.ScopeClass) t.QualifiedName
-			>
-			e.Function
-		>;
+  s.ScopeClass
+  t.IModule Found t.QualifiedName
+  t.ErrorList t.ResolveTable e.Function =
+    <SwResolvingFunction-Qualified
+      s.ScopeClass
+      t.IModule t.ErrorList
+      <MResolveTable::Lookup
+        t.ResolveTable (s.ScopeClass) t.QualifiedName
+      >
+      e.Function
+    >;
 
 SwResolvingFunction-Qualified {
-	s.ScopeClass
-	t.IModule t.ErrorList
-	t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-	e.Function =
-		<ResolvingFunction-Body
-			<MIModule::GetFunctionAttribute
-				<CheckSuccess
-					<MIModule::UpdateFunction
-						t.IModule (e.Function)
-						(ScopeClass s.ScopeClass)
-						(Qualified t.ExternalQualifier)
-					>
-				>
-				Body e.Function
-			>
-			t.ErrorList t.ResolveTable e.Function
-		>;
+  s.ScopeClass
+  t.IModule t.ErrorList
+  t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+  e.Function =
+    <ResolvingFunction-Body
+      <MIModule::GetFunctionAttribute
+        <CheckSuccess
+          <MIModule::UpdateFunction
+            t.IModule (e.Function)
+            (ScopeClass s.ScopeClass)
+            (Qualified t.ExternalQualifier)
+          >
+        >
+        Body e.Function
+      >
+      t.ErrorList t.ResolveTable e.Function
+    >;
 }
 
 CheckSuccess
-	t.IModule Success = t.IModule;
+  t.IModule Success = t.IModule;
 
 ResolvingFunction-Body
-	t.IModule Found (e.Sentences)
-	t.ErrorList t.ResolveTable e.FnName =
-		<ResolvingBody
-			(e.FnName)
-			t.IModule t.ErrorList t.ResolveTable
-			(/* Распознанные выражения */) e.Sentences
-		>;
+  t.IModule Found (e.Sentences)
+  t.ErrorList t.ResolveTable e.FnName =
+    <ResolvingBody
+      (e.FnName)
+      t.IModule t.ErrorList t.ResolveTable
+      (/* Распознанные выражения */) e.Sentences
+    >;
 
 ResolvingBody {
-	(e.FnName) t.IModule t.ErrorList t.ResolveTable
-	(e.Resolved) =
-		<CheckSuccess
-			<MIModule::UpdateFunction
-				t.IModule (e.FnName)
-				(Body (e.Resolved))
-			>
-		>
-		t.ErrorList t.ResolveTable;
+  (e.FnName) t.IModule t.ErrorList t.ResolveTable
+  (e.Resolved) =
+    <CheckSuccess
+      <MIModule::UpdateFunction
+        t.IModule (e.FnName)
+        (Body (e.Resolved))
+      >
+    >
+    t.ErrorList t.ResolveTable;
 
-	(e.FnName) t.IModule t.ErrorList t.ResolveTable
-	(e.Resolved) t.NextSentence e.Tail =
-		<ResolvingBody
-			(e.FnName) t.IModule
-			<ResolvingSentence
-				t.ErrorList t.ResolveTable
-				(e.Resolved) t.NextSentence
-			> e.Tail
-		>;
+  (e.FnName) t.IModule t.ErrorList t.ResolveTable
+  (e.Resolved) t.NextSentence e.Tail =
+    <ResolvingBody
+      (e.FnName) t.IModule
+      <ResolvingSentence
+        t.ErrorList t.ResolveTable
+        (e.Resolved) t.NextSentence
+      > e.Tail
+    >;
 }
 
 CheckErrors
-	t.ErrorList =
-		<SwCheckErrors
-			<MError::EmptyList t.ErrorList>
-		>;
+  t.ErrorList =
+    <SwCheckErrors
+      <MError::EmptyList t.ErrorList>
+    >;
 
 SwCheckErrors {
-	t.ErrorList Empty = Success t.ErrorList;
-	t.ErrorList NotEmpty = Errors t.ErrorList;
+  t.ErrorList Empty = Success t.ErrorList;
+  t.ErrorList NotEmpty = Errors t.ErrorList;
 }
 
 /*
-	Образцовое и результатное выражения различаются лишь набором термов.
-	Считаем, что на входе имеем правильное выражение (чужих термов ни в образце,
-	ни в результате нет, все переменные на месте).
-	Не смотря на то, что пока поддерживается только Базисный Рефал, мы выражение
-	трактуем как цепочку из нескольких образцовых и результатных выражений:
-		(Pattern ...) (Result ...) (Result ...) ...
-	Эту последовательность можно трактовать как одно большое длинное выражение, в кото-
-	ром (Pattern e.Content) и (Result e.Content) -- просто особые типы скобок.
-	Это, конечно, злостное хакерство в плохом смысле слова "хакерство", но пока так проще.
-	В перспективе перепишу.
+  Образцовое и результатное выражения различаются лишь набором термов.
+  Считаем, что на входе имеем правильное выражение (чужих термов ни в образце,
+  ни в результате нет, все переменные на месте).
+  Не смотря на то, что пока поддерживается только Базисный Рефал, мы выражение
+  трактуем как цепочку из нескольких образцовых и результатных выражений:
+    (Pattern ...) (Result ...) (Result ...) ...
+  Эту последовательность можно трактовать как одно большое длинное выражение, в кото-
+  ром (Pattern e.Content) и (Result e.Content) -- просто особые типы скобок.
+  Это, конечно, злостное хакерство в плохом смысле слова "хакерство", но пока так проще.
+  В перспективе перепишу.
 */
 
 ResolvingSentence {
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.UnresolvedChain ) =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( '$' ) e.UnresolvedChain '$'
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.UnresolvedChain ) =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( '$' ) e.UnresolvedChain '$'
+    >;
 }
 
 ResolvingChain {
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( '$' e.ScannedChain ) '$' =
-		t.ErrorList t.ResolveTable
-		( e.ResolvedSentences
-			( e.ScannedChain )
-		);
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( '$' e.ScannedChain ) '$' =
+    t.ErrorList t.ResolveTable
+    ( e.ResolvedSentences
+      ( e.ScannedChain )
+    );
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( Pattern e.SubChain ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' Pattern e.ScannedChain ) )
-			e.SubChain ( '!' Pattern e.Tail )
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( Pattern e.SubChain ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' Pattern e.ScannedChain ) )
+      e.SubChain ( '!' Pattern e.Tail )
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( Result e.SubChain ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' Result e.ScannedChain ) )
-			e.SubChain ( '!' Result e.Tail )
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( Result e.SubChain ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' Result e.ScannedChain ) )
+      e.SubChain ( '!' Result e.Tail )
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( Structure e.InBrackets ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' Structure e.ScannedChain ) )
-			e.InBrackets ( '!' Structure e.Tail )
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( Structure e.InBrackets ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' Structure e.ScannedChain ) )
+      e.InBrackets ( '!' Structure e.Tail )
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( Abstract e.InBrackets ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' Abstract e.ScannedChain ) )
-			e.InBrackets ( '!' Abstract e.Tail )
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( Abstract e.InBrackets ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' Abstract e.ScannedChain ) )
+      e.InBrackets ( '!' Abstract e.Tail )
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( Qualified t.SrcPos t.QualifiedName )
-	e.Argument e.Tail =
-		<ResolvingChain
-			<ResolvingQualified
-				t.ErrorList t.ResolveTable
-				(e.ResolvedSentences)
-				( e.ScannedChain )
-				( Qualified t.SrcPos t.QualifiedName )
-				e.Tail
-			>
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( Qualified t.SrcPos t.QualifiedName )
+  e.Argument e.Tail =
+    <ResolvingChain
+      <ResolvingQualified
+        t.ErrorList t.ResolveTable
+        (e.ResolvedSentences)
+        ( e.ScannedChain )
+        ( Qualified t.SrcPos t.QualifiedName )
+        e.Tail
+      >
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( Function t.Callable e.Argument ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' Function e.ScannedChain ) )
-			t.Callable e.Argument ( '!' Function e.Tail )
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( Function t.Callable e.Argument ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' Function e.ScannedChain ) )
+      t.Callable e.Argument ( '!' Function e.Tail )
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( FnPtr t.Callable ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' FnPtr e.ScannedChain ) )
-			t.Callable ( '!' FnPtr e.Tail )
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( FnPtr t.Callable ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' FnPtr e.ScannedChain ) )
+      t.Callable ( '!' FnPtr e.Tail )
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( ( '!' IndirectCall e.ScannedChain ) (SVar e.Index) )
-			e.Argument ('!' IndirectCall e.Tail)
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  ( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( ( '!' IndirectCall e.ScannedChain ) (SVar e.Index) )
+      e.Argument ('!' IndirectCall e.Tail)
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( ( '!' s.BracketType e.LMultiBracket ) e.InBrackets )
-	( '!' s.BracketType e.RMultiBracket ) =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( e.LMultiBracket (s.BracketType e.InBrackets) )
-			e.RMultiBracket
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( ( '!' s.BracketType e.LMultiBracket ) e.InBrackets )
+  ( '!' s.BracketType e.RMultiBracket ) =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( e.LMultiBracket (s.BracketType e.InBrackets) )
+      e.RMultiBracket
+    >;
 
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	t.NextTerm e.Tail =
-		<ResolvingChain
-			t.ErrorList t.ResolveTable
-			(e.ResolvedSentences)
-			( e.ScannedChain t.NextTerm )
-			e.Tail
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  t.NextTerm e.Tail =
+    <ResolvingChain
+      t.ErrorList t.ResolveTable
+      (e.ResolvedSentences)
+      ( e.ScannedChain t.NextTerm )
+      e.Tail
+    >;
 }
 
 /*
-	То, ради чего делается весь этот сложный рекурсивный просмотр --
+  То, ради чего делается весь этот сложный рекурсивный просмотр --
 анализ корректности вызовов. Стратегия обработки ошибок (необъявленных
 функций): функциональный терм заменяем скобочным термом и заносим
 информацию об ошибке в список ошибок.
 */
 ResolvingQualified {
-	t.ErrorList t.ResolveTable
-	(e.ResolvedSentences)
-	( ('!' s.BracketType e.LMultiBracket) )
-	(Qualified t.SrcPosModule t.QualifiedName)
-	e.Argument ('!' s.BracketType e.RMultiBracket) =
-		<SwResolvingQualified
-			t.ErrorList
-			<MResolveTable::Lookup
-				t.ResolveTable
-				( <ValidScopes s.BracketType> )
-				t.QualifiedName
-			> t.SrcPosModule
-			(e.ResolvedSentences)
-			( ('!' s.BracketType e.LMultiBracket) )
-			e.Argument ('!' s.BracketType e.RMultiBracket)
-		>;
+  t.ErrorList t.ResolveTable
+  (e.ResolvedSentences)
+  ( ('!' s.BracketType e.LMultiBracket) )
+  (Qualified t.SrcPosModule t.QualifiedName)
+  e.Argument ('!' s.BracketType e.RMultiBracket) =
+    <SwResolvingQualified
+      t.ErrorList
+      <MResolveTable::Lookup
+        t.ResolveTable
+        ( <ValidScopes s.BracketType> )
+        t.QualifiedName
+      > t.SrcPosModule
+      (e.ResolvedSentences)
+      ( ('!' s.BracketType e.LMultiBracket) )
+      e.Argument ('!' s.BracketType e.RMultiBracket)
+    >;
 }
 
 ValidScopes {
-	FnPtr = Local Entry Swap;
-	Function = Local Entry Swap;
-	Abstract = ADT;
+  FnPtr = Local Entry Swap;
+  Function = Local Entry Swap;
+  Abstract = ADT;
 }
 
 SwResolvingQualified {
-	t.ErrorList t.ResolveTable
-	Found s.ScopeClass t.QualifiedName t.SrcPos
-	(e.ResolvedSentences)
-	( e.ScannedChain )
-	e.Argument (e.NotScannedResult) =
-		t.ErrorList t.ResolveTable
-		(e.ResolvedSentences)
-		( e.ScannedChain (s.ScopeClass t.QualifiedName) )
-		e.Argument (e.NotScannedResult);
+  t.ErrorList t.ResolveTable
+  Found s.ScopeClass t.QualifiedName t.SrcPos
+  (e.ResolvedSentences)
+  ( e.ScannedChain )
+  e.Argument (e.NotScannedResult) =
+    t.ErrorList t.ResolveTable
+    (e.ResolvedSentences)
+    ( e.ScannedChain (s.ScopeClass t.QualifiedName) )
+    e.Argument (e.NotScannedResult);
 
-	t.ErrorList t.ResolveTable
-	NotFound NotFound t.UnresolvedQualified t.SrcPos
-	(e.ResolvedSentences)
-	( ('!' s.BracketType e.LMultiBracket) )
-	e.Argument ('!' s.BracketType e.RMultiBracket) =
-		<MError::AddUnresolvedFunction
-			t.ErrorList t.SrcPos GenericQualified
-			<MQualifiedName::Parse t.UnresolvedQualified>
-		> t.ResolveTable
-		(e.ResolvedSentences)
-		( ('!' Structure e.LMultiBracket) )
-		e.Argument ('!' Structure e.RMultiBracket);
+  t.ErrorList t.ResolveTable
+  NotFound NotFound t.UnresolvedQualified t.SrcPos
+  (e.ResolvedSentences)
+  ( ('!' s.BracketType e.LMultiBracket) )
+  e.Argument ('!' s.BracketType e.RMultiBracket) =
+    <MError::AddUnresolvedFunction
+      t.ErrorList t.SrcPos GenericQualified
+      <MQualifiedName::Parse t.UnresolvedQualified>
+    > t.ResolveTable
+    (e.ResolvedSentences)
+    ( ('!' Structure e.LMultiBracket) )
+    e.Argument ('!' Structure e.RMultiBracket);
 }
 
 $END MResolver.

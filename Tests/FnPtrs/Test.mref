@@ -3,12 +3,12 @@ $MODULE Test;
 $IMPORT P = MPtrs, IO = InOut;
 
 $ENTRY Go =
-	<IndirectCall
-		<P::GetPtr <IO::ReadLine>>
-	>;
+  <IndirectCall
+    <P::GetPtr <IO::ReadLine>>
+  >;
 
 IndirectCall
-	s.Function =
-		< s.Function 'Argument = ' <InOut::ReadLine> >;
+  s.Function =
+    < s.Function 'Argument = ' <InOut::ReadLine> >;
 
 $END Test.

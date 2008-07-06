@@ -18,70 +18,70 @@ $IMPORT MBackEnd_Refal5_init;
 $IMPORT MFrontEnd_MRefal;
 
 $ENTRY Go =
-	<MVersion::Show>
-	<StartCompiling>;
+  <MVersion::Show>
+  <StartCompiling>;
 
 StartCompiling {
-	= <Results
-		<MLinker::LinkAll
-			<CompileList <MContext::Create> <LoadModuleList> >
-		>
-	>;
+  = <Results
+    <MLinker::LinkAll
+      <CompileList <MContext::Create> <LoadModuleList> >
+    >
+  >;
 }
 
 Results {
-	t.Context Success =
-		<MContext::Destroy t.Context>;
+  t.Context Success =
+    <MContext::Destroy t.Context>;
 
-	t.Context Fails =
-		<MContext::Destroy t.Context>
-		<MError::Fatal 'Unknown error'>;
+  t.Context Fails =
+    <MContext::Destroy t.Context>
+    <MError::Fatal 'Unknown error'>;
 }
 
 LoadModuleList {
-	= <DoLoadModuleList () 2 <MOS::Arg 1>>;
+  = <DoLoadModuleList () 2 <MOS::Arg 1>>;
 }
 
 DoLoadModuleList {
-	() 2 =
-		<MError::Fatal 'Command line error: use MRefal module1 module2'>;
+  () 2 =
+    <MError::Fatal 'Command line error: use MRefal module1 module2'>;
 
-	(e.Modules) s.NextNumArg =
-		e.Modules;
+  (e.Modules) s.NextNumArg =
+    e.Modules;
 
-	(e.Modules) s.NextNumArg e.ModuleOrFile =
-		<DoLoadModuleList
-			(e.Modules <ModuleOrFile e.ModuleOrFile>)
-			<Math::Add s.NextNumArg 1>
-			<MOS::Arg s.NextNumArg>
-		>;
+  (e.Modules) s.NextNumArg e.ModuleOrFile =
+    <DoLoadModuleList
+      (e.Modules <ModuleOrFile e.ModuleOrFile>)
+      <Math::Add s.NextNumArg 1>
+      <MOS::Arg s.NextNumArg>
+    >;
 }
 
 ModuleOrFile {
-	e.Name = <SwModuleOrFile (<MStrings::Lower e.Name>) e.Name>;
+  e.Name = <SwModuleOrFile (<MStrings::Lower e.Name>) e.Name>;
 }
 
 SwModuleOrFile {
-	( e.FnameName '.mref' ) e.FnameNameExtCase s.Dot s.M s.R s.E s.F =
-		(Module e.FnameNameExtCase);
+  ( e.FnameName '.mref' ) e.FnameNameExtCase s.Dot s.M s.R s.E s.F =
+    (Module e.FnameNameExtCase);
 
-	( e.ModNameLower ) e.ModNameCase =
-		(Module <Modules::CanonicalModuleName e.ModNameCase>);
+  ( e.ModNameLower ) e.ModNameCase =
+    (Module <Modules::CanonicalModuleName e.ModNameCase>);
 }
 
 CompileList {
-	t.Context e.Modules =
-		<CompileModulesFromList t.Context e.Modules>;
+  t.Context e.Modules =
+    <CompileModulesFromList t.Context e.Modules>;
 }
 
 CompileModulesFromList {
-	t.Context (Module e.ModName) e.Modules =
-		<CompileModulesFromList
-			<Compiler::CompileByModuleName t.Context e.ModName> e.Modules
-		>;
+  t.Context (Module e.ModName) e.Modules =
+    <CompileModulesFromList
+      <Compiler::CompileByModuleName t.Context e.ModName> e.Modules
+    >;
 
-	t.Context =
-		t.Context;
+  t.Context =
+    t.Context;
 }
 
 $END MRefal.

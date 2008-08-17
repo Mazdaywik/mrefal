@@ -9,12 +9,6 @@ c 	t.$Index::X$ ( $ADT::__StructureBrackets$ e.$Index::1$ ) =
 c 		$Ident::F$ ;
 c }
 
-b Entry::Types::FirstOneOf
-c $Entry::Types::FirstOneOf$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Pat$ ) t.$Index::First$ e.$Index::Tail$ =
-c 		<$Entry::Types::OneOf$ t.$Index::First$ ( $ADT::__StructureBrackets$ e.$Index::Pat$ ) > t.$Index::First$ e.$Index::Tail$ ;
-c }
-
 b Entry::Types::UpAlph
 c $Entry::Types::UpAlph$ {
 c 	=

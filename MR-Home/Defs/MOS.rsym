@@ -1,7 +1,7 @@
 $module MOS;
 
-$import FileIO;
 $import MRefalRTS;
+$import FileIO;
 $import Math;
 
 $entry Arg;

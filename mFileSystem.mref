@@ -26,7 +26,7 @@ $ENTRY Init
 UnBracket (e.Expr) = e.Expr;
 
 $ENTRY Final
-  = <MOS::System 'del ' <TempName>>;
+  = <MOS::System 'del ' <TempName> ' >nul 2>nul'>;
 
 TempName = <MSwapSupport::Read &G_TempFileName>;
 

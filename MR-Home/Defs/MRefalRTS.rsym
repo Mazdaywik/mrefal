@@ -11,13 +11,11 @@ $entry Putout;
 $entry Arg;
 $entry Exit;
 $entry ExistFile;
-$entry ExistFile-T;
 $entry System;
 $entry Env;
 
 $entry Upper;
 $entry Lower;
-$entry Lenw;
 $entry Numb;
 $entry Symb;
 $entry Ord;

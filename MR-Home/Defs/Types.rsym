@@ -2,7 +2,6 @@ $module Types;
 
 $entry CharType;
 $entry Digits;
-$entry FirstOneOf;
 $entry LoAlph;
 $entry OneOf;
 $entry UpAlph;

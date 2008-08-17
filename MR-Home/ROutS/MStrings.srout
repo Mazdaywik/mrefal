@@ -25,6 +25,18 @@ c 	e.$Index::Line$ =
 c 		<$Entry::MRefalRTS::Chr$ e.$Index::Line$ > ;
 c }
 
+b Entry::MStrings::Upper
+c $Entry::MStrings::Upper$ {
+c 	e.$Index::Expr$ =
+c 		<$Entry::MRefalRTS::Upper$ e.$Index::Expr$ > ;
+c }
+
+b Entry::MStrings::Lower
+c $Entry::MStrings::Lower$ {
+c 	e.$Index::Expr$ =
+c 		<$Entry::MRefalRTS::Lower$ e.$Index::Expr$ > ;
+c }
+
 b Entry::MStrings::Length
 c $Entry::MStrings::Length$ {
 c 	e.$Index::Expr$ =
@@ -51,18 +63,6 @@ c 	s.$Index::Length$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) =
 c 		s.$Index::Length$ e.$Index::Scanned$ ;
 c }
 
-b Entry::MStrings::Upper
-c $Entry::MStrings::Upper$ {
-c 	e.$Index::Expr$ =
-c 		<$Entry::MRefalRTS::Upper$ e.$Index::Expr$ > ;
-c }
-
-b Entry::MStrings::Lower
-c $Entry::MStrings::Lower$ {
-c 	e.$Index::Expr$ =
-c 		<$Entry::MRefalRTS::Lower$ e.$Index::Expr$ > ;
-c }
-
 b Entry::MStrings::First
 c $Entry::MStrings::First$ {
 c 	s.$Index::Count$ e.$Index::Expr$ =
@@ -74,7 +74,7 @@ c $Local::MStrings::DoFirst$ {
 c 	0 ( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Last$ =
 c 		( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Last$ ;
 c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) =
-c 		e.$Index::First$ ;
+c 		( $ADT::__StructureBrackets$ e.$Index::First$ ) ;
 c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) t.$Index::Next$ e.$Index::Last$ =
 c 		<$Local::MStrings::DoFirst$ <$Entry::Math::Dec$ s.$Index::Num$ > ( $ADT::__StructureBrackets$ e.$Index::First$ t.$Index::Next$ ) e.$Index::Last$ > ;
 c }
@@ -117,5 +117,39 @@ c 	e.$Index::Line$ '\n' =
 c 		<$Local::MStrings::Trim-R$ e.$Index::Line$ > ;
 c 	e.$Index::Line$ =
 c 		e.$Index::Line$ ;
+c }
+
+b Entry::MStrings::Repeat
+c $Entry::MStrings::Repeat$ {
+c 	0 e.$Index::Expr$ =
+c 		;
+c 	1 e.$Index::Expr$ =
+c 		e.$Index::Expr$ ;
+c 	s.$Index::Num$ e.$Index::Expr$ =
+c 		e.$Index::Expr$ <$Entry::MStrings::Repeat$ <$Entry::Math::Dec$ s.$Index::Num$ > e.$Index::Expr$ > ;
+c }
+
+b Entry::MStrings::Fields
+c $Entry::MStrings::Fields$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Fields$ ) e.$Index::Line$ =
+c 		<$Local::MStrings::Fields-Rot$ <$Entry::MLambda::MapReduce$ $Local::MStrings::FindField$ ( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Fields$ > > ;
+c }
+
+b Local::MStrings::Fields-Rot
+c $Local::MStrings::Fields-Rot$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Tail$ ) e.$Index::Fields$ =
+c 		e.$Index::Fields$ ( $ADT::__StructureBrackets$ e.$Index::Tail$ ) ;
+c }
+
+b Local::MStrings::FindField
+c $Local::MStrings::FindField$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) s.$Index::Length$ =
+c 		<$Local::MStrings::FindField-Aux$ <$Entry::MStrings::First$ s.$Index::Length$ e.$Index::Line$ > > ;
+c }
+
+b Local::MStrings::FindField-Aux
+c $Local::MStrings::FindField-Aux$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Rest$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Rest$ ) ( $ADT::__StructureBrackets$ e.$Index::First$ ) ;
 c }
 

@@ -4,8 +4,8 @@ r file ROut/InOut.rout
 b Swap::InOut::G_Buffer
 c $Swap::InOut::G_Buffer$ {
 c 	e.$Index::NewValue$ =
-c 		<Dg ('InOut::G_Buffer')>
-c 		<Br ('InOut::G_Buffer') '=' e.$Index::NewValue$ >;
+c 		<Dg ('::InOut::G_Buffer')>
+c 		<Br ('::InOut::G_Buffer') '=' e.$Index::NewValue$ >;
 c }
 
 b Entry::InOut::WriteLine

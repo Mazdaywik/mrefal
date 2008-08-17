@@ -112,18 +112,12 @@ $ENTRY UpdateFunction
   <UpdateImport t.IModule (e.Import) e.Attribs>
     == t.IModule s.Status
 */
-//$ENTRY
-UpdateImport
-  t.IModule (e.Import) e.Attribs =
-    <UpdateEntity
-      t.IModule ImportName (e.Import) e.Attribs
-    >;
-
-$ENTRY UpdateImport_New
+$ENTRY UpdateImport
   t.IModule t.Import e.Attribs =
-    <UpdateImport
+    <UpdateEntity
       t.IModule
-      (<MQualifiedSupport::LastSegment t.Import>)
+      ImportName
+      ( <MQualifiedSupport::LastSegment t.Import> )
       e.Attribs
     >;
 
@@ -289,17 +283,10 @@ $ENTRY GetFunctionAttribute {
     == t.IModule Found e.Value
     == t.IModule s.ErrorStatus
 */
-//$ENTRY
-GetImportAttribute
-  t.IModule s.Attrib e.Import =
-    <GetEntityAttribute
-      t.IModule ImportName s.Attrib e.Import
-    >;
-
-$ENTRY GetImportAttribute_New
+$ENTRY GetImportAttribute
   t.IModule s.Attrib t.Import =
-    <GetImportAttribute
-      t.IModule s.Attrib
+    <GetEntityAttribute
+      t.IModule ImportName s.Attrib
       <MQualifiedSupport::LastSegment t.Import>
     >;
 
@@ -398,17 +385,12 @@ $ENTRY GetFunctionList
   <GetImportList t.IModule>
     == t.IModule (e.ImportName)*
 */
-//$ENTRY
-GetImportList
-  t.IModule =
-    <FindEntityByKind t.IModule ImportName>;
-
-$ENTRY GetImportList_New
+$ENTRY GetImportList
   t.IModule =
     // Хакерство: MapReduce особым образом работает с первым термом
     <MLambda::MapReduce
       & Qualify
-      <GetImportList t.IModule>
+      <FindEntityByKind t.IModule ImportName>
     >;
 
 Qualify {

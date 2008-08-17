@@ -160,7 +160,7 @@ $ENTRY AddNewImport
   t.IModule t.SrcPos t.NewName e.Attribs t.ErrorList =
     <CheckRedeclaration-Import
       t.ErrorList
-      <MIModule::UpdateImport_New
+      <MIModule::UpdateImport
         t.IModule t.NewName
         e.Attribs
         (Position t.SrcPos)

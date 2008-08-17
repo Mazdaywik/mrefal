@@ -3,90 +3,93 @@ $MODULE TODO_list;
 $IMPORT FileIO, MOS, InOut, MUtilitiesBanner;
 
 $ENTRY Go =
-	<MUtilitiesBanner::Type 'TODO_list'>
-	<Main <MOS::ArgList>>;
+  <MUtilitiesBanner::Type 'TODO_list'>
+  <Main <MOS::ArgList>>;
 
 Main {
-	(e.?ProgName) (e.FileForScan) =
-		<ExtractTags
-			('TODOs.txt')
-			<FileIO::Load e.FileForScan>
-		>;
+  (e.?ProgName) (e.FileForScan) =
+    <ExtractTags
+      ('TODOs.txt')
+      (e.FileForScan)
+      <FileIO::Load e.FileForScan>
+    >;
 
-	(e.?ProgName) (e.FileForScan) (e.OutputFile) =
-		<ExtractTags
-			(e.OutputFile)
-			<FileIO::Load e.FileForScan>
-		>;
+  (e.?ProgName) (e.FileForScan) (e.OutputFile) =
+    <ExtractTags
+      (e.OutputFile)
+      (e.FileForScan)
+      <FileIO::Load e.FileForScan>
+    >;
 
-	(e.Progname) e.?Other =
-		<InOut::WriteLine 'usage: ' e.Progname ' changes_file.txt'>;
+  (e.Progname) e.?Other =
+    <InOut::WriteLine 'usage: ' e.Progname ' changes_file.txt'>;
 }
 
 ExtractTags
-	(e.OutName)
-	e.FileContent =
-		<SaveInfo
-			(e.OutName)
-			<DoExtractTags
-				<CreateTagTable>
-				e.FileContent
-			>
-		>;
+  (e.OutName) (e.FileForScan)
+  e.FileContent =
+    <SaveInfo
+      (e.OutName)
+      (e.FileForScan)
+      <DoExtractTags
+        <CreateTagTable>
+        e.FileContent
+      >
+    >;
 
 DoExtractTags {
-	t.TagTable (e.NextLine) e.Lines =
-		<DoExtractTags
-			<FindTag t.TagTable <Trim e.NextLine>>
-			e.Lines
-		>;
+  t.TagTable (e.NextLine) e.Lines =
+    <DoExtractTags
+      <FindTag t.TagTable <Trim e.NextLine>>
+      e.Lines
+    >;
 
-	t.TagTable = t.TagTable;
+  t.TagTable = t.TagTable;
 }
 
 FindTag {
-	// Дата формата [дд.мм.гггг - (ч)ч:мм:сс,сс] -- игнорируем
-	t.TagTable '[' e.Date ' - ' e.Time ']' =
-		t.TagTable;
+  // Дата формата [дд.мм.гггг - (ч)ч:мм:сс,сс] -- игнорируем
+  t.TagTable '[' e.Date ' - ' e.Time ']' =
+    t.TagTable;
 
-	t.TagTable '[' e.Tag ':' e.Description ']' =
-		<ChangeTable t.TagTable (<Trim e.Tag>) <Trim e.Description>>;
+  t.TagTable '[' e.Tag ':' e.Description ']' =
+    <ChangeTable t.TagTable (<Trim e.Tag>) <Trim e.Description>>;
 
-	t.TagTable e.OtherLine = t.TagTable;
+  t.TagTable e.OtherLine = t.TagTable;
 }
 
 ChangeTable {
-	t.TagTable ('TODO') e.Description =
-		<Add_TODO t.TagTable e.Description>;
+  t.TagTable ('TODO') e.Description =
+    <Add_TODO t.TagTable e.Description>;
 
-	t.TagTable ('DONE') e.Description =
-		<Add_DONE t.TagTable e.Description>;
+  t.TagTable ('DONE') e.Description =
+    <Add_DONE t.TagTable e.Description>;
 
-	t.TagTable ('ERROR') e.Description =
-		<Add_ERROR t.TagTable e.Description>;
+  t.TagTable ('ERROR') e.Description =
+    <Add_ERROR t.TagTable e.Description>;
 
-	t.TagTable ('FIXED') e.Description =
-		<Add_FIXED t.TagTable e.Description>;
+  t.TagTable ('FIXED') e.Description =
+    <Add_FIXED t.TagTable e.Description>;
 
-	t.TagTable ('CHANGED') e.Description =
-		<Add_CHANGED t.TagTable e.Description>;
+  t.TagTable ('CHANGED') e.Description =
+    <Add_CHANGED t.TagTable e.Description>;
 
-	t.TagTable (e.UnknownTag) e.Description =
-		<Add_BAD-TAG
-			t.TagTable 'Unknown tag [' e.UnknownTag '] ' e.Description
-		>;
+  t.TagTable (e.UnknownTag) e.Description =
+    <Add_BAD-TAG
+      t.TagTable 'Unknown tag [' e.UnknownTag '] ' e.Description
+    >;
 }
 
 Trim {
-	'\t' e.Line = <Trim e.Line>;
-	' ' e.Line = <Trim e.Line>;
-	e.Line = <TrimLast e.Line>;
+  '\t' e.Line = <Trim e.Line>;
+  ' ' e.Line = <Trim e.Line>;
+  e.Line = <TrimLast e.Line>;
 }
 
 TrimLast {
-	e.Line '\t' = <TrimLast e.Line>;
-	e.Line ' ' = <TrimLast e.Line>;
-	e.Line = e.Line;
+  e.Line '\t' = <TrimLast e.Line>;
+  e.Line ' ' = <TrimLast e.Line>;
+  e.Line = e.Line;
 }
 
 *-------------------------------------------------------------------------------
@@ -96,104 +99,108 @@ TrimLast {
 CreateTagTable = ( );
 
 Add_TODO {
-	// Повторное TODO. Удаляем предыдущее, это помещаем в конец.
-	( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
-		( e.Tags-B e.Tags-E (TODO e.ToDo-Name) );
+  // Повторное TODO. Удаляем предыдущее, это помещаем в конец.
+  ( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
+    ( e.Tags-B e.Tags-E (TODO e.ToDo-Name) );
 
-	( e.Tags ) e.ToDo-Name =
-		( e.Tags (TODO e.ToDo-Name) );
+  ( e.Tags ) e.ToDo-Name =
+    ( e.Tags (TODO e.ToDo-Name) );
 }
 
 Add_DONE {
-	// Удаляем соответствующее TODO
-	( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
-		( e.Tags-B e.Tags-E );
+  // Удаляем соответствующее TODO
+  ( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
+    ( e.Tags-B e.Tags-E );
 
-	// Соответствующий TODO отсутствует, добавляем как BAD-TAG
-	( e.Tags ) e.Done-Name =
-		<Add_BAD-TAG ( e.Tags ) 'Widow DONE: ' e.Done-Name>;
+  // Соответствующий TODO отсутствует, добавляем как BAD-TAG
+  ( e.Tags ) e.Done-Name =
+    <Add_BAD-TAG ( e.Tags ) 'Widow DONE: ' e.Done-Name>;
 }
 
 Add_BAD-TAG {
-	( e.Tags ) e.BadTag =
-		( e.Tags (BAD-TAG e.BadTag) );
+  ( e.Tags ) e.BadTag =
+    ( e.Tags (BAD-TAG e.BadTag) );
 }
 
 Add_ERROR {
-	// Повторное вхождение. Предыдущее удаляем, новое переносим в конец.
-	( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
-		( e.Tags-B e.Tags-E (ERROR e.Error-Name) );
+  // Повторное вхождение. Предыдущее удаляем, новое переносим в конец.
+  ( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
+    ( e.Tags-B e.Tags-E (ERROR e.Error-Name) );
 
-	( e.Tags ) e.Error-Name =
-		( e.Tags (ERROR e.Error-Name) );
+  ( e.Tags ) e.Error-Name =
+    ( e.Tags (ERROR e.Error-Name) );
 }
 
 Add_FIXED {
-	// Удаляем соответствующую ошибку
-	( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
-		( e.Tags-B e.Tags-E );
+  // Удаляем соответствующую ошибку
+  ( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
+    ( e.Tags-B e.Tags-E );
 
-	// Повторно не добавляем
-	( e.Tags-B (FIXED e.Fixed-Name) e.Tags-E ) e.Fixed-Name =
-		( e.Tags-B (FIXED e.Fixed-Name) e.Tags-E );
+  // Повторно не добавляем
+  ( e.Tags-B (FIXED e.Fixed-Name) e.Tags-E ) e.Fixed-Name =
+    ( e.Tags-B (FIXED e.Fixed-Name) e.Tags-E );
 
-	// Соответствующая ошибка отсутствует, добавляем как FIXED
-	( e.Tags ) e.Fixed-Name =
-		( e.Tags (FIXED e.Fixed-Name) );
+  // Соответствующая ошибка отсутствует, добавляем как FIXED
+  ( e.Tags ) e.Fixed-Name =
+    ( e.Tags (FIXED e.Fixed-Name) );
 }
 
 Add_CHANGED {
-	// Повторно не добавляем
-	( e.Tags-B (CHANGED e.Changed-Name) e.Tags-E ) e.Changed-Name =
-		( e.Tags-B (CHANGED e.Changed-Name) e.Tags-E );
+  // Повторно не добавляем
+  ( e.Tags-B (CHANGED e.Changed-Name) e.Tags-E ) e.Changed-Name =
+    ( e.Tags-B (CHANGED e.Changed-Name) e.Tags-E );
 
-	( e.Tags-B ) e.Changed-Name =
-		( e.Tags-B (CHANGED e.Changed-Name) );
+  ( e.Tags-B ) e.Changed-Name =
+    ( e.Tags-B (CHANGED e.Changed-Name) );
 }
 
 SaveInfo
-	(e.OutName) ( e.Tags ) =
-		<FileIO::Save
-			(e.OutName)
-			('\tСписок актуальных TODO из Changes.txt')
-			()
-			<OutTagList
-				<FilterTODO e.Tags>
-			>
-		>;
+  (e.OutName) (e.FileForScan) ( e.Tags ) =
+    <FileIO::Save
+      (e.OutName)
+      ('\tСписок актуальных задач из ' e.FileForScan)
+      ()
+      <OutTagList
+        <FilterTODO e.Tags>
+      >
+    >;
 
 FilterTODO {
-	(TODO e.Description) e.Tail =
-		(TODO e.Description)
-		<FilterTODO e.Tail>;
+  (TODO e.Description) e.Tail =
+    (TODO e.Description)
+    <FilterTODO e.Tail>;
 
-	(ERROR e.Description) e.Tail =
-		(ERROR e.Description)
-		<FilterTODO e.Tail>;
+  (ERROR e.Description) e.Tail =
+    (ERROR e.Description)
+    <FilterTODO e.Tail>;
+    
+  (BAD-TAG e.Description) e.Tail =
+    (BAD-TAG e.Description)
+    <FilterTODO e.Tail>;
 
-	(s.?OtherType e.?Description) e.Tail =
-		<FilterTODO e.Tail>;
+  (s.?OtherType e.?Description) e.Tail =
+    <FilterTODO e.Tail>;
 
-	= ;
+  = ;
 }
 
 OutTagList {
-	(s.Type e.Description) e.Tail =
-		( <TypeLine s.Type e.Description> )
-		<OutTagList e.Tail>;
+  (s.Type e.Description) e.Tail =
+    ( <TypeLine s.Type e.Description> )
+    <OutTagList e.Tail>;
 
-	= ;
+  = ;
 }
 
 TypeLine {
-	s.Type e.Description =
-		'\t[' <TypeType s.Type> '] ' e.Description;
+  s.Type e.Description =
+    '\t[' <TypeType s.Type> '] ' e.Description;
 }
 
 // Печатать тип
 TypeType {
-	TODO = 'TODO'; BAD-TAG = 'BAD-TAG'; ERROR = 'ERROR';
-	FIXED = 'FIXED'; CHANGED = 'CHANGED';
+  TODO = 'TODO'; BAD-TAG = 'BAD-TAG'; ERROR = 'ERROR';
+  FIXED = 'FIXED'; CHANGED = 'CHANGED';
 }
 
 $END TODO_list.

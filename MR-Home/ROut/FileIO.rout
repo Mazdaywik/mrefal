@@ -4,8 +4,8 @@ r file ROut/FileIO.rout
 b Swap::FileIO::G_Handles
 c $Swap::FileIO::G_Handles$ {
 c 	e.$Index::NewValue$ =
-c 		<Dg ('FileIO::G_Handles')>
-c 		<Br ('FileIO::G_Handles') '=' e.$Index::NewValue$ >;
+c 		<Dg ('::FileIO::G_Handles')>
+c 		<Br ('::FileIO::G_Handles') '=' e.$Index::NewValue$ >;
 c }
 
 b Entry::FileIO::Init

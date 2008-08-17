@@ -1,0 +1,95 @@
+v ROUT3 Module Refal 0.1
+r file ROutS/MLambda.srout
+
+b Entry::MLambda::Apply
+c $Entry::MLambda::Apply$ {
+c 	( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::LeftLinked$ ) e.$Index::Argument$ =
+c 		<$Entry::MLambda::Apply$ t.$Index::Lambda$ e.$Index::LeftLinked$ e.$Index::Argument$ > ;
+c 	( $ADT::MLambda::R-Lambda$ t.$Index::Lambda$ e.$Index::RightLinked$ ) e.$Index::Argument$ =
+c 		<$Entry::MLambda::Apply$ t.$Index::Lambda$ e.$Index::Argument$ e.$Index::RightLinked$ > ;
+c 	s.$Index::FnPtr$ e.$Index::Argument$ =
+c 		<Mu s.$Index::FnPtr$ e.$Index::Argument$ > ;
+c }
+
+b Entry::MLambda::BindLeft
+c $Entry::MLambda::BindLeft$ {
+c 	( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::Left1$ ) e.$Index::Left2$ =
+c 		( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::Left1$ e.$Index::Left2$ ) ;
+c 	t.$Index::Lambda$ e.$Index::Left$ =
+c 		( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::Left$ ) ;
+c }
+
+b Entry::MLambda::BindRight
+c $Entry::MLambda::BindRight$ {
+c 	( $ADT::MLambda::R-Lambda$ t.$Index::Lambda$ e.$Index::Right1$ ) e.$Index::Right2$ =
+c 		( $ADT::MLambda::R-Lambda$ t.$Index::Lambda$ e.$Index::Right2$ e.$Index::Right1$ ) ;
+c 	t.$Index::Lambda$ e.$Index::Right$ =
+c 		( $ADT::MLambda::R-Lambda$ t.$Index::Lambda$ e.$Index::Right$ ) ;
+c }
+
+b Entry::MLambda::Map
+c $Entry::MLambda::Map$ {
+c 	t.$Index::Lambda$ t.$Index::Next$ e.$Index::Tail$ =
+c 		<$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Next$ > <$Entry::MLambda::Map$ t.$Index::Lambda$ e.$Index::Tail$ > ;
+c 	t.$Index::Lambda$ =
+c 		;
+c }
+
+b Entry::MLambda::Reduce
+c $Entry::MLambda::Reduce$ {
+c 	t.$Index::Lambda$ t.$Index::Accum$ t.$Index::Next$ e.$Index::Tail$ =
+c 		<$Entry::MLambda::Reduce$ t.$Index::Lambda$ <$Local::MLambda::GuardTerm$ <$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Accum$ t.$Index::Next$ > > e.$Index::Tail$ > ;
+c 	t.$Index::Lambda$ t.$Index::Accum$ =
+c 		t.$Index::Accum$ ;
+c }
+
+b Local::MLambda::GuardTerm
+c $Local::MLambda::GuardTerm$ {
+c 	t.$Index::OneTerm$ =
+c 		t.$Index::OneTerm$ ;
+c }
+
+b Entry::MLambda::Reduce-R
+c $Entry::MLambda::Reduce-R$ {
+c 	t.$Index::Lambda$ t.$Index::Accum$ e.$Index::AntiTail$ t.$Index::Last$ =
+c 		<$Entry::MLambda::Reduce$ t.$Index::Lambda$ <$Local::MLambda::GuardTerm$ <$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Accum$ t.$Index::Last$ > > e.$Index::AntiTail$ > ;
+c 	t.$Index::Lambda$ t.$Index::Accum$ =
+c 		t.$Index::Accum$ ;
+c }
+
+b Entry::MLambda::MapReduce
+c $Entry::MLambda::MapReduce$ {
+c 	t.$Index::Lambda$ t.$Index::Accum$ e.$Index::Src$ =
+c 		<$Local::MLambda::UnBracket$ <$Entry::MLambda::Reduce$ <$Entry::MLambda::BindLeft$ $Local::MLambda::MapReducer$ t.$Index::Lambda$ > ( $ADT::__StructureBrackets$ t.$Index::Accum$ ) e.$Index::Src$ > > ;
+c }
+
+b Local::MLambda::UnBracket
+c $Local::MLambda::UnBracket$ {
+c 	( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Result$ ) =
+c 		t.$Index::Accum$ e.$Index::Result$ ;
+c }
+
+b Local::MLambda::MapReducer
+c $Local::MLambda::MapReducer$ {
+c 	t.$Index::LLambda$ ( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Scanned$ ) t.$Index::Next$ =
+c 		<$Local::MLambda::MapReducer-Aux$ ( $ADT::__StructureBrackets$ <$Entry::MLambda::Apply$ t.$Index::LLambda$ t.$Index::Accum$ t.$Index::Next$ > ) e.$Index::Scanned$ > ;
+c }
+
+b Local::MLambda::MapReducer-Aux
+c $Local::MLambda::MapReducer-Aux$ {
+c 	( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Result$ ) e.$Index::Scanned$ =
+c 		( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Scanned$ e.$Index::Result$ ) ;
+c }
+
+b Entry::MLambda::MapReduce-R
+c $Entry::MLambda::MapReduce-R$ {
+c 	t.$Index::Lambda$ t.$Index::Accum$ e.$Index::Src$ =
+c 		<$Local::MLambda::UnBracket$ <$Entry::MLambda::Reduce-R$ <$Entry::MLambda::BindLeft$ $Local::MLambda::MapReducer-R$ t.$Index::Lambda$ > ( $ADT::__StructureBrackets$ t.$Index::Accum$ ) e.$Index::Src$ > > ;
+c }
+
+b Local::MLambda::MapReducer-R
+c $Local::MLambda::MapReducer-R$ {
+c 	t.$Index::LLambda$ ( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Result$ ) t.$Index::Src$ =
+c 		( $ADT::__StructureBrackets$ <$Entry::MLambda::Apply$ t.$Index::LLambda$ t.$Index::Accum$ t.$Index::Src$ > e.$Index::Result$ ) ;
+c }
+

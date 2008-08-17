@@ -131,7 +131,7 @@ To_OldSymTable-T
       <SymInfo-Imports
         <MLambda::MapReduce
           & AliasToRealName
-          <MIModule::GetImportList_New t.Module>
+          <MIModule::GetImportList t.Module>
         >
       >
     >;
@@ -155,7 +155,7 @@ SymInfo-Imports
 AliasToRealName
   t.IModule t.AliasName =
     <AliasToRealName-Aux
-      <MIModule::GetImportAttribute_New
+      <MIModule::GetImportAttribute
         t.IModule RealName t.AliasName
       >
     >;
@@ -307,7 +307,7 @@ DoLoadQFunc-SwapArgs {
 LoadFromOneModule
   t.Context t.ModuleName =
     <SwLoadFromOneModule
-      ( <MQualifiedSupport::UnQualify t.ModuleName> )
+      ( <MQualifiedSupport::LastSegment t.ModuleName> )
       <MContext::ExtractOption t.Context t.ModuleName Status>
     >;
 
@@ -504,7 +504,7 @@ SwDoCheckCompileIfNeed-Old {
       <MContext::ExtractOption
         <CompileIfNeed-Old
           t.Context
-          <MQualifiedSupport::UnQualify t.NextName>
+          <MQualifiedSupport::LastSegment t.NextName>
         >
         t.NextName
         Status

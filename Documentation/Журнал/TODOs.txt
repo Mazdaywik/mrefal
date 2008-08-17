@@ -1,7 +1,6 @@
-	Список актуальных TODO из Changes.txt
+	Список актуальных задач из Журнал\Changes.txt
 
 	[TODO] RASL и интерпретатор
-	[TODO] eXpression eXchange in/out
 	[TODO] Стандартные модули контейнеров и распространённых функций
 	[TODO] Удалить MRefalRTS::Put
 	[TODO] //== Список приоритетных TODO ==\\

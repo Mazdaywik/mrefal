@@ -28,8 +28,8 @@ c }
 b Swap::MSelfDiag::G_LogOpened
 c $Swap::MSelfDiag::G_LogOpened$ {
 c 	e.$Index::NewValue$ =
-c 		<Dg ('MSelfDiag::G_LogOpened')>
-c 		<Br ('MSelfDiag::G_LogOpened') '=' e.$Index::NewValue$ >;
+c 		<Dg ('::MSelfDiag::G_LogOpened')>
+c 		<Br ('::MSelfDiag::G_LogOpened') '=' e.$Index::NewValue$ >;
 c }
 
 b Local::MSelfDiag::SwOpenLog

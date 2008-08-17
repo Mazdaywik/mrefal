@@ -1,0 +1,12 @@
+$module MLambda;
+
+$entry Apply;
+$entry BindLeft;
+$entry BindRight;
+$entry Map;
+$entry MapReduce;
+$entry MapReduce-R;
+$entry Reduce;
+$entry Reduce-R;
+
+$end MLambda.

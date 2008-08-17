@@ -8,7 +8,7 @@ c $Entry::MRefalRTS::Card$ { = <Card >; }
 
 b Entry::MRefalRTS::Open
 c $Entry::MRefalRTS::Open$ {
-c 	s.Mode s.Channel e.FName = <Open s.Mode s.Channel e.FName >;
+c   s.Mode s.Channel e.FName = <Open s.Mode s.Channel e.FName >;
 c }
 
 b Entry::MRefalRTS::Get
@@ -28,26 +28,21 @@ c $Entry::MRefalRTS::Exit$ { s.RetCode = <Exit s.RetCode >; }
 
 b Entry::MRefalRTS::ExistFile
 c $Entry::MRefalRTS::ExistFile$ {
-c 	e.FileName = <$Local::MRefalRTS::ExistFileAux$ e.FileName >;
-c }
-
-b Entry::MRefalRTS::ExistFile-T
-c $Entry::MRefalRTS::ExistFile-T$ {
-c 	e.FileName = <$Local::MRefalRTS::ExistFileAux$ e.FileName > e.FileName ;
+c   e.FileName = <$Local::MRefalRTS::ExistFileAux$ e.FileName >;
 c }
 
 b Local::MRefalRTS::ExistFileAux
 c $Local::MRefalRTS::ExistFileAux$ {
-c 	e.FileName =
-c 		<$Local::MRefalRTS::SwExistFileAux$
-c 			<ExistFile e.FileName>
-c 		>;
+c   e.FileName =
+c     <$Local::MRefalRTS::SwExistFileAux$
+c       <ExistFile e.FileName>
+c     >;
 c }
 
 b Local::MRefalRTS::SwExistFileAux
 c $Local::MRefalRTS::SwExistFileAux$ {
-c 	True = $Ident::True$;
-c 	False = $Ident::False$;
+c   True = $Ident::True$;
+c   False = $Ident::False$;
 c }
 
 b Entry::MRefalRTS::Upper
@@ -61,9 +56,6 @@ c $Entry::MRefalRTS::Add$ { e.Expr = <Add e.Expr >; }
 
 b Entry::MRefalRTS::Sub
 c $Entry::MRefalRTS::Sub$ { e.Expr = <Sub e.Expr >; }
-
-b Entry::MRefalRTS::Lenw
-c $Entry::MRefalRTS::Lenw$ { e.Expr = <Lenw e.Expr >; }
 
 b Entry::MRefalRTS::Numb
 c $Entry::MRefalRTS::Numb$ { e.Digits = <Numb e.Digits >; }

@@ -1,6 +1,37 @@
 v ROUT3 Module Refal 0.1
 r file ROutS/MFileSystem.srout
 
+b Swap::MFileSystem::G_TempFileName
+c $Swap::MFileSystem::G_TempFileName$ {
+c 	e.$Index::NewValue$ =
+c 		<Dg ('MFileSystem::G_TempFileName')>
+c 		<Br ('MFileSystem::G_TempFileName') '=' e.$Index::NewValue$ >;
+c }
+
+b Entry::MFileSystem::Init
+c $Entry::MFileSystem::Init$ {
+c 	=
+c 		<$Entry::MOS::System$ 'echo %random%>~suf.tmp' > <$Swap::MFileSystem::G_TempFileName$ <$Entry::MOS::Env$ 'TEMP' > '\\~dirlist_' <$Local::MFileSystem::UnBracket$ <$Entry::FileIO::Load$ '~suf.tmp' > > '.tmp' > <$Entry::MOS::System$ 'del ~suf.tmp' > ;
+c }
+
+b Local::MFileSystem::UnBracket
+c $Local::MFileSystem::UnBracket$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Expr$ ) =
+c 		e.$Index::Expr$ ;
+c }
+
+b Entry::MFileSystem::Final
+c $Entry::MFileSystem::Final$ {
+c 	=
+c 		<$Entry::MOS::System$ 'del ' <$Local::MFileSystem::TempName$ > > ;
+c }
+
+b Local::MFileSystem::TempName
+c $Local::MFileSystem::TempName$ {
+c 	=
+c 		<$Entry::MSwapSupport::Read$ $Swap::MFileSystem::G_TempFileName$ > ;
+c }
+
 b Entry::MFileSystem::ExistFile
 c $Entry::MFileSystem::ExistFile$ {
 c 	e.$Index::FileName$ =
@@ -32,7 +63,7 @@ c }
 b Local::MFileSystem::DoFilesInfo
 c $Local::MFileSystem::DoFilesInfo$ {
 c 	e.$Index::Mask$ =
-c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>~dirlst.tmp 2>nul' > <$Local::MFileSystem::ParseListing$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::FileIO::Load$ '~dirlst.tmp' > > > <$Entry::MOS::System$ 'del ~dirlst.tmp' > ;
+c 		<$Entry::MOS::System$ 'dir ' e.$Index::Mask$ '>' <$Local::MFileSystem::TempName$ > ' 2>nul' > <$Local::MFileSystem::ParseListing$ <$Entry::MDosWinRecoder::DosToWin$ <$Entry::FileIO::Load$ <$Local::MFileSystem::TempName$ > > > > ;
 c }
 
 b Local::MFileSystem::ParseListing
@@ -47,36 +78,30 @@ c }
 
 b Local::MFileSystem::ReadFileList
 c $Local::MFileSystem::ReadFileList$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) ( $ADT::__StructureBrackets$ e.$Index::Line$ ) e.$Index::Tail$ =
-c 		<$Local::MFileSystem::AppendPath$ ( $ADT::__StructureBrackets$ e.$Index::Path$ ) <$Local::MFileSystem::ParseLine$ e.$Index::Line$ > > <$Local::MFileSystem::ReadFileList$ ( $ADT::__StructureBrackets$ e.$Index::Path$ ) e.$Index::Tail$ > ;
-c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) =
+c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) e.$Index::Lines$ =
+c 		<$Entry::MLambda::Map$ <$Entry::MLambda::BindLeft$ $Local::MFileSystem::AppendPath$ ( $ADT::__StructureBrackets$ e.$Index::Path$ ) > <$Entry::MLambda::Map$ $Local::MFileSystem::ParseLine$ e.$Index::Lines$ > > ;
+c }
+
+b Local::MFileSystem::AppendPath
+c $Local::MFileSystem::AppendPath$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::L_Path$ ) ( $ADT::__StructureBrackets$ e.$Index::OtherInfo$ ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) ) =
+c 		( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::L_Path$ '\\' e.$Index::Name$ ) e.$Index::OtherInfo$ ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) ) ;
+c 	( $ADT::__StructureBrackets$ e.$Index::L_Path$ ) =
 c 		;
 c }
 
 b Local::MFileSystem::ParseLine
 c $Local::MFileSystem::ParseLine$ {
-c 	'   ' e.$Index::Tail$ =
+c 	( $ADT::__StructureBrackets$ '   ' e.$Index::Tail$ ) =
 c 		;
-c 	e.$Index::Line$ =
-c 		<$Local::MFileSystem::CutDateTime$ <$Entry::MStrings::First$ 17 e.$Index::Line$ > > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) =
+c 		<$Local::MFileSystem::ProcessFields$ <$Entry::MLambda::Map$ $Entry::MStrings::Trim$ <$Entry::MStrings::Fields$ ( $ADT::__StructureBrackets$ 10 7 19 ) e.$Index::Line$ > > > ;
 c }
 
-b Local::MFileSystem::CutDateTime
-c $Local::MFileSystem::CutDateTime$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::DateTime$ ) e.$Index::SizeAndName$ =
-c 		( $ADT::__StructureBrackets$ $Ident::DateTime$ <$Local::MFileSystem::ParseDateTime$ <$Entry::MStrings::First$ 10 e.$Index::DateTime$ > > ) <$Local::MFileSystem::CutSize$ <$Entry::MStrings::First$ 19 e.$Index::SizeAndName$ > > ;
-c }
-
-b Local::MFileSystem::ParseDateTime
-c $Local::MFileSystem::ParseDateTime$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Date$ ) e.$Index::Time$ =
-c 		<$Local::MFileSystem::ParseDate$ <$Entry::MStrings::Trim$ e.$Index::Date$ > > <$Local::MFileSystem::ParseTime$ <$Entry::MStrings::Trim$ e.$Index::Time$ > > 0 ;
-c }
-
-b Local::MFileSystem::CutSize
-c $Local::MFileSystem::CutSize$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Size$ ) e.$Index::Name$ =
-c 		( $ADT::__StructureBrackets$ $Ident::Size$ <$Local::MFileSystem::ParseSize$ e.$Index::Size$ > ) ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) ;
+b Local::MFileSystem::ProcessFields
+c $Local::MFileSystem::ProcessFields$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Date$ '.' e.$Index::Month$ '.' e.$Index::Year$ ) ( $ADT::__StructureBrackets$ e.$Index::Hours$ ':' e.$Index::Minutes$ ) ( $ADT::__StructureBrackets$ e.$Index::Size$ ) ( $ADT::__StructureBrackets$ e.$Index::LongName$ ) =
+c 		( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ $Ident::DateTime$ <$Entry::MStrings::Numb$ e.$Index::Year$ > <$Entry::MStrings::Numb$ e.$Index::Month$ > <$Entry::MStrings::Numb$ e.$Index::Date$ > <$Entry::MStrings::Numb$ e.$Index::Hours$ > <$Entry::MStrings::Numb$ e.$Index::Minutes$ > 0 ) ( $ADT::__StructureBrackets$ $Ident::Size$ <$Local::MFileSystem::ParseSize$ e.$Index::Size$ > ) ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::LongName$ ) ) ;
 c }
 
 b Local::MFileSystem::ParseSize
@@ -86,26 +111,20 @@ c 		<$Local::MFileSystem::ParseSize$ e.$Index::Begin$ e.$Index::End$ > ;
 c 	'<' e.$Index::Catalog$ '>' =
 c 		$Ident::Directory$ ;
 c 	e.$Index::Digits$ =
-c 		<$Entry::MStrings::Numb$ e.$Index::Digits$ > ;
+c 		<$Entry::MStrings::Numb$ <$Local::MFileSystem::DigitsOnly$ e.$Index::Digits$ > > ;
 c }
 
-b Local::MFileSystem::ParseDate
-c $Local::MFileSystem::ParseDate$ {
-c 	e.$Index::Day$ '.' e.$Index::Month$ '.' e.$Index::Year$ =
-c 		<$Entry::MStrings::Numb$ e.$Index::Year$ > <$Entry::MStrings::Numb$ e.$Index::Month$ > <$Entry::MStrings::Numb$ e.$Index::Day$ > ;
+b Local::MFileSystem::DigitsOnly
+c $Local::MFileSystem::DigitsOnly$ {
+c 	e.$Index::Line$ =
+c 		<$Entry::MLambda::Map$ <$Entry::MLambda::BindLeft$ $Local::MFileSystem::DigitOnly$ ( $ADT::__StructureBrackets$ <$Entry::Types::Digits$ > ) > e.$Index::Line$ > ;
 c }
 
-b Local::MFileSystem::ParseTime
-c $Local::MFileSystem::ParseTime$ {
-c 	e.$Index::Hours$ ':' e.$Index::Minutes$ =
-c 		<$Entry::MStrings::Numb$ e.$Index::Hours$ > <$Entry::MStrings::Numb$ e.$Index::Minutes$ > ;
-c }
-
-b Local::MFileSystem::AppendPath
-c $Local::MFileSystem::AppendPath$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) e.$Index::OtherInfo$ ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) =
-c 		( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Path$ '\\' e.$Index::Name$ ) e.$Index::OtherInfo$ ( $ADT::__StructureBrackets$ $Ident::LongName$ e.$Index::Name$ ) ) ;
-c 	( $ADT::__StructureBrackets$ e.$Index::Path$ ) =
+b Local::MFileSystem::DigitOnly
+c $Local::MFileSystem::DigitOnly$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::L_Dig-B$ s.$Index::Dig$ e.$Index::L_Dig-E$ ) s.$Index::Dig$ =
+c 		s.$Index::Dig$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::L_Digs$ ) s.$Index::NoDig$ =
 c 		;
 c }
 

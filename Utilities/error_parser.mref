@@ -1,5 +1,0 @@
-$PROGRAM Error_parser;
-
-$ENTRY Go = ;
-
-$END Error_parser.

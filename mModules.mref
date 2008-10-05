@@ -3,6 +3,52 @@ $MODULE MModules;
 $IMPORT MBE-Mgr;
 $IMPORT MContext;
 $IMPORT MFE-Mgr;
+$IMPORT MLambda;
+$IMPORT MStrings;
+
+
+/**
+  <LookupModule_NEW
+    t.hContext (e.ModulePath) e.ModuleName
+  >
+    == t.hContext Exist t.QualifiedName
+    == t.hContext NotExist
+*/
+$ENTRY LookupModule_NEW
+  t.hContext (e.ModulePath) e.ModuleName =
+     <LookupModule-ScanModulePath
+       t.hContext
+       ( <MLambda::Map &NormalizePath e.ModulePath> )
+       <NormalizePath (e.ModuleName)>
+     >;
+
+NormalizePath
+  ( e.Path ) =
+    ( <MLambda::Map & ConvShash
+      /*
+        НЕДОДЕЛКА!!!!
+        Будем предполагать, что работаем в Windows
+      */
+      <MStrings::Lower e.Path>
+    > );
+
+ConvSlash {
+  '\\' = '/';
+  s.Other = s.Other;
+}
+
+/*
+  Будем решать проблему поиска модуля так. Сначала сгенерируем гипотезы отно-
+  сительно расположения файлов, а только потом проверим их наличие.
+*/
+
+LookupModule-ScanModulePath {
+  /*
+    НЕДОДЕЛКА!!!!
+    Будем только текстуально сравнивать наличие MP-каталога в начале пути к
+    файлу модуля, решение проблемы относительных/абсолютных имён пока отложим.
+  */
+}
 
 //##############################################################################
 
@@ -11,7 +57,6 @@ $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MOrder;
 $IMPORT MOS;
-$IMPORT MStrings;
 
 $ENTRY CanonicalModuleName {
   s.Initial e.Tail =

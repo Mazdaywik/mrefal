@@ -1,33 +1,38 @@
 ################################################################################
 Module MBackEnd_Refal5;
 
-  <Generate-T t.IModule e.OutName>
-    == t.IModule
+<Generate-T t.IModule e.OutName>
+  == t.IModule
 
 ################################################################################
 Module MBE-Mgr;
 
 <Register s.Name s.Generator s.Linker (e.Folder) (e.Ext)>
-	== empty
+  == empty
 
 <Generate t.Context t.IModule t.QualifiedName>
-	== t.Context t.IModule Success
-	== t.Context t.IModule Fails
+  == t.Context t.IModule Success
+  == t.Context t.IModule Fails
 
 <Link t.Context (e.OutName) e.OrderedFiles>
-	== t.Context Success
-	== t.Context Fails
+  == t.Context Success
+  == t.Context Fails
 e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
 
 <GetList> == s.BackEndName*
 
+<GetInfo s.FEName s.Option>
+  == Success e.Option
+  == Fails s.Error
+s.Error ::= InvalidMgr | InvalidOption
+
 <X_GetPath-T t.Context t.QualifiedName s.BEName>
-	== t.Context t.QualifiedName Success e.Path
-	== t.Context t.QualifiedName Fails
+  == t.Context t.QualifiedName Success e.Path
+  == t.Context t.QualifiedName Fails
 
 <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
-	== t.QualifiedName Success e.OutPath
-	== t.QualifiedName Fails
+  == t.QualifiedName Success e.OutPath
+  == t.QualifiedName Fails
 
 =============================================================================
 Модуль реализует хранилище данных для диспетчеров входных и генерирующих
@@ -38,18 +43,18 @@ e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
 Module MBEFE-Holder;
 
 <UpdateEntry
-	s.FnSwap
-	s.MgrName
-	(s.Option e.Value)*
+  s.FnSwap
+  s.MgrName
+  (s.Option e.Value)*
 > == empty
 
 <GetInfo s.FnSwap s.MgrName s.OptionName>
-	== Success e.Value
-	== Fails s.Error
+  == Success e.Value
+  == Fails s.Error
 s.Error ::= InvalidMgr | InvalidOption
 
 <GetMgrList s.FnSwap>
-	== e<name>.MgrNames
+  == e<name>.MgrNames
 
 ################################################################################
 Module MContext;
@@ -59,23 +64,23 @@ Module MContext;
 <Destroy t.Context> == empty
 
 <UpdateInfo t.Context t.QualifiedName e.NewOptionList>
-	== t.UpdatedContext Success
-	== t.Context Fails
+  == t.UpdatedContext Success
+  == t.Context Fails
 
 <ExtractOption t.Context t.QualifiedName s.Option>
-	== t.Context Found e.Option
-	== t.Context OptionNotFound
-	== t.Context ModuleNotFound
+  == t.Context Found e.Option
+  == t.Context OptionNotFound
+  == t.Context ModuleNotFound
 
 <ExtractModulesList t.Context>
-	== t.Context t.QualifiedName*
+  == t.Context t.QualifiedName*
 
 <LastModule t.Context t.QualifiedName>
-	== t.UpdatedContext Success
-	== t.Context Fails
+  == t.UpdatedContext Success
+  == t.Context Fails
 
 <GetProgName t.Context>
-	== t.Context t.QualifiedName
+  == t.Context t.QualifiedName
 
 ################################################################################
 Module MCreateDirIfNeed;
@@ -87,31 +92,31 @@ Module MCreateDirIfNeed;
 ################################################################################
 Module MError;
 
-  <EmptyList t.ErrorList>
-    == t.ErrorList Empty
-    == t.ErrorList NotEmpty
+<EmptyList t.ErrorList>
+  == t.ErrorList Empty
+  == t.ErrorList NotEmpty
 
-  <ContentLevel t.ErrorList>
-    == t.ErrorList Empty
-    == t.ErrorList Warnings
-    == t.ErrorList Errors
+<ContentLevel t.ErrorList>
+  == t.ErrorList Empty
+  == t.ErrorList Warnings
+  == t.ErrorList Errors
 
-  <MergeLists t.List1 t.List2>
-    == t.MergedList
+<MergeLists t.List1 t.List2>
+  == t.MergedList
 
-  <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
-    == t.UpdatedErrorList
+<AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
+  == t.UpdatedErrorList
 
-  <AddNamesMismatch
-    t.ErrorList t.TailPos
-    t.InHead t.InTail
-  >
-    == t.ErrorList
+<AddNamesMismatch
+  t.ErrorList t.TailPos
+  t.InHead t.InTail
+>
+  == t.ErrorList
 
-  <AddMismatchInternalAndExternalNames
-    t.ErrorList t.SrcPos t.InternalName t.ExternalName
-  >
-    == t.ErrorList
+<AddMismatchInternalAndExternalNames
+  t.ErrorList t.SrcPos t.InternalName t.ExternalName
+>
+  == t.ErrorList
 
 ################################################################################
 Module MExeTyper;
@@ -132,189 +137,199 @@ Module MExeTyper;
 Module MFE-Mgr;
 
 <Register s.FEName s.FnParser (e.Ext)>
-	== empty
+  == empty
 
 <GetPath-T s.FEName t.QualifiedName e.BaseFolder>
-	== Success t.QualifiedName e.FilePath
-	== Fails t.QualifiedName
+  == Success t.QualifiedName e.FilePath
+  == Fails t.QualifiedName
 
 <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
-	== t.ErrorList Success s.Result t.IModule
-	== t.ErrorList Fails
+  == t.ErrorList Success s.Result t.IModule
+  == t.ErrorList Fails
 s.Result ::= Success | Warnings | Errors
 
 <GetList>
-	== s.FrontEndName*
+  == s.FrontEndName*
 
 <X_GetPath-T t.Context t.QualifiedName s.FEName>
-	== t.Context t.QualifiedName Success e.FileName
-	== t.Context t.QualifiedName Fails
+  == t.Context t.QualifiedName Success e.FileName
+  == t.Context t.QualifiedName Fails
+
+<GetInfo s.FEName s.Option>
+  == Success e.Option
+  == Fails s.Error
+s.Error ::= InvalidMgr | InvalidOption
 
 ################################################################################
 Module MFileSystem;
 
-  <ParseFileName e.FileName>
-    == (e.Directory) e.FileNameNoExt (e.Ext)
-  Пример:
-  <ParseFileName 'c:\\Directory\\Document.doc'>
-    == ('c;\\Directory') 'Document' ('doc')
+<ParseFileName e.FileName>
+  == (e.Directory) e.FileNameNoExt (e.Ext)
+Пример:
+<ParseFileName 'c:\\Directory\\Document.doc'>
+  == ('c;\\Directory') 'Document' ('doc')
 
 ################################################################################
 Module MIModule;
 
-  <Create
-    t.QualifiedName
-    (s.Attrib e.Value)*
-  >
-    == t.IModule s.Status
+<Create
+  t.QualifiedName
+  (s.Attrib e.Value)*
+>
+  == t.IModule s.Status
 
-  <Destroy t.IModule> == empty
-
----------------------------------------------------------------------------
-
-  <GetModuleName t.IModule>
-    == t.IModule t.QualifiedName
+<Destroy t.IModule> == empty
 
 ---------------------------------------------------------------------------
 
-  <UpdateModule t.IModule e.Attribs>
-    == t.IModule s.Status
-
-  s.Status ::=
-    Success | InvalidAttrib | InvariantError
-
-  <UpdateFunction
-    t.IModule
-    (e.FunctionName)
-    (s.Attrib e.Value)*
-  >
-    == t.IModule s.Status
-
-  s.Status ::=
-    Success | InvalidKind | InvalidAttrib | InvariantError
-
-  <UpdateImport t.IModule (e.Import) e.Attribs>
-    == t.IModule s.Status
-
-  <UpdateADT t.IModule (e.Name) e.Attribs>
-    == t.IModule s.Status
-
-  <UpdateEntity
-    t.IModule s.Kind (e.EntityName) e.Attribs
-  >
-    == t.IModule s.Status
-
-  s.Status ::=
-    Success | InvalidKind | InvalidAttrib | InvariantError
+<GetModuleName t.IModule>
+  == t.IModule t.QualifiedName
 
 ---------------------------------------------------------------------------
 
-  <GetModuleAttribute t.IModule s.Attribute>
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
+<UpdateModule t.IModule e.Attribs>
+  == t.IModule s.Status
 
-  s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
+s.Status ::=
+  Success | InvalidAttrib | InvariantError
 
-  <GetFucntionAttribute t.IModule s.Attrib e.FnName>
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
+<UpdateFunction
+  t.IModule
+  (e.FunctionName)
+  (s.Attrib e.Value)*
+>
+  == t.IModule s.Status
 
-  s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+s.Status ::=
+  Success | InvalidKind | InvalidAttrib | InvariantError
 
-  <GetImportAttribute t.IModule s.Attrib e.Import>
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
+<UpdateImport t.IModule (e.Import) e.Attribs>
+  == t.IModule s.Status
 
-  <GetADTAttributes t.IModule s.Attrib e.Name>
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
+<UpdateADT t.IModule (e.Name) e.Attribs>
+  == t.IModule s.Status
 
-  <GetEntityAttribute
-    t.IModule s.Kind s.Attrib e.Name
-  >
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
+<UpdateEntity
+  t.IModule s.Kind (e.EntityName) e.Attribs
+>
+  == t.IModule s.Status
 
-  s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+s.Status ::=
+  Success | InvalidKind | InvalidAttrib | InvariantError
 
 ---------------------------------------------------------------------------
 
-  <GetFunctionList t.IModule>
-    == t.IModule (e.FnName)*
+<GetModuleAttribute t.IModule s.Attribute>
+  == t.IModule Found e.Value
+  == t.IModule s.ErrorStatus
 
-  <GetImportList t.IModule>
-    == t.IModule (e.ImportName)*
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 
-  <GetADTList t.IModule>
-    == t.IModule (e.ADT)*
+<GetFucntionAttribute t.IModule s.Attrib e.FnName>
+  == t.IModule Found e.Value
+  == t.IModule s.ErrorStatus
+
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+
+<GetImportAttribute t.IModule s.Attrib e.Import>
+  == t.IModule Found e.Value
+  == t.IModule s.ErrorStatus
+
+<GetADTAttributes t.IModule s.Attrib e.Name>
+  == t.IModule Found e.Value
+  == t.IModule s.ErrorStatus
+
+<GetEntityAttribute
+  t.IModule s.Kind s.Attrib e.Name
+>
+  == t.IModule Found e.Value
+  == t.IModule s.ErrorStatus
+
+s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+
+---------------------------------------------------------------------------
+
+<GetFunctionList t.IModule>
+  == t.IModule (e.FnName)*
+
+<GetImportList t.IModule>
+  == t.IModule (e.ImportName)*
+
+<GetADTList t.IModule>
+  == t.IModule (e.ADT)*
 
 ################################################################################
 Module MLambda;
 
 <Apply t.Lambda e.Arg>
-	== e.Result
+  == e.Result
 
 <BindLeft t.Lambda e.Left>
-	== t.Lambda'
+  == t.Lambda'
 <Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Left e.Arg>
 
 <BindRight t.Lambda e.Right>
-	== t.Lambda'
+  == t.Lambda'
 <Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Arg e.Right>
 
+<Composite t.InnerLamda t.OuterLambda>
+  == t.CompositeLambda
+<Apply t.CompositeLambda e.Arg>
+  === <Apply t.OuterLambda <Apply t.InnerLambda e.Arg>>
+
 <Map t.Lambda t.Src*>
-	== e.Result*
+  == e.Result*
 <Apply t.Lambda t.Src> == e.Result
 
 <Reduce t.Lambda t.Accum t.Src*>
-	== t.Accum'
+  == t.Accum'
 <Apply t.Lambda t.Accum t.Src> == t.Accum'
 
 <Reduce-R t.Lambda t.Accum t.Src*>
-	== t.Accum'
+  == t.Accum'
 <Apply t.Lambda t.Accum t.Src> == t.Accum'
 
 <MapReduce t.Lambda t.Accum t.Src*>
-	== t.Accum' e.Result*
+  == t.Accum' e.Result*
 <Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
 
 <MapReduce-R t.Lambda t.Accum t.Src*>
-	== t.Accum' e.Result*
+  == t.Accum' e.Result*
 <Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
 
 ################################################################################
 Module MLinker_Refal5;
 
-  <Link t.Context (e.ProgName) (e.ROutName)*>
-    == t.Context Success
-    == t.Context Fails
+<Link t.Context (e.ProgName) (e.ROutName)*>
+  == t.Context Success
+  == t.Context Fails
 
-  <CreateStartupUnit t.Context>
-    == t.Context (t.StartupUnit)
+<CreateStartupUnit t.Context>
+  == t.Context (t.StartupUnit)
 
-  <CreateUnitStorage> == t.UnitStorage
+<CreateUnitStorage> == t.UnitStorage
 
-  <AddUnit t.UnitStorage t.Unit>
-    == t.UnitStorage
+<AddUnit t.UnitStorage t.Unit>
+  == t.UnitStorage
 
-  <AddRequest t.UnitStorage e.Name>
-    == t.UnitStorage
+<AddRequest t.UnitStorage e.Name>
+  == t.UnitStorage
 
-  <AddLinked t.UnitStorage e.Name>
-    == t.UnitStorage
+<AddLinked t.UnitStorage e.Name>
+  == t.UnitStorage
 
-  <GetNextUnit t.UnitStorage>
-    == t.UnitStorage t.Unit
-    == t.UnitStorage None
-    == t.UnitStorage Finish
+<GetNextUnit t.UnitStorage>
+  == t.UnitStorage t.Unit
+  == t.UnitStorage None
+  == t.UnitStorage Finish
 
-  <DestroyUnitStorage t.UnitStorage> == empty
+<DestroyUnitStorage t.UnitStorage> == empty
 
-  <NextRequestedName-D t.UnitStorage>
-    == e.Name
+<NextRequestedName-D t.UnitStorage>
+  == e.Name
 
-  <NotLinkedList t.UnitStorage>
-    == t.UnitStorage (e.NotLinkedUnitName)*
+<NotLinkedList t.UnitStorage>
+  == t.UnitStorage (e.NotLinkedUnitName)*
 
 ################################################################################
 Module MLocation;
@@ -336,25 +351,31 @@ s.Status ::=
 ################################################################################
 Module MModules;
 
-  <SourceState e.ModName>
-    == ModuleNotFound
-    == Library
-    == NeedRecompile
-    == SrcNotUpdated
+<LookupModule_NEW
+  t.hContext (e.ModulePath) e.ModuleName
+>
+  == t.hContext Exist t.QualifiedName
+  == t.hContext NotExist
 
-  <LookupLibrary e.ModuleName>
-    == ModuleNotFound
-    == Library (Sym e.SymName) (Out e.OutName)
+<SourceState e.ModName>
+  == ModuleNotFound
+  == Library
+  == NeedRecompile
+  == SrcNotUpdated
 
-  <LookupModule-T e.ModuleName>
-     == s.Status
-       (Sym e.SymName)
-       (Out e.OutName)
-       (Src e.SrcName)
-       e.ModuleName
-  s.Status ::= one of
-    ModuleNotFound NeedRecompile Library SrcNotUpdated SystemLibrary
-    e.*Name may be None
+<LookupLibrary e.ModuleName>
+  == ModuleNotFound
+  == Library (Sym e.SymName) (Out e.OutName)
+
+<LookupModule-T e.ModuleName>
+   == s.Status
+     (Sym e.SymName)
+     (Out e.OutName)
+     (Src e.SrcName)
+     e.ModuleName
+s.Status ::= one of
+  ModuleNotFound NeedRecompile Library SrcNotUpdated SystemLibrary
+  e.*Name may be None
 
 =============================================================================
 Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
@@ -373,58 +394,58 @@ Module MNameMaker;
 ################################################################################
 Module MParser_Common;
 
-  <Parse s.FnModuleBody e.FileName>
-    == t.ErrorList Success t.IModule
-    == t.ErrorList Fails
+<Parse s.FnModuleBody e.FileName>
+  == t.ErrorList Success t.IModule
+  == t.ErrorList Fails
 
-  <GeneralizeInfo
-    t.GenericErrorList t.QualifiedName
-    t.LocalErrorList {Maybe t.IModule}
-  >
-    == t.ErrorList Success s.ErrorsLevel t.IModule
-    == t.ErrorList Fails
-  s.ErrorsLevel ::= Success | Warnings | Errors
+<GeneralizeInfo
+  t.GenericErrorList t.QualifiedName
+  t.LocalErrorList {Maybe t.IModule}
+>
+  == t.ErrorList Success s.ErrorsLevel t.IModule
+  == t.ErrorList Fails
+s.ErrorsLevel ::= Success | Warnings | Errors
 
 -----------------------------------------------------------------------------
-  Функции синтаксического анализа делятся на три категории:
-  (1) Функции, распознающие основные секции файла: начало, конец, объявления,
+Функции синтаксического анализа делятся на три категории:
+(1) Функции, распознающие основные секции файла: начало, конец, объявления,
 импорты, определения. Эти функции после себя на стеке ничего не оставляют.
 Даже в формате этих функций стек отсутствует.
-  После распознавания глобальной структуры эта информация сразу помещается
+После распознавания глобальной структуры эта информация сразу помещается
 в IModule, поэтому после работы этих функций стека не остаётся.
-  (2) Функции, распознающие остальные нетерминалы. Эти функции активно рабо-
+(2) Функции, распознающие остальные нетерминалы. Эти функции активно рабо-
 тают со стеком. Эти функции после распознавания оставляют на стеке распознан-
 ный нетерминал.
-  (3) Промежуточные функции. Они могут работать так, как хотят.
+(3) Промежуточные функции. Они могут работать так, как хотят.
 ------------------------------------------------------------------------------
 
-  AnyQualifiedName = DotQualifiedName | QuadQualifiedName .
-  DotQualifiedName =
-    IDENTIFIER | DotQualifiedName '.' IDENTIFIER .
-  QuadQualifiedName =
-    IDENTIFIER | QuadQualifiedName '::' IDENTIFIER .
-  
-  <N***QualifiedName
-    t.ErrorList t.Lexer t.NextToken
-  >
-    == e.ScannedQName t.ErrorList t.Lexer t.NextToken
+AnyQualifiedName = DotQualifiedName | QuadQualifiedName .
+DotQualifiedName =
+  IDENTIFIER | DotQualifiedName '.' IDENTIFIER .
+QuadQualifiedName =
+  IDENTIFIER | QuadQualifiedName '::' IDENTIFIER .
 
-  e.ScannedQName ::=
-    Success t<MQualifiedName::QName>.QualifiedName | Fails
+<N***QualifiedName
+  t.ErrorList t.Lexer t.NextToken
+>
+  == e.ScannedQName t.ErrorList t.Lexer t.NextToken
 
-  В случае ошибки на стеке оставляется первый неожиданный терм.
-  Если имя было частично определено, например так:
-    'PackageName::ModuleName::222',
-  то имя считается распознанным успешно. Информация об ошибке
-  падает в t.ErrorList, но синтаксически инвариант соблюдётся.
+e.ScannedQName ::=
+  Success t<MQualifiedName::QName>.QualifiedName | Fails
+
+В случае ошибки на стеке оставляется первый неожиданный терм.
+Если имя было частично определено, например так:
+  'PackageName::ModuleName::222',
+то имя считается распознанным успешно. Информация об ошибке
+падает в t.ErrorList, но синтаксически инвариант соблюдётся.
 
 ################################################################################
 Module MParser_MRefal;
 
-  <SrcModule t.ErrorList t.QualifiedName e.FileName>
-    == t.ErrorList Success s.Result t.IModule
-    == t.ErrorList Fails
-  s.Result ::= Success | Warnings | Errors
+<SrcModule t.ErrorList t.QualifiedName e.FileName>
+  == t.ErrorList Success s.Result t.IModule
+  == t.ErrorList Fails
+s.Result ::= Success | Warnings | Errors
 
 ################################################################################
 Module MParser_Sym;
@@ -484,78 +505,78 @@ s.Result ::= True | False
 ################################################################################
 Module MQualifiedSupport;
 
-  <UnQualify t.QualifiedName>
-    == e.Name
-  t.QualifiedName должен содержать один сегмент.
+<UnQualify t.QualifiedName>
+  == e.Name
+t.QualifiedName должен содержать один сегмент.
 
-  <LastSegment t.Qualified>
-    == e.Last
+<LastSegment t.Qualified>
+  == e.Last
 
 ################################################################################
 Module MResolver;
 
-  <Resolve t.Module t.ErrorList t.ResolveTable>
-    == t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+<Resolve t.Module t.ErrorList t.ResolveTable>
+  == t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
 
 ################################################################################
 Module MResolveTable;
 
-  <Create> == t.ResolveTable
+<Create> == t.ResolveTable
 
-  <Destroy t.ResolveTable> == empty
+<Destroy t.ResolveTable> == empty
 
-  <Add t.ResolveTable
-    t.InternalQualifier
-    s.ScopeClass
-    t.ExternalQualifier
-  > == t.UpdatedResolveTable
+<Add t.ResolveTable
+  t.InternalQualifier
+  s.ScopeClass
+  t.ExternalQualifier
+> == t.UpdatedResolveTable
 
-  <Lookup t.ResolveTable (e.ValidScopes) t.InternalQualifier>
-    == t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-    == t.ResolveTable NotFound NotFound t.InternalQualifier
-  e.ValidScopes ::= s.ScopeClass*
+<Lookup t.ResolveTable (e.ValidScopes) t.InternalQualifier>
+  == t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+  == t.ResolveTable NotFound NotFound t.InternalQualifier
+e.ValidScopes ::= s.ScopeClass*
 
 ################################################################################
 Module MSelfDiag;
 
-  <Assert-??-T (e.Result) (e.Expected) [e.Message]>
-    == e.Result
-    fail down
+<Assert-??-T (e.Result) (e.Expected) [e.Message]>
+  == e.Result
+  fail down
 
-  <Assert-?? (e.Result) (e.Expected) [e.Message]>
-    == empty
-    fail down
+<Assert-?? (e.Result) (e.Expected) [e.Message]>
+  == empty
+  fail down
 
 ################################################################################
 Module MStartupSeqGenerator;
 
-  <GetFnList t.Context>
-    == t.Context e.FnList
-    == t.Context GoNotFound
-    == t.Context MultipleGo e.FnList--GoFunctions
-  e.FnList = (e.Function)*
+<GetFnList t.Context>
+  == t.Context e.FnList
+  == t.Context GoNotFound
+  == t.Context MultipleGo e.FnList--GoFunctions
+e.FnList = (e.Function)*
 
-  <UpdateStartInfo t.StartInfo t.Context e.ModuleName>
-    == t.StartInfo t.Context
+<UpdateStartInfo t.StartInfo t.Context e.ModuleName>
+  == t.StartInfo t.Context
 
 ################################################################################
 Module MStrings;
 
-  <Seq s.NFirst s.NLast>
-    == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
-  s.NFirst и s.NLast -- числа,
-  при чём должно быть s.NFirst <= s.NLast
+<Seq s.NFirst s.NLast>
+  == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
+s.NFirst и s.NLast -- числа,
+при чём должно быть s.NFirst <= s.NLast
 
-  <Reverse e.Line> == e.eniL
+<Reverse e.Line> == e.eniL
 
-  <Repeat s.Num e.Expr>
-    == e.Expr e.Expr ... e.Expr
-  <Length <Repeat s.Num e.Expr>> == s.Num
-  s.Num >= 0
+<Repeat s.Num e.Expr>
+  == e.Expr e.Expr ... e.Expr
+<Length <Repeat s.Num e.Expr>> == s.Num
+s.Num >= 0
 
-  <Fields (e.Fields) e.Line>
-    == (e.SubField)*
-  e.Fields = s<num>*
+<Fields (e.Fields) e.Line>
+  == (e.SubField)*
+e.Fields = s<num>*
 
 ################################################################################
 Module MSwapSupport;
@@ -618,31 +639,31 @@ Module MSwapSupport;
 ################################################################################
 Module MSymModule;
 
-  Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
+Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
 на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
 линковщик.
 
-  <LoadInfo_New t.Context t.ModuleName>
-    == t.Context Success t.IModule
-    == t.Context Fails
-  t.ModuleName ::= t.QualifiedName
+<LoadInfo_New t.Context t.ModuleName>
+  == t.Context Success t.IModule
+  == t.Context Fails
+t.ModuleName ::= t.QualifiedName
 
-  <LoadInfo t.Context e.ModuleName>
-    == t.UpdatedContext
-      ( Module e.ModuleName )
-      ( Functions ((e.Qualifier)(e.FnName))* )
-      ( Imports (e.ModName)* )
-    == t.C ontext SymInfoNotFound
+<LoadInfo t.Context e.ModuleName>
+  == t.UpdatedContext
+    ( Module e.ModuleName )
+    ( Functions ((e.Qualifier)(e.FnName))* )
+    ( Imports (e.ModName)* )
+  == t.C ontext SymInfoNotFound
 
-  <SymTableToSymInfo-T t.IModule>
-    == t.IModule
-      ( CurModule e.ModName )
-      ( Functions (e.FnName)* )
-      ( Imports (e.ModName)* )
+<SymTableToSymInfo-T t.IModule>
+  == t.IModule
+    ( CurModule e.ModName )
+    ( Functions (e.FnName)* )
+    ( Imports (e.ModName)* )
 
-  <LookupSym t.Context e.ModuleName>
-    == (e.ModuleName) t.Context Known s.Status e.SymName
-    == (e.ModuleName) t.Context NotKnown s.Status e.SymName
+<LookupSym t.Context e.ModuleName>
+  == (e.ModuleName) t.Context Known s.Status e.SymName
+  == (e.ModuleName) t.Context NotKnown s.Status e.SymName
 
 ################################################################################
 Module MSymStream;
@@ -684,43 +705,43 @@ Module MSymStream;
 ################################################################################
 Module MSymTable;
 
-  <Create> == t.SymTable
+<Create> == t.SymTable
 
-  <AddName t.SymTable e.Name>
-    == t.SymTable
+<AddName t.SymTable e.Name>
+  == t.SymTable
 
-  <UpdateAttrib t.SymTable (e.Name) s.Attrib e.Value>
-    == t.SymTable
+<UpdateAttrib t.SymTable (e.Name) s.Attrib e.Value>
+  == t.SymTable
 
-  <RemoveAttrib t.SymTable e.Name s.Attrib>
-    == t.SymTable Found e.Value
-    == t.SymTable NoAttrib
-    == t.SymTable NoName
+<RemoveAttrib t.SymTable e.Name s.Attrib>
+  == t.SymTable Found e.Value
+  == t.SymTable NoAttrib
+  == t.SymTable NoName
 
-  <GetAttrib t.SymTable e.Name s.Attrib>
-    == t.SymTable Found e.Value
-    == t.SymTable NoAttrib
-    == t.SymTable NoName
+<GetAttrib t.SymTable e.Name s.Attrib>
+  == t.SymTable Found e.Value
+  == t.SymTable NoAttrib
+  == t.SymTable NoName
 
-  <ExtractNames t.SymTable>
-    == t.SymTable (e.Name)*
+<ExtractNames t.SymTable>
+  == t.SymTable (e.Name)*
 
-  <UpdateAttribSet
-    t.SymTable (e.Name)
-    (s.Attrib e.Value)*
-  > == t.SymTable
+<UpdateAttribSet
+  t.SymTable (e.Name)
+  (s.Attrib e.Value)*
+> == t.SymTable
 
-  <FindByKind t.SymTable s.Kind>
-    == t.SymTable (e.Name)*
+<FindByKind t.SymTable s.Kind>
+  == t.SymTable (e.Name)*
 
 ################################################################################
 Module MXXIO;
 
-  <Load e.FileName>
-    == Success e.LoadedExpr
-    == Fails
+<Load e.FileName>
+  == Success e.LoadedExpr
+  == Fails
 
-  <Save (e.FileName) e.Expr>
-    == Success
-    == Fails
+<Save (e.FileName) e.Expr>
+  == Success
+  == Fails
 

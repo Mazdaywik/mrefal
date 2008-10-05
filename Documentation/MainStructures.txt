@@ -1,81 +1,88 @@
 --------------------------------------------------------------------------------
-	Структура "Тело функции"
+  Структура "Тело функции"
 --------------------------------------------------------------------------------
 
 t.FunctionBody ::=
-	( t.Sentence* )
+  ( t.Sentence* )
 
 t.Sentence ::=
-	t.PatternExpr t.ResultExpr
+  t.PatternExpr t.ResultExpr
 
 t.PatternExpr ::=
-	( Pattern t.PatternTerm* )
+  ( Pattern t.PatternTerm* )
 
 t.ResultExpr ::=
-	( Result t.ResultTerm* )
+  ( Result t.ResultTerm* )
 
 t.CommonTerm ::=
-	(Identifier e.Name)
-	(EVar e.Index)
-	(SVar e.Index)
-	(TVar e.Index)
-	(Literal e.Content)
-	(DQWord e.Content)
-	(Macro s.Value)
-	(FnPtr t.Callable)
+  (Identifier e.Name)
+  (EVar e.Index)
+  (SVar e.Index)
+  (TVar e.Index)
+  (Literal e.Content)
+  (DQWord e.Content)
+  (Macro s.Value)
+  (FnPtr t.Callable)
 
 
 t.PatternTerm ::=
-	t.CommonTerm
-	(Structure t.PatternTerm*)
-	(Abstract t.Callable t.PatternTerm*)
+  t.CommonTerm
+  (Structure t.PatternTerm*)
+  (Abstract t.Callable t.PatternTerm*)
 
 t.ResultTerm ::=
-	t.CommonTerm
-	(Structure t.ResultTerm)
-	(Abstract t.Callable t.ResultTerm*)
-	(Function t.Callable e.Argument)
-	(IndirectCall (SVar e.Index) e.Argument)
+  t.CommonTerm
+  (Structure t.ResultTerm)
+  (Abstract t.Callable t.ResultTerm*)
+  (Function t.Callable e.Argument)
+  (IndirectCall (SVar e.Index) e.Argument)
 
 t.Callable ::=
-	(Qualified t.SrcPos t.QualifiedName)
+  (Qualified t.SrcPos t.QualifiedName)
 
 После проверки t.ModuleElement и t.Callable меняются:
 
 t.ModuleElement ::=
-	(Function
-		s.ScopeClass
-		t.QualifiedName
-		t.FunctionBody
-	)
+  (Function
+    s.ScopeClass
+    t.QualifiedName
+    t.FunctionBody
+  )
 
 t.Callable ::=
-	(s.CallType t.QualifiedName)
+  (s.CallType t.QualifiedName)
 
 s.CallType ::=
-	Entry
-	Local
-	Swap
+  Entry
+  Local
+  Swap
 
 Здесь t.QualifiedName -- АТД типа t.QualifiedName из модуля MQualifiedName
 
 --------------------------------------------------------------------------------
-	Структура "Квалифицированное имя"
+  Структура "Квалифицированное имя"
 --------------------------------------------------------------------------------
 
 e.QualifiedName = (e.PartName)*
 
 --------------------------------------------------------------------------------
-	Структура "Символическая информация"
+  Структура "Символическая информация"
 --------------------------------------------------------------------------------
 
 e.SymInfo ::=
-	( Module e.ModuleLocation) \
-	( Functions (e.FnName)* ) \
-	( Imports t.ImportLocation* )
+  ( Module e.ModuleLocation) \
+  ( Functions (e.FnName)* ) \
+  ( Imports t.ImportLocation* )
 
 e.ModuleLocation ::=
-	(e.Directory) e.ModuleName
+  (e.Directory) e.ModuleName
 
 t.ImportLocation ::=
-	( e.ModuleLocation )
+  ( e.ModuleLocation )
+
+--------------------------------------------------------------------------------
+  Структура даннных "Переменная MODULEPATH"
+--------------------------------------------------------------------------------
+
+e.ModulePath ::= ( e.FolderName )*
+e.FolderName ::= s.Char*

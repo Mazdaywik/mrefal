@@ -5,20 +5,20 @@ $IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
 /*==============================================================================
-	Опции front-end-диспетчера:
+  Опции front-end-диспетчера:
 
-	s.FEName ::= IDENTIFIER -- Имя
-	s.FnParser ::= {
-		t.ErrorList t.QualifiedName e.FileName =
-			t.ErrorList Success s.Result t.IModule;
+  s.FEName ::= IDENTIFIER -- Имя
+  s.FnParser ::= {
+    t.ErrorList t.QualifiedName e.FileName =
+      t.ErrorList Success s.Result t.IModule;
 
-		t.ErrorList t.QualifiedName e.FileName =
-			t.ErrorList Fails;
-	}
-	s.Result ::= Success | Warnings | Errors
-	e.Ext -- Расширение файлов исходного текста
-		Функция s.FnParser может предполагать, что файл с заданным именем
-	существует.
+    t.ErrorList t.QualifiedName e.FileName =
+      t.ErrorList Fails;
+  }
+  s.Result ::= Success | Warnings | Errors
+  e.Ext -- Расширение файлов исходного текста
+    Функция s.FnParser может предполагать, что файл с заданным именем
+  существует.
 ==============================================================================*/
 
 $SWAP G_FrontEnds;
@@ -26,129 +26,130 @@ $SWAP G_FrontEnds;
 //------------------------------------------------------------------------------
 
 /**
-	<Register s.FEName s.FnParser (e.Ext)>
-		== empty
+  <Register s.FEName s.FnParser (e.Ext)>
+    == empty
 */
 $ENTRY Register
-	s.Name s.FnParser (e.Ext) =
-		<MBEFE-Holder::UpdateEntry
-			& G_FrontEnds s.Name (FnParser s.FnParser) (Ext e.Ext)
-		>;
+  s.Name s.FnParser (e.Ext) =
+    <MBEFE-Holder::UpdateEntry
+      & G_FrontEnds s.Name (FnParser s.FnParser) (Ext e.Ext)
+    >;
 
 //------------------------------------------------------------------------------
 
 /**
-	<GetPath-T s.FEName t.QualifiedName e.BaseFolder>
-		== Success t.QualifiedName e.FilePath
-		== Fails t.QualifiedName
+  <GetPath-T s.FEName t.QualifiedName e.BaseFolder>
+    == Success t.QualifiedName e.FilePath
+    == Fails t.QualifiedName
 */
 $ENTRY GetPath-T
-	s.FEName t.QualifiedName e.BaseFolder =
-		<GetPath-Aux
-			( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
-			( <GetInfo s.FEName Ext> )
-			e.BaseFolder
-		>;
+  s.FEName t.QualifiedName e.BaseFolder =
+    <GetPath-Aux
+      ( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
+      ( <GetInfo s.FEName Ext> )
+      e.BaseFolder
+    >;
 
 GetPath-Aux {
-	( t.QualifiedName e.Relative ) ( Fails s.Error ) e.BaseFolder =
-		Fails t.QualifiedName;
+  ( t.QualifiedName e.Relative ) ( Fails s.Error ) e.BaseFolder =
+    Fails t.QualifiedName;
 
-	( t.QualifiedName e.Relative ) ( Success e.Ext ) Current =
-		Success t.QualifiedName
-		e.Relative '.' e.Ext;
+  ( t.QualifiedName e.Relative ) ( Success e.Ext ) Current =
+    Success t.QualifiedName
+    e.Relative '.' e.Ext;
 
-	( t.QualifiedName e.Relative ) ( Success e.Ext ) e.BaseFolder =
-		Succes t.QualifiedName
-		e.BaseFolder '/' e.Relative '.' e.Ext;
+  ( t.QualifiedName e.Relative ) ( Success e.Ext ) e.BaseFolder =
+    Succes t.QualifiedName
+    e.BaseFolder '/' e.Relative '.' e.Ext;
 }
 
 //------------------------------------------------------------------------------
 
 /**
-	<Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
-		== t.ErrorList Success s.Result t.IModule
-		== t.ErrorList Fails
-	s.Result ::= Success | Warnings | Errors
+  <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
+    == t.ErrorList Success s.Result t.IModule
+    == t.ErrorList Fails
+  s.Result ::= Success | Warnings | Errors
 */
 $ENTRY Load
-	s.FEName t.ErrorList t.QualifiedName e.BaseDir =
-		<Load-Aux
-			( <GetInfo s.FEName FnParser> )
-			t.ErrorList
-			<GetPath s.FEName t.QualifiedName e.BaseDir>
-		>;
+  s.FEName t.ErrorList t.QualifiedName e.BaseDir =
+    <Load-Aux
+      ( <GetInfo s.FEName FnParser> )
+      t.ErrorList
+      <GetPath s.FEName t.QualifiedName e.BaseDir>
+    >;
 
 GetPath
-	s.FEName t.QualifiedName e.BaseDir =
-		<GetPath-T s.FEName t.QualifiedName e.BaseDir>;
+  s.FEName t.QualifiedName e.BaseDir =
+    <GetPath-T s.FEName t.QualifiedName e.BaseDir>;
 
 DestroyQName {
-	s.Result t.QualifiedName e.Tail =
-		<MQualifiedName::Destroy t.QualifiedName>
-		s.Result e.Tail;
+  s.Result t.QualifiedName e.Tail =
+    <MQualifiedName::Destroy t.QualifiedName>
+    s.Result e.Tail;
 }
 
 Load-Aux {
-	( Fails s.Error ) t.ErrorList s.Result t.QualifiedName e.Tail =
-		<MQualifiedName::Destroy t.QualifiedName>
-		Fails t.ErrorList;
+  ( Fails s.Error ) t.ErrorList s.Result t.QualifiedName e.Tail =
+    <MQualifiedName::Destroy t.QualifiedName>
+    Fails t.ErrorList;
 
-	( e.Returned ) t.ErrorList Fails t.QualifiedName =
-		<MQualifiedName::Destroy t.QualifiedName>
-		Fails t.ErrorList;
+  ( e.Returned ) t.ErrorList Fails t.QualifiedName =
+    <MQualifiedName::Destroy t.QualifiedName>
+    Fails t.ErrorList;
 
-	( Success s.FnParser ) t.ErrorList Success t.QualifiedName e.FileName =
-		<s.FnParser t.ErrorList t.QualifiedName e.FileName>;
+  ( Success s.FnParser ) t.ErrorList Success t.QualifiedName e.FileName =
+    <s.FnParser t.ErrorList t.QualifiedName e.FileName>;
 }
 
 //------------------------------------------------------------------------------
 
 /**
-	<GetList>
-		== s.FrontEndName*
+  <GetList>
+    == s.FrontEndName*
 */
 $ENTRY GetList = <MBEFE-Holder::GetMgrList & G_FrontEnds>;
 
 //------------------------------------------------------------------------------
 
 /**
-	<X_GetPath-T t.Context t.QualifiedName s.FEName>
-		== t.Context t.QualifiedName Success e.FileName
-		== t.Context t.QualifiedName Fails
+  <X_GetPath-T t.Context t.QualifiedName s.FEName>
+    == t.Context t.QualifiedName Success e.FileName
+    == t.Context t.QualifiedName Fails
 */
 $ENTRY X_GetPath
-	t.Context t.QualifiedName s.FEName =
-		<MNameMaker::MakeName
-			t.Context t.QualifiedName s.FEName
-			& MakeRelative
-		>;
+  t.Context t.QualifiedName s.FEName =
+    <MNameMaker::MakeName
+      t.Context t.QualifiedName s.FEName
+      & MakeRelative
+    >;
 
 MakeRelative
-	t.QualifiedName s.FEName =
-		<MakeRelative--SwExistInfo
-			(<GetInfo s.FEName Ext>)
-			<MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
-		>;
+  t.QualifiedName s.FEName =
+    <MakeRelative--SwExistInfo
+      (<GetInfo s.FEName Ext>)
+      <MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
+    >;
 
 MakeRelative--SwExistInfo {
-	(Fails s.Error) t.QualifiedName e.Path =
-		t.QualifiedName Fails;
+  (Fails s.Error) t.QualifiedName e.Path =
+    t.QualifiedName Fails;
 
-	( Success e.Ext ) t.QualifiedName e.Path =
-		t.QualifiedName Success e.Path '.' e.Ext;
+  ( Success e.Ext ) t.QualifiedName e.Path =
+    t.QualifiedName Success e.Path '.' e.Ext;
 }
 
 //------------------------------------------------------------------------------
 
-/*
-	<GetInfo s.FEName>
-		== s.FnParser (e.Ext)
-		== InfoNotFound
+/**
+  <GetInfo s.FEName s.Option>
+    == Success e.Option
+    == Fails s.Error
+  s.Error ::= InvalidMgr | InvalidOption
 */
-GetInfo
-	s.FEName s.Option =
-		<MBEFE-Holder::GetInfo & G_FrontEnds s.FEName s.Option>;
+$ENTRY GetInfo
+  s.FEName s.Option =
+    <MBEFE-Holder::GetInfo & G_FrontEnds s.FEName s.Option>;
 
 //------------------------------------------------------------------------------
 

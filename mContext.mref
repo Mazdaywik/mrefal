@@ -73,10 +73,59 @@ UpdateInfo-UpdateOptions {
 }
 
 DefaultOptions
-  = (Sym None) (Out None) (Src None) (Status Unknown)
-  (ModuleType Program) (CachedSym None) (BackFiles)
-  (BaseDirectory Current)
-  (FrontEnd None);
+  =
+    /*
+      Информация о входных и выходных частях (старое)
+      Формат: None | e.FileName
+    */
+    (Sym None) (Out None) (Src None)
+
+    // Информация о входных и выходных частях
+    (FrontEnd None) // None | s.FrontEnd e.FileName
+    (BackEnds) // e.BackEnds ::= (s.BackEnd e.FileName)*
+
+    // Информация о статусе компилирования
+
+    // Библиотека или файл с исходником
+    (Type Unknown) // Unknown | Library | Source
+
+    /*
+      Был ли обработан?
+      * Unknown -- если не инициализровано;
+      * Found -- модуль только обнаружен;
+      * SuccessCompiled -- успешно откомпилирован,
+      имеет смысл только для исходника;
+      * Updated
+        * для исходника -- выходные файлы корректны, не компилировался;
+        * для библиотечного модуля -- выходные файлы корректны;
+        (если возможна проверка корректности для back-end,
+        гарантируется, что корректна хотя бы SymInfo);
+      * Errors -- в процессе обработки произошла ошибка;
+        * для исходника -- ошибки в процессе компиляции;
+        * для библиотечного модуля -- выходные файлы повреждены.
+    */
+    (Status_NEW Unknown)
+
+    /*
+      Время последней модификации. Нужно для того, чтобы определить,
+      необходима ли перекомпиляция: импортирующие модули должны быть
+      откомпилированы позже импортируемых.
+      Unknown -- информация не доступна
+      e.DateTime -- см. MainStructures.txt
+    */
+    (LastTime Unknown)
+
+    (NeedRecompile Unknown) // Unknown | True | False
+
+    (ModuleType Program) // Program | Module
+    (CachedSym None) // None | t.IModule
+    (BaseDirectory Current) // Current | e.FileName
+    /*
+      Объединяло Type и Status_NEW, устаревшее.
+      Unknown | InCompiling | Library | Recompiled | Updated
+    */
+    (Status Unknown)
+    ;
 
 UpdateOptions
   (e.OldOptions) e.NewOptions =

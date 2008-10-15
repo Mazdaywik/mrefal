@@ -86,3 +86,10 @@ t.ImportLocation ::=
 
 e.ModulePath ::= ( e.FolderName )*
 e.FolderName ::= s.Char*
+
+--------------------------------------------------------------------------------
+  Дата-время
+--------------------------------------------------------------------------------
+
+e.DateTime ::= s.Year s.Month s.Day s.Hour s.Minute s.Second
+s.Element ::= s.Number

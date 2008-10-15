@@ -11,44 +11,22 @@ $IMPORT MStrings;
   <LookupModule_NEW
     t.hContext (e.ModulePath) e.ModuleName
   >
-    == t.hContext Exist t.QualifiedName
+    == t.hContext Source s.FEMgr t.QualifiedName
+    == t.hContext Library
     == t.hContext NotExist
+
+  В случае наличия модуля также инициализируется контекст информацией о
+  базовой папке, используемом s.FEMgr, а также устанавливается Status_NEW
+  в Found.
+  Предусловие -- имя модуля корректно и пути e.ModulePath содержат корректные
+  имена файлов и каталогов.
 */
 $ENTRY LookupModule_NEW
   t.hContext (e.ModulePath) e.ModuleName =
-     <LookupModule-ScanModulePath
-       t.hContext
-       ( <MLambda::Map &NormalizePath e.ModulePath> )
-       <NormalizePath (e.ModuleName)>
-     >;
-
-NormalizePath
-  ( e.Path ) =
-    ( <MLambda::Map & ConvShash
-      /*
-        НЕДОДЕЛКА!!!!
-        Будем предполагать, что работаем в Windows
-      */
-      <MStrings::Lower e.Path>
-    > );
-
-ConvSlash {
-  '\\' = '/';
-  s.Other = s.Other;
-}
-
-/*
-  Будем решать проблему поиска модуля так. Сначала сгенерируем гипотезы отно-
-  сительно расположения файлов, а только потом проверим их наличие.
-*/
-
-LookupModule-ScanModulePath {
-  /*
-    НЕДОДЕЛКА!!!!
-    Будем только текстуально сравнивать наличие MP-каталога в начале пути к
-    файлу модуля, решение проблемы относительных/абсолютных имён пока отложим.
-  */
-}
+    <CheckVariants
+      ( <MContext::ExtractModulesList> )
+      <GenVariants (e.ModulePath) e.ModuleName>
+    >;
 
 //##############################################################################
 

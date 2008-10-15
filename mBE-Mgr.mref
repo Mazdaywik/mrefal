@@ -184,6 +184,39 @@ $ENTRY GetInfo
 //------------------------------------------------------------------------------
 
 /**
+  <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
+    == t.QualifiedName Success e.OutPath
+    == t.QualifiedName Fails
+*/
+$ENTRY GetPath-T
+  s.BEName t.QualifiedName e.BaseFolder =
+    <GetPath-Aux
+      ( <GetInfo s.BEName Folder> ) ( <GetInfo s.BEName Ext> )
+      ( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
+      e.BaseFolder
+    >;
+
+GetPath-Aux {
+  ( Fails s.Error ) ( e.Result )
+  ( t.QualifiedName e.RelativePath ) e.BaseFolder =
+    t.QualifiedName Fails;
+
+  ( Success e.Folder ) ( Fails s.Error )
+  ( t.QualifiedName e.RelativePath ) e.BaseFolder =
+    t.QualifiedName Fails;
+
+  ( Success e.Folder ) (Success e.Ext )
+  ( t.QualifiedName e.RelativePath ) Current =
+    t.QualifiedName Success e.Folder '/' e.RelativePath '.' e.Ext;
+
+  ( Success e.Folder ) (Success e.Ext )
+  ( t.QualifiedName e.RelativePath ) e.Base =
+    t.QualifiedName Success e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
+}
+
+//------------------------------------------------------------------------------
+
+/**
   <X_GetPath-T t.Context t.QualifiedName s.BEName>
     == t.Context t.QualifiedName Success e.Path
     == t.Context t.QualifiedName Fails
@@ -213,39 +246,6 @@ MakeRelative-Aux {
   ( Success e.Folder ) ( Success e.Ext )
   t.QualifiedName e.Path =
     t.QualifiedName Success e.Folder '/' e.Path '.' e.Ext;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-  <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
-    == t.QualifiedName Success e.OutPath
-    == t.QualifiedName Fails
-*/
-$ENTRY GetPath-T
-  s.BEName t.QualifiedName e.BaseFolder =
-    <GetPath-Aux
-      ( <GetInfo s.BEName Folder> ) ( <GetInfo s.BEName Ext> )
-      ( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
-      e.BaseFolder
-    >;
-
-GetPath-Aux {
-  ( Fails s.Error ) ( e.Result )
-  ( t.QualifiedName e.RelativePath ) e.BaseFolder =
-    t.QualifiedName Fails;
-
-  ( Success e.Folder ) ( Fails s.Error )
-  ( t.QualifiedName e.RelativePath ) e.BaseFolder =
-    t.QualifiedName Fails;
-
-  ( Success e.Folder ) (Success e.Ext )
-  ( t.QualifiedName e.RelativePath ) Current =
-    t.QualifiedName Success e.Folder '/' e.RelativePath '.' e.Ext;
-
-  ( Success e.Folder ) (Success e.Ext )
-  ( t.QualifiedName e.RelativePath ) e.Base =
-    t.QualifiedName Success e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
 }
 
 $END MBE-Mgr.

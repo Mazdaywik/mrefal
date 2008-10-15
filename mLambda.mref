@@ -23,7 +23,7 @@ $ENTRY Apply {
   [C-Lambda t.InnerLambda t.OuterLambda] e.Argument =
     <Apply
       t.OuterLambda
-      <Apply t.InnerLambda e.Arugument>
+      <Apply t.InnerLambda e.Argument>
     >;
 
   s.FnPtr e.Argument = <s.FnPtr e.Argument>;

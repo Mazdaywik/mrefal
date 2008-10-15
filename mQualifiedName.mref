@@ -1,149 +1,167 @@
 $MODULE MQualifiedName;
 
 /*==============================================================================
-	Абстрактный тип данных -- квалифицированное имя.
+  Абстрактный тип данных -- квалифицированное имя.
 ==============================================================================*/
 
 /*------------------------------------------------------------------------------
-	Внутренний формат
-		t.QualifiedName = [QName t.Segment*]
-		t.Segment = (e.Name)
-		e.Name != empty
+  Внутренний формат
+    t.QualifiedName = [QName t.Segment*]
+    t.Segment = (e.Name)
+    e.Name != empty
 ------------------------------------------------------------------------------*/
 
 $IMPORT MSelfDiag;
+$IMPORT MStrings;
 
 $DATA QName;
 
 /**
-	<Create (e.Segment)*>
-		== t.QualifiedName
-	обратна Parse
+  <Create (e.Segment)*>
+    == t.QualifiedName
+  обратна Parse
 */
 $ENTRY Create
-	e.Segments =
-		[QName <CheckSegments e.Segments>];
+  e.Segments =
+    [QName <CheckSegments e.Segments>];
 
 CheckSegments {
-	= ;
+  = ;
 
-	(e.Segment) e.Tail =
-		(<CheckSegment e.Segment>)
-		<CheckSegments e.Tail>;
+  (e.Segment) e.Tail =
+    (<CheckSegment e.Segment>)
+    <CheckSegments e.Tail>;
 }
 
 /**
-	<Destroy t.QualifiedName> == empty
+  <Destroy t.QualifiedName> == empty
 */
 $ENTRY Destroy
-	[QName e.Segments] = ;
+  [QName e.Segments] = ;
 
 /**--------------------------------------------------------------------------*/
 
 /**
-	<AddSubName t.QualifiedName e.SubName>
-		== t.UpdatedQualifiedName
+  <AddSubName t.QualifiedName e.SubName>
+    == t.UpdatedQualifiedName
 */
 $ENTRY AddSubName
-	[QName e.Qualifiers] e.SubName =
-		<MSelfDiag::Assert-NE (e.SubName) () 'SubName must be not empty'>
-		[QName
-			e.Qualifiers (<CheckSegment e.SubName>)
-		];
+  [QName e.Qualifiers] e.SubName =
+    <MSelfDiag::Assert-NE (e.SubName) () 'SubName must be not empty'>
+    [QName
+      e.Qualifiers (<CheckSegment e.SubName>)
+    ];
 
 /**
-	<AddSuperName t.QualifiedName e.SuperName>
-		== t.UpdatedQualifiedName
+  <AddSuperName t.QualifiedName e.SuperName>
+    == t.UpdatedQualifiedName
 */
 $ENTRY AddSuperName
-	[QName e.Qualifiers] e.SuperName =
-		<MSelfDiag::Assert-NE (e.SuperName) () 'SuperName must be not empty'>
-		[QName
-			(<CheckSegment e.SuperName>) e.Qualifiers
-		];
+  [QName e.Qualifiers] e.SuperName =
+    <MSelfDiag::Assert-NE (e.SuperName) () 'SuperName must be not empty'>
+    [QName
+      (<CheckSegment e.SuperName>) e.Qualifiers
+    ];
 
 CheckSegment {
-	=
-		<MSelfDiag::Error 'Segment can\'t be empty'>;
+  =
+    <MSelfDiag::Error 'Segment can\'t be empty'>;
 
-	e.Segment = e.Segment;
+  e.Segment = e.Segment;
 }
 
 /**
-	<Append t.QualifiedAcceptor t.QualifiedForAppend>
-		== t.UpdatedQualifierAcceptor
+  <Append t.QualifiedAcceptor t.QualifiedForAppend>
+    == t.UpdatedQualifierAcceptor
 */
 $ENTRY Append
-	[QName e.AcceptorSegments] [QName e.ForAppendSegments] =
-		[QName e.AcceptorSegments e.ForAppendSegments];
+  [QName e.AcceptorSegments] [QName e.ForAppendSegments] =
+    [QName e.AcceptorSegments e.ForAppendSegments];
 
 /**
-	<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
-		== t.UpdatedQualifierAcceptor t.QualifierForAppend
+  <Append-T t.QualifiedAcceptor t.QualifiedForAppend>
+    == t.UpdatedQualifierAcceptor t.QualifierForAppend
 */
 $ENTRY Append-T
-	t.Acceptor t.ForAppend =
-		<Append t.Acceptor t.ForAppend> t.ForAppend;
+  t.Acceptor t.ForAppend =
+    <Append t.Acceptor t.ForAppend> t.ForAppend;
 
 /**--------------------------------------------------------------------------*/
 
 /**
-	<Parse t.QualifiedName>
-		== (e.SegmentName)*
-	обратна Create
+  <Parse t.QualifiedName>
+    == (e.SegmentName)*
+  обратна Create
 */
 $ENTRY Parse
-	[QName e.Qualifiers] =
-		e.Qualifiers;
+  [QName e.Qualifiers] =
+    e.Qualifiers;
 
 /**
-	<Parse-T t.QualifiedName>
-		== t.QualifiedName (e.SegmentName)*
+  <Parse-T t.QualifiedName>
+    == t.QualifiedName (e.SegmentName)*
 */
 $ENTRY Parse-T
-	[QName e.Qualifiers] =
-		[QName e.Qualifiers] e.Qualifiers;
+  [QName e.Qualifiers] =
+    [QName e.Qualifiers] e.Qualifiers;
 
 /**--------------------------------------------------------------------------*/
 
 /**
-	<ToRelativeFSPath-T t.QualifiedName>
-		== t.QualifiedName
-			e.Segment '/' e.Segment '/' ... '/' e.Segment
+  <ToRelativeFSPath-T t.QualifiedName>
+    == t.QualifiedName
+      e.Segment '/' e.Segment '/' ... '/' e.Segment
 */
 $ENTRY ToRelativeFSPath-T
-	[QName e.Segments] =
-		[QName e.Segments] <CreatePath e.Segments>;
+  [QName e.Segments] =
+    [QName e.Segments] <CreatePath e.Segments>;
 
 CreatePath {
-	(e.OneSegment) = e.OneSegment;
+  (e.OneSegment) = e.OneSegment;
 
-	(e.NextSegment) e.Tail =
-		e.NextSegment '/' <CreatePath e.Tail>;
+  (e.NextSegment) e.Tail =
+    e.NextSegment '/' <CreatePath e.Tail>;
 }
 
 /**--------------------------------------------------------------------------*/
 
 /**
-	<Equals t.QName1 t.QName2>
-		== True | False
+  <Equals t.QName1 t.QName2>
+    == True | False
 */
 $ENTRY Equals {
-	[QName e.Segments] [QName e.Segments] = True;
+  [QName e.Segments] [QName e.Segments] = True;
 
-	t.QName1 t.QName2 = Fails;
+  t.QName1 t.QName2 = Fails;
 }
 
 /**
-	<Equals-T t.QName1 t.QName2>
-		== s.Result t.QName1 t.QName2
-	s.Result ::= True | False
+  <Equals-T t.QName1 t.QName2>
+    == s.Result t.QName1 t.QName2
+  s.Result ::= True | False
 */
 $ENTRY Equals-T {
-	[QName e.Segments] [QName e.Segments] =
-		True [QName e.Segments] [QName e.Segments];
+  [QName e.Segments] [QName e.Segments] =
+    True [QName e.Segments] [QName e.Segments];
 
-	t.QName1 t.QName2 = False t.QName1 t.QName2;
+  t.QName1 t.QName2 = False t.QName1 t.QName2;
+}
+
+/**
+  <Equals-NoCase t.QName1 | t.QName2>
+    == True | False
+*/
+$ENTRY Equals-NoCase {
+  [QName e.Segments1] [QName e.Segments2] =
+    <SwEquals-NoCase
+      ( <MStrings::Lower e.Segments1> ) ( <MStrings::Lower e.Segments2> )
+    >;
+}
+
+SwEquals-NoCase {
+  (e.LowerSegments) (e.LowerSegments) = True;
+
+  (e.Other1) (e.Other2) = False;
 }
 
 $END MQualifiedName.

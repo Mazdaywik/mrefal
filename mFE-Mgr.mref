@@ -66,53 +66,6 @@ GetPath-Aux {
 //------------------------------------------------------------------------------
 
 /**
-  <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
-    == t.ErrorList Success s.Result t.IModule
-    == t.ErrorList Fails
-  s.Result ::= Success | Warnings | Errors
-*/
-$ENTRY Load
-  s.FEName t.ErrorList t.QualifiedName e.BaseDir =
-    <Load-Aux
-      ( <GetInfo s.FEName FnParser> )
-      t.ErrorList
-      <GetPath s.FEName t.QualifiedName e.BaseDir>
-    >;
-
-GetPath
-  s.FEName t.QualifiedName e.BaseDir =
-    <GetPath-T s.FEName t.QualifiedName e.BaseDir>;
-
-DestroyQName {
-  s.Result t.QualifiedName e.Tail =
-    <MQualifiedName::Destroy t.QualifiedName>
-    s.Result e.Tail;
-}
-
-Load-Aux {
-  ( Fails s.Error ) t.ErrorList s.Result t.QualifiedName e.Tail =
-    <MQualifiedName::Destroy t.QualifiedName>
-    Fails t.ErrorList;
-
-  ( e.Returned ) t.ErrorList Fails t.QualifiedName =
-    <MQualifiedName::Destroy t.QualifiedName>
-    Fails t.ErrorList;
-
-  ( Success s.FnParser ) t.ErrorList Success t.QualifiedName e.FileName =
-    <s.FnParser t.ErrorList t.QualifiedName e.FileName>;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-  <GetList>
-    == s.FrontEndName*
-*/
-$ENTRY GetList = <MBEFE-Holder::GetMgrList & G_FrontEnds>;
-
-//------------------------------------------------------------------------------
-
-/**
   <X_GetPath-T t.Context t.QualifiedName s.FEName>
     == t.Context t.QualifiedName Success e.FileName
     == t.Context t.QualifiedName Fails
@@ -142,12 +95,52 @@ MakeRelative--SwExistInfo {
 //------------------------------------------------------------------------------
 
 /**
-  <GetInfo s.FEName s.Option>
-    == Success e.Option
-    == Fails s.Error
-  s.Error ::= InvalidMgr | InvalidOption
+  <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
+    == t.ErrorList Success s.Result t.IModule
+    == t.ErrorList Fails
+  s.Result ::= Success | Warnings | Errors
 */
-$ENTRY GetInfo
+$ENTRY Load
+  s.FEName t.ErrorList t.QualifiedName e.BaseDir =
+    <Load-Aux
+      ( <GetInfo s.FEName FnParser> )
+      t.ErrorList
+      <GetPath s.FEName t.QualifiedName e.BaseDir>
+    >;
+
+GetPath
+  s.FEName t.QualifiedName e.BaseDir =
+    <GetPath-T s.FEName t.QualifiedName e.BaseDir>;
+
+Load-Aux {
+  ( Fails s.Error ) t.ErrorList s.Result t.QualifiedName e.Tail =
+    <MQualifiedName::Destroy t.QualifiedName>
+    Fails t.ErrorList;
+
+  ( e.Returned ) t.ErrorList Fails t.QualifiedName =
+    <MQualifiedName::Destroy t.QualifiedName>
+    Fails t.ErrorList;
+
+  ( Success s.FnParser ) t.ErrorList Success t.QualifiedName e.FileName =
+    <s.FnParser t.ErrorList t.QualifiedName e.FileName>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetList>
+    == s.FrontEndName*
+*/
+$ENTRY GetList = <MBEFE-Holder::GetMgrList & G_FrontEnds>;
+
+//------------------------------------------------------------------------------
+
+/*
+  <GetInfo s.FEName>
+    == s.FnParser (e.Ext)
+    == InfoNotFound
+*/
+GetInfo
   s.FEName s.Option =
     <MBEFE-Holder::GetInfo & G_FrontEnds s.FEName s.Option>;
 

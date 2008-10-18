@@ -109,7 +109,7 @@ $ENTRY UpdateFunction
 //------------------------------------------------------------------------------
 
 /**
-  <UpdateImport t.IModule (e.Import) e.Attribs>
+  <UpdateImport t.IModule t.Import e.Attribs>
     == t.IModule s.Status
 */
 $ENTRY UpdateImport
@@ -279,7 +279,7 @@ $ENTRY GetFunctionAttribute {
 //------------------------------------------------------------------------------
 
 /**
-  <GetImportAttribute t.IModule s.Attrib e.Import>
+  <GetImportAttribute t.IModule s.Attrib t.Import>
     == t.IModule Found e.Value
     == t.IModule s.ErrorStatus
 */
@@ -383,7 +383,7 @@ $ENTRY GetFunctionList
 
 /**
   <GetImportList t.IModule>
-    == t.IModule (e.ImportName)*
+    == t.IModule t.ImportName*
 */
 $ENTRY GetImportList
   t.IModule =

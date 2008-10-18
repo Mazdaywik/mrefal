@@ -1,6 +1,7 @@
 $MODULE MParser_Common;
 
 $IMPORT MLexer;
+$IMPORT MLambda;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
@@ -156,65 +157,90 @@ CompareQNames-AddErrorInfo {
 // Функции добавления в таблицу символов
 //------------------------------------------------------------------------------
 
-$ENTRY AddNewImport
-  t.IModule t.SrcPos t.NewName e.Attribs t.ErrorList =
-    <CheckRedeclaration-Import
-      t.ErrorList
-      <MIModule::UpdateImport
-        t.IModule t.NewName
-        e.Attribs
-        (Position t.SrcPos)
-      >
-      t.SrcPos t.NewName
+/*
+  Служебная функция, выдаёт список всех АТД и функций,
+  объявленных в анализируемом модуле
+
+  <GetEntityList t.IModule>
+    == t.IModule (e.EntityName)*
+*/
+GetEntityList
+  t.IModule =
+    <GetEntityList-Imports
+      <MIModule::GetImportList t.IModule>
     >;
 
-$ENTRY AddNewFunction
-  t.IModule t.SrcPos (e.NewName) e.Attribs t.ErrorList=
-    <CheckRedeclaration
-      t.ErrorList
-      <MIModule::UpdateFunction
-        t.IModule (e.NewName)
-        e.Attribs (Position t.SrcPos)
+GetEntityList-Imports
+  t.IModule e.Imports =
+    <GetEntityList-ADT
+      <MIModule::GetADTList t.IModule>
+      <MLambda::Map
+        <MLambda::Composite
+          & MQualifiedSupport.LastSegment
+          & MLambda.Bracket
+        >
+        e.Imports
       >
-      t.SrcPos e.NewName
+    >;
+
+GetEntityList-ADT
+  t.IModule e.ImportsAndADTList =
+    <MIModule::GetFunctionList t.IModule>
+    e.ImportsAndADTList;
+
+$ENTRY AddNewFunction
+  t.IModule t.SrcPos (e.NewName) e.Attribs t.ErrorList =
+    <AddNewEntity-SwRedeclaration
+      ( <GetEntityList t.IModule> )
+      (e.NewName) & MIModule.UpdateFunction
+      t.SrcPos (e.NewName) e.Attribs t.ErrorList
     >;
 
 $ENTRY AddNewADT
   t.IModule t.SrcPos (e.NewName) e.Attribs t.ErrorList =
-    <CheckRedeclaration
-      t.ErrorList
-      <MIModule::UpdateADT
-        t.IModule (e.NewName)
-        e.Attribs (Position t.SrcPos)
-      >
-      t.SrcPos e.NewName
+    <AddNewEntity-SwRedeclaration
+      ( <GetEntityList t.IModule> )
+      (e.NewName) & MIModule.UpdateADT
+      t.SrcPos (e.NewName) e.Attribs t.ErrorList
     >;
 
-CheckRedeclaration {
+$ENTRY AddNewImport
+  t.IModule t.SrcPos t.NewName e.Attribs t.ErrorList =
+    <AddNewEntity-SwRedeclaration
+      ( <GetEntityList t.IModule> )
+      ( <MQualifiedSupport::UnQualify t.NewName> )
+      & MIModule.UpdateImport
+      t.SrcPos t.NewName e.Attribs t.ErrorList
+    >;
+
+AddNewEntity-SwRedeclaration {
+  ( t.IModule e.Names-B (e.NewNameComp) e.Names-E )
+  (e.NewNameComp) s.FnUpdater
+  t.SrcPos t.NewName e.Attribs t.ErrorList =
+    t.IModule
+    <MError::AddRedeclaredIdentifier
+      t.ErrorList t.SrcPos e.NewNameComp
+    >;
+
+  ( t.IModule e.Names ) (e.NewNameComp) s.FnUpdater
+  t.SrcPos t.NewName e.Attribs t.ErrorList =
+    <UpdateEntity-GuardInvariant
+      t.ErrorList
+      <s.FnUpdater
+        t.IModule t.NewName e.Attribs (Position t.SrcPos)
+      >
+      t.SrcPos e.NewNameComp
+    >;
+}
+
+UpdateEntity-GuardInvariant {
   t.ErrorList t.IModule Success t.SrcPos e.NewName =
     t.IModule t.ErrorList;
 
   t.ErrorList t.IModule InvalidKind t.SrcPos e.NewName =
     t.IModule
     <MError::AddRedeclaredIdentifier
-      t.ErrorList t.SrcPos e.NewName
-    >;
-
-  /*
-    Две другие ошибки -- InvalidKind и InvariantError означают
-    нарушение инварианта. Программа автоматически умрёт.
-  */
-}
-
-CheckRedeclaration-Import {
-  t.ErrorList t.IModule Success t.SrcPos t.NewName =
-    t.IModule t.ErrorList;
-
-  t.ErrorList t.IModule InvalidKind t.SrcPos t.NewName =
-    t.IModule
-    <MError::AddRedeclaredIdentifier
-      t.ErrorList t.SrcPos
-      <MQualifiedSupport::LastSegment t.NewName>
+      t.ErrorList t.SrcPos e.NewName '(!)'
     >;
 
   /*

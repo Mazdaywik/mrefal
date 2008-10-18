@@ -6,28 +6,6 @@ $IMPORT MFE-Mgr;
 $IMPORT MLambda;
 $IMPORT MStrings;
 
-
-/**
-  <LookupModule_NEW
-    t.hContext (e.ModulePath) e.ModuleName
-  >
-    == t.hContext Source s.FEMgr t.QualifiedName
-    == t.hContext Library
-    == t.hContext NotExist
-
-  В случае наличия модуля также инициализируется контекст информацией о
-  базовой папке, используемом s.FEMgr, а также устанавливается Status_NEW
-  в Found.
-  Предусловие -- имя модуля корректно и пути e.ModulePath содержат корректные
-  имена файлов и каталогов.
-*/
-$ENTRY LookupModule_NEW
-  t.hContext (e.ModulePath) e.ModuleName =
-    <CheckVariants
-      ( <MContext::ExtractModulesList> )
-      <GenVariants (e.ModulePath) e.ModuleName>
-    >;
-
 //##############################################################################
 
 $IMPORT MCreateDirIfNeed;

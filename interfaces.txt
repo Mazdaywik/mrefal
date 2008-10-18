@@ -26,13 +26,13 @@ e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
   == Fails s.Error
 s.Error ::= InvalidMgr | InvalidOption
 
-<X_GetPath-T t.Context t.QualifiedName s.BEName>
-  == t.Context t.QualifiedName Success e.Path
-  == t.Context t.QualifiedName Fails
-
 <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
   == t.QualifiedName Success e.OutPath
   == t.QualifiedName Fails
+
+<X_GetPath-T t.Context t.QualifiedName s.BEName>
+  == t.Context t.QualifiedName Success e.Path
+  == t.Context t.QualifiedName Fails
 
 =============================================================================
 Модуль реализует хранилище данных для диспетчеров входных и генерирующих
@@ -143,6 +143,10 @@ Module MFE-Mgr;
   == Success t.QualifiedName e.FilePath
   == Fails t.QualifiedName
 
+<X_GetPath-T t.Context t.QualifiedName s.FEName>
+  == t.Context t.QualifiedName Success e.FileName
+  == t.Context t.QualifiedName Fails
+
 <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
   == t.ErrorList Success s.Result t.IModule
   == t.ErrorList Fails
@@ -150,15 +154,6 @@ s.Result ::= Success | Warnings | Errors
 
 <GetList>
   == s.FrontEndName*
-
-<X_GetPath-T t.Context t.QualifiedName s.FEName>
-  == t.Context t.QualifiedName Success e.FileName
-  == t.Context t.QualifiedName Fails
-
-<GetInfo s.FEName s.Option>
-  == Success e.Option
-  == Fails s.Error
-s.Error ::= InvalidMgr | InvalidOption
 
 ################################################################################
 Module MFileSystem;
@@ -203,7 +198,7 @@ s.Status ::=
 s.Status ::=
   Success | InvalidKind | InvalidAttrib | InvariantError
 
-<UpdateImport t.IModule (e.Import) e.Attribs>
+<UpdateImport t.IModule t.Import e.Attribs>
   == t.IModule s.Status
 
 <UpdateADT t.IModule (e.Name) e.Attribs>
@@ -231,7 +226,7 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 
 s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
-<GetImportAttribute t.IModule s.Attrib e.Import>
+<GetImportAttribute t.IModule s.Attrib t.Import>
   == t.IModule Found e.Value
   == t.IModule s.ErrorStatus
 
@@ -253,7 +248,7 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
   == t.IModule (e.FnName)*
 
 <GetImportList t.IModule>
-  == t.IModule (e.ImportName)*
+  == t.IModule t.ImportName*
 
 <GetADTList t.IModule>
   == t.IModule (e.ADT)*
@@ -296,6 +291,10 @@ Module MLambda;
 <MapReduce-R t.Lambda t.Accum t.Src*>
   == t.Accum' e.Result*
 <Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+
+<UnBracket (e.Brackets)> == e.Brackets
+
+<Bracket e.Expr> == (e.Expr)
 
 ################################################################################
 Module MLinker_Refal5;
@@ -350,12 +349,6 @@ s.Status ::=
 
 ################################################################################
 Module MModules;
-
-<LookupModule_NEW
-  t.hContext (e.ModulePath) e.ModuleName
->
-  == t.hContext Exist t.QualifiedName
-  == t.hContext NotExist
 
 <SourceState e.ModName>
   == ModuleNotFound
@@ -459,7 +452,7 @@ s.Result ::= Success | Warnings | Errors
 Module MQualifiedName;
 
 <Create (e.Segment)*>
-	== t.QualifiedName
+  == t.QualifiedName
 обратна Parse
 
 <Destroy t.QualifiedName> == empty
@@ -467,40 +460,43 @@ Module MQualifiedName;
 --------------------------------------------------------------------------
 
 <AddSubName t.QualifiedName e.SubName>
-	== t.UpdatedQualifiedName
+  == t.UpdatedQualifiedName
 
 <AddSuperName t.QualifiedName e.SuperName>
-	== t.UpdatedQualifiedName
+  == t.UpdatedQualifiedName
 
 <Append t.QualifiedAcceptor t.QualifiedForAppend>
-	== t.UpdatedQualifierAcceptor
+  == t.UpdatedQualifierAcceptor
 
 <Append-T t.QualifiedAcceptor t.QualifiedForAppend>
-	== t.UpdatedQualifierAcceptor t.QualifierForAppend
+  == t.UpdatedQualifierAcceptor t.QualifierForAppend
 
 --------------------------------------------------------------------------
 
 <Parse t.QualifiedName>
-	== (e.SegmentName)*
+  == (e.SegmentName)*
 обратна Create
 
 <Parse-T t.QualifiedName>
-	== t.QualifiedName (e.SegmentName)*
+  == t.QualifiedName (e.SegmentName)*
 
 --------------------------------------------------------------------------
 
 <ToRelativeFSPath-T t.QualifiedName>
-	== t.QualifiedName
-		e.Segment '/' e.Segment '/' ... '/' e.Segment
+  == t.QualifiedName
+    e.Segment '/' e.Segment '/' ... '/' e.Segment
 
 --------------------------------------------------------------------------
 
 <Equals t.QName1 t.QName2>
-	== True | False
+  == True | False
 
 <Equals-T t.QName1 t.QName2>
-	== s.Result t.QName1 t.QName2
+  == s.Result t.QName1 t.QName2
 s.Result ::= True | False
+
+<Equals-NoCase t.QName1 | t.QName2>
+  == True | False
 
 ################################################################################
 Module MQualifiedSupport;

@@ -123,7 +123,7 @@ $ENTRY Reduce-R {
 */
 $ENTRY MapReduce {
   t.Lambda t.Accum e.Src =
-    <UnBracket
+    <UnBracket-AccumResult
       <Reduce
         <BindLeft & MapReducer t.Lambda>
         (t.Accum) e.Src
@@ -131,7 +131,7 @@ $ENTRY MapReduce {
     >;
 }
 
-UnBracket (t.Accum e.Result) = t.Accum e.Result;
+UnBracket-AccumResult (t.Accum e.Result) = t.Accum e.Result;
 
 MapReducer
   t.LLambda (t.Accum e.Scanned) t.Next =
@@ -161,5 +161,19 @@ $ENTRY MapReduce-R
 MapReducer-R
   t.LLambda (t.Accum e.Result) t.Src =
     ( <Apply t.LLambda t.Accum t.Src> e.Result );
+
+//-----------------------------------------------------------------------------
+
+/**
+  <UnBracket (e.Brackets)> == e.Brackets
+*/
+$ENTRY UnBracket
+  (e.Brackets) = e.Brackets;
+
+/**
+  <Bracket e.Expr> == (e.Expr)
+*/
+$ENTRY Bracket
+  e.Expr = (e.Expr);
 
 $END MLambda.

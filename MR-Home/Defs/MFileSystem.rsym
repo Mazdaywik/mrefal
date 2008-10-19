@@ -1,11 +1,11 @@
 $module MFileSystem;
 
-$import MRefalRTS;
+$import FileIO;
 $import MDosWinRecoder;
 $import MLambda;
-$import MOrder;
 $import MOS;
-$import FileIO;
+$import MOrder;
+$import MRefalRTS;
 $import MSelfDiag;
 $import MStrings;
 $import MSwapSupport;

@@ -52,6 +52,8 @@ UpdateOptions {
     (s.Option e.Value) <UpdateOptions (e.NewOptions) e.OldOptions>;
 }
 
+//------------------------------------------------------------------------------
+
 /**
   <GetInfo s.FnSwap s.MgrName s.OptionName>
     == Success e.Value
@@ -80,6 +82,8 @@ SwGetInfo--LookupOptions {
   s.OptionName e.Options =
     Fails InvalidOption;
 }
+
+//------------------------------------------------------------------------------
 
 /**
   <GetMgrList s.FnSwap>

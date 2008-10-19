@@ -14,8 +14,6 @@ $entry ExistFile;
 $entry System;
 $entry Env;
 
-$entry Upper;
-$entry Lower;
 $entry Numb;
 $entry Symb;
 $entry Ord;

@@ -16,9 +16,65 @@ $ENTRY Ord e.Line = <MRefalRTS::Ord e.Line>;
 
 $ENTRY Chr e.Line = <MRefalRTS::Chr e.Line>;
 
-$ENTRY Upper e.Expr = <MRefalRTS::Upper e.Expr>;
+//------------------------------------------------------------------------------
 
-$ENTRY Lower e.Expr = <MRefalRTS::Lower e.Expr>;
+UpperLowerTable =
+  ('Aa') ('Bb') ('Cc') ('Dd') ('Ee')
+  ('Ff') ('Gg') ('Hh') ('Ii') ('Jj')
+  ('Kk') ('Ll') ('Mm') ('Nn') ('Oo')
+  ('Pp') ('Qq') ('Rr') ('Ss') ('Tt')
+  ('Uu') ('Vv') ('Ww') ('Xx') ('Yy')
+  ('Zz');
+
+$ENTRY Upper
+  e.Expr = <RMap &UpChar e.Expr>;
+
+$ENTRY Lower
+  e.Expr = <RMap &LoChar e.Expr>;
+
+RMap
+  s.Func e.Expr =
+    <DoRMap
+      s.Func (<UpperLowerTable>) ('$') e.Expr '$'
+    >;
+
+DoRMap {
+  s.Func t.UpperLower (e.Scanned) s.Next e.Expr t.MultiBracket =
+    <DoRMap
+      s.Func
+      <s.Func t.UpperLower (e.Scanned) s.Next>
+      e.Expr t.MultiBracket
+    >;
+
+  s.Func t.UpperLower (e.Scanned) (e.Inner) e.Expr t.MultiBracket =
+    <DoRMap
+      s.Func t.UpperLower ( (e.Scanned) ) e.Inner (e.Expr t.MultiBracket)
+    >;
+
+  s.Func t.UpperLower ( (e.Scanned) e.Inner ) (e.Expr t.MultiBracket) =
+    <DoRMap
+      s.Func t.UpperLower ( e.Scanned (e.Inner) ) e.Expr t.MultiBracket
+    >;
+
+  s.Func t.UpperLower ('$' e.Scanned) '$' =
+    e.Scanned;
+}
+
+UpChar {
+  ( e.Letters-B (s.Upper s.Lower) e.Letters-E ) (e.Scanned) s.Lower =
+    ( (s.Upper s.Lower) e.Letters-B e.Letters-E ) (e.Scanned s.Upper);
+
+  ( e.Letters ) (e.Scanned) s.Next =
+    ( e.Letters ) (e.Scanned s.Next);
+}
+
+LoChar {
+  ( e.Letters-B (s.Upper s.Lower) e.Letters-E ) (e.Scanned) s.Upper =
+    ( (s.Upper s.Lower) e.Letters-B e.Letters-E ) (e.Scanned s.Lower);
+
+  ( e.Letters ) (e.Scanned) s.Next =
+    ( e.Letters ) (e.Scanned s.Next);
+}
 
 //------------------------------------------------------------------------------
 

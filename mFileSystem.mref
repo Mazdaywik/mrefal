@@ -178,126 +178,12 @@ ExtractAttrib {
     >;
 }
 
-$ENTRY CompareFileTime
-  (e.Time1) (e.Time2) =
-    <MOrder::Compare (e.Time1) (e.Time2)>;
-
-/*
-*****Код для Win95
-
-ParseListing {
-  () t.Hdr1 t.Hdr2 (e.Text1 s.Disk ':' e.Path) () e.Tail =
-    <ReadFileList (s.Disk ':' e.Path) e.Tail>;
-
-  e.Other = <MIntError::Error 'Directory listing error: ' e.Other>;
-}
-
-ReadFileList {
-  (e.Path) (e.Line) e.Tail =
-    <AppendPath
-      (e.Path)
-      <ParseLine e.Line>
-    > <ReadFileList (e.Path) e.Tail>;
-
-  (e.Path) = ;
-}
-
-ParseLine {
-  '   ' e.Tail = ;
-  e.Line = <Cut8-3 <MStrings::First 12 e.Line>>;
-}
-
-Cut8-3 (e.DosName) e.Tail =
-  (DosName <ParseDosName <MStrings::First 8 e.DosName>>)
-  <CutSize <MStrings::First 14 e.Tail>>;
-
-CutSize (e.Size) e.Tail =
-  (Size <ParseSize e.Size>)
-  <CutDateTime <MStrings::First 18 e.Tail>>;
-
-CutDateTime (e.DateTime ' ') e.LongName =
-  (DateTime <ParseDateTime <MStrings::First 10 e.DateTime>>)
-  (LongName e.LongName);
-
-ParseDosName (e.Name) e.Ext = (<MStrings::Trim e.Name>) <MStrings::Trim e.Ext>;
-
-ParseSize {
-  e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
-  '<' e.Catalog '>' = Directory;
-  e.Digits = <MStrings::Numb e.Digits>;
-}
-
-ParseDateTime (e.Date) e.Time =
-  <ParseDate <MStrings::Trim e.Date>>
-  <ParseTime <MStrings::Trim e.Time>>;
-
-ParseDate
-  e.Day '.' e.Month '.' e.Year =
-    <ParseYear e.Year>
-    <MStrings::Numb e.Month>
-    <MStrings::Numb e.Day>;
-
-ParseTime e.Hours ':' e.Minutes =
-  <MStrings::Numb e.Hours>
-  <MStrings::Numb e.Minutes>;
-
-ParseYear {
-  '0' s.Year = <MStrings::Numb '200' s.Year>;
-  e.Year = <MStrings::Numb '19' e.Year>;
-}
-
-AppendPath {
-  (e.Path) e.OtherInfo (LongName e.Name) =
-    ( (e.Path '\\' e.Name) e.OtherInfo (LongName e.Name) );
-
-  (e.Path) = ;
-}
-
-$ENTRY FileAttribute
-  s.Attribute e.FileName =
-    <CheckExistAndGetAttrib
-      s.Attribute
-      <ExistFile-T e.FileName>
-    >;
-
-CheckExistAndGetAttrib {
-  s.Attribute False e.FileName = FileNotFound;
-  s.Attribute True e.FileName =
-    <ExtractAttrib s.Attribute <FilesInfo e.FileName>>;
-}
-
-ExtractAttrib {
-  s.Attrib ( t.Path e.Att-B (s.Attrib e.Value) e.Att-E ) =
-    (e.Value);
-
-  s.Attrib ( t.Path e.Attribs ) =
-    <MIntError::Error
-      'Unknown file attribute ' s.Attrib
-    >;
-
-  s.Attrib t.OneFile e.Tail =
-    <MIntError::Error
-      'Found many files in ExtractAttrib ' t.OneFile e.Tail
-    >;
-}
-
-$ENTRY CompareFileTime {
-  (s.SameField e.First) (s.SameField e.Second) =
-    <CompareFileTime (e.First) (e.Second)>;
-
-  () () = '=';
-
-  (s.DiffField1 e.Tail1) (s.DiffField2 e.Tail2) =
-    <Math::Compare s.DiffField1 s.DiffField2>;
-}
- ^ Код для Windows 95*/
-
 /**
   <ParseFileName e.FileName>
     == (e.Directory) e.FileNameNoExt (e.Ext)
   Пример:
   <ParseFileName 'c:\\Directory\\Document.doc'>
-    == ('c;\\Directory') 'Document' ('doc')
+    == ('c;\\Directory\\') 'Document' ('doc')
 */
 $ENTRY ParseFileName
   e.FileName =

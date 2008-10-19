@@ -45,12 +45,6 @@ c   True = $Ident::True$;
 c   False = $Ident::False$;
 c }
 
-b Entry::MRefalRTS::Upper
-c $Entry::MRefalRTS::Upper$ { e.Expr = <Upper e.Expr >; }
-
-b Entry::MRefalRTS::Lower
-c $Entry::MRefalRTS::Lower$ { e.Expr = <Lower e.Expr >; }
-
 b Entry::MRefalRTS::Add
 c $Entry::MRefalRTS::Add$ { e.Expr = <Add e.Expr >; }
 

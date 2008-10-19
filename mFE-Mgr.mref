@@ -137,7 +137,7 @@ $ENTRY GetList = <MBEFE-Holder::GetMgrList & G_FrontEnds>;
 
 /*
   <GetInfo s.FEName>
-    == s.FnParser (e.Ext)
+    == Success e.Value
     == InfoNotFound
 */
 GetInfo
@@ -145,5 +145,25 @@ GetInfo
     <MBEFE-Holder::GetInfo & G_FrontEnds s.FEName s.Option>;
 
 //------------------------------------------------------------------------------
+
+/**
+  <GetExt-T s.FEName>
+    == s.FEName e.Ext
+*/
+$ENTRY GetExt-T
+  s.FEName =
+    <GetExt-Guard
+      s.FEName <GetInfo s.FEName Ext>
+    >;
+
+NoExtForBackEnd { }
+
+GetExt-Guard {
+  // Отсутствие расширения -- нарушение инварианта
+  s.FEName InfoNotFound =
+    <NoExtForBackEnd s.FEName>;
+
+  s.FEName Success e.Ext = s.FEName e.Ext;
+}
 
 $END MFE-Mgr.

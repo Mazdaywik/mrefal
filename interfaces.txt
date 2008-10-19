@@ -155,6 +155,9 @@ s.Result ::= Success | Warnings | Errors
 <GetList>
   == s.FrontEndName*
 
+<GetExt-T s.FEName>
+  == s.FEName e.Ext
+
 ################################################################################
 Module MFileSystem;
 
@@ -162,7 +165,7 @@ Module MFileSystem;
   == (e.Directory) e.FileNameNoExt (e.Ext)
 Пример:
 <ParseFileName 'c:\\Directory\\Document.doc'>
-  == ('c;\\Directory') 'Document' ('doc')
+  == ('c;\\Directory\\') 'Document' ('doc')
 
 ################################################################################
 Module MIModule;
@@ -349,6 +352,19 @@ s.Status ::=
 
 ################################################################################
 Module MModules;
+
+<LookupCmdLineModule
+  t.hContext (e.ModulePath) e.CmdLinePath
+>
+  == t.hContext Found
+    t.QualifiedName s.FrontEndName e.BaseDirectory
+  == t.hContext NotFound
+
+<LookupImportModule
+  t.hContext (e.ModulePath) t.QualifiedName
+>
+  == t.hContext Found s.FrontEndName e.BaseDirectory
+  == t.hContext NotFound
 
 <SourceState e.ModName>
   == ModuleNotFound

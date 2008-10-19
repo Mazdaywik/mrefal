@@ -3,14 +3,271 @@ $MODULE MModules;
 $IMPORT MBE-Mgr;
 $IMPORT MContext;
 $IMPORT MFE-Mgr;
+$IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MStrings;
+$IMPORT MQualifiedName;
+
+/**
+  <LookupCmdLineModule
+    t.hContext (e.ModulePath) e.CmdLinePath
+  >
+    == t.hContext Found
+      t.QualifiedName s.FrontEndName e.BaseDirectory
+    == t.hContext NotFound
+*/
+$ENTRY LookupCmdLineModule
+  t.hContext (e.ModulePath) e.CmdLinePath =
+    <GenVariants-CmdLine
+        t.hContext (e.ModulePath)
+        <ParseFileNameEx e.CmdLinePath>
+    >;
+
+/*
+  <ParseFileNameEx e.FileName>
+    == s.PathType (e.Directory) e.FileNameNoExt (e.Ext)
+  s.PathType ::= Relative | Absolut
+
+  Не смотря на то, что путь типа D:Directory\File фактически
+  является относительным, здесь буду считать абсолютным, т.к.
+  из него нельзя построить напрямую квалифицированное имя.
+*/
+ParseFileNameEx
+  e.FileName =
+    <SwParseFileName
+      <MFileSystem::ParseFileName e.FileName>
+    >;
+
+SwParseFileName {
+  (s.Disk ':' e.Tail) e.FileName (e.Ext) =
+    Absolut (s.Disk ':' e.Tail) e.FileName (e.Ext);
+
+  ('/' e.Tail) e.FileName (e.Ext) =
+    Absolut ('/' e.Tail) e.FileName (e.Ext);
+
+  ('\\' e.Tail) e.FileName (e.Ext) =
+    Absolut ('\\' e.Tail) e.FileName (e.Ext);
+
+  (e.Directory) e.FileName (e.Ext) =
+    Relative (e.Directory) e.FileName (e.Ext);
+}
+
+GenVariants-CmdLine
+  t.hContext (e.ModulePath) s.PathType (e.Folder) e.FileName (e.Ext) =
+    <GenVariants-CmdLine-Aux
+      t.hContext
+      <MLambda::Map
+        <MLambda::BindLeft & CrossName (e.Folder)>
+        e.ModulePath
+      >
+      <MakeAppendNames s.PathType (e.Folder) e.ModulePath>
+      (e.FileName)
+      (
+        <AvailFrontEnds
+          <MStrings::Lower e.Ext>
+        >
+      )
+    >;
+
+MakeAppendNames {
+  Relative (e.Folder) e.ModulePath =
+    <MLambda::Map
+      <MLambda::BindLeft & AppendName (e.Folder)>
+      e.ModulePath
+    >;
+
+  Absolut (e.Folder) e.ModulePath =
+    /* Ничего */;
+}
+
+/*
+  <CrossName (e.L-Folder) (e.MPDirectory)>
+    == ( e.BaseFolder t.QualifiedName )
+    == empty
+*/
+CrossName
+  (e.L-Folder) (e.MPDirectory) =
+    <DoCrossName
+      ( <CanonicalPath e.L-Folder> )
+      ( <CanonicalPath e.MPDirectory> )
+      () e.L-Folder
+    >;
+
+DoCrossName {
+  // C- -- canonical
+
+  ( s.C-Next e.C-ModuleFolder ) ( s.C-Next e.C-MPDirectory )
+  ( e.Scanned ) s.Next e.ModuleFolder =
+    <DoCrossName
+      ( e.C-ModuleFolder ) ( e.C-MPDirectory )
+      ( e.Scanned s.Next ) e.ModuleFolder
+    >;
+
+  // Начало e.[C-]ModuleFolder совпадает с e.C-MPDirectory
+  ( e.C-ModuleFolder-Tail ) () (e.BaseFolder) e.ModuleFolder-Tail =
+    ( e.BaseFolder <QNameFromRelativePath e.ModuleFolder-Tail> );
+
+  // Не совпадает
+  ( e.C-ModuleFolder ) ( e.C-MPDirectory )
+  ( e.Scanned ) e.ModuleFolder =
+    /* Пусто */;
+}
+
+/*
+  <AppendName (e.L-Folder) (e.MPDirectory)>
+    == ( e.BaseFolder t.QualifiedName )
+    == empty
+*/
+AppendName
+  (e.L-Folder) (e.MPDirectory) =
+    ( e.MPDirectory <QNameFromRelativePath e.L-Folder> );
+
+
+CanonicalPath
+  e.Path = <MLambda::Map & CanonicalChar e.Path>;
+
+CanonicalChar {
+  '\\' = '/';
+  s.Other = <MStrings::Lower s.Other>;
+}
+
+QNameFromRelativePath
+  e.Path =
+    <MQualifiedName::Create
+      <SlashParse e.Path>
+    >;
+
+SlashParse
+  e.Path =
+    <DeleteAccum
+      <MLambda::MapReduce
+        & SlashParse-A () e.Path
+      >
+    >;
+
+SlashParse-A {
+  // Пустые сегменты игнорируем
+  () '\\' = ();
+  () '/' = ();
+
+  // Непустой сегмент выбрасываем
+  (e.Segment) '\\' = () (e.Segment);
+  (e.Segment) '/' = () (e.Segment);
+
+  // Любой другой символ сохраняем
+  (e.Segment) s.Next = (e.Segment s.Next);
+}
+
+DeleteAccum
+  t.Accum e.Scanned = e.Scanned;
+
+AvailFrontEnds {
+  // Расширение не указано -- все доступные front-end'ы
+  = <MFE-Mgr::GetList>;
+
+  // Фильтруем по расширению
+  e.Ext =
+    <MLambda::Map
+      <MLambda::BindRight & FilterBackEnd e.Ext>
+      <MLambda::Map
+        <MLambda::Composite
+          & MFE-Mgr.GetExt-T
+          & MLambda.Bracket
+        >
+        <MFE-Mgr::GetList>
+      >
+    >;
+}
+
+FilterBackEnd {
+  ( s.BackEnd e.Ext ) e.Ext = s.BackEnd;
+
+  ( s.BackEnd e.Ext1 ) e.Ext2 = ;
+}
+
+GenVariants-CmdLine-Aux {
+  /*
+    То, что front-end'ов нет, означает, что расширение неправильное.
+    Выдавать осмысленную ошибку пока не будем, достаточно сообщения
+    об отсутствии модуля.
+  */
+  t.hContext e.RawVariants (e.ModuleName) () =
+    t.hContext NotFound;
+
+  t.hContext e.RawVariants (e.ModuleName) (e.AvailFrontEnds) =
+    <CheckVariants-CmdLine
+      t.hContext
+      <MLambda::Map
+        <MLambda::BindLeft
+          & FinishVariant
+          (e.ModuleName) (e.AvailFrontEnds)
+        >
+        e.RawVariants
+      >
+    >;
+}
+
+FinishVariant
+  (e.L-ModuleName) (e.L-AvailFrontEnds)
+  ( e.BaseDirectory t.QualifiedPacketName ) =
+    <MLambda::Map
+      <MLambda::BindLeft
+        & FinishVariant-Aux
+        (
+          e.BaseDirectory
+          <MQualifiedName::AddSubName
+            t.QualifiedPacketName
+            e.L-ModuleName
+          >
+        )
+      >
+      e.L-AvailFrontEnds
+    >;
+
+FinishVariant-Aux
+  ( e.L-BaseDirectory t.L-ModuleName ) s.FrontEnd =
+    ( s.FrontEnd t.L-ModuleName e.L-BaseDirectory );
+
+CheckVariants-CmdLine
+  t.hContext e.Variants =
+    t.hContext NotFound
+    <MLambda::Map
+      <MLambda::Composite
+        & MLambda.UnBracket
+        & WriteVariant
+      >
+      e.Variants
+    >;
+
+WriteVariant {
+  s.FrontEnd t.QualifiedName e.BaseDirectory =
+    <InOut::WriteText
+      ()
+      (s.FrontEnd)
+      (<MQualifiedName::Parse t.QualifiedName>)
+      (e.BaseDirectory)
+    >;
+}
+
+$import InOut;
+
+//------------------------------------------------------------------------------
+
+/**
+  <LookupImportModule
+    t.hContext (e.ModulePath) t.QualifiedName
+  >
+    == t.hContext Found s.FrontEndName e.BaseDirectory
+    == t.hContext NotFound
+*/
+$ENTRY LookupImportModule
+  t.hContext (e.ModulePath) t.QualifiedName =
+    t.hContext NotFound;
 
 //##############################################################################
 
 $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
-$IMPORT MFileSystem;
 $IMPORT MOrder;
 $IMPORT MOS;
 

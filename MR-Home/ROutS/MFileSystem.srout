@@ -23,7 +23,7 @@ c }
 b Entry::MFileSystem::Final
 c $Entry::MFileSystem::Final$ {
 c 	=
-c 		<$Entry::MOS::System$ 'del ' <$Local::MFileSystem::TempName$ > > ;
+c 		<$Entry::MOS::System$ 'del ' <$Local::MFileSystem::TempName$ > ' >nul 2>nul' > ;
 c }
 
 b Local::MFileSystem::TempName

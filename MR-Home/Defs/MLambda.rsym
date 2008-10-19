@@ -3,10 +3,13 @@ $module MLambda;
 $entry Apply;
 $entry BindLeft;
 $entry BindRight;
+$entry Bracket;
+$entry Composite;
 $entry Map;
 $entry MapReduce;
 $entry MapReduce-R;
 $entry Reduce;
 $entry Reduce-R;
+$entry UnBracket;
 
 $end MLambda.

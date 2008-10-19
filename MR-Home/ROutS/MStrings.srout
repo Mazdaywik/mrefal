@@ -25,16 +25,56 @@ c 	e.$Index::Line$ =
 c 		<$Entry::MRefalRTS::Chr$ e.$Index::Line$ > ;
 c }
 
+b Local::MStrings::UpperLowerTable
+c $Local::MStrings::UpperLowerTable$ {
+c 	=
+c 		( $ADT::__StructureBrackets$ 'Aa' ) ( $ADT::__StructureBrackets$ 'Bb' ) ( $ADT::__StructureBrackets$ 'Cc' ) ( $ADT::__StructureBrackets$ 'Dd' ) ( $ADT::__StructureBrackets$ 'Ee' ) ( $ADT::__StructureBrackets$ 'Ff' ) ( $ADT::__StructureBrackets$ 'Gg' ) ( $ADT::__StructureBrackets$ 'Hh' ) ( $ADT::__StructureBrackets$ 'Ii' ) ( $ADT::__StructureBrackets$ 'Jj' ) ( $ADT::__StructureBrackets$ 'Kk' ) ( $ADT::__StructureBrackets$ 'Ll' ) ( $ADT::__StructureBrackets$ 'Mm' ) ( $ADT::__StructureBrackets$ 'Nn' ) ( $ADT::__StructureBrackets$ 'Oo' ) ( $ADT::__StructureBrackets$ 'Pp' ) ( $ADT::__StructureBrackets$ 'Qq' ) ( $ADT::__StructureBrackets$ 'Rr' ) ( $ADT::__StructureBrackets$ 'Ss' ) ( $ADT::__StructureBrackets$ 'Tt' ) ( $ADT::__StructureBrackets$ 'Uu' ) ( $ADT::__StructureBrackets$ 'Vv' ) ( $ADT::__StructureBrackets$ 'Ww' ) ( $ADT::__StructureBrackets$ 'Xx' ) ( $ADT::__StructureBrackets$ 'Yy' ) ( $ADT::__StructureBrackets$ 'Zz' ) ;
+c }
+
 b Entry::MStrings::Upper
 c $Entry::MStrings::Upper$ {
 c 	e.$Index::Expr$ =
-c 		<$Entry::MRefalRTS::Upper$ e.$Index::Expr$ > ;
+c 		<$Local::MStrings::RMap$ $Local::MStrings::UpChar$ e.$Index::Expr$ > ;
 c }
 
 b Entry::MStrings::Lower
 c $Entry::MStrings::Lower$ {
 c 	e.$Index::Expr$ =
-c 		<$Entry::MRefalRTS::Lower$ e.$Index::Expr$ > ;
+c 		<$Local::MStrings::RMap$ $Local::MStrings::LoChar$ e.$Index::Expr$ > ;
+c }
+
+b Local::MStrings::RMap
+c $Local::MStrings::RMap$ {
+c 	s.$Index::Func$ e.$Index::Expr$ =
+c 		<$Local::MStrings::DoRMap$ s.$Index::Func$ ( $ADT::__StructureBrackets$ <$Local::MStrings::UpperLowerTable$ > ) ( $ADT::__StructureBrackets$ '$$' ) e.$Index::Expr$ '$$' > ;
+c }
+
+b Local::MStrings::DoRMap
+c $Local::MStrings::DoRMap$ {
+c 	s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Next$ e.$Index::Expr$ t.$Index::MultiBracket$ =
+c 		<$Local::MStrings::DoRMap$ s.$Index::Func$ <Mu s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Next$ > e.$Index::Expr$ t.$Index::MultiBracket$ > ;
+c 	s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::Inner$ ) e.$Index::Expr$ t.$Index::MultiBracket$ =
+c 		<$Local::MStrings::DoRMap$ s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ) e.$Index::Inner$ ( $ADT::__StructureBrackets$ e.$Index::Expr$ t.$Index::MultiBracket$ ) > ;
+c 	s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Inner$ ) ( $ADT::__StructureBrackets$ e.$Index::Expr$ t.$Index::MultiBracket$ ) =
+c 		<$Local::MStrings::DoRMap$ s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ( $ADT::__StructureBrackets$ e.$Index::Inner$ ) ) e.$Index::Expr$ t.$Index::MultiBracket$ > ;
+c 	s.$Index::Func$ t.$Index::UpperLower$ ( $ADT::__StructureBrackets$ '$$' e.$Index::Scanned$ ) '$$' =
+c 		e.$Index::Scanned$ ;
+c }
+
+b Local::MStrings::UpChar
+c $Local::MStrings::UpChar$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Letters-B$ ( $ADT::__StructureBrackets$ s.$Index::Upper$ s.$Index::Lower$ ) e.$Index::Letters-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Lower$ =
+c 		( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ s.$Index::Upper$ s.$Index::Lower$ ) e.$Index::Letters-B$ e.$Index::Letters-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ s.$Index::Upper$ ) ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Letters$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Next$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Letters$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ s.$Index::Next$ ) ;
+c }
+
+b Local::MStrings::LoChar
+c $Local::MStrings::LoChar$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Letters-B$ ( $ADT::__StructureBrackets$ s.$Index::Upper$ s.$Index::Lower$ ) e.$Index::Letters-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Upper$ =
+c 		( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ s.$Index::Upper$ s.$Index::Lower$ ) e.$Index::Letters-B$ e.$Index::Letters-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ s.$Index::Lower$ ) ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Letters$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Next$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Letters$ ) ( $ADT::__StructureBrackets$ e.$Index::Scanned$ s.$Index::Next$ ) ;
 c }
 
 b Entry::MStrings::Length

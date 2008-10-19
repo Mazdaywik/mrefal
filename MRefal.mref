@@ -6,6 +6,7 @@ $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MLinker;
 $IMPORT Modules;
+$IMPORT MModules;
 $IMPORT MOS;
 $IMPORT Math;
 $IMPORT MStrings;
@@ -44,7 +45,7 @@ LoadModuleList {
 
 DoLoadModuleList {
   () 2 =
-    <MError::Fatal 'Command line error: use MRefal module1 module2'>;
+    <MError::Fatal 'Command line error: use MRefal module1 module2 ...'>;
 
   (e.Modules) s.NextNumArg =
     e.Modules;
@@ -70,8 +71,51 @@ SwModuleOrFile {
 }
 
 CompileList {
+  t.Context e.Modules
+  (Module 'Test+++') (Module e.ModulePath) e.Tests =
+    <CompileList
+      <Test t.Context (<PrepareMP e.ModulePath>) e.Tests>
+      e.Modules
+    >;
+
   t.Context e.Modules =
     <CompileModulesFromList t.Context e.Modules>;
+}
+
+PrepareMP
+  e.ModulePath =
+    <DeleteEmpty
+      <DoPrepareMP e.ModulePath>
+    >;
+
+DoPrepareMP {
+  e.Part ';' e.Tail = (e.Part) <DoPrepareMP e.Tail>;
+
+  e.Part = (e.Part);
+}
+
+DeleteEmpty {
+  e.Begin () e.End = e.Begin <DeleteEmpty e.End>;
+
+  e.NotEmpty = e.NotEmpty;
+}
+
+Test {
+  t.hContext (e.ModulePath) (Module e.NextModule) e.Tail =
+    <Test
+      <ContextOnly
+        <MModules::LookupCmdLineModule
+          t.hContext (e.ModulePath) e.NextModule
+        >
+      >
+      (e.ModulePath) e.Tail
+    >;
+
+  t.hContext (e.ModulePath) = t.hContext;
+}
+
+ContextOnly {
+  t.hContext NotFound = t.hContext;
 }
 
 CompileModulesFromList {

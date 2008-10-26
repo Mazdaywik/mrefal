@@ -105,6 +105,10 @@ ModuleToInterface {
     // ('Import ' e.ModuleName)
     <ModuleToInterface e.ModuleContent>;
 
+  ('//STARTCUT') e.ModuleContent =
+    ('# STARTCUT')
+    <Cutting e.ModuleContent>;
+
   (e.?OtherLine)
   e.ModuleContent =
     <ModuleToInterface e.ModuleContent>;
@@ -128,6 +132,17 @@ TypeDocComment {
   e.UnclosedComment =
     ('???Warning: Unclosed comment')
     e.UnclosedComment;
+}
+
+Cutting {
+  ('//ENDCUT') e.ModuleContent =
+    ('# ENDCUT')
+    <ModuleToInterface e.ModuleContent>;
+
+  (e.OtherLine) e.ModuleContent =
+    (e.OtherLine) <Cutting e.ModuleContent>;
+
+  = ();
 }
 
 UnTab

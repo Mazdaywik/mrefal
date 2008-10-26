@@ -72,6 +72,8 @@ UpdateInfo-UpdateOptions {
     Fails;
 }
 
+/**---------------------------------------------------------------------------*/
+//STARTCUT
 DefaultOptions
   =
     /*
@@ -81,8 +83,8 @@ DefaultOptions
     (Sym None) (Out None) (Src None)
 
     // Информация о входных и выходных частях
-    (FrontEnd None) // None | s.FrontEnd e.FileName
-    (BackEnds) // e.BackEnds ::= (s.BackEnd e.FileName)*
+    (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
+    (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
 
     // Информация о статусе компилирования
 
@@ -127,6 +129,8 @@ DefaultOptions
     */
     (Status Unknown)
     ;
+//ENDCUT
+/**---------------------------------------------------------------------------*/
 
 UpdateOptions
   (e.OldOptions) e.NewOptions =

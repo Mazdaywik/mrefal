@@ -9,12 +9,20 @@ $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 $IMPORT MSymStream;
 
+/**
+  <Fatal e.Message>
+    == fail down (errcode 1)
+*/
 $ENTRY Fatal
   e.Message =
     <MOutModuleStatus::Flush>
     <InOut::WriteLine 'FATAL ERROR: ' e.Message>
     <MOS::Exit 1>;
 
+/**
+  <LinkError e.Message>
+    == fail down (errcode 1)
+*/
 $ENTRY LinkError
   e.Message =
     <MOutModuleStatus::Flush>
@@ -50,8 +58,14 @@ OutError {
 
 $DATA ErrorList;
 
+/**
+  <CreateErrList> == t.hErrorList
+*/
 $ENTRY CreateErrList = [ErrorList];
 
+/**
+  <DestroyErrList t.hErrorList> == empty
+*/
 $ENTRY DestroyErrList
   [ErrorList e.Errors] = ;
 
@@ -167,8 +181,10 @@ QualifiedNameToString
   t.QualifiedName =
     <TypeQualified <MQualifiedName::Parse t.QualifiedName>>;
 
-* <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
-* == t.UpdatedErrorList
+/**
+  <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
+    == t.UpdatedErrorList
+*/
 $ENTRY AddRedeclaredIdentifier
   t.ErrorList t.SrcPos e.Identifier =
     <AddToList
@@ -176,6 +192,10 @@ $ENTRY AddRedeclaredIdentifier
       ( Semantics t.SrcPos 'Identifier redeclared ' e.Identifier )
     >;
 
+/**
+  <AddVarTypeMismatch t.hErrorList t.SrcPos e.VarName>
+    == t.hErrorList
+*/
 $ENTRY AddVarTypeMismatch
   t.ErrorList t.SrcPos e.VarName =
     <AddToList
@@ -185,6 +205,10 @@ $ENTRY AddVarTypeMismatch
       )
     >;
 
+/**
+  <AddUndeclaredVariable t.hErrorList t.SrcPos s.VarType e.Index>
+    == t.hErrorList
+*/
 $ENTRY AddUndeclaredVariable
   t.ErrorList t.SrcPos s.VarType e.Index =
     <AddToList
@@ -199,6 +223,10 @@ VarTypeToPrefix {
   EVar = 'e.'; SVar = 's.'; TVar = 't.';
 }
 
+/**
+  <AddUnresolvedFunction t.hErrorList t.SrcPos s.ScopeClass e.FnName>
+    == t.hErrorList
+*/
 $ENTRY AddUnresolvedFunction {
   t.ErrorList
   t.SrcPos Local e.FnName =
@@ -248,11 +276,18 @@ TypeQualified {
   (e.Name) = e.Name;
 }
 
+/**
+  <PrintErrorsAndStop t.hErrorList>
+    == fail down (errcode 1)
+*/
 $ENTRY PrintErrorsAndStop
   t.ErrorList =
     <PrintErrors t.ErrorList>
     <MOS::Exit 1>;
 
+/**
+  <PrintErrors t.hErrorList> == empty
+*/
 $ENTRY PrintErrors
   [ErrorList e.Errors] =
     <DoPrintErrors

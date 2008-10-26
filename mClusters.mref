@@ -1,0 +1,33 @@
+$MODULE MClusters;
+/**=============================================================================
+  Функции модуля обрабатывают "гроздь" модулей -- набор прямо или косвенно зави-
+сящих модулей от некоторого модуля. Две основные фукции модуля: CheckNeedCompile
+для проверки необходимости перекомпиляции данного модуля и ListForLinking для
+получения списка модулей (упорядоченных в топологическом порядке), подлежащих
+компоновке.
+==============================================================================*/
+
+/**
+  <CheckNeedCompile
+    t.hContext (e.ModulePath) t.QualifiedName
+  >
+    == t.hContext t.QualifiedName s.Result
+
+  s.Result ::= NeedRecompile | Updated | Library | NotFound
+*/
+$ENTRY CheckNeedCompile
+  t.hContext (e.ModulePath) t.QualifiedName =
+    t.hContext t.QualifiedName NotFound;
+
+//------------------------------------------------------------------------------
+
+/**
+  <ListForLinking t.hContext t.QualifiedName>
+    == t.hContext Success t.QualifiedName*
+    == t.hContext Fails
+*/
+$ENTRY ListForLinking
+  t.hContext t.QualifiedName =
+    t.hContext Fails;
+
+$END MClusters.

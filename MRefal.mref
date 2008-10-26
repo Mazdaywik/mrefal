@@ -4,11 +4,15 @@ $PROGRAM MRefal;
 $IMPORT Compiler;
 $IMPORT MContext;
 $IMPORT MError;
+$IMPORT InOut;
+$IMPORT MLambda;
 $IMPORT MLinker;
 $IMPORT Modules;
 $IMPORT MModules;
 $IMPORT MOS;
 $IMPORT Math;
+$IMPORT MQualifiedName;
+$IMPORT MQualifiedSupport;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
@@ -20,15 +24,7 @@ $IMPORT MFrontEnd_MRefal;
 
 $ENTRY Go =
   <MVersion::Show>
-  <StartCompiling>;
-
-StartCompiling {
-  = <Results
-      <MLinker::LinkAll
-        <CompileList <MContext::Create> <LoadModuleList> >
-      >
-    >;
-}
+  <CompileList <MContext::Create> <LoadModuleList> >;
 
 Results {
   t.Context Success =
@@ -39,28 +35,19 @@ Results {
     <MError::Fatal 'Unknown error'>;
 }
 
-LoadModuleList {
-  = <DoLoadModuleList () 2 <MOS::Arg 1>>;
-}
+LoadModuleList
+  = <SwLoadModuleList <MOS::ArgList>>;
 
-DoLoadModuleList {
-  () 2 =
+SwLoadModuleList {
+  (e.ProgName) =
     <MError::Fatal 'Command line error: use MRefal module1 module2 ...'>;
 
-  (e.Modules) s.NextNumArg =
-    e.Modules;
-
-  (e.Modules) s.NextNumArg e.ModuleOrFile =
-    <DoLoadModuleList
-      (e.Modules <ModuleOrFile e.ModuleOrFile>)
-      <Math::Add s.NextNumArg 1>
-      <MOS::Arg s.NextNumArg>
-    >;
+  (e.ProgName) e.Modules = e.Modules;
 }
 
-ModuleOrFile {
-  e.Name = <SwModuleOrFile (<MStrings::Lower e.Name>) e.Name>;
-}
+ModuleOrFile
+  (e.Module) =
+    <SwModuleOrFile (<MStrings::Lower e.Module>) e.Module>;
 
 SwModuleOrFile {
   ( e.FnameName '.mref' ) e.FnameNameExtCase s.Dot s.M s.R s.E s.F =
@@ -68,18 +55,6 @@ SwModuleOrFile {
 
   ( e.ModNameLower ) e.ModNameCase =
     (Module <Modules::CanonicalModuleName e.ModNameCase>);
-}
-
-CompileList {
-  t.Context e.Modules
-  (Module 'Test+++') (Module e.ModulePath) e.Tests =
-    <CompileList
-      <Test t.Context (<PrepareMP e.ModulePath>) e.Tests>
-      e.Modules
-    >;
-
-  t.Context e.Modules =
-    <CompileModulesFromList t.Context e.Modules>;
 }
 
 PrepareMP
@@ -100,22 +75,96 @@ DeleteEmpty {
   e.NotEmpty = e.NotEmpty;
 }
 
-Test {
-  t.hContext (e.ModulePath) (Module e.NextModule) e.Tail =
-    <Test
-      <ContextOnly
-        <MModules::LookupCmdLineModule
-          t.hContext (e.ModulePath) e.NextModule
+CompileList {
+  t.hContext ('+new+') (e.ModulePath) e.Modules =
+    <CheckFoundResult
+      <MLambda::MapReduce
+        <MLambda::Composite
+          & MLambda.UnBracket-H
+          <MLambda::Parallel-H
+            & MLambda.Bracket-H
+            <MLambda::BindLeft-H
+              & MModules.LookupCmdLineModule
+              (<PrepareMP e.ModulePath>)
+            >
+          >
+          & MLambda.Bracket-H
         >
+        t.hContext
+        e.Modules
       >
-      (e.ModulePath) e.Tail
     >;
 
-  t.hContext (e.ModulePath) = t.hContext;
+  t.hContext ('+old+') e.Modules =
+    <Results
+      <MLinker::LinkAll
+        <CompileModulesFromList
+          t.hContext
+          <MLambda::Map & ModuleOrFile e.Modules>
+        >
+      >
+    >;
+
+  t.hContext e.Modules =
+    <CompileList t.hContext ('+old+') e.Modules>;
 }
 
-ContextOnly {
-  t.hContext NotFound = t.hContext;
+CheckFoundResult {
+  t.hContext e.Results-B ( (e.Module) NotFound ) e.Results-E =
+    <MContext::Destroy t.hContext>
+    <MLambda::Map
+      & PrintNotFound
+      e.Results-B ( (e.Module) NotFound ) e.Results-E
+    >;
+
+  t.hContext e.ResultsFound =
+    <MLambda::TerminateAccumulator
+      & FinishMake
+      <MLambda::Reduce
+        (Success t.hContext <MError::CreateErrList>)
+        & Make
+        e.ResultsFound
+      >
+    >;
+}
+
+PrintNotFound {
+  ( (e.Module) NotFound ) =
+    <InOut::WriteLine
+      'CMDLINE ERROR: module ' e.Module ' not found'
+    >;
+
+  ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+    <InOut::WriteLine
+      'FOUND: ' e.Module ' '
+      <MQualifiedName::Parse t.QualifiedName>
+      ' ' s.FrontEnd ' ' e.BaseDirectory
+    >;
+}
+
+Make {
+  (Success t.hContext t.hErrorList)
+  ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+    <InOut::WriteLine
+      'MAKE: ' e.Module '('
+      <MQualifiedName::Parse t.QualifiedName>
+      ' ' s.FrontEnd ' ' e.BaseDirectory ')'
+    >
+    (Success t.hContext t.hErrorList);
+
+  (Fails t.hContext t.hErrorList)
+  ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+    (Fails t.hContext t.hErrorList);
+}
+
+FinishMake {
+  ( Success t.hContext t.hErrorList ) =
+    <MContext::Destroy t.hContext>
+    <MError::PrintErrorsAndStop t.hErrorList>;
+
+  ( Fails t.hContext t.hErrorList ) =
+    <MContext::Destroy t.hContext>
+    <MError::PrintErrorsAndStop t.hErrorList>;
 }
 
 CompileModulesFromList {

@@ -59,7 +59,7 @@ GetPath-Aux {
     e.Relative '.' e.Ext;
 
   ( t.QualifiedName e.Relative ) ( Success e.Ext ) e.BaseFolder =
-    Succes t.QualifiedName
+    Success t.QualifiedName
     e.BaseFolder '/' e.Relative '.' e.Ext;
 }
 

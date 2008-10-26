@@ -3,16 +3,16 @@ $MODULE Modules;
 $IMPORT MModules;
 
 $ENTRY LookupModule-T
-  e.ModuleName =
-    <MModules::LookupModule-T e.ModuleName>;
+  t.hContext e.ModuleName =
+    <MModules::LookupModule-T t.hContext e.ModuleName>;
 
 $ENTRY SymName
-  e.ModuleName =
-    <MModules::SymName e.ModuleName>;
+  t.hContext e.ModuleName =
+    <MModules::SymName t.hContext e.ModuleName>;
 
 $ENTRY OutName
-  e.ModuleName =
-    <MModules::OutName e.ModuleName>;
+  t.hContext e.ModuleName =
+    <MModules::OutName t.hContext e.ModuleName>;
 
 $ENTRY HomeDir = <MModules::HomeDir>;
 

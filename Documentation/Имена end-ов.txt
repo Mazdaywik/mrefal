@@ -1,3 +1,5 @@
+Запрещённые имена: Library
+
 FrontEnds:
   MRefal_FrontEnd
 BackEnds:

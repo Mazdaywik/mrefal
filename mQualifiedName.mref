@@ -65,7 +65,7 @@ $ENTRY AddSuperName
 
 CheckSegment {
   =
-    <MSelfDiag::Error 'Segment can\'t be empty'>;
+    <MSelfDiag::FailDown 'Segment can\'t be empty'>;
 
   e.Segment = e.Segment;
 }

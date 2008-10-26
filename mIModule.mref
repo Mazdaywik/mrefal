@@ -155,12 +155,14 @@ UpdateEntity
       e.Attribs
     >;
 
+//STARTCUT
 ValidAttribs {
   Function = ScopeClass Position Body Qualified;
   ModuleName = Position FsName ModuleType;
   ImportName = Position RealName;
   ADT = Position;
 }
+//ENDCUT
 
 SwUpdateEntity {
   [IModule (Name e.ModName)] (e.Name)

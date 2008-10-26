@@ -30,8 +30,16 @@ $ENTRY Final
 
 TempName = <MSwapSupport::Read &G_TempFileName>;
 
+/**
+  <ExistFile e.FileName> == True | False
+*/
 $ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
 
+/**
+  <ExistFile-T e.FileName>
+    == True e.FileName
+    == False e.FileName
+*/
 $ENTRY ExistFile-T
   e.FileName = <MRefalRTS::ExistFile e.FileName> e.FileName;
 

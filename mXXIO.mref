@@ -66,6 +66,8 @@ DoParse {
       t.MultiBracket ( e.Scanned ) e.Text
     >;
 
+  '$' ( e.Scanned ) ')' e.Text = Fails;
+
   t.MutliBracket ( e.Scanned ) s.Ordinary e.Text =
     <DoParse
       t.MutliBracket ( e.Scanned s.Ordinary ) e.Text
@@ -76,8 +78,6 @@ DoParse {
 
   // Ошибочное завершение
   t.MultiBracket ( e.Scanned ) = Fails;
-
-  '$' ( e.Scanned ) ')' e.Text = Fails;
 }
 
 ParseNumber

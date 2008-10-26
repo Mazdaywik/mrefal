@@ -1,0 +1,129 @@
+$PROGRAM ErrorDecoder;
+
+$IMPORT FileIO;
+$IMPORT InOut;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MUtilitiesBanner;
+
+$ENTRY Go =
+  <MUtilitiesBanner::Type 'Error Decoder'>
+  <Main <MOS::ArgList>>;
+
+Main
+  (e.ProgName) e.ErrorFiles =
+    <MLambda::Map & ProcessErrorFile e.ErrorFiles>;
+
+ProcessErrorFile
+  (e.FileName) =
+    <FileIO::Save
+      (e.FileName)
+      <DeleteTable
+        <MLambda::MapReduce
+          & ProcessLine
+          <LoadAliases>
+          <FileIO::Load e.FileName>
+        >
+      >
+    >;
+
+DeleteTable
+  t.Table e.Lines = e.Lines;
+
+LoadAliases =
+  (
+    <MLambda::Map
+      & MakeRule
+      <FileIO::Load 'Info/Aliases.als'>
+    >
+  );
+
+MakeRule {
+  (e.Alias ' --> ' e.RealName) = ( e.Alias (<Dot e.RealName>) );
+  () = ;
+}
+
+Dot {
+  e.Name-B '::' e.Name-E = e.Name-B '.' <Dot e.Name-E>;
+
+  e.Name = e.Name;
+}
+
+ProcessLine
+  t.Table (e.Line) =
+    <DoProcessLine t.Table () e.Line>;
+
+DoProcessLine {
+  ( e.Table-B (e.Alias (e.RealName)) e.Table-E )
+  ( e.Scanned '<' ) e.Alias ' ' e.Tail =
+    <DoProcessLine
+      ( (e.Alias (e.RealName)) e.Table-B e.Table-E )
+      (e.Scanned '<' e.RealName ' ' ) e.Tail
+    >;
+
+  ( e.Table-B (e.Alias (e.RealName)) e.Table-E )
+  ( e.Scanned '<' ) e.Alias =
+    <DoProcessLine
+      ( (e.Alias (e.RealName)) e.Table-B e.Table-E )
+      (e.Scanned '<' e.RealName )
+    >;
+
+  ( e.Table-B (e.Alias ('__StructureBrackets')) e.Table-E )
+  ( e.Scanned '(' ) e.Alias ' ' e.Tail =
+    <DoProcessLine
+      ( (e.Alias ('__StructureBrackets')) e.Table-B e.Table-E )
+      ( e.Scanned '(' ) e.Tail
+    >;
+
+  ( e.Table-B (e.Alias ('__StructureBrackets')) e.Table-E )
+  ( e.Scanned '(' ) e.Alias =
+    <DoProcessLine
+      ( (e.Alias ('__StructureBrackets')) e.Table-B e.Table-E )
+      ( e.Scanned '(' )
+    >;
+
+  ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.Scanned '(' ) s.Init e.Alias ' ' e.Tail =
+    <DoProcessLine
+      ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.Scanned <CheckInit-Type s.Init> e.RealName ' ' ) e.Tail
+    >;
+
+  ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.Scanned '(' ) s.Init e.Alias =
+    <DoProcessLine
+      ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.Scanned <CheckInit-Type s.Init> e.RealName )
+    >;
+
+  ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.Scanned ) s.Init e.Alias ' ' e.Tail =
+    <DoProcessLine
+      ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.Scanned <CheckInit s.Init> e.RealName ' ' ) e.Tail
+    >;
+
+  ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.Scanned ) s.Init e.Alias =
+    <DoProcessLine
+      ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.Scanned <CheckInit s.Init> e.RealName )
+    >;
+
+  t.Table ( e.Scanned ) s.Next e.Tail =
+    <DoProcessLine
+      t.Table ( e.Scanned s.Next ) e.Tail
+    >;
+
+  t.Table ( e.Scanned ) = t.Table ( e.Scanned );
+}
+
+CheckInit {
+  'E' = '*'; 'L' = '*'; 'S' = '*'; s.Other = ;
+}
+
+CheckInit-Type {
+  'T' = '['; s.Other = '(';
+}
+
+$END ErrorDecoder.

@@ -1,4 +1,21 @@
 ################################################################################
+Module Compiler;
+
+<LookupModule-T t.Context (e.Directory) e.ModuleName>
+  == t.Context
+    s.Known s.Status
+    (Sym e.SymFileName)
+    (Out e.OutFileName)
+    (Src e.SrcFileName)
+    (e.Directory) e.ModuleName
+s.Known ::= Known | NotKnown
+s.Status ::=
+  if Known
+    Recompiled | Updated | Library | InCompiling
+  if NotKnown
+    ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
+
+################################################################################
 Module MBackEnd_Refal5;
 
 <Generate-T t.IModule e.OutName>
@@ -67,6 +84,66 @@ Module MContext;
   == t.UpdatedContext Success
   == t.Context Fails
 
+---------------------------------------------------------------------------
+# STARTCUT
+DefaultOptions
+  =
+    /*
+      Информация о входных и выходных частях (старое)
+      Формат: None | e.FileName
+    */
+    (Sym None) (Out None) (Src None)
+
+    // Информация о входных и выходных частях
+    (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
+    (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
+
+    // Информация о статусе компилирования
+
+    // Библиотека или файл с исходником
+    (Type Unknown) // Unknown | Library | Source
+
+    /*
+      Был ли обработан?
+      * Unknown -- если не инициализровано;
+      * Found -- модуль только обнаружен;
+      * InCmdLine --- модуль обнаружен в командной строке;
+      * SuccessCompiled -- успешно откомпилирован,
+      имеет смысл только для исходника;
+      * Updated
+        * для исходника -- выходные файлы корректны, не компилировался;
+        * для библиотечного модуля -- выходные файлы корректны;
+        (если возможна проверка корректности для back-end,
+        гарантируется, что корректна хотя бы SymInfo);
+      * Errors -- в процессе обработки произошла ошибка;
+        * для исходника -- ошибки в процессе компиляции;
+        * для библиотечного модуля -- выходные файлы повреждены.
+    */
+    (Status_NEW Unknown)
+
+    /*
+      Время последней модификации. Нужно для того, чтобы определить,
+      необходима ли перекомпиляция: импортирующие модули должны быть
+      откомпилированы позже импортируемых.
+      Unknown -- информация не доступна
+      e.DateTime -- см. MainStructures.txt
+    */
+    (LastTime Unknown)
+
+    (NeedRecompile Unknown) // Unknown | True | False
+
+    (ModuleType Program) // Program | Module
+    (CachedSym None) // None | t.IModule
+    (BaseDirectory Current) // Current | e.FileName
+    /*
+      Объединяло Type и Status_NEW, устаревшее.
+      Unknown | InCompiling | Library | Recompiled | Updated
+    */
+    (Status Unknown)
+    ;
+# ENDCUT
+---------------------------------------------------------------------------
+
 <ExtractOption t.Context t.QualifiedName s.Option>
   == t.Context Found e.Option
   == t.Context OptionNotFound
@@ -91,6 +168,16 @@ Module MCreateDirIfNeed;
 
 ################################################################################
 Module MError;
+
+<Fatal e.Message>
+  == fail down (errcode 1)
+
+<LinkError e.Message>
+  == fail down (errcode 1)
+
+<CreateErrList> == t.hErrorList
+
+<DestroyErrList t.hErrorList> == empty
 
 <EmptyList t.ErrorList>
   == t.ErrorList Empty
@@ -117,6 +204,23 @@ Module MError;
   t.ErrorList t.SrcPos t.InternalName t.ExternalName
 >
   == t.ErrorList
+
+<AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
+  == t.UpdatedErrorList
+
+<AddVarTypeMismatch t.hErrorList t.SrcPos e.VarName>
+  == t.hErrorList
+
+<AddUndeclaredVariable t.hErrorList t.SrcPos s.VarType e.Index>
+  == t.hErrorList
+
+<AddUnresolvedFunction t.hErrorList t.SrcPos s.ScopeClass e.FnName>
+  == t.hErrorList
+
+<PrintErrorsAndStop t.hErrorList>
+  == fail down (errcode 1)
+
+<PrintErrors t.hErrorList> == empty
 
 ################################################################################
 Module MExeTyper;
@@ -160,6 +264,12 @@ s.Result ::= Success | Warnings | Errors
 
 ################################################################################
 Module MFileSystem;
+
+<ExistFile e.FileName> == True | False
+
+<ExistFile-T e.FileName>
+  == True e.FileName
+  == False e.FileName
 
 <ParseFileName e.FileName>
   == (e.Directory) e.FileNameNoExt (e.Ext)
@@ -215,6 +325,14 @@ s.Status ::=
 s.Status ::=
   Success | InvalidKind | InvalidAttrib | InvariantError
 
+# STARTCUT
+ValidAttribs {
+  Function = ScopeClass Position Body Qualified;
+  ModuleName = Position FsName ModuleType;
+  ImportName = Position RealName;
+  ADT = Position;
+}
+# ENDCUT
 ---------------------------------------------------------------------------
 
 <GetModuleAttribute t.IModule s.Attribute>
@@ -264,16 +382,53 @@ Module MLambda;
 
 <BindLeft t.Lambda e.Left>
   == t.Lambda'
-<Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Left e.Arg>
+<Apply t.Lambda' e.Arg>
+  === <Apply t.Lambda e.Left e.Arg>
+
+<BindLeft-H t.Lambda e.Left>
+  == t.Lambda'
+<Apply t.Lambda' t.Handle e.Arg>
+  == <Apply t.Lambda t.Handle e.Left e.Arg>
 
 <BindRight t.Lambda e.Right>
   == t.Lambda'
-<Apply t.Lambda' e.Arg> === <Apply t.Lambda e.Arg e.Right>
+<Apply t.Lambda' e.Arg>
+  === <Apply t.Lambda e.Arg e.Right>
 
-<Composite t.InnerLamda t.OuterLambda>
+<Composite t.Lambda_1 ... t.Lambda_N>
   == t.CompositeLambda
 <Apply t.CompositeLambda e.Arg>
-  === <Apply t.OuterLambda <Apply t.InnerLambda e.Arg>>
+  ===
+  <Apply
+    t.Lambda_N
+    <Apply
+      t.Lambda_N-1
+      ...
+      <Apply t.Lambda_1 e.Arg>
+      ...
+    >
+  >
+
+<MakeHandled t.Lambda>
+  == t.Lambda'
+<Apply t.Lambda' t.Handle e.Arg>
+  === t.Handle <Apply t.Lambda e.Arg>
+
+<Parallel t.Lambda_1 ... t.Lambda_N>
+  == t.Lambda'
+<Apply t.Lambda' e.Argument>
+  === <Apply t.Lambda_1 e.Argument> ... <Apply t.Lambda_N e.Argument>
+
+<Parallel-H e.Lambda_1 ... t.Lambda_N>
+  == t.Lambda'
+<Apply t.Lambda' t.Handle e.Argument>:
+<Apply t.Lambda t.Handle e.Argument>
+  === t.Handle_1 e.Result_1
+...
+<Apply t.Lambda_N t.Handle_N-1 e.Result_N-1>
+  === t.Handle' e.Result
+
+---------------------------------------------------------------------------
 
 <Map t.Lambda t.Src*>
   == e.Result*
@@ -295,9 +450,22 @@ Module MLambda;
   == t.Accum' e.Result*
 <Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
 
+<TerminateAccumulator t.FnTerminator t.Accum e.Elems>
+  == <Apply t.FnTerminator t.Accum> e.Elems
+
+<Nil e.Any> == empty
+
+---------------------------------------------------------------------------
+
 <UnBracket (e.Brackets)> == e.Brackets
 
 <Bracket e.Expr> == (e.Expr)
+
+<UnBracket-H t.Handle (e.Brackets)>
+  == t.Handle e.Brackets
+
+<Bracket-H t.Handle e.Expr>
+  == t.Handle (e.Expr)
 
 ################################################################################
 Module MLinker_Refal5;
@@ -332,23 +500,6 @@ Module MLinker_Refal5;
 
 <NotLinkedList t.UnitStorage>
   == t.UnitStorage (e.NotLinkedUnitName)*
-
-################################################################################
-Module MLocation;
-
-<LookupModule-T t.Context (e.Directory) e.ModuleName>
-	== t.Context
-		s.Known s.Status
-		(Sym e.SymFileName)
-		(Out e.OutFileName)
-		(Src e.SrcFileName)
-		(e.Directory) e.ModuleName
-s.Known ::= Known | NotKnown
-s.Status ::=
-	if Known
-		Recompiled | Updated | Library | InCompiling
-	if NotKnown
-		ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 
 ################################################################################
 Module MModules;
@@ -399,6 +550,31 @@ Module MNameMaker;
 <s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
 	== t.QualifiedName Success e.RelativeName
 	== t.QualifiedName Fails
+
+################################################################################
+Module MOS;
+
+<System e.Command>
+  == empty
+
+<Arg s.Number>
+  == e.Arg
+  == empty
+
+<ArgList>
+  == (e.Argument)*
+
+<ProgName> == e.ProgName
+
+<Exit s.RetCode>
+  завершение программы
+
+<EnvList>
+  == (e.VariableName)*
+
+<Env e.Name>
+  == e.Value
+  == empty
 
 ################################################################################
 Module MParser_Common;

@@ -221,7 +221,7 @@ FinishVariant
           >
         )
       >
-      e.L-AvailFrontEnds
+      e.L-AvailFrontEnds Library
     >;
 
 FinishVariant-Aux
@@ -230,26 +230,148 @@ FinishVariant-Aux
 
 CheckVariants-CmdLine
   t.hContext e.Variants =
-    t.hContext NotFound
-    <MLambda::Map
-      <MLambda::Composite
-        & MLambda.UnBracket
-        & WriteVariant
-      >
-      e.Variants
+    <DoCheckVariants-CmdLine
+      t.hContext e.Variants
     >;
 
-WriteVariant {
-  s.FrontEnd t.QualifiedName e.BaseDirectory =
-    <InOut::WriteText
-      ()
-      (s.FrontEnd)
-      (<MQualifiedName::Parse t.QualifiedName>)
+DoCheckVariants-CmdLine {
+  t.hContext (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =
+    <SwDoCheckVariant-CmdLine
+      <CheckVariant-T
+        t.hContext
+        s.FrontEnd t.QualifiedName e.BaseDirectory
+      >
+      e.Tail
+    >;
+
+  t.hContext = t.hContext NotFound;
+}
+
+CheckVariant-T {
+  t.hContext Library t.QualifiedName e.BaseDirectory =
+    <CheckVariant-T-LibAux
+      t.hContext t.QualifiedName
+      <MLambda::Map
+        <MLambda::Composite
+          <MLambda::Parallel
+            & MLambda.Identity
+            <MLambda::BindRight
+              & MBE-Mgr.GetPath-T
+              t.QualifiedName e.BaseDirectory
+            >
+          >
+          & MLambda.Bracket
+        >
+        <MBE-Mgr::GetList>
+      >
       (e.BaseDirectory)
+    >;
+
+  t.hContext s.FrontEnd t.QualifiedName e.BaseDirectory =
+    <CheckVariant-T-SrcAux
+      t.hContext
+      <MFE-Mgr::GetPath-T s.FrontEnd t.QualifiedName e.BaseDirectory>
+      (s.FrontEnd e.BaseDirectory)
     >;
 }
 
-$import InOut;
+CheckVariant-T-SrcAux {
+  t.hContext
+  Success t.QualifiedName e.FilePath (s.FrontEnd e.BaseDirectory) =
+    <CheckVariant-T-SrcAux-SwExist
+      t.hContext
+      (s.FrontEnd t.QualifiedName e.BaseDirectory)
+      <MFileSystem::ExistFile-T e.FilePath>
+    >;
+
+  t.hContext
+  Fails t.QualifiedName (s.FrontEnd e.BaseDirectory) =
+    t.hContext (NotFound);
+}
+
+CheckVariant-T-SrcAux-SwExist {
+  t.hContext
+  (s.FrontEnd t.QualifiedName e.BaseDirectory)
+  True e.FrontEndName =
+    <GuardInvariant
+      <MContext::UpdateInfo
+        t.hContext t.QualifiedName
+        (FrontEnd s.FrontEnd e.FrontEndName)
+        (Type Source)
+        (Status_NEW InCmdLine)
+        (BaseDirectory e.BaseDirectory)
+      >
+    >
+    (Found t.QualifiedName s.FrontEnd e.BaseDirectory);
+
+  t.hContext
+  (s.FrontEnd t.QualifiedName e.BaseDirectory)
+  False e.FrontEndName =
+    t.hContext NotFound;
+}
+
+CheckVariant-T-LibAux {
+  t.hContext t.QualifiedName
+  e.BE-Files-B (s.BackEnd t.QualifiedName-Internal Fails) e.BE-Files-E
+  (e.BaseDirectory) =
+    t.hContext (NotFound);
+
+  t.hContext t.QualifiedName e.BE-Files (e.BaseDirectory) =
+    <CheckVariant-T-LibAux-SwExist
+      t.hContext t.QualifiedName (e.BaseDirectory)
+      <MLambda::Map
+        &Lib-CheckExist e.BE-Files
+      >
+    >;
+}
+
+Lib-CheckExist {
+  ( s.BackEnd t.QualifiedName Success e.FilePath ) =
+    <SwLib-CheckExist
+      s.BackEnd <MFileSystem::ExistFile-T e.FilePath>
+    >;
+}
+
+SwLib-CheckExist {
+  s.BackEnd True e.FilePath =
+    (s.BackEnd e.FilePath);
+
+  s.BackEnd False e.FilePath =
+    NotExist;
+}
+
+CheckVariant-T-LibAux-SwExist {
+  t.hContext t.QualifiedName (e.BaseDirectory)
+  e.BE-Files-B NotExist e.BE-Files-E =
+    t.hContext NotFound;
+
+  t.hContext t.QualifiedName (e.BaseDirectory) e.BE-Files =
+    <GuardInvariant
+      <MContext::UpdateInfo
+        t.hContext t.QualifiedName
+        (BackEnds e.BE-Files)
+        (Type Library)
+        (StatusNew InCmdLine)
+        (BaseDirectory e.BaseDirectory)
+      >
+    >
+    (Found t.QualifiedName Library e.BaseDirectory);
+}
+
+GuardInvariant
+  t.hContext Success = t.hContext;
+
+SwDoCheckVariant-CmdLine {
+  t.hContext
+  (Found t.QualifiedName s.FrontEndName e.BaseDirectory)
+  e.Tail =
+    t.hContext Found t.QualifiedName s.FrontEndName e.BaseDirectory;
+
+  t.hContext NotFound e.Tail =
+    <DoCheckVariants-CmdLine
+      t.hContext e.Tail
+    >;
+}
 
 //------------------------------------------------------------------------------
 
@@ -277,11 +399,11 @@ $ENTRY CanonicalModuleName {
 }
 
 $ENTRY SymName {
-  e.ModName = <SymDirName> '\\' e.ModName '.rsym';
+  t.hContext e.ModName = t.hContext <SymDirName> '\\' e.ModName '.rsym';
 }
 
 $ENTRY OutName {
-  e.ModName = <OutDirName> '\\' e.ModName '.rout';
+  t.hContext e.ModName = t.hContext <OutDirName> '\\' e.ModName '.rout';
 }
 
 SymDirName = <MCreateDirIfNeed::Create 'Defs'>;
@@ -290,7 +412,7 @@ OutDirName = <MCreateDirIfNeed::Create 'ROut'>;
 
 //$ENTRY
 SrcName {
-  e.ModName = e.ModName '.mref';
+  t.hContext e.ModName = t.hContext e.ModName '.mref';
 }
 
 GetTime {
@@ -299,7 +421,7 @@ GetTime {
 
 //$ENTRY
 SourceState-T
-  e.ModName = <SourceState e.ModName> e.ModName;
+  t.hContext e.ModName = <SourceState t.hContext e.ModName> e.ModName;
 
 /**
   <SourceState e.ModName>
@@ -308,17 +430,32 @@ SourceState-T
     == NeedRecompile
     == SrcNotUpdated
 */
-//$ENTRY
 SourceState
-  e.ModName =
+  t.hContext e.ModName =
     <ThreeFilesState
-      ( <SymName e.ModName> )
-      ( <OutName e.ModName> )
-      ( <SrcName e.ModName> )
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::Composite
+            & SymName
+            & MLambda.Bracket-H
+          >
+          <MLambda::Composite
+            & OutName
+            & MLambda.Bracket-H
+          >
+          <MLambda::Composite
+            & SrcName
+            & MLambda.Bracket-H
+          >
+        >
+        t.hContext
+        e.ModName
+      >
     >;
 
 ThreeFilesState
-  (e.SymName) (e.OutName) (e.SrcName) =
+  t.hContext (e.SymName) (e.OutName) (e.SrcName) =
+    t.hContext
     <CompareMTimes
       <GetTime e.SymName>
       <GetTime e.OutName>
@@ -350,32 +487,31 @@ SwCompareMTimes {
   e.Other = NeedRecompile;
 }
 
-$ENTRY LookupLibrary-T
-  e.ModuleName = <LookupLibrary e.ModuleName> e.ModuleName;
-
 /**
-  <LookupLibrary e.ModuleName>
-    == ModuleNotFound
-    == Library (Sym e.SymName) (Out e.OutName)
+  <LookupLibrary t.hContext e.ModuleName>
+    == t.hContext ModuleNotFound
+    == t.hContext Library (Sym e.SymName) (Out e.OutName)
 */
-$ENTRY LookupLibrary
-  e.ModuleName =
+LookupLibrary
+  t.hContext e.ModuleName =
     <SwLookupLibrary
+      t.hContext
       ( <MFileSystem::ExistFile-T <HomeDir> '\\Defs\\' e.ModuleName '.rsym'> )
       ( <MFileSystem::ExistFile-T <HomeDir> '\\ROut\\' e.ModuleName '.rout'> )
     >;
 
 SwLookupLibrary {
-  (True e.SymName) (True e.OutName) =
-    Library (Sym e.SymName) (Out e.OutName);
+  t.hContext (True e.SymName) (True e.OutName) =
+    t.hContext Library (Sym e.SymName) (Out e.OutName);
 
-  e.Other1 t.Other2 =
-    ModuleNotFound;
+  t.hContext t.Other1 t.Other2 =
+    t.hContext ModuleNotFound;
 }
 
 /**
-  <LookupModule-T e.ModuleName>
-     == s.Status
+  <LookupModule-T t.hContext e.ModuleName>
+     == t.hContext
+       s.Status
        (Sym e.SymName)
        (Out e.OutName)
        (Src e.SrcName)
@@ -385,37 +521,57 @@ SwLookupLibrary {
     e.*Name may be None
 */
 $ENTRY LookupModule-T
-  e.ModuleName =
+  t.hContext e.ModuleName =
     <SwLookupModule
-      <SourceState-T e.ModuleName>
+      <SourceState-T
+        t.hContext
+        e.ModuleName
+      >
     >;
 
 SwLookupModule {
-  ModuleNotFound e.ModuleName =
+  t.hContext ModuleNotFound e.ModuleName =
     <SwLookupAsSystemLibrary
-      <LookupLibrary-T e.ModuleName>
+      <LookupLibrary t.hContext e.ModuleName>
+      e.ModuleName
     >;
 
-  s.OtherStatus e.ModuleName =
-    s.OtherStatus
-    (Sym <SymName e.ModuleName>)
-    (Out <OutName e.ModuleName>)
-    (Src <SrcName-SwLibrary
-      s.OtherStatus e.ModuleName
-    >) e.ModuleName;
+  t.hContext s.OtherStatus e.ModuleName =
+    <MLambda::Apply
+      <MLambda::Parallel-H
+        <MLambda::MakeHandled <MLambda::Const s.OtherStatus>>
+        <MLambda::Composite
+          & SymName
+          <MLambda::BindLeft-H & MLambda.Bracket-H Sym>
+        >
+        <MLambda::Composite
+          & OutName
+          <MLambda::BindLeft-H & MLambda.Bracket-H Out>
+        >
+        <MLambda::Composite
+          <MLambda::BindLeft-H & SrcName-SwLibrary s.OtherStatus>
+          <MLambda::BindLeft-H & MLambda.Bracket-H Src>
+        >
+      >
+      t.hContext e.ModuleName
+    >
+    e.ModuleName;
 }
 
 SrcName-SwLibrary {
-  Library e.ModuleName = None;
-  s.Other e.ModuleName = <SrcName e.ModuleName>;
+  t.hContext Library e.ModuleName =
+    t.hContext None;
+
+  t.hContext s.Other e.ModuleName =
+    <SrcName t.hContext e.ModuleName>;
 }
 
 SwLookupAsSystemLibrary {
-  ModuleNotFound e.ModuleName =
-    ModuleNotFound (Sym None) (Out None) (Src None) e.ModuleName;
+  t.hContext ModuleNotFound e.ModuleName =
+    t.hContext ModuleNotFound (Sym None) (Out None) (Src None) e.ModuleName;
 
-  Library (Sym e.SymName) (Out e.OutName) e.ModuleName =
-    SystemLibrary (Sym e.SymName) (Out e.OutName) (Src None) e.ModuleName;
+  t.hContext Library (Sym e.SymName) (Out e.OutName) e.ModuleName =
+    t.hContext SystemLibrary (Sym e.SymName) (Out e.OutName) (Src None) e.ModuleName;
 }
 
 $ENTRY HomeDir = <MOS::Env 'MR_Home'>;

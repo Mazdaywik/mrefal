@@ -8,6 +8,8 @@ $ENTRY Error
     <Log 'INTERNAL ERROR: ' e.Message>
     <MRefalRTS::Exit 1>;
 
+$ENTRY FailDown { }
+
 $ENTRY Log
   e.Message =
     <OpenLog>

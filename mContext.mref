@@ -1,6 +1,7 @@
 $MODULE MContext;
 
 $IMPORT MQualifiedName;
+$IMPORT MStrings;
 
 /*------------------------------------------------------------------------------
   Внутренняя структура:
@@ -31,35 +32,90 @@ $ENTRY Destroy
 //------------------------------------------------------------------------------
 
 /**
-  <UpdateInfo t.Context t.QualifiedName e.NewOptionList>
-    == t.UpdatedContext Success
-    == t.Context Fails
+  <UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
+    == t.hUpdatedContext Success
+    == t.hContext Fails s.Error
+  s.Error ::= UnknownOption | MismatchCase
 */
 $ENTRY UpdateInfo
   [Context e.Info] t.QualifiedName e.NewOptions =
     <UpdateInfo-FindName
       [Context e.Info]
-      ( <MQualifiedName::Parse t.QualifiedName> )
+      t.QualifiedName
+      (
+        <MStrings::Lower
+          <MQualifiedName::Parse t.QualifiedName>
+        >
+      )
       e.NewOptions
     >;
 
 UpdateInfo-FindName {
-  [Context e.Info-B ( (e.Name) e.OldOptions) e.Info-E]
-  (e.Name) e.NewOptions =
+  [Context
+    e.Info-B
+    ( (e.Name)
+      e.OldOptions-B (RealName Unknown) e.OldOptions-E
+    )
+    e.Info-E
+  ]
+  t.QualifiedName (e.Name) e.NewOptions =
     <UpdateInfo-UpdateOptions
       (e.Info-B) (e.Info-E) (e.Name)
       <UpdateOptions
-        (e.OldOptions) e.NewOptions
+        (e.OldOptions-B (RealName Unknown) e.OldOptions-E)
+        e.NewOptions
       >
     >;
 
-  [Context e.Info] (e.Name) e.NewOptions =
+  [Context
+    e.Info-B
+    ( (e.Name)
+      e.OldOptions-B
+      (RealName t.RealQualifiedName)
+      e.OldOptions-E
+    )
+    e.Info-E
+  ]
+  t.QualifiedName (e.Name) e.NewOptions =
+    <UpdateInfo-FindName-CheckName
+      (e.Info-B) (e.Info-E)
+      (e.OldOptions-B) (e.OldOptions-E)
+      (RealName t.RealQualifiedName)
+      ( <MQualifiedName::Parse t.RealQualifiedName> )
+      ( <MQualifiedName::Parse t.QualifiedName> )
+      ( e.Name ) e.NewOptions
+    >;
+
+  [Context e.Info] t.QualifiedName (e.Name) e.NewOptions =
     <UpdateInfo-UpdateOptions
       (e.Info) () (e.Name)
       <UpdateOptions
         (<DefaultOptions>) e.NewOptions
       >
     >;
+}
+
+UpdateInfo-FindName-CheckName {
+  (e.Info-B) (e.Info-E) (e.OldOptions-B) (e.OldOptions-E)
+  (RealName t.RealQualifiedName)
+  ( e.RealName ) ( e.RealName ) ( e.Name ) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      (e.Info-B) (e.Info-E) (e.Name)
+      <UpdateOptions
+        ( e.OldOptions-B (RealName t.RealQualifiedName) e.OldOptions-E )
+        e.NewOptions
+      >
+    >;
+
+  (e.Info-B) (e.Info-E) (e.OldOptions-B) (e.OldOptions-E)
+  (RealName t.RealQualifiedName)
+  ( e.RealName ) ( e.ExternalName ) (e.Name) e.NewOptions =
+    [Context
+      e.Info-B
+      ((e.Name) e.OldOptions-B (RealName t.RealQualifiedName) e.OldOptions-E)
+      e.Info-E
+    ]
+    Fails MismatchCase;
 }
 
 UpdateInfo-UpdateOptions {
@@ -69,6 +125,35 @@ UpdateInfo-UpdateOptions {
 
   (e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Fails =
     [Context e.Info-B ( (e.Name) e.OldOptions ) e.Info-E]
+    Fails UnknonwOption;
+}
+
+UpdateOptions
+  (e.OldOptions) e.NewOptions =
+    (e.OldOptions)
+    <DoUpdateOptions
+      () (e.OldOptions) e.NewOptions
+    >;
+
+DoUpdateOptions {
+  (e.NewOptions) () = Success e.NewOptions;
+
+  (e.Updated)
+  ( (s.Option e.OldValue) e.OldOptions )
+  e.NewOptions-B (s.Option e.NewValue) e.NewOptions-E =
+    <DoUpdateOptions
+      (e.Updated
+        (s.Option e.NewValue)
+      )
+      (e.OldOptions) e.NewOptions-B e.NewOptions-E
+    >;
+
+  (e.Updated) (t.NextOption e.OldOptions) e.NewOptions =
+    <DoUpdateOptions
+      (e.Updated t.NextOption) (e.OldOptions) e.NewOptions
+    >;
+
+  (e.Updated) () e.NewOptions =
     Fails;
 }
 
@@ -86,6 +171,10 @@ DefaultOptions
     (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
     (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
 
+    // Информация о настоящем имени модуля (контекст индексируется без учёта
+    // регистра, но регистр надо проверять)
+    (RealName Unknown) // Unknown | t.QualifiedName
+
     // Информация о статусе компилирования
 
     // Библиотека или файл с исходником
@@ -95,7 +184,6 @@ DefaultOptions
       Был ли обработан?
       * Unknown -- если не инициализровано;
       * Found -- модуль только обнаружен;
-      * InCmdLine --- модуль обнаружен в командной строке;
       * SuccessCompiled -- успешно откомпилирован,
       имеет смысл только для исходника;
       * Updated
@@ -132,50 +220,76 @@ DefaultOptions
 //ENDCUT
 /**---------------------------------------------------------------------------*/
 
-UpdateOptions
-  (e.OldOptions) e.NewOptions =
-    (e.OldOptions)
-    <DoUpdateOptions
-      () (e.OldOptions) e.NewOptions
-    >;
-
-DoUpdateOptions {
-  (e.NewOptions) () = Success e.NewOptions;
-
-  (e.Updated)
-  ( (s.Option e.OldValue) e.OldOptions )
-  e.NewOptions-B (s.Option e.NewValue) e.NewOptions-E =
-    <DoUpdateOptions
-      (e.Updated
-        (s.Option e.NewValue)
-      )
-      (e.OldOptions) e.NewOptions-B e.NewOptions-E
-    >;
-
-  (e.Updated) (t.NextOption e.OldOptions) e.NewOptions =
-    <DoUpdateOptions
-      (e.Updated t.NextOption) (e.OldOptions) e.NewOptions
-    >;
-
-  (e.Updated) () e.NewOptions =
-    Fails;
-}
-
 //------------------------------------------------------------------------------
 
 /**
-  <ExtractOption t.Context t.QualifiedName s.Option>
-    == t.Context Found e.Option
-    == t.Context OptionNotFound
-    == t.Context ModuleNotFound
+  <ExtractOption t.hContext t.QualifiedName s.Option>
+    == t.hContext Found e.Option
+    == t.hContext OptionNotFound
+    == t.hContext ModuleNotFound
+    == t.hContext MismatchCase
 */
 $ENTRY ExtractOption
   [Context e.Info] t.QualifiedName s.Option =
-    <ExtractOption-FindName
+    <ExtractOption-CheckName
       [Context e.Info]
-      <MQualifiedName::Parse t.QualifiedName>
+      <MQualifiedName::Parse-T t.QualifiedName>
       s.Option
     >;
+
+ExtractOption-CheckName
+  t.hContext t.QualifiedName e.ExternalName s.Option =
+    <ExtractOption-CheckName-Aux
+      ( e.ExternalName )
+      <ExtractOption-FindName
+        t.hContext
+        <MStrings::Lower e.ExternalName>
+        s.Option
+      >
+    >;
+
+ExtractOption-CheckName-Aux {
+  ( e.ExternalName )
+  t.hContext Found e.Info =
+    <ExtractOption-CheckName-SwMatch
+      (e.Info) (e.ExternalName)
+      <ExtractOption-FindName
+        t.hContext
+        <MStrings::Lower e.ExternalName>
+        RealName
+      >
+    >;
+
+  ( e.ExternalName )
+  t.hContext OptionNotFound = t.hContext OptionNotFound;
+
+  ( e.ExternalName )
+  t.hContext ModuleNotFound = t.hContext ModuleNotFound;
+}
+
+ExtractOption-CheckName-SwMatch {
+  (e.Info) (e.ExternalName)
+  t.hContext Found Unknown =
+    t.hContext Found e.Info;
+
+  (e.Info) (e.ExternalName)
+  t.hContext Found t.RealName =
+    <ExtractOption-CheckName-SwMatch-Aux
+      (e.Info) (e.ExternalName)
+      <MQualifiedName::Parse t.RealName>
+      t.hContext
+    >;
+
+  // Остальные варианты не рассматриваем -- нарушение инварианта
+}
+
+ExtractOption-CheckName-SwMatch-Aux {
+  (e.Info) (e.RealName) e.RealName t.hContext =
+    t.hContext Found e.Info;
+
+  (e.Info) (e.ExternalName) e.RealName t.hContext =
+    t.hContext MismatchCase;
+}
 
 ExtractOption-FindName {
   [Context
@@ -212,19 +326,28 @@ $ENTRY ExtractModulesList
 
 DoExtractModulesList {
   (e.ScannedInfo) (e.Result)
-  ( (e.NextName) e.Options ) e.Tail =
+  ( (e.NextName) e.Options-B (RealName t.RealName) e.Options-E )
+  e.Tail =
     <DoExtractModulesList
       (e.ScannedInfo
-        ( (e.NextName) e.Options )
+        ( (e.NextName)
+          e.Options-B (RealName t.RealName) e.Options-E
+        )
       )
       (e.Result
-        <MQualifiedName::Create e.NextName>
+        <MakeRealName t.RealName e.NextName>
       )
       e.Tail
     >;
 
   (e.ScannedInfo) (e.Result) =
     [Context e.ScannedInfo] e.Result;
+}
+
+MakeRealName {
+  Unknown e.NextName = <MQualifiedName::Create e.NextName>;
+
+  t.RealName e.NextName = t.RealName;
 }
 
 //------------------------------------------------------------------------------
@@ -238,7 +361,7 @@ $ENTRY LastModule
   [Context e.Info] t.QualifiedName =
     <LastModule-FindName
       [Context e.Info]
-      <MQualifiedName::Parse t.QualifiedName>
+      <MStrings::Lower <MQualifiedName::Parse t.QualifiedName>>
     >;
 
 LastModule-FindName {
@@ -258,8 +381,14 @@ LastModule-FindName {
     == t.Context t.QualifiedName
 */
 $ENTRY GetProgName
-  [Context e.Info ( (e.LastName) e.Options )] =
-    [Context e.Info ( (e.LastName) e.Options)]
-    <MQualifiedName::Create e.LastName>;
+  [Context
+    e.Info
+    ( (e.LastName) e.Options-B (RealName t.RealName) e.Options-E )
+  ] =
+    [Context
+      e.Info
+      ( (e.LastName) e.Options-B (RealName t.RealName) e.Options-E )
+    ]
+    <MakeRealName t.RealName e.LastName>;
 
 $END MContext.

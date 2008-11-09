@@ -5,14 +5,13 @@ $IMPORT MContext;
 $IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
-/*==============================================================================
+/**=============================================================================
   Параметры конкретного диспетчера:
     s.Name ::= IDENTIFIER -- имя диспетчера
     s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
-    s.FnLinker ::= {
-      t.Context (e.OutName) (e.ObjName)* = t.Context Success;
-      t.Context (e.OutName) (e.ObjName)* = t.Context Fails;
-    }
+    <s.FnLinker t.hContext (e.OutName) (e.ObjName)>
+      == t.hContext Success
+      == t.hContext Fails
     e.Folder -- имя папки
     e.Ext -- расширение файла
 ==============================================================================*/
@@ -64,9 +63,9 @@ DoGenerate {
 }
 
 GeneratePer
-  t.Context t.IModule t.QualifiedName s.BackEndName =
+  t.hContext t.IModule t.QualifiedName s.BackEndName =
     <GeneratePer-Aux
-      ( <MContext::ExtractOption t.Context t.QualifiedName BaseDirectory> )
+      ( <MContext::ExtractOption t.hContext t.QualifiedName BaseDirectory> )
       t.IModule t.QualifiedName
       s.BackEndName <GetInfo s.BackEndName Generator>
     >;
@@ -77,10 +76,15 @@ GeneratePer-Aux {
   Fails s.Error =
     Fails t.Context t.IModule t.QualifiedName;
 
-  ( t.Context ModuleInfoNotFound )
+  ( t.Context ModuleNotFound )
   t.IModule t.QualifiedName s.BackEndName
   Success s.FnGenerator =
     Fails t.Context t.IModule t.QualifiedName;
+
+  ( t.hContext MismatchCase )
+  t.hIModule t.QualifiedName s.BackEndName
+  Success s.FnGenerator =
+    Fails t.hContext t.hIModule t.QualifiedName;
 
   ( t.Context Found e.BaseDirectory )
   t.IModule t.QualifiedName s.BackEndName
@@ -93,7 +97,7 @@ GeneratePer-Aux {
 
 GeneratePer-Aux2 {
   t.Context t.IModule s.FnGenerator
-  t.QualifiedName Success e.FileName =
+  Success t.QualifiedName e.FileName =
     Success t.Context
     <s.FnGenerator t.IModule e.FileName>
     t.QualifiedName;
@@ -156,7 +160,7 @@ ToNames {
 }
 
 PathOnly {
-  t.QualifiedName Success e.Path = (e.Path);
+  Success t.QualifiedName e.Path = (e.Path);
 
   // Ветвь с Fails не рассматриваем -- в именах мы полностью уверены.
 }
@@ -185,8 +189,8 @@ $ENTRY GetInfo
 
 /**
   <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
-    == t.QualifiedName Success e.OutPath
-    == t.QualifiedName Fails
+    == Success t.QualifiedName e.OutPath
+    == Fails t.QualifiedName
 */
 $ENTRY GetPath-T
   s.BEName t.QualifiedName e.BaseFolder =
@@ -199,19 +203,19 @@ $ENTRY GetPath-T
 GetPath-Aux {
   ( Fails s.Error ) ( e.Result )
   ( t.QualifiedName e.RelativePath ) e.BaseFolder =
-    t.QualifiedName Fails;
+    Fails t.QualifiedName;
 
   ( Success e.Folder ) ( Fails s.Error )
   ( t.QualifiedName e.RelativePath ) e.BaseFolder =
-    t.QualifiedName Fails;
+    Fails t.QualifiedName;
 
   ( Success e.Folder ) (Success e.Ext )
   ( t.QualifiedName e.RelativePath ) Current =
-    t.QualifiedName Success e.Folder '/' e.RelativePath '.' e.Ext;
+    Success t.QualifiedName e.Folder '/' e.RelativePath '.' e.Ext;
 
   ( Success e.Folder ) (Success e.Ext )
   ( t.QualifiedName e.RelativePath ) e.Base =
-    t.QualifiedName Success e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
+    Success t.QualifiedName e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
 }
 
 //------------------------------------------------------------------------------

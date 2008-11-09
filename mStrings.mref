@@ -197,4 +197,38 @@ FindField
 FindField-Aux
   (e.First) e.Rest = (e.Rest) (e.First);
 
+//------------------------------------------------------------------------------
+
+/**
+  <Decart ( t.ElemA* ) ( t.ElemB* )>
+    == (t.ElemA t.ElemB)*
+
+  Пример:
+  <Decart (1 2 3) (A B C D)> ==
+    (1 A) (1 B) (1 C) (1 D)
+    (2 A) (2 B) (2 C) (2 D)
+    (3 A) (3 B) (3 C) (3 D)
+*/
+$ENTRY Decart {
+  ( ) ( e.ElemsB ) = /* Пусто */;
+
+  ( e.ElemsA ) ( ) = /* Пусто */;
+
+  ( t.ElemA ) ( e.ElemsB ) =
+    <Folding t.ElemA e.ElemsB>;
+
+  ( t.ElemA e.ElemsA ) ( e.ElemsB ) =
+    <Folding t.ElemA e.ElemsB>
+    <Decart ( e.ElemsA ) ( e.ElemsB )>;
+}
+
+Folding {
+  t.ElemA = /* Пусто */;
+
+  t.ElemA t.ElemB = ( t.ElemA t.ElemB );
+
+  t.ElemA t.NextB e.TailB =
+    ( t.ElemA t.NextB ) <Folding t.ElemA e.TailB>;
+}
+
 $END MStrings.

@@ -263,7 +263,7 @@ $ENTRY AddUnresolvedFunction {
       t.ErrorList
       ( Semantics
         t.SrcPos
-        'Unresolved calling <' <TypeQualified e.QualifiedName> '... >'
+        'Unresolved calling <' <TypeQualified e.QualifiedName> ' ... >'
       )
     >;
 }

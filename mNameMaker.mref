@@ -1,57 +1,61 @@
 /**=============================================================================
-	Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
+  Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
 ==============================================================================*/
 $MODULE MNameMaker;
 
 $IMPORT MContext;
 
 /**
-	<MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
-		== t.Context t.QualifiedName Success e.FilePath
-		== t.Context t.QualifiedName Fails
+  <MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
+    == t.Context t.QualifiedName Success e.FilePath
+    == t.Context t.QualifiedName Fails
 
-	<s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
-		== t.QualifiedName Success e.RelativeName
-		== t.QualifiedName Fails
+  <s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
+    == t.QualifiedName Success e.RelativeName
+    == t.QualifiedName Fails
 */
 $ENTRY MakeName
-	t.Context t.QualifiedName s.MgrName s.FnRelative =
-		<MakeName--SwInContext
-			( <MContext::ExtractOption
-				t.Context t.QualifiedName BaseDirectory
-			> )
-			t.QualifiedName s.MgrName s.FnRelative
-		>;
+  t.Context t.QualifiedName s.MgrName s.FnRelative =
+    <MakeName--SwInContext
+      ( <MContext::ExtractOption
+        t.Context t.QualifiedName BaseDirectory
+      > )
+      t.QualifiedName s.MgrName s.FnRelative
+    >;
 
 MakeName--SwInContext {
-	( t.Context Found e.BaseName )
-	t.QualifiedName s.MgrName s.FnRelative =
-		<MakeName--SwMakeRelative
-			t.Context (e.BaseName)
-			<s.FnRelative t.QualifiedName s.MgrName>
-		>;
+  ( t.hContext Found e.BaseName )
+  t.QualifiedName s.MgrName s.FnRelative =
+    <MakeName--SwMakeRelative
+      t.hContext (e.BaseName)
+      <s.FnRelative t.QualifiedName s.MgrName>
+    >;
 
-	( t.Context OptionNotFound )
-	t.QualifiedName s.MgrName s.FnRelative =
-		t.Context t.QualifiedName Fails;
+  ( t.hContext OptionNotFound )
+  t.QualifiedName s.MgrName s.FnRelative =
+    t.hContext t.QualifiedName Fails;
 
-	( t.Context ModuleNotFound )
-	t.QualifiedName s.MgrName s.FnRelative =
-		t.Context t.QualifiedName Fails;
+  ( t.hContext ModuleNotFound )
+  t.QualifiedName s.MgrName s.FnRelative =
+    t.hContext t.QualifiedName Fails;
+
+  ( t.hContext MismatchCase )
+  t.QualifiedName s.MgrName s.FnRelative =
+    t.hContext t.QualifiedName Fails;
 }
 
 MakeName--SwMakeRelative {
-	t.Context (Current)
-	t.QualifiedName Success e.RelativeName =
-		t.Context t.QualifiedName Success e.RelativeName;
+  t.Context (Current)
+  t.QualifiedName Success e.RelativeName =
+    t.Context t.QualifiedName Success e.RelativeName;
 
-	t.Context (e.BaseName)
-	t.QualifiedName Success e.RelativeName =
-		t.Context t.QualifiedName Success e.BaseName '/' e.RelativeName;
+  t.Context (e.BaseName)
+  t.QualifiedName Success e.RelativeName =
+    t.Context t.QualifiedName Success e.BaseName '/' e.RelativeName;
 
-	t.Context (e.BaseName)
-	t.QualifiedName Fails =
-		t.Context t.QualifiedName Fails;
+  t.Context (e.BaseName)
+  t.QualifiedName Fails =
+    t.Context t.QualifiedName Fails;
 }
 
 $END MNameMaker.

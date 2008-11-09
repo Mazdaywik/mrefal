@@ -412,8 +412,8 @@ SwLoadFromOneModule {
     >;
 
   /*
-    Проверку на OptionNotFound не делаем. Это нарушение инварианта,
-    программа должна вылететь с ошибкой.
+    Проверку на OptionNotFound и на MismatchCase не делаем.
+    Это нарушение инварианта, программа должна вылететь с ошибкой.
   */
 
   (e.ModuleName) t.Context Found Recompiled =
@@ -643,6 +643,10 @@ SwDoCheckCompileIfNeed-Old {
 
   t.ModuleName s.Status t.Context Found Updated t.NextName =
     t.ModuleName s.Status t.Context;
+
+  /*
+    Проверку на MismatchName не делаем -- пускай программа рушится.
+  */
 }
 
 * <ImportsFromSym t.Context t.ModuleName t.FnList t.ImportList>

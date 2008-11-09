@@ -193,3 +193,25 @@ c 	( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Rest$ =
 c 		( $ADT::__StructureBrackets$ e.$Index::Rest$ ) ( $ADT::__StructureBrackets$ e.$Index::First$ ) ;
 c }
 
+b Entry::MStrings::Decart
+c $Entry::MStrings::Decart$ {
+c 	( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ e.$Index::ElemsB$ ) =
+c 		;
+c 	( $ADT::__StructureBrackets$ e.$Index::ElemsA$ ) ( $ADT::__StructureBrackets$ ) =
+c 		;
+c 	( $ADT::__StructureBrackets$ t.$Index::ElemA$ ) ( $ADT::__StructureBrackets$ e.$Index::ElemsB$ ) =
+c 		<$Local::MStrings::Folding$ t.$Index::ElemA$ e.$Index::ElemsB$ > ;
+c 	( $ADT::__StructureBrackets$ t.$Index::ElemA$ e.$Index::ElemsA$ ) ( $ADT::__StructureBrackets$ e.$Index::ElemsB$ ) =
+c 		<$Local::MStrings::Folding$ t.$Index::ElemA$ e.$Index::ElemsB$ > <$Entry::MStrings::Decart$ ( $ADT::__StructureBrackets$ e.$Index::ElemsA$ ) ( $ADT::__StructureBrackets$ e.$Index::ElemsB$ ) > ;
+c }
+
+b Local::MStrings::Folding
+c $Local::MStrings::Folding$ {
+c 	t.$Index::ElemA$ =
+c 		;
+c 	t.$Index::ElemA$ t.$Index::ElemB$ =
+c 		( $ADT::__StructureBrackets$ t.$Index::ElemA$ t.$Index::ElemB$ ) ;
+c 	t.$Index::ElemA$ t.$Index::NextB$ e.$Index::TailB$ =
+c 		( $ADT::__StructureBrackets$ t.$Index::ElemA$ t.$Index::NextB$ ) <$Local::MStrings::Folding$ t.$Index::ElemA$ e.$Index::TailB$ > ;
+c }
+

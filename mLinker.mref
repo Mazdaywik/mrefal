@@ -7,52 +7,52 @@ $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 
 $ENTRY LinkAll {
-	t.Context =
-		<RealLink
-			<Context::GetProgName t.Context>
-		>;
+  t.Context =
+    <RealLink
+      <Context::GetProgName t.Context>
+    >;
 }
 
 RealLink {
-	t.Context e.ProgName =
-		<MOutModuleStatus::Linking e.ProgName>
-		<MOutModuleStatus::Flush>
+  t.Context e.ProgName =
+    <MOutModuleStatus::Linking e.ProgName>
+    <MOutModuleStatus::Flush>
 
-		<RealLink-Aux
-			(e.ProgName)
-			<MakeOutNames
-				<MContext::ExtractModulesList t.Context>
-			>
-		>;
+    <RealLink-Aux
+      (e.ProgName)
+      <MakeOutNames
+        <MContext::ExtractModulesList t.Context>
+      >
+    >;
 }
 
 RealLink-Aux
-	(e.ProgName) t.Context e.Modules =
-		<MBE-Mgr::Link t.Context (e.ProgName) e.Modules>;
+  (e.ProgName) t.Context e.Modules =
+    <MBE-Mgr::Link t.Context (e.ProgName) e.Modules>;
 
 MakeOutNames
-	t.Context e.ModuleNames =
-		<DoMakeOutNames () t.Context e.ModuleNames>;
+  t.Context e.ModuleNames =
+    <DoMakeOutNames () t.Context e.ModuleNames>;
 
 DoMakeOutNames {
-	(e.OutNames) t.Context t.NextQName e.Tail =
-		<DoMakeOutNames
-			<SwMakeOutName
-				(e.OutNames) t.NextQName
-				<MContext::ExtractOption t.Context t.NextQName BaseDirectory>
-			>
-			e.Tail
-		>;
+  (e.OutNames) t.Context t.NextQName e.Tail =
+    <DoMakeOutNames
+      <SwMakeOutName
+        (e.OutNames) t.NextQName
+        <MContext::ExtractOption t.Context t.NextQName BaseDirectory>
+      >
+      e.Tail
+    >;
 
-	(e.OutNames) t.Context =
-		t.Context e.OutNames;
+  (e.OutNames) t.Context =
+    t.Context e.OutNames;
 }
 
 SwMakeOutName {
-	(e.OutNames) t.QualifiedName t.Context Found e.BaseDir =
-		(e.OutNames (t.QualifiedName e.BaseDir)) t.Context;
+  (e.OutNames) t.QualifiedName t.Context Found e.BaseDir =
+    (e.OutNames (t.QualifiedName e.BaseDir)) t.Context;
 
-	// Ветвь с Fails не проверяем. Пусть будет fail down.
+  // Ветвь с ! Found не проверяем. Пусть будет fail down.
 }
 
 $END MLinker.

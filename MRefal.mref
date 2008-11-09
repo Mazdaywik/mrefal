@@ -76,7 +76,7 @@ DeleteEmpty {
 }
 
 CompileList {
-  t.hContext ('+new+') (e.ModulePath) e.Modules =
+  t.hContext ('+new+') ('=MP:' e.ModulePath) e.Modules =
     <CheckFoundResult
       <MLambda::MapReduce
         <MLambda::Composite
@@ -121,8 +121,8 @@ CheckFoundResult {
     <MLambda::TerminateAccumulator
       & FinishMake
       <MLambda::Reduce
-        (Success t.hContext <MError::CreateErrList>)
         & Make
+        (Success t.hContext <MError::CreateErrList>)
         e.ResultsFound
       >
     >;

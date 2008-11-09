@@ -240,7 +240,7 @@ UpdateEntity-GuardInvariant {
   t.ErrorList t.IModule InvalidKind t.SrcPos e.NewName =
     t.IModule
     <MError::AddRedeclaredIdentifier
-      t.ErrorList t.SrcPos e.NewName '(!)'
+      t.ErrorList t.SrcPos e.NewName
     >;
 
   /*

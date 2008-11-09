@@ -1,0 +1,16 @@
+$MODULE MCompiler;
+
+$IMPORT MClusters;
+$IMPORT MModules;
+
+/**
+  <Make t.hContext t.hErrorList t.QualifiedName>
+    == t.hContext t.hErrorList Success
+    == t.hContext t.hErrorList Fails
+*/
+$ENTRY Make
+  t.hContext t.hErrorList t.QualifiedName =
+    t.hContext t.hErrorList Fails;
+
+
+$END MCompiler.

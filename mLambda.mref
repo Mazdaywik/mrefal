@@ -225,7 +225,7 @@ GuardTerm {
 */
 $ENTRY Reduce-R {
   t.Lambda t.Accum e.AntiTail t.Last =
-    <Reduce
+    <Reduce-R
       t.Lambda
       <GuardTerm <Apply t.Lambda t.Accum t.Last>>
       e.AntiTail

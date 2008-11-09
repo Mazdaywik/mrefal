@@ -5,8 +5,10 @@ $IMPORT MSelfDiag;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
 
-* <UpdateModuleInfo t.Context (e.ModName) e.NewOptionsList>
-* == t.UpdatedContext
+/**
+  <UpdateModuleInfo t.Context (e.ModName) e.NewOptionsList>
+    == t.UpdatedContext
+*/
 $ENTRY UpdateModuleInfo {
   t.Context (e.ModName) e.NewOptions =
     <UpdateInfo-Guard
@@ -22,8 +24,17 @@ UpdateInfo-Guard {
   t.Context Success =
     t.Context;
 
-  t.Context Fails =
-    <MSelfDiag::Error 'Invalid options in Context::UpdateModuleInfo'>;
+  t.Context Fails s.Error =
+    <MSelfDiag::Error
+      'Invalid options in Context::UpdateModuleInfo, error '
+      <UpdateError s.Error>
+    >;
+}
+
+UpdateError {
+  UnknownOption = 'unknown option';
+
+  MismatchCase = 'mismatch case';
 }
 
 $ENTRY LastModule
@@ -43,10 +54,12 @@ LastModule-Guard {
     <MSelfDiag::Error 'Context::LastModule: module name not found'>;
 }
 
-* <ExtractOption t.Context s.Option e.ModName>
-* == t.Context Found e.Option
-* == t.Context ModuleInfoNotFound
-* !fail abort!
+/**
+  <ExtractOption t.Context s.Option e.ModName>
+    == t.Context Found e.Option
+    == t.Context ModuleInfoNotFound
+    !fail abort!
+*/
 $ENTRY ExtractOption
   t.Context s.Option e.ModName =
     <ExtractOption-Guard
@@ -66,6 +79,9 @@ ExtractOption-Guard {
 
   t.Context ModuleNotFound =
     t.Context ModuleInfoNotFound;
+
+  t.Context MismatchCase =
+    t.Context ModuleInfoNotFound;
 }
 
 $ENTRY GetProgName
@@ -78,8 +94,10 @@ GetProgName-AsNoQualified
   t.Context t.ProgName =
     t.Context <MQualifiedSupport::UnQualify t.ProgName>;
 
-* <ExtractModulesList t.Context>
-* == t.Context (e.ModuleName)*
+/**
+  <ExtractModulesList t.Context>
+    == t.Context (e.ModuleName)*
+*/
 $ENTRY ExtractModulesList
   t.Context =
     <ExtractList-UnQualify

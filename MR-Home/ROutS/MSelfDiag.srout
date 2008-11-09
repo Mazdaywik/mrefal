@@ -7,6 +7,10 @@ c 	e.$Index::Message$ =
 c 		<$Entry::MRefalRTS::Prout$ 'INTERNAL ERROR: ' e.$Index::Message$ > <$Entry::MSelfDiag::Log$ 'INTERNAL ERROR: ' e.$Index::Message$ > <$Entry::MRefalRTS::Exit$ 1 > ;
 c }
 
+b Entry::MSelfDiag::FailDown
+c $Entry::MSelfDiag::FailDown$ {
+c NF = NF ; }
+
 b Entry::MSelfDiag::Log
 c $Entry::MSelfDiag::Log$ {
 c 	e.$Index::Message$ =

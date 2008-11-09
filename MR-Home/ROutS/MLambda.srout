@@ -5,12 +5,40 @@ b Entry::MLambda::Apply
 c $Entry::MLambda::Apply$ {
 c 	( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::LeftLinked$ ) e.$Index::Argument$ =
 c 		<$Entry::MLambda::Apply$ t.$Index::Lambda$ e.$Index::LeftLinked$ e.$Index::Argument$ > ;
+c 	( $ADT::MLambda::LH-Lambda$ t.$Index::Lambda$ e.$Index::LeftLinked$ ) t.$Index::Handle$ e.$Index::Argument$ =
+c 		<$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Handle$ e.$Index::LeftLinked$ e.$Index::Argument$ > ;
 c 	( $ADT::MLambda::R-Lambda$ t.$Index::Lambda$ e.$Index::RightLinked$ ) e.$Index::Argument$ =
 c 		<$Entry::MLambda::Apply$ t.$Index::Lambda$ e.$Index::Argument$ e.$Index::RightLinked$ > ;
 c 	( $ADT::MLambda::C-Lambda$ t.$Index::InnerLambda$ t.$Index::OuterLambda$ ) e.$Index::Argument$ =
 c 		<$Entry::MLambda::Apply$ t.$Index::OuterLambda$ <$Entry::MLambda::Apply$ t.$Index::InnerLambda$ e.$Index::Argument$ > > ;
+c 	( $ADT::MLambda::H-Lambda$ t.$Index::Lambda$ ) t.$Index::Handle$ e.$Index::Argument$ =
+c 		t.$Index::Handle$ <$Entry::MLambda::Apply$ t.$Index::Lambda$ e.$Index::Argument$ > ;
+c 	( $ADT::MLambda::P-Lambda$ t.$Index::Lambda-L$ t.$Index::Lambda-R$ ) e.$Index::Argument$ =
+c 		<$Entry::MLambda::Apply$ t.$Index::Lambda-L$ e.$Index::Argument$ > <$Entry::MLambda::Apply$ t.$Index::Lambda-R$ e.$Index::Argument$ > ;
+c 	( $ADT::MLambda::PH-Lambda$ e.$Index::Lambdas$ ) t.$Index::Handle$ e.$Index::Argument$ =
+c 		<$Local::MLambda::Apply-PH-Finish$ <$Entry::MLambda::MapReduce$ $Local::MLambda::Applies-PH$ ( $ADT::__StructureBrackets$ t.$Index::Handle$ e.$Index::Argument$ ) e.$Index::Lambdas$ > > ;
+c 	( $ADT::MLambda::Const-Lambda$ e.$Index::Value$ ) e.$Index::Argument$ =
+c 		e.$Index::Value$ ;
 c 	s.$Index::FnPtr$ e.$Index::Argument$ =
 c 		<Mu s.$Index::FnPtr$ e.$Index::Argument$ > ;
+c }
+
+b Local::MLambda::Applies-PH
+c $Local::MLambda::Applies-PH$ {
+c 	( $ADT::__StructureBrackets$ t.$Index::Handle$ e.$Index::Argument$ ) t.$Index::Lambda$ =
+c 		<$Local::MLambda::Applies-PH-Aux$ ( $ADT::__StructureBrackets$ e.$Index::Argument$ ) <$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Handle$ e.$Index::Argument$ > > ;
+c }
+
+b Local::MLambda::Applies-PH-Aux
+c $Local::MLambda::Applies-PH-Aux$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Argument$ ) t.$Index::Handle$ e.$Index::Result$ =
+c 		( $ADT::__StructureBrackets$ t.$Index::Handle$ e.$Index::Argument$ ) e.$Index::Result$ ;
+c }
+
+b Local::MLambda::Apply-PH-Finish
+c $Local::MLambda::Apply-PH-Finish$ {
+c 	( $ADT::__StructureBrackets$ t.$Index::Handle$ e.$Index::Argument$ ) e.$Index::Results$ =
+c 		t.$Index::Handle$ e.$Index::Results$ ;
 c }
 
 b Entry::MLambda::BindLeft
@@ -19,6 +47,12 @@ c 	( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::Left1$ ) e.$Index::Lef
 c 		( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::Left1$ e.$Index::Left2$ ) ;
 c 	t.$Index::Lambda$ e.$Index::Left$ =
 c 		( $ADT::MLambda::L-Lambda$ t.$Index::Lambda$ e.$Index::Left$ ) ;
+c }
+
+b Entry::MLambda::BindLeft-H
+c $Entry::MLambda::BindLeft-H$ {
+c 	t.$Index::Lambda$ e.$Index::Left$ =
+c 		( $ADT::MLambda::LH-Lambda$ t.$Index::Lambda$ e.$Index::Left$ ) ;
 c }
 
 b Entry::MLambda::BindRight
@@ -31,8 +65,36 @@ c }
 
 b Entry::MLambda::Composite
 c $Entry::MLambda::Composite$ {
-c 	t.$Index::InnerLambda$ t.$Index::OuterLambda$ =
-c 		( $ADT::MLambda::C-Lambda$ t.$Index::InnerLambda$ t.$Index::OuterLambda$ ) ;
+c 	t.$Index::InnerLambda$ =
+c 		t.$Index::InnerLambda$ ;
+c 	t.$Index::InnerLambda$ e.$Index::OtherLambdas$ =
+c 		( $ADT::MLambda::C-Lambda$ t.$Index::InnerLambda$ <$Entry::MLambda::Composite$ e.$Index::OtherLambdas$ > ) ;
+c }
+
+b Entry::MLambda::MakeHandled
+c $Entry::MLambda::MakeHandled$ {
+c 	t.$Index::Lambda$ =
+c 		( $ADT::MLambda::H-Lambda$ t.$Index::Lambda$ ) ;
+c }
+
+b Entry::MLambda::Parallel
+c $Entry::MLambda::Parallel$ {
+c 	t.$Index::Lambda$ =
+c 		t.$Index::Lambda$ ;
+c 	t.$Index::Lambda$ e.$Index::OtherLambdas$ =
+c 		( $ADT::MLambda::P-Lambda$ t.$Index::Lambda$ <$Entry::MLambda::Parallel$ e.$Index::OtherLambdas$ > ) ;
+c }
+
+b Entry::MLambda::Parallel-H
+c $Entry::MLambda::Parallel-H$ {
+c 	e.$Index::Lambdas$ =
+c 		( $ADT::MLambda::PH-Lambda$ e.$Index::Lambdas$ ) ;
+c }
+
+b Entry::MLambda::Const
+c $Entry::MLambda::Const$ {
+c 	e.$Index::Value$ =
+c 		( $ADT::MLambda::Const-Lambda$ e.$Index::Value$ ) ;
 c }
 
 b Entry::MLambda::Map
@@ -68,13 +130,7 @@ c }
 b Entry::MLambda::MapReduce
 c $Entry::MLambda::MapReduce$ {
 c 	t.$Index::Lambda$ t.$Index::Accum$ e.$Index::Src$ =
-c 		<$Local::MLambda::UnBracket-AccumResult$ <$Entry::MLambda::Reduce$ <$Entry::MLambda::BindLeft$ $Local::MLambda::MapReducer$ t.$Index::Lambda$ > ( $ADT::__StructureBrackets$ t.$Index::Accum$ ) e.$Index::Src$ > > ;
-c }
-
-b Local::MLambda::UnBracket-AccumResult
-c $Local::MLambda::UnBracket-AccumResult$ {
-c 	( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Result$ ) =
-c 		t.$Index::Accum$ e.$Index::Result$ ;
+c 		<$Entry::MLambda::UnBracket$ <$Entry::MLambda::Reduce$ <$Entry::MLambda::BindLeft$ $Local::MLambda::MapReducer$ t.$Index::Lambda$ > ( $ADT::__StructureBrackets$ t.$Index::Accum$ ) e.$Index::Src$ > > ;
 c }
 
 b Local::MLambda::MapReducer
@@ -101,6 +157,12 @@ c 	t.$Index::LLambda$ ( $ADT::__StructureBrackets$ t.$Index::Accum$ e.$Index::Re
 c 		( $ADT::__StructureBrackets$ <$Entry::MLambda::Apply$ t.$Index::LLambda$ t.$Index::Accum$ t.$Index::Src$ > e.$Index::Result$ ) ;
 c }
 
+b Entry::MLambda::TerminateAccumulator
+c $Entry::MLambda::TerminateAccumulator$ {
+c 	t.$Index::FnTerminator$ t.$Index::Accum$ e.$Index::Elems$ =
+c 		<$Entry::MLambda::Apply$ t.$Index::FnTerminator$ t.$Index::Accum$ > e.$Index::Elems$ ;
+c }
+
 b Entry::MLambda::UnBracket
 c $Entry::MLambda::UnBracket$ {
 c 	( $ADT::__StructureBrackets$ e.$Index::Brackets$ ) =
@@ -111,5 +173,29 @@ b Entry::MLambda::Bracket
 c $Entry::MLambda::Bracket$ {
 c 	e.$Index::Expr$ =
 c 		( $ADT::__StructureBrackets$ e.$Index::Expr$ ) ;
+c }
+
+b Entry::MLambda::UnBracket-H
+c $Entry::MLambda::UnBracket-H$ {
+c 	t.$Index::Handle$ ( $ADT::__StructureBrackets$ e.$Index::Brackets$ ) =
+c 		t.$Index::Handle$ e.$Index::Brackets$ ;
+c }
+
+b Entry::MLambda::Bracket-H
+c $Entry::MLambda::Bracket-H$ {
+c 	t.$Index::Handle$ e.$Index::Expr$ =
+c 		t.$Index::Handle$ ( $ADT::__StructureBrackets$ e.$Index::Expr$ ) ;
+c }
+
+b Entry::MLambda::Nil
+c $Entry::MLambda::Nil$ {
+c 	e.$Index::Any$ =
+c 		;
+c }
+
+b Entry::MLambda::Identity
+c $Entry::MLambda::Identity$ {
+c 	e.$Index::Value$ =
+c 		e.$Index::Value$ ;
 c }
 

@@ -12,8 +12,7 @@ $IMPORT MQualifiedName;
   <LookupCmdLineModule
     t.hContext (e.ModulePath) e.CmdLinePath
   >
-    == t.hContext Found
-      t.QualifiedName s.FrontEndName e.BaseDirectory
+    == t.hContext Found t.QualifiedName s.FrontEndName e.BaseDirectory
     == t.hContext NotFound
 */
 $ENTRY LookupCmdLineModule
@@ -199,7 +198,9 @@ GenVariants-CmdLine-Aux {
       t.hContext
       <MLambda::Map
         <MLambda::BindLeft & FinishVariant e.ModuleName>
-        <MStrings::Decart (e.RawVariants ) (e.AvailFrontEnds Library)>
+        <MStrings::Decart
+          (e.RawVariants) (e.AvailFrontEnds Library)
+        >
       >
     >;
 }
@@ -219,17 +220,16 @@ FinishVariant
   >
     == t.hContext Found s.FrontEndName e.BaseDirectory
     == t.hContext NotFound
+  e.BaseDirectory ::= Current | e.FSPath
 */
 $ENTRY LookupImportModule
   t.hContext (e.ModulePath) t.QualifiedName =
     <LookupImportModule-SwKnown
-      (e.ModulePath)
-      t.QualifiedName
+      (e.ModulePath) t.QualifiedName
       <MContext::ExtractOption
         t.hContext t.QualifiedName FrontEnd
       >
-   >;
-
+    >;
 
 LookupImportModule-SwKnown {
   (e.ModulePath) t.QualifiedName
@@ -237,32 +237,30 @@ LookupImportModule-SwKnown {
     <LookupImportModule-Known
       t.QualifiedName Library
       <MContext::ExtractOption
-        t.hContext
-        t.QualifiedName
-        BaseDirectory
+        t.hContext t.QualifiedName BaseDirectory
       >
     >;
 
   (e.ModulePath) t.QualifiedName
   t.hContext Found s.FrontEnd e.Path =
     <LookupImportModule-Known
-       t.QualifiedName s.FrontEnd
-       <MContext::ExtractOption
-         t.hContext
-         t.QualifiedName
-         BaseDirectory
-       >
-     >;
-
-  (e.ModulePath) t.QualifiedName t.hContext
-  ModuleNotFound =
-    <LookupImportModule-Unknown
-      t.hContext t.QualifiedName e.ModulePath
+      t.QualifiedName s.FrontEnd
+      <MContext::ExtractOption
+        t.hContext t.QualifiedName BaseDirectory
+      >
     >;
 
-  (e.ModulePath) t.QualifiedName t.hContext
-  MismatchCase =
+  (e.ModulePath) t.QualifiedName
+  t.hContext ModuleNotFound =
+    <LookupImportModule-Unknown
+       t.hContext t.QualifiedName e.ModulePath
+    >;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext MismatchCase =
     t.hContext NotFound;
+
+  // Здесь нарушение инварианта
 }
 
 LookupImportModule-Known {
@@ -279,26 +277,21 @@ LookupImportModule-Unknown
       <CheckVariants
         t.hContext
         <MLambda::Map
-          <MLambda::BindLeft
-            & MakeImportVariant t.QualifiedName
-          >
-          <MStrings::Decart
-            (e.ModulePath) ( <MFE-Mgr::GetList> Library )
-          >
+          <MLambda::BindLeft & MakeImportVariant t.QualifiedName>
+          <MStrings::Decart ( e.ModulePath ) ( <MFE-Mgr::GetList> Library )>
         >
       >
     >;
 
 MakeImportVariant
-  t.L-ModuleName ((e.MP-Catalog) s.FrontEnd) =
+  t.L-ModuleName ( (e.MP-Catalog) s.FrontEnd ) =
     ( s.FrontEnd t.L-ModuleName e.MP-Catalog );
 
 CheckVariants-Import-CorrectFormat {
   t.hContext Found t.QualifiedName s.FrontEnd e.BaseDirectory =
     t.hContext Found s.FrontEnd e.BaseDirectory;
 
-  t.hContext NotFound =
-    t.hContext NotFound;
+  t.hContext NotFound = t.hContext NotFound;
 }
 
 //------------------------------------------------------------------------------
@@ -306,7 +299,9 @@ CheckVariants-Import-CorrectFormat {
 /*
   <CheckVariants t.hContext e.Variants>
     == t.hContext Found t.QualifiedName s.FrontEnd e.BaseDirectory
-    == t.hContext NonFound;
+    == t.hContext NotFound
+
+  e.Variants ::= ( s.FrontEnd t.QualifiedName e.BaseDirectory )*
 */
 ?CheckVariants
   t.hContext e.Variants =
@@ -314,7 +309,9 @@ CheckVariants-Import-CorrectFormat {
       t.hContext e.Variants
     >;
 
-CheckVariants {
+$import MSelfDiag;
+
+CheckVariants
   t.hContext e.Variants =
     <MSelfDiag::Log 't.hContext = ' t.hContext>
     <MSelfDiag::Log 'e.Variants ='>
@@ -327,9 +324,6 @@ CheckVariants {
     >
     <MSelfDiag::Log>
     <?CheckVariants t.hContext e.Variants>;
-}
-
-$import MSelfDiag;
 
 DoCheckVariants-CmdLine {
   t.hContext (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =
@@ -489,6 +483,11 @@ $ENTRY CanonicalModuleName {
     <MStrings::Upper s.Initial> <MStrings::Lower e.Tail>;
 }
 
+/**
+  <???Name t.hContext e.ModName>
+    == t.hContext e.???Name
+  ??? ::= Sym | Out
+*/
 $ENTRY SymName {
   t.hContext e.ModName =
     <MLambda::Nil <SymDirName>>
@@ -515,10 +514,11 @@ $ENTRY OutName {
     >;
 }
 
-XXXName-Guard
-  Success t.QualifiedName e.Path =
-    <TrueSlash e.Path>;
+XXXName-Guard {
+  Success t.QualifiedName e.Path = <TrueSlash e.Path>;
 
+  // Остальное -- нарушение инварианта
+}
 
 TrueSlash {
   e.Path-B '/' e.Path-E = e.Path-B '\\' <TrueSlash e.Path-E>;

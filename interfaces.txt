@@ -16,6 +16,20 @@ s.Status ::=
     ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 
 ################################################################################
+Module Context;
+
+<UpdateModuleInfo t.Context (e.ModName) e.NewOptionsList>
+  == t.UpdatedContext
+
+<ExtractOption t.Context s.Option e.ModName>
+  == t.Context Found e.Option
+  == t.Context ModuleInfoNotFound
+  !fail abort!
+
+<ExtractModulesList t.Context>
+  == t.Context (e.ModuleName)*
+
+################################################################################
 Module MBackEnd_Refal5;
 
 <Generate-T t.IModule e.OutName>
@@ -74,15 +88,44 @@ s.Error ::= InvalidMgr | InvalidOption
   == e<name>.MgrNames
 
 ################################################################################
+Module MClusters;
+=============================================================================
+Функции модуля обрабатывают "гроздь" модулей -- набор прямо или косвенно зави-
+сящих модулей от некоторого модуля. Две основные фукции модуля: CheckNeedCompile
+для проверки необходимости перекомпиляции данного модуля и ListForLinking для
+получения списка модулей (упорядоченных в топологическом порядке), подлежащих
+компоновке.
+==============================================================================
+
+<CheckNeedCompile
+  t.hContext (e.ModulePath) t.QualifiedName
+>
+  == t.hContext t.QualifiedName s.Result
+
+s.Result ::= NeedRecompile | Updated | Library | NotFound
+
+<ListForLinking t.hContext t.QualifiedName>
+  == t.hContext Success t.QualifiedName*
+  == t.hContext Fails
+
+################################################################################
+Module MCompiler;
+
+<Make t.hContext t.hErrorList t.QualifiedName>
+  == t.hContext t.hErrorList Success
+  == t.hContext t.hErrorList Fails
+
+################################################################################
 Module MContext;
 
 <Create> == t.Context
 
 <Destroy t.Context> == empty
 
-<UpdateInfo t.Context t.QualifiedName e.NewOptionList>
-  == t.UpdatedContext Success
-  == t.Context Fails
+<UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
+  == t.hUpdatedContext Success
+  == t.hContext Fails s.Error
+s.Error ::= UnknownOption | MismatchCase
 
 ---------------------------------------------------------------------------
 # STARTCUT
@@ -97,6 +140,10 @@ DefaultOptions
     // Информация о входных и выходных частях
     (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
     (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
+
+    // Информация о настоящем имени модуля (контекст индексируется без учёта
+    // регистра, но регистр надо проверять)
+    (RealName Unknown) // Unknown | t.QualifiedName
 
     // Информация о статусе компилирования
 
@@ -144,10 +191,11 @@ DefaultOptions
 # ENDCUT
 ---------------------------------------------------------------------------
 
-<ExtractOption t.Context t.QualifiedName s.Option>
-  == t.Context Found e.Option
-  == t.Context OptionNotFound
-  == t.Context ModuleNotFound
+<ExtractOption t.hContext t.QualifiedName s.Option>
+  == t.hContext Found e.Option
+  == t.hContext OptionNotFound
+  == t.hContext ModuleNotFound
+  == t.hContext MismatchCase
 
 <ExtractModulesList t.Context>
   == t.Context t.QualifiedName*
@@ -428,6 +476,10 @@ Module MLambda;
 <Apply t.Lambda_N t.Handle_N-1 e.Result_N-1>
   === t.Handle' e.Result
 
+<Const e.Value>
+  == t.Lambda
+<Apply t.Lambda e.AnyArg> === e.Value
+
 ---------------------------------------------------------------------------
 
 <Map t.Lambda t.Src*>
@@ -453,8 +505,6 @@ Module MLambda;
 <TerminateAccumulator t.FnTerminator t.Accum e.Elems>
   == <Apply t.FnTerminator t.Accum> e.Elems
 
-<Nil e.Any> == empty
-
 ---------------------------------------------------------------------------
 
 <UnBracket (e.Brackets)> == e.Brackets
@@ -466,6 +516,10 @@ Module MLambda;
 
 <Bracket-H t.Handle e.Expr>
   == t.Handle (e.Expr)
+
+<Nil e.Any> == empty
+
+<Identity e.Value> == e.Value
 
 ################################################################################
 Module MLinker_Refal5;
@@ -507,8 +561,7 @@ Module MModules;
 <LookupCmdLineModule
   t.hContext (e.ModulePath) e.CmdLinePath
 >
-  == t.hContext Found
-    t.QualifiedName s.FrontEndName e.BaseDirectory
+  == t.hContext Found t.QualifiedName s.FrontEndName e.BaseDirectory
   == t.hContext NotFound
 
 <LookupImportModule
@@ -516,6 +569,7 @@ Module MModules;
 >
   == t.hContext Found s.FrontEndName e.BaseDirectory
   == t.hContext NotFound
+e.BaseDirectory ::= Current | e.FSPath
 
 <SourceState e.ModName>
   == ModuleNotFound
@@ -523,12 +577,13 @@ Module MModules;
   == NeedRecompile
   == SrcNotUpdated
 
-<LookupLibrary e.ModuleName>
-  == ModuleNotFound
-  == Library (Sym e.SymName) (Out e.OutName)
+<LookupLibrary t.hContext e.ModuleName>
+  == t.hContext ModuleNotFound
+  == t.hContext Library (Sym e.SymName) (Out e.OutName)
 
-<LookupModule-T e.ModuleName>
-   == s.Status
+<LookupModule-T t.hContext e.ModuleName>
+   == t.hContext
+     s.Status
      (Sym e.SymName)
      (Out e.OutName)
      (Src e.SrcName)
@@ -544,12 +599,12 @@ s.Status ::= one of
 Module MNameMaker;
 
 <MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
-	== t.Context t.QualifiedName Success e.FilePath
-	== t.Context t.QualifiedName Fails
+  == t.Context t.QualifiedName Success e.FilePath
+  == t.Context t.QualifiedName Fails
 
 <s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
-	== t.QualifiedName Success e.RelativeName
-	== t.QualifiedName Fails
+  == t.QualifiedName Success e.RelativeName
+  == t.QualifiedName Fails
 
 ################################################################################
 Module MOS;
@@ -765,6 +820,15 @@ s.Num >= 0
 <Fields (e.Fields) e.Line>
   == (e.SubField)*
 e.Fields = s<num>*
+
+<Decart ( t.ElemA* ) ( t.ElemB* )>
+  == (t.ElemA t.ElemB)*
+
+Пример:
+<Decart (1 2 3) (A B C D)> ==
+  (1 A) (1 B) (1 C) (1 D)
+  (2 A) (2 B) (2 C) (2 D)
+  (3 A) (3 B) (3 C) (3 D)
 
 ################################################################################
 Module MSwapSupport;

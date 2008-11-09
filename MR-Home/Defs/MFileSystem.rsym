@@ -1,17 +1,16 @@
 $module MFileSystem;
 
-$import FileIO;
+$import MRefalRTS;
 $import MDosWinRecoder;
 $import MLambda;
-$import MOS;
 $import MOrder;
-$import MRefalRTS;
+$import MOS;
+$import FileIO;
 $import MSelfDiag;
 $import MStrings;
 $import MSwapSupport;
 $import Types;
 
-$entry CompareFileTime;
 $entry ExistFile;
 $entry ExistFile-T;
 $entry FileAttribute;

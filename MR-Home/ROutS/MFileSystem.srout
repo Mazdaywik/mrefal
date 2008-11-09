@@ -152,12 +152,6 @@ c 	s.$Index::Attrib$ t.$Index::OneFile$ e.$Index::Tail$ =
 c 		<$Entry::MSelfDiag::Error$ 'Found many files in ExtractAttrib ' t.$Index::OneFile$ e.$Index::Tail$ > ;
 c }
 
-b Entry::MFileSystem::CompareFileTime
-c $Entry::MFileSystem::CompareFileTime$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) =
-c 		<$Entry::MOrder::Compare$ ( $ADT::__StructureBrackets$ e.$Index::Time1$ ) ( $ADT::__StructureBrackets$ e.$Index::Time2$ ) > ;
-c }
-
 b Entry::MFileSystem::ParseFileName
 c $Entry::MFileSystem::ParseFileName$ {
 c 	e.$Index::FileName$ =

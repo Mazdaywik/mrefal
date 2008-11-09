@@ -70,7 +70,7 @@ GetPath-Aux {
     == t.Context t.QualifiedName Success e.FileName
     == t.Context t.QualifiedName Fails
 */
-$ENTRY X_GetPath
+$ENTRY X_GetPath-T
   t.Context t.QualifiedName s.FEName =
     <MNameMaker::MakeName
       t.Context t.QualifiedName s.FEName

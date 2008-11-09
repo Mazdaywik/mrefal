@@ -1,8 +1,8 @@
 $module MStrings;
 
+$import MLambda;
 $import MRefalRTS;
 $import Math;
-$import MLambda;
 
 $entry Chr;
 $entry Decart;

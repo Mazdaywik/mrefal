@@ -1,6 +1,5 @@
 $module MDosWinRecoder;
 
-
 $entry DosToWin;
 $entry WinToDos;
 

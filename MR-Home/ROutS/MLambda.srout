@@ -122,7 +122,7 @@ c }
 b Entry::MLambda::Reduce-R
 c $Entry::MLambda::Reduce-R$ {
 c 	t.$Index::Lambda$ t.$Index::Accum$ e.$Index::AntiTail$ t.$Index::Last$ =
-c 		<$Entry::MLambda::Reduce$ t.$Index::Lambda$ <$Local::MLambda::GuardTerm$ <$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Accum$ t.$Index::Last$ > > e.$Index::AntiTail$ > ;
+c 		<$Entry::MLambda::Reduce-R$ t.$Index::Lambda$ <$Local::MLambda::GuardTerm$ <$Entry::MLambda::Apply$ t.$Index::Lambda$ t.$Index::Accum$ t.$Index::Last$ > > e.$Index::AntiTail$ > ;
 c 	t.$Index::Lambda$ t.$Index::Accum$ =
 c 		t.$Index::Accum$ ;
 c }

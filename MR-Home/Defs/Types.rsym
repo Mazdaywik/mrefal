@@ -1,6 +1,5 @@
 $module Types;
 
-
 $entry CharType;
 $entry Digits;
 $entry LoAlph;

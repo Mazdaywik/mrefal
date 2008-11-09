@@ -1,6 +1,5 @@
 $module MLambda;
 
-
 $entry Apply;
 $entry BindLeft;
 $entry BindLeft-H;

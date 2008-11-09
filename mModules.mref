@@ -145,6 +145,7 @@ SlashParse
       >
     >;
 
+// автомат
 SlashParse-A {
   // Пустые сегменты игнорируем
   () '\\' = ();
@@ -432,7 +433,7 @@ CheckVariant-T-LibAux {
 }
 
 Lib-CheckExist {
-  ( s.BackEnd t.QualifiedName Success e.FilePath ) =
+  ( s.BackEnd Success t.QualifiedName e.FilePath ) =
     <SwLib-CheckExist
       s.BackEnd <MFileSystem::ExistFile-T e.FilePath>
     >;

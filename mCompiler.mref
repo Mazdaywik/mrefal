@@ -1,16 +1,68 @@
 $MODULE MCompiler;
 
+$IMPORT MBE-Mgr;
 $IMPORT MClusters;
 $IMPORT MModules;
+$IMPORT MQualifiedName;
+
+$IMPORT Compiler;
 
 /**
-  <Make t.hContext t.hErrorList t.QualifiedName>
+  <Make t.hContext t.hErrorList t.RootModuleName>
     == t.hContext t.hErrorList Success
     == t.hContext t.hErrorList Fails
 */
 $ENTRY Make
-  t.hContext t.hErrorList t.QualifiedName =
-    t.hContext t.hErrorList Fails;
+  t.hContext t.hErrorList t.RootModuleName =
+    <Make-Aux
+      <Link
+        <Compiler::CompileByModuleName-Q t.hContext t.RootModuleName>
+        t.RootModuleName
+      >
+      t.hErrorList
+    >;
 
+Make-Aux
+  t.hContext s.Result t.hErrorList =
+    t.hContext t.hErrorList s.Result;
+
+//------------------------------------------------------------------------------
+
+/*
+  <Parse t.hContext t.hErrorList t.ModuleName>
+    == t.hContext t.hErrorList Success s.Result t.hRawIModule
+    == t.hContext t.hErrorList Fails
+
+  s.Result ::= Success | Warnings | Errors
+*/
+
+//------------------------------------------------------------------------------
+
+/*
+  <CompileImport t.hContext t.hErrorList t.ModuleName>
+    == t.hContext t.hErrorList Success s.Result t.hSymIModule
+    == t.hContext t.hErrorList Fails
+
+  s.Result ::= Success | Warnings | Errors
+*/
+
+//------------------------------------------------------------------------------
+
+/*
+  <Link t.hContext t.RootModuleName>
+    == t.hContext Success
+    == t.hContext Fails
+*/
+Link
+  t.hContext t.RootModuleName =
+    <Link-Aux
+      ( <MQualifiedName::Parse t.RootModuleName> )
+      <MClusters::ListForLinking t.hContext t.RootModuleName>
+    >;
+
+Link-Aux {
+  ( (e.OutName) ) t.hContext e.Modules =
+    <MBE-Mgr::Link t.hContext (e.OutName) e.Modules>;
+}
 
 $END MCompiler.

@@ -2,6 +2,7 @@ $MODULE MBE-Mgr;
 
 $IMPORT MBEFE-Holder;
 $IMPORT MContext;
+$IMPORT MLambda;
 $IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
@@ -9,7 +10,7 @@ $IMPORT MQualifiedName;
   Параметры конкретного диспетчера:
     s.Name ::= IDENTIFIER -- имя диспетчера
     s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
-    <s.FnLinker t.hContext (e.OutName) (e.ObjName)>
+    <s.FnLinker t.hContext (e.OutName) (e.ObjName)*>
       == t.hContext Success
       == t.hContext Fails
     e.Folder -- имя папки
@@ -114,7 +115,7 @@ GeneratePer-Aux2 {
   <Link t.Context (e.OutName) e.OrderedFiles>
     == t.Context Success
     == t.Context Fails
-  e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
+  e.OrderedFiles ::= t.QualifiedName*
 */
 $ENTRY Link
   t.Context (e.OutName) e.OrderedFiles =
@@ -144,26 +145,30 @@ DoLink {
   t.Context Success (e.OutName) (e.OrderedFiles) (s.BEName s.FnLinker) e.Tail =
     <DoLink
       <s.FnLinker
-        t.Context (e.OutName)
-        <ToNames s.BEName e.OrderedFiles>
+        <SwapFirsts
+          (e.OutName)
+          <MLambda::MapReduce
+            <MLambda::BindLeft & MakeObjNames s.BEName>
+            t.Context e.OrderedFiles
+          >
+        >
       >
       (e.OutName) (e.OrderedFiles) e.Tail
     >;
 }
 
-ToNames {
-  s.BEName = ;
+SwapFirsts
+  t.First t.Second e.Tail = t.Second t.First e.Tail;
 
-  s.BEName (t.QualifiedName e.BaseDir) e.Tail =
-    <PathOnly <GetPath-T s.BEName t.QualifiedName e.BaseDir>>
-    <ToNames s.BEName e.Tail>;
-}
+MakeObjNames
+  s.L-BEName t.hContext t.ModuleName =
+    <MakeObjNames-Guard
+      <X_GetPath-T t.hContext t.ModuleName s.L-BEName>
+    >;
 
-PathOnly {
-  Success t.QualifiedName e.Path = (e.Path);
-
-  // Ветвь с Fails не рассматриваем -- в именах мы полностью уверены.
-}
+MakeObjNames-Guard
+  t.hContext t.ModuleName Success e.Path =
+    t.hContext (e.Path);
 
 //------------------------------------------------------------------------------
 

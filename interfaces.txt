@@ -1,6 +1,9 @@
 ################################################################################
 Module Compiler;
 
+<CompileByModuleName-Q t.hContext t.QualifiedName>
+  == t.hContext
+
 <LookupModule-T t.Context (e.Directory) e.ModuleName>
   == t.Context
     s.Known s.Status
@@ -37,6 +40,16 @@ Module MBackEnd_Refal5;
 
 ################################################################################
 Module MBE-Mgr;
+=============================================================================
+Параметры конкретного диспетчера:
+  s.Name ::= IDENTIFIER -- имя диспетчера
+  s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
+  <s.FnLinker t.hContext (e.OutName) (e.ObjName)>
+    == t.hContext Success
+    == t.hContext Fails
+  e.Folder -- имя папки
+  e.Ext -- расширение файла
+==============================================================================
 
 <Register s.Name s.Generator s.Linker (e.Folder) (e.Ext)>
   == empty
@@ -58,8 +71,8 @@ e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
 s.Error ::= InvalidMgr | InvalidOption
 
 <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
-  == t.QualifiedName Success e.OutPath
-  == t.QualifiedName Fails
+  == Success t.QualifiedName e.OutPath
+  == Fails t.QualifiedName
 
 <X_GetPath-T t.Context t.QualifiedName s.BEName>
   == t.Context t.QualifiedName Success e.Path
@@ -111,7 +124,7 @@ s.Result ::= NeedRecompile | Updated | Library | NotFound
 ################################################################################
 Module MCompiler;
 
-<Make t.hContext t.hErrorList t.QualifiedName>
+<Make t.hContext t.hErrorList t.RootModuleName>
   == t.hContext t.hErrorList Success
   == t.hContext t.hErrorList Fails
 
@@ -154,7 +167,6 @@ DefaultOptions
       Был ли обработан?
       * Unknown -- если не инициализровано;
       * Found -- модуль только обнаружен;
-      * InCmdLine --- модуль обнаружен в командной строке;
       * SuccessCompiled -- успешно откомпилирован,
       имеет смысл только для исходника;
       * Updated
@@ -561,7 +573,8 @@ Module MModules;
 <LookupCmdLineModule
   t.hContext (e.ModulePath) e.CmdLinePath
 >
-  == t.hContext Found t.QualifiedName s.FrontEndName e.BaseDirectory
+  == t.hContext Found
+    t.QualifiedName s.FrontEndName e.BaseDirectory
   == t.hContext NotFound
 
 <LookupImportModule
@@ -569,7 +582,6 @@ Module MModules;
 >
   == t.hContext Found s.FrontEndName e.BaseDirectory
   == t.hContext NotFound
-e.BaseDirectory ::= Current | e.FSPath
 
 <SourceState e.ModName>
   == ModuleNotFound

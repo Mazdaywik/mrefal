@@ -34,12 +34,26 @@ $IMPORT MResolveTable;
 $IMPORT MSelfDiag;
 $IMPORT MSymModule;
 
+/**
+  <CompileByModuleName-Q t.hContext t.QualifiedName>
+    == t.hContext
+*/
 $ENTRY CompileByModuleName-Q
   t.hContext t.QualifiedName =
     <CompileByModuleName
-      t.hContext
+      <GuardUpdate
+        <MContext::UpdateInfo
+          t.hContext t.QualifiedName
+          (Sym 'Defs\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rsym')
+          (Out 'ROut\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rout')
+          (Src <MQualifiedSupport::UnQualify t.QualifiedName> '.mref')
+        >
+      >
       <MQualifiedSupport::LastSegment t.QualifiedName>
     >;
+
+GuardUpdate
+  t.hContext Success = t.hContext;
 
 $ENTRY CompileByModuleName
   t.Context e.ModuleName =

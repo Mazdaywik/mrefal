@@ -7,6 +7,8 @@ $MODULE MClusters;
 компоновке.
 ==============================================================================*/
 
+$IMPORT MContext;
+
 /**
   <CheckNeedCompile
     t.hContext (e.ModulePath) t.QualifiedName
@@ -28,6 +30,20 @@ $ENTRY CheckNeedCompile
 */
 $ENTRY ListForLinking
   t.hContext t.QualifiedName =
-    t.hContext Fails;
+    <ListForLinking-Aux
+      t.QualifiedName
+      <MContext::ExtractModulesList t.hContext>
+    >;
+
+/** ListForLinking ПЕРЕПИСАТЬ!!!! */
+
+ListForLinking-Aux {
+  t.QualifiedName t.hContext
+  t.Modules-B t.QualifiedName t.Modules-E =
+    t.hContext t.Modules-B t.QualifiedName t.Modules-E;
+
+  t.QualifiedName t.hContext e.Modules =
+    t.hContext t.QualifiedName e.Modules;
+}
 
 $END MClusters.

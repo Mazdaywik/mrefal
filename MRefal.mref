@@ -2,6 +2,7 @@ $PROGRAM MRefal;
 
 // Эти модули используются
 $IMPORT Compiler;
+$IMPORT MCompiler;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT InOut;
@@ -122,7 +123,7 @@ CheckFoundResult {
       & FinishMake
       <MLambda::Reduce
         & Make
-        (Success t.hContext <MError::CreateErrList>)
+        (t.hContext <MError::CreateErrList> Success)
         e.ResultsFound
       >
     >;
@@ -143,26 +144,23 @@ PrintNotFound {
 }
 
 Make {
-  (Success t.hContext t.hErrorList)
+  (t.hContext t.hErrorList Success)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
-    <InOut::WriteLine
-      'MAKE: ' e.Module '('
-      <MQualifiedName::Parse t.QualifiedName>
-      ' ' s.FrontEnd ' ' e.BaseDirectory ')'
-    >
-    (Success t.hContext t.hErrorList);
+    ( <MCompiler::Make t.hContext t.hErrorList t.QualifiedName> );
 
-  (Fails t.hContext t.hErrorList)
+  (t.hContext t.hErrorList Fails)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
-    (Fails t.hContext t.hErrorList);
+    (t.hContext t.hErrorList Fails);
 }
 
+
+
 FinishMake {
-  ( Success t.hContext t.hErrorList ) =
+  ( t.hContext t.hErrorList Success ) =
     <MContext::Destroy t.hContext>
     <MError::PrintErrorsAndStop t.hErrorList>;
 
-  ( Fails t.hContext t.hErrorList ) =
+  ( t.hContext t.hErrorList Fails ) =
     <MContext::Destroy t.hContext>
     <MError::PrintErrorsAndStop t.hErrorList>;
 }

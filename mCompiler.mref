@@ -61,8 +61,14 @@ Link
     >;
 
 Link-Aux {
-  ( (e.OutName) ) t.hContext e.Modules =
+  ( (e.OutName) ) t.hContext Success e.Modules =
     <MBE-Mgr::Link t.hContext (e.OutName) e.Modules>;
+
+  ( (e.OutName) ) t.hContext Fails =
+    t.hContext Fails;
+
+  ( e.OtherHeadName ) t.hContext Success e.Modules =
+    t.hContext Fails;
 }
 
 $END MCompiler.

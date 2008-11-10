@@ -8,6 +8,103 @@ $MODULE MClusters;
 ==============================================================================*/
 
 $IMPORT MContext;
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MSymModule;
+
+//------------------------------------------------------------------------------
+
+/*
+  <DependencesList t.hContext t.ModuleName>
+    == t.hContext Avail t.ImportedModules*
+    == t.hContext NotAvail
+    == t.hContext Fails
+*/
+DependencesList
+  t.hContext t.ModuleName =
+    <DependencesList-SwAvail
+      t.ModuleName
+      <MContext::ExtractOption
+        t.hContext t.ModuleName Status_NEW
+      >
+    >;
+
+DependencesList-SwAvail {
+  t.ModuleName t.hContext Found SuccessCompiled =
+    <DependencesList-OnAvail
+      t.hContext t.ModuleName
+    >;
+
+  t.ModuleName t.hContext Found Updated =
+    <DependencesList-OnAvail
+      t.hContext t.ModuleName
+    >;
+
+  t.ModuleName t.hContext Errors =
+    t.hContext Fails;
+
+  t.ModuleName t.hContext s.OtherStatus =
+    t.hContext NotAvail;
+
+  t.ModuleName t.hContext ModuleInfoNotFound =
+    t.hContext NotAvail;
+
+  // В случае OptionNotFound здесь должен быть бабах.
+}
+
+DependencesList-OnAvail
+  t.hContext t.ModuleName =
+    <DependencesList-OnAvail-Aux
+      <MSymModule::LoadInfo_New t.hContext t.ModuleName>
+    >;
+
+DependencesList-OnAvail-Aux {
+  t.hContext Success t.hIModule =
+    <DependencesList-OnAvail-OnSuccess
+      t.hContext <DependencesFromIModule t.hIModule>
+    >;
+
+  t.hContext Fails =
+    t.hContext Fails;
+}
+
+DependencesList-OnAvail-OnSuccess
+  t.hContext t.hIModule e.ImportedModuleNames =
+    <MIModule::Destroy t.hIModule>
+    t.hContext Avail e.ImportedModuleNames;
+
+//------------------------------------------------------------------------------
+
+/**
+  <DependencesFromIModule t.hIModule>
+    == t.hIModule t.ImportedModule*
+*/
+$ENTRY DependencesFromIModule
+  t.hIModule =
+    <MLambda::MapReduce
+      & ToRealNames <MIModule::GetImportList t.hIModule>
+    >;
+
+ToRealNames
+  t.hIModule t.ShortAlias =
+    <ToRealNames-Aux
+      <MIModule::GetImportAttribute t.hIModule RealName t.ShortAlias>
+    >;
+
+ToRealNames-Aux {
+  t.hIModule Found t.ImportName =
+    t.hIModule t.ImportName;
+
+  /*
+    Все имена получаем посредством функции MIModule::GetImportList, поэтому
+    все они являются именами модулей и присутствуют в MIModule. Поэтому, если
+    атрибут RealName присутствует, то эта функция должна отработать успешно.
+    Если же атрибут RealName будет позже исключён, то пускай программа
+    радостно рухнет на этой функции.
+  */
+}
+
+//------------------------------------------------------------------------------
 
 /**
   <CheckNeedCompile
@@ -28,22 +125,137 @@ $ENTRY CheckNeedCompile
     == t.hContext Success t.QualifiedName*
     == t.hContext Fails
 */
-$ENTRY ListForLinking
-  t.hContext t.QualifiedName =
-    <ListForLinking-Aux
-      t.QualifiedName
-      <MContext::ExtractModulesList t.hContext>
+$ENTRY ListForLinking?
+  t.hContext t.RootModuleName =
+    <LoadDependences
+      t.hContext () t.RootModuleName
     >;
 
-/** ListForLinking ПЕРЕПИСАТЬ!!!! */
+$import MSelfDiag;
+
+$ENTRY ListForLinking
+  t.hContext t.RootModuleName =
+    <ListForLinking-Aux
+      <ListForLinking? t.hContext t.RootModuleName>
+    >;
 
 ListForLinking-Aux {
-  t.QualifiedName t.hContext
-  t.Modules-B t.QualifiedName t.Modules-E =
-    t.hContext t.Modules-B t.QualifiedName t.Modules-E;
+  t.hContext Success e.Modules =
+    <MSelfDiag::Log 'e.Modules = ' e.Modules>
+    t.hContext Success e.Modules;
 
-  t.QualifiedName t.hContext e.Modules =
-    t.hContext t.QualifiedName e.Modules;
+  t.hContext Fails = t.hContext Fails;
+}
+
+/*
+  <LoadDependences t.hContext (e.Loaded) e.NotLoaded>
+
+  e.Loaded ::= ( t.Head e.Dependend )
+  e.NotLoaded ::= t.ModuleName
+*/
+LoadDependences {
+  t.hContext ( e.Loaded ) =
+    t.hContext
+    <TopologicalSort e.Loaded>;
+
+  t.hContext ( e.Loaded ) t.Next e.NotLoaded =
+    <LoadDependences-UpdateLoaded
+      ( e.Loaded ) t.Next <DependencesList t.hContext t.Next> ( e.NotLoaded )
+    >;
+}
+
+LoadDependences-UpdateLoaded {
+  ( e.Loaded ) t.Next t.hContext Avail e.List ( e.NotLoaded ) =
+    <LoadDependences
+      t.hContext
+      <DeleteDetected
+        ( e.Loaded (t.Next e.List) ) <Unique e.List e.NotLoaded>
+      >
+    >;
+
+  ( e.Loaded ) t.Next t.hContext NotAvail ( e.NotLinked ) =
+    t.hContext Fails;
+
+  ( e.Loaded ) t.Next t.hContext Fails ( e.NotLinked ) =
+    t.hContext Fails;
+}
+
+DeleteDetected {
+  ( e.Loaded-B (t.Master e.Slaves) e.Loaded-E )
+  e.NotLoaded-B t.Master e.NotLoaded-E =
+    <DeleteDetected
+      ( e.Loaded-B (t.Master e.Slaves) e.Loaded-E )
+      e.NotLoaded-B e.NotLoaded-E
+    >;
+
+  ( e.Loaded ) e.NotLoaded = ( e.Loaded ) e.NotLoaded;
+}
+
+Unique {
+  e.Set-B t.Double e.Set-M t.Double e.Set-E =
+    e.Set-B <Unique t.Double e.Set-M e.Set-E>;
+
+  e.Set = e.Set;
+}
+
+/*
+    Топологическая сортировка.
+    Для некоторого набора элементов определено отношение t.X << t.Y (для неко-
+  торых не определено), причём выполняются следующие условия:
+    (1) t.X << t.Y && t.Y << t.Z => t.X << t.Z
+    (2) t.X << t.Y => not( t.Y << t.X )
+    как то так.
+
+    Описание алгоритма. На входе имеем информацию: для каждого t.X из множества
+  { t.X } заданы такие { t.Y } из { t.X }, для которых верно t.X << t.Y.
+    Алгоритм имеет итеративную природу
+    На каждой итерации:
+    (1) Выбираем t.Head из { t.X } такой, что t.Head не принадлежит не одному
+  { t.Y } для какого-либо t.X. Если t.Head найти не удаётся, значит в графе
+  зависмостей есть циклы. Алгоритм не применим по определению.
+    (2) t.Head добавляем в конец результата, удаляем t.Head из { t.X }
+    (3) Алгоритм завершается, когда в { t.X } не остаётся элементов.
+*/
+TopologicalSort
+  e.Loaded =
+    <DoTopologicalSort
+      ( /* Результат */ )
+      ( <FindSlaves e.Loaded> )
+      ( /* Неголовные */ )
+      e.Loaded
+    >;
+
+FindSlaves
+  e.Loaded = <Unique <MLambda::Map & Slaves e.Loaded>>;
+
+Slaves
+  (t.Master e.Slaves) = e.Slaves;
+
+DoTopologicalSort {
+  ( e.Result )
+  ( e.AllSlaves-B t.Master e.AllSlaves-E ) ( e.NotHead )
+  ( t.Master e.Slaves ) e.Tail =
+    <DoTopologicalSort
+      ( e.Result )
+      ( e.AllSlaves-B t.Master e.AllSlaves-E )
+      ( e.NotHead (t.Master e.Slaves) )
+      e.Tail
+    >;
+
+  ( e.Result )
+  ( e.AllSlaves ) ( e.NotHead ) t.Head e.Tail =
+    <DoTopologicalSort
+      ( e.Result )
+      ( <FindSlaves e.Tail e.NotHead> )
+      ( /* Неголовные */ )
+      e.Tail e.NotHead
+    >;
+
+  // Завершение итераций
+  ( e.Result ) ( ) ( ) = Success e.Result;
+
+  // Случай циклических связей
+  ( e.Result ) ( e.AllSlaves ) ( e.NotHead ) = Fails;
 }
 
 $END MClusters.

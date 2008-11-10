@@ -2,8 +2,7 @@ $MODULE MSymModule;
 
 /**
   Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
-на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
-линковщик.
+на диск, кеширование внутри контекста.
 */
 
 $IMPORT Context;
@@ -76,7 +75,7 @@ LoadInfo_New-SwParseFile {
       ( Module e.ModuleName )
       ( Functions ((e.Qualifier)(e.FnName))* )
       ( Imports (e.ModName)* )
-    == t.C ontext SymInfoNotFound
+    == t.Context SymInfoNotFound
 */
 $ENTRY LoadInfo
   t.Context e.ModuleName =

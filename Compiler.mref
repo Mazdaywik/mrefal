@@ -485,6 +485,7 @@ SwCompileIfNeed-Old {
         (e.ModuleName)
         (Sym e.SymFile) (Out e.OutFile) (Src None)
         (Status Library)
+        (Status_NEW Updated)
       > e.ModuleName
     >;
 
@@ -499,6 +500,7 @@ SwCompileIfNeed-Old {
         (Sym e.SymFile) (Out e.OutFile) (Src None)
         (Status Library)
         (BaseDirectory <Modules::HomeDir>)
+        (Status_NEW Updated)
       > e.ModuleName
     >;
 
@@ -510,6 +512,7 @@ SwCompileIfNeed-Old {
       (e.ModuleName)
       (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
       (Status Recompiled)
+      (Status_NEW SuccessCompiled)
     >;
 
 
@@ -522,6 +525,7 @@ SwCompileIfNeed-Old {
         (e.ModuleName)
         (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
         (Status Updated)
+        (Status_NEW Updated)
       >
       e.ModuleName
     >;
@@ -623,7 +627,14 @@ UpdateModuleInfo--SetStatus-Aux
       (Sym e.SymName)
       (Out e.OutName)
       (Status s.Status)
+      (Status_NEW <SelectStatus_NEW s.Status>)
     >;
+
+SelectStatus_NEW {
+  Updated = Updated;
+
+  Recompiled = SuccessCompiled;
+}
 
 SwDoCheckCompileIfNeed-Old {
   t.ModuleName s.Status t.Context ModuleNotFound t.NextName =
@@ -779,6 +790,7 @@ UpdateContext {
       t.Context
       (e.ModuleName)
       (Status Recompiled)
+      (Status_NEW SuccessCompiled)
     >;
 }
 

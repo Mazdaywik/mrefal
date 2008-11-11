@@ -125,27 +125,11 @@ $ENTRY CheckNeedCompile
     == t.hContext Success t.QualifiedName*
     == t.hContext Fails
 */
-$ENTRY ListForLinking?
+$ENTRY ListForLinking
   t.hContext t.RootModuleName =
     <LoadDependences
       t.hContext () t.RootModuleName
     >;
-
-$import MSelfDiag;
-
-$ENTRY ListForLinking
-  t.hContext t.RootModuleName =
-    <ListForLinking-Aux
-      <ListForLinking? t.hContext t.RootModuleName>
-    >;
-
-ListForLinking-Aux {
-  t.hContext Success e.Modules =
-    <MSelfDiag::Log 'e.Modules = ' e.Modules>
-    t.hContext Success e.Modules;
-
-  t.hContext Fails = t.hContext Fails;
-}
 
 /*
   <LoadDependences t.hContext (e.Loaded) e.NotLoaded>
@@ -243,9 +227,9 @@ DoTopologicalSort {
     >;
 
   ( e.Result )
-  ( e.AllSlaves ) ( e.NotHead ) t.Head e.Tail =
+  ( e.AllSlaves ) ( e.NotHead ) (t.Head e.Slaves) e.Tail =
     <DoTopologicalSort
-      ( e.Result )
+      ( e.Result t.Head )
       ( <FindSlaves e.Tail e.NotHead> )
       ( /* Неголовные */ )
       e.Tail e.NotHead

@@ -309,28 +309,11 @@ CheckVariants-Import-CorrectFormat {
     == t.hContext Found t.QualifiedName s.FrontEnd e.BaseDirectory
     == t.hContext NonFound;
 */
-?CheckVariants
+CheckVariants
   t.hContext e.Variants =
     <DoCheckVariants-CmdLine
       t.hContext e.Variants
     >;
-
-CheckVariants {
-  t.hContext e.Variants =
-    <MSelfDiag::Log 't.hContext = ' t.hContext>
-    <MSelfDiag::Log 'e.Variants ='>
-    <MLambda::Map
-      <MLambda::Composite
-        & MLambda.UnBracket
-        <MLambda::BindLeft & MSelfDiag.Log '  '>
-      >
-      e.Variants
-    >
-    <MSelfDiag::Log>
-    <?CheckVariants t.hContext e.Variants>;
-}
-
-$import MSelfDiag;
 
 DoCheckVariants-CmdLine {
   t.hContext (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =

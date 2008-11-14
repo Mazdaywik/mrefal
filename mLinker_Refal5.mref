@@ -4,6 +4,7 @@ $IMPORT FileIO;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
 $IMPORT MExeTyper;
+$IMPORT MLambda;
 $IMPORT MLinkerAliasTable;
 $IMPORT MOrder;
 $IMPORT MOS;
@@ -11,7 +12,7 @@ $IMPORT MStartupSeqGenerator;
 $IMPORT MVersion;
 
 /**
-  <Link t.Context (e.ProgName) (e.ROutName)*>
+  <Link t.Context (e.ProgName) (t.ModuleName e.ROutName)*>
     == t.Context Success
     == t.Context Fails
 */
@@ -31,23 +32,34 @@ $ENTRY Link {
 DefLim = 64;
 
 StartLinkLoop
-  t.ExeTyper t.UnitStorage t.Context e.Modules =
+  t.ExeTyper t.UnitStorage t.hContext e.Modules =
     <StartLinkLoop-Aux
       t.UnitStorage
       <MLinkerAliasTable::Create>
       t.ExeTyper
-      <CreateStartupUnitForLoop t.Context>
-      e.Modules
+      <CreateStartupUnitForLoop
+        t.hContext
+        <MLambda::Map & OnlyModuleNames e.Modules>
+      >
+      <MLambda::Map & OnlyObjects e.Modules>
     >;
+
+OnlyObjects
+  (t.ModuleName e.ObjName) = (e.ObjName);
+
+OnlyModuleNames
+  (t.ModuleName e.ObjName) = t.ModuleName;
 
 /**
   <CreateStartupUnit t.Context>
     == t.Context (t.StartupUnit)
 */
 CreateStartupUnitForLoop
-  t.Context =
+  t.Context e.Modules =
     <CreateStartupUnitForLoop-Aux
-      <MStartupSeqGenerator::GetFnList t.Context>
+      <MStartupSeqGenerator::GetFnList
+        t.Context e.Modules
+      >
     >;
 
 CreateStartupUnitForLoop-Aux

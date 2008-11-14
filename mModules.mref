@@ -5,6 +5,7 @@ $IMPORT MContext;
 $IMPORT MFE-Mgr;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
+$IMPORT MSelfDiag;
 $IMPORT MStrings;
 $IMPORT MQualifiedName;
 
@@ -461,17 +462,145 @@ SwDoCheckVariant-CmdLine {
     >;
 }
 
+//------------------------------------------------------------------------------
+
+/**
+  <GetBEList t.hContext t.ModuleName>
+    == t.hContext Known (s.BE-Name e.PathToFile)*
+    == t.hContext UnKnown
+*/
+$ENTRY GetBEList
+  t.hContext t.ModuleName =
+    <GetBEList-CheckKnown
+      t.ModuleName
+      <MContext::ExtractOption
+        t.hContext t.ModuleName Status_NEW
+      >
+    >;
+
+GetBEList-CheckKnown {
+  t.ModuleName t.hContext ModuleNotFound =
+    t.hContext UnKnown;
+
+  t.ModuleName t.hContext MismatchCase =
+    t.hContext UnKnown;
+
+  t.ModuleName t.hContext Found Unknown =
+    t.hContext UnKnown;
+
+  t.ModuleName t.hContext Found s.Type =
+    <GetBEList-BackEnds
+      t.ModuleName
+      <MContext::ExtractOption
+        t.hContext t.ModuleName BackEnds
+      >
+    >;
+
+  /*
+    Отсутствие опции не проверяем -- это нарушение инварианта
+  */
+}
+
+GetBEList-BackEnds {
+  t.ModuleName t.hContext Found Unknowns =
+    <GetBEList-Finish
+      t.ModuleName
+      <MLambda::MapReduce
+        <MLambda::Composite
+          <MLambda::Parallel-H
+            <MLambda::MakeHandled & MLambda.Identity>
+            <MLambda::BindLeft-H
+              & MBE-Mgr.X_GetPath-T
+              t.ModuleName
+            >
+          >
+          & MLambda.Bracket-H
+        >
+        t.hContext
+        <MBE-Mgr::GetList>
+      >
+    >;
+
+  t.ModuleName t.hContext Found e.BackEnds =
+    t.hContext Known e.BackEnds;
+}
+
+GetBEList-Finish
+  t.ModuleName t.hContext e.BackEnds =
+    <GetBEList-UpdateBackEnds
+      t.hContext t.ModuleName
+      <MLambda::Map & ToPairNameFile e.BackEnds>
+    >;
+
+ToPairNameFile
+  (s.BackEnd t.ModuleName Success e.Path) = (s.BackEnd e.Path);
+
+GetBEList-UpdateBackEnds
+  t.hContext t.ModuleName e.BackEnds =
+    <GuardUpdateBackEnds
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName 
+        (BackEnds e.BackEnds)
+      >
+    >
+    Known e.BackEnds;
+
+GuardUpdateBackEnds
+  t.hContext Success = t.hContext;
+
+/**
+  <GetFEName t.hContext t.ModuleName>
+    == t.hContext Known Library
+    == t.hContext Known s.FE-Name e.PathToFile
+    == t.hContext UnKnown
+*/
+$ENTRY GetFEName
+  t.hContext t.ModuleName =
+    <GetFEName-CheckKnown
+      t.ModuleName
+      <MContext::ExtractOption t.hContext t.ModuleName Status_NEW>
+    >;
+
+GetFEName-CheckKnown {
+  t.ModuleName t.hContext ModuleNotFound =
+    t.hContext UnKnown;
+
+  t.ModuleName t.hContext MismatchCase =
+    t.hContext UnKnown;
+
+  t.ModuleName t.hContext Found Unknown =
+    t.hContext UnKnown;
+
+  t.ModuleName t.hContext Found s.Other =
+    <GetFEName-Aux
+      t.ModuleName
+      <MContext::ExtractOption t.hContext t.ModuleName FrontEnd>
+    >;
+}
+
+GetFEName-Aux {
+  t.ModuleName t.hContext Found Unknowns =
+    /*
+      Неожиданно. Если модуль уже известен, то он должен оказаться либо
+      библиотечным, либо иметь свой front-end.
+    */
+    <MSelfDiag::FailDown
+      & GetFEName-Aux t.ModuleName t.hContext Found Unknowns
+    >;
+
+  t.ModuleName t.hContext Found None =
+    t.hContext Known Library;
+
+  t.ModuleName t.hContext Found s.FrontEnd e.Path =
+    t.hContext Known s.FrontEnd e.Path;
+}
+
 //##############################################################################
 
 $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
 $IMPORT MOrder;
 $IMPORT MOS;
-
-$ENTRY CanonicalModuleName {
-  s.Initial e.Tail =
-    <MStrings::Upper s.Initial> <MStrings::Lower e.Tail>;
-}
 
 $ENTRY SymName {
   t.hContext e.ModName =

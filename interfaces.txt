@@ -4,13 +4,13 @@ Module Compiler;
 <CompileByModuleName-Q t.hContext t.QualifiedName>
   == t.hContext
 
-<LookupModule-T t.Context (e.Directory) e.ModuleName>
+<LookupModule-T t.Context e.ModuleName>
   == t.Context
     s.Known s.Status
     (Sym e.SymFileName)
     (Out e.OutFileName)
     (Src e.SrcFileName)
-    (e.Directory) e.ModuleName
+    e.ModuleName
 s.Known ::= Known | NotKnown
 s.Status ::=
   if Known
@@ -29,9 +29,6 @@ Module Context;
   == t.Context ModuleInfoNotFound
   !fail abort!
 
-<ExtractModulesList t.Context>
-  == t.Context (e.ModuleName)*
-
 ################################################################################
 Module MBackEnd_Refal5;
 
@@ -44,7 +41,7 @@ Module MBE-Mgr;
 Параметры конкретного диспетчера:
   s.Name ::= IDENTIFIER -- имя диспетчера
   s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
-  <s.FnLinker t.hContext (e.OutName) (e.ObjName)>
+  <s.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
     == t.hContext Success
     == t.hContext Fails
   e.Folder -- имя папки
@@ -61,7 +58,7 @@ Module MBE-Mgr;
 <Link t.Context (e.OutName) e.OrderedFiles>
   == t.Context Success
   == t.Context Fails
-e.OrderedFiles ::= (t.QualifiedName e.BaseDir)
+e.OrderedFiles ::= t.QualifiedName*
 
 <GetList> == s.BackEndName*
 
@@ -110,12 +107,18 @@ Module MClusters;
 компоновке.
 ==============================================================================
 
+<DependencesFromIModule t.hIModule>
+  == t.hIModule t.ImportedModule*
+
 <CheckNeedCompile
   t.hContext (e.ModulePath) t.QualifiedName
 >
   == t.hContext t.QualifiedName s.Result
 
-s.Result ::= NeedRecompile | Updated | Library | NotFound
+s.Result ::=
+  NeedRecompile | Updated | Library | NotFound | SuccessRecompiled | Errors
+
+ TODO: Здесь надо проверять на Updated 
 
 <ListForLinking t.hContext t.QualifiedName>
   == t.hContext Success t.QualifiedName*
@@ -169,11 +172,15 @@ DefaultOptions
       * Found -- модуль только обнаружен;
       * SuccessCompiled -- успешно откомпилирован,
       имеет смысл только для исходника;
-      * Updated
+      * LocalUpdated
         * для исходника -- выходные файлы корректны, не компилировался;
         * для библиотечного модуля -- выходные файлы корректны;
-        (если возможна проверка корректности для back-end,
+        (если возможна проверка корректности для back-end;
         гарантируется, что корректна хотя бы SymInfo);
+      * GlobalUpdated
+        * для исходников и библиотечных модулей аналогично LocalUpdated
+        с тем отличием, что GlobalUpdated также рекурсивно установлен
+        у всех импортируемых модулей;
       * Errors -- в процессе обработки произошла ошибка;
         * для исходника -- ошибки в процессе компиляции;
         * для библиотечного модуля -- выходные файлы повреждены.
@@ -208,16 +215,6 @@ DefaultOptions
   == t.hContext OptionNotFound
   == t.hContext ModuleNotFound
   == t.hContext MismatchCase
-
-<ExtractModulesList t.Context>
-  == t.Context t.QualifiedName*
-
-<LastModule t.Context t.QualifiedName>
-  == t.UpdatedContext Success
-  == t.Context Fails
-
-<GetProgName t.Context>
-  == t.Context t.QualifiedName
 
 ################################################################################
 Module MCreateDirIfNeed;
@@ -371,6 +368,13 @@ s.Status ::=
 s.Status ::=
   Success | InvalidKind | InvalidAttrib | InvariantError
 
+<UpdateFunction-Q
+  t.hIModule
+  t.FunctionName
+  (s.Attrib e.Value)
+>
+  == t.hIModule s.Status
+
 <UpdateImport t.IModule t.Import e.Attribs>
   == t.IModule s.Status
 
@@ -388,7 +392,7 @@ s.Status ::=
 # STARTCUT
 ValidAttribs {
   Function = ScopeClass Position Body Qualified;
-  ModuleName = Position FsName ModuleType;
+  ModuleName = Position ModuleType;
   ImportName = Position RealName;
   ADT = Position;
 }
@@ -406,6 +410,10 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
   == t.IModule s.ErrorStatus
 
 s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
+
+<GetFunctionAttrubute-Q t.hIModule s.Attrib t.FnName>
+  == t.hIModule Found e.Value
+  == t.hIModule s.ErrorStatus
 
 <GetImportAttribute t.IModule s.Attrib t.Import>
   == t.IModule Found e.Value
@@ -427,6 +435,9 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
 <GetFunctionList t.IModule>
   == t.IModule (e.FnName)*
+
+<GetFunctionList-Q t.hIModule>
+  == t.hIModule t.ModuleName*
 
 <GetImportList t.IModule>
   == t.IModule t.ImportName*
@@ -536,7 +547,7 @@ Module MLambda;
 ################################################################################
 Module MLinker_Refal5;
 
-<Link t.Context (e.ProgName) (e.ROutName)*>
+<Link t.Context (e.ProgName) (t.ModuleName e.ROutName)*>
   == t.Context Success
   == t.Context Fails
 
@@ -582,6 +593,15 @@ Module MModules;
 >
   == t.hContext Found s.FrontEndName e.BaseDirectory
   == t.hContext NotFound
+
+<GetBEList t.hContext t.ModuleName>
+  == t.hContext Known (s.BE-Name e.PathToFile)*
+  == t.hContext UnKnown
+
+<GetFEName t.hContext t.ModuleName>
+  == t.hContext Known Library
+  == t.hContext Known s.FE-Name e.PathToFile
+  == t.hContext UnKnown
 
 <SourceState e.ModName>
   == ModuleNotFound
@@ -745,17 +765,9 @@ Module MQualifiedName;
   == t.QualifiedName
     e.Segment '/' e.Segment '/' ... '/' e.Segment
 
---------------------------------------------------------------------------
-
-<Equals t.QName1 t.QName2>
-  == True | False
-
 <Equals-T t.QName1 t.QName2>
   == s.Result t.QName1 t.QName2
 s.Result ::= True | False
-
-<Equals-NoCase t.QName1 | t.QName2>
-  == True | False
 
 ################################################################################
 Module MQualifiedSupport;
@@ -805,11 +817,12 @@ Module MSelfDiag;
 ################################################################################
 Module MStartupSeqGenerator;
 
-<GetFnList t.Context>
-  == t.Context e.FnList
-  == t.Context GoNotFound
-  == t.Context MultipleGo e.FnList--GoFunctions
+<GetFnList t.hContext e.ModuleList>
+  == t.hContext e.FnList
+  == t.hContext GoNotFound
+  == t.hContext MultipleGo e.FnList--GoFunctions
 e.FnList = (e.Function)*
+e.ModuleList = t.ModuleName*
 
 <UpdateStartInfo t.StartInfo t.Context e.ModuleName>
   == t.StartInfo t.Context
@@ -904,20 +917,22 @@ Module MSwapSupport;
 Module MSymModule;
 
 Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
-на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
-линковщик.
+на диск, кеширование внутри контекста.
 
 <LoadInfo_New t.Context t.ModuleName>
   == t.Context Success t.IModule
   == t.Context Fails
 t.ModuleName ::= t.QualifiedName
 
+<SymReduce-T t.hIModule>
+  == t.hIModule t.hISymModule
+
 <LoadInfo t.Context e.ModuleName>
   == t.UpdatedContext
     ( Module e.ModuleName )
     ( Functions ((e.Qualifier)(e.FnName))* )
     ( Imports (e.ModName)* )
-  == t.C ontext SymInfoNotFound
+  == t.Context SymInfoNotFound
 
 <SymTableToSymInfo-T t.IModule>
   == t.IModule

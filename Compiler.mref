@@ -40,16 +40,19 @@ $IMPORT MSymModule;
 */
 $ENTRY CompileByModuleName-Q
   t.hContext t.QualifiedName =
-    <CompileByModuleName
-      <GuardUpdate
-        <MContext::UpdateInfo
-          t.hContext t.QualifiedName
-          (Sym 'Defs\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rsym')
-          (Out 'ROut\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rout')
-          (Src <MQualifiedSupport::UnQualify t.QualifiedName> '.mref')
+    <ParseAndCompile
+      t.QualifiedName
+      <LookupModule-T
+        <GuardUpdate
+          <MContext::UpdateInfo
+            t.hContext t.QualifiedName
+            (Sym 'Defs\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rsym')
+            (Out 'ROut\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rout')
+            (Src <MQualifiedSupport::UnQualify t.QualifiedName> '.mref')
+          >
         >
+        <MQualifiedSupport::LastSegment t.QualifiedName>
       >
-      <MQualifiedSupport::LastSegment t.QualifiedName>
     >;
 
 GuardUpdate
@@ -58,19 +61,20 @@ GuardUpdate
 $ENTRY CompileByModuleName
   t.Context e.ModuleName =
     <ParseAndCompile
+      <MQualifiedName::Create (e.ModuleName)>
       <LookupModule-T
-        t.Context () e.ModuleName
+        t.Context e.ModuleName
       >
     >;
 
 /**
-  <LookupModule-T t.Context (e.Directory) e.ModuleName>
+  <LookupModule-T t.Context e.ModuleName>
     == t.Context
       s.Known s.Status
       (Sym e.SymFileName)
       (Out e.OutFileName)
       (Src e.SrcFileName)
-      (e.Directory) e.ModuleName
+      e.ModuleName
   s.Known ::= Known | NotKnown
   s.Status ::=
     if Known
@@ -79,7 +83,7 @@ $ENTRY CompileByModuleName
       ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 */
 LookupModule-T
-  t.Context () e.ModuleName =
+  t.Context e.ModuleName =
     <SwKnown
       (e.ModuleName)
       <Context::ExtractOption
@@ -110,7 +114,7 @@ OnKnown-Src
         t.Context Out e.ModuleName
       >
     > (Src e.SrcName)
-    ( /* e.Directory */ ) e.ModuleName;
+    e.ModuleName;
 
 OnKnown-Out
   (e.ModuleName) s.Status t.Context Found e.OutName =
@@ -133,56 +137,61 @@ OnUnknown
     (Sym e.SymName)
     (Out e.OutName)
     (Src e.SrcName)
-    ( /* e.Directory */ ) e.ModuleName;
+    e.ModuleName;
 
 
 ParseAndCompile {
+  t.QualifiedName
   t.Context NotKnown ModuleNotFound
-  t.SymName t.OutName t.SrcName (e.Directory) e.ModuleName =
+  t.SymName t.OutName t.SrcName e.ModuleName =
     <MError::Fatal 'Module `' e.ModuleName '` not found'>;
 
+  t.QualifiedName
   t.Context
   s.Known s.Status
   (Sym e.SymName) (Out e.OutName) (Src e.SrcName)
-  (e.Directory) e.Name =
+  e.Name =
     <MOutModuleStatus::Compiling e.SrcName>
     <Compile-SwParseResult
+      t.QualifiedName
       (File e.SrcName)
       t.Context
       <MFE-Mgr::Load MRefal_FrontEnd
         <MError::CreateErrList>
-        <CreateQualifiedName e.SrcName>
+        t.QualifiedName
         Current
       >
     >
     <MOutModuleStatus::Compiled e.SrcName>;
 }
 
-CreateQualifiedName
-  e.FileName s.Dot s.M s.R s.E s.F =
-    <MQualifiedName::Create (e.FileName)>;
-
 Compile-SwParseResult {
+  t.QualifiedName
   t.FileName t.Context t.ErrorList Success Success t.IModule =
     <MError::DestroyErrList t.ErrorList>
-    <Compile0 t.FileName t.Context t.IModule>;
+    <Compile0 t.QualifiedName t.FileName t.Context t.IModule>;
 
+  t.QualifiedName
   t.FileName t.Context t.ErrorList Success Warnings t.IModule =
     <MError::PrintErrors t.ErrorList>
-    <Compile0 t.FileName t.Context t.IModule>;
+    <Compile0 t.QualifiedName t.FileName t.Context t.IModule>;
 
+  t.QualifiedName
   t.FileName t.Context t.ErrorList Success Errors t.IModule =
     <MError::PrintErrorsAndStop t.ErrorList>;
 
+  t.QualifiedName
   t.FileName t.Context t.ErrorList Fails =
     <MError::PrintErrorsAndStop t.ErrorList>;
 }
 
 Compile0 {
+  t.ModuleName
   (File e.FileName)
   t.Context
   t.IModule =
     <Compile1
+      t.ModuleName
       (File e.FileName)
       t.Context
       <MIModule::GetModuleName t.IModule>
@@ -190,6 +199,7 @@ Compile0 {
 }
 
 Compile1 {
+  t.ModuleName
   (File e.FileName)
   t.Context
   t.IModule

@@ -8,8 +8,10 @@ $MODULE MClusters;
 ==============================================================================*/
 
 $IMPORT MContext;
+$IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
+$IMPORT MModules;
 $IMPORT MSymModule;
 
 //------------------------------------------------------------------------------
@@ -112,11 +114,132 @@ ToRealNames-Aux {
   >
     == t.hContext t.QualifiedName s.Result
 
-  s.Result ::= NeedRecompile | Updated | Library | NotFound
+  s.Result ::=
+    NeedRecompile | Updated | Library | NotFound | SuccessCompiled | Errors
 */
 $ENTRY CheckNeedCompile
   t.hContext (e.ModulePath) t.QualifiedName =
     t.hContext t.QualifiedName NotFound;
+
+//------------------------------------------------------------------------------
+
+/*
+  <CheckNeedCompileOne
+    t.hContext (e.ModulePath) t.QualifiedName
+  >
+    == t.hContext t.QualifiedName s.Result
+
+  s.Result ::=
+    NeedRecompile | Updated | Library | NotFound |
+    SuccessCompiled | Errors | LocalUpdated
+*/
+CheckNeedCompileOne
+  t.hContext (e.ModulePath) t.QualifiedName =
+    <CheckNeedCompileOne-SwKnown
+      (e.ModulePath) t.QualifiedName
+      <MContext::ExtractOption t.hContext t.QualifiedName Status_NEW>
+    >;
+
+CheckNeedCompileOne-SwKnown {
+  (e.ModulePath) t.QualifiedName
+  t.hContext ModuleNotFound =
+    <CheckNeedCompileOne-OnUnknown
+      t.hContext (e.ModulePath) t.QualifiedName
+    >;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext MismatchCase =
+    t.hContext t.QualifiedName NotFound;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext Found Unknown =
+    <CheckNeedCompileOne-OnUnknown
+      t.hContext (e.ModulePath) t.QualifiedName
+    >;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext Found Found =
+    <CheckNeedCompileOne-OnUnknown
+      t.hContext (e.ModulePath) t.QualifiedName
+    >;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext Found SuccessCompiled =
+    t.hContext t.QualifiedName SuccessCompiled;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext Found LocalUpdated =
+    t.hContext t.QualifiedName LocalUpdated;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext Found GlobalUpdated =
+    t.hContext t.QualifiedName GlobalUpdated;
+
+  (e.ModulePath) t.QualifiedName
+  t.hContext Found Errors =
+    t.hContext t.QualifiedName Errors;
+}
+
+CheckNeedCompileOne-OnUnknown
+  t.hContext (e.ModulePath) t.QualifiedName =
+    <CheckNeedCompileOne-Aux
+      t.QualifiedName
+      <MModules::LookupImportModule
+        t.hContext (e.ModulePath) t.QualifiedName
+      >
+    >;
+
+CheckNeedCompileOne-Aux {
+  t.QualifiedName t.hContext Found Library e.BaseDirectory =
+    t.hContext t.QualifiedName Library;
+
+  t.QualifiedName t.hContext NotFound =
+    t.hContext t.QualifiedName NotFound;
+
+  t.QualifiedName t.hContext Found s.FrontEnd e.BaseDirectory =
+    <CheckNeedCompileOne-ExistBackEnds
+      (t.QualifiedName s.FrontEnd e.BaseDirectory)
+      <MModules::GetBEList t.hContext t.QualifiedName>
+    >;
+
+  t.QualifiedName t.hContext NotFound =
+    t.hContext t.QualifiedName NotFound;
+}
+
+CheckNeedCompileOne-ExistBackEnds {
+  (t.ModuleName s.FrontEnd e.BaseDirectory)
+  t.hContext Known e.BackEnds =
+    <CheckNeedCompileOne-ExistBackEnds-SwExist
+      (t.ModuleName s.FrontEnd e.BaseDirectory)
+      t.hContext
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          <MLambda::MakeHandled
+            & MFileSystem.ExistFile-T
+          >
+          & MLambda.Bracket
+        >
+        e.BackEnds
+      >
+    >;
+
+  /*
+    Вариант с UnKnown не проверяем, т.к. это нарушение инварианта.
+  */
+}
+
+CheckNeedCompileOne-ExistBackEnds-SwExist {
+  (t.ModuleName s.FrontEnd e.BaseDirectory)
+  t.hContext
+  e.BEFiles-B (s.BackEnd False e.FileName) e.BEFiles-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  (t.ModuleName s.FrontEnd e.BaseDirectory)
+  t.hContext e.BEFiles =
+    /** TODO: Здесь надо проверять на Updated */
+    t.hContext t.ModuleName NeedRecompile;
+}
 
 //------------------------------------------------------------------------------
 

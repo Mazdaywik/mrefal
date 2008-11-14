@@ -106,6 +106,22 @@ $ENTRY UpdateFunction
       t.IModule Function (e.FnName) e.Attribs
     >;
 
+/**
+  <UpdateFunction-Q
+    t.hIModule
+    t.FunctionName
+    (s.Attrib e.Value)
+  >
+    == t.hIModule s.Status
+*/
+$ENTRY UpdateFunction-Q
+  t.hIModule t.FunctionName e.Attribs =
+    <UpdateFunction
+      t.hIModule
+      ( <MQualifiedSupport::LastSegment t.FunctionName> )
+      e.Attribs
+    >;
+
 //------------------------------------------------------------------------------
 
 /**
@@ -158,7 +174,7 @@ UpdateEntity
 //STARTCUT
 ValidAttribs {
   Function = ScopeClass Position Body Qualified;
-  ModuleName = Position FsName ModuleType;
+  ModuleName = Position ModuleType;
   ImportName = Position RealName;
   ADT = Position;
 }
@@ -278,6 +294,17 @@ $ENTRY GetFunctionAttribute {
     >;
 }
 
+/**
+  <GetFunctionAttrubute-Q t.hIModule s.Attrib t.FnName>
+    == t.hIModule Found e.Value
+    == t.hIModule s.ErrorStatus
+*/
+$ENTRY GetFunctionAttribute-Q
+  t.hIModule s.Attrib t.FnName =
+    <GetFunctionAttribute
+      t.hIModule s.Attrib <MQualifiedSupport::LastSegment t.FnName>
+    >;
+
 //------------------------------------------------------------------------------
 
 /**
@@ -380,6 +407,31 @@ GetEntityAttrib-Aux {
 $ENTRY GetFunctionList
   t.IModule =
     <FindEntityByKind t.IModule Function>;
+
+/**
+  <GetFunctionList-Q t.hIModule>
+    == t.hIModule t.ModuleName*
+*/
+$ENTRY GetFunctionList-Q
+  t.hIModule =
+    <MLambda::MapReduce
+      & AddQualifier
+      <GetFunctionList t.hIModule>
+    >;
+
+AddQualifier
+  t.hIModule (e.FunctionName) =
+    <AddQualifier-Aux
+      <GetModuleName t.hIModule>
+      e.FunctionName
+    >;
+
+AddQualifier-Aux
+  t.hIModule t.ModuleName e.FunctionName =
+    t.hIModule
+    <MQualifiedName::AddSubName
+      t.ModuleName e.FunctionName
+    >;
 
 //------------------------------------------------------------------------------
 

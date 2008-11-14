@@ -186,11 +186,15 @@ DefaultOptions
       * Found -- модуль только обнаружен;
       * SuccessCompiled -- успешно откомпилирован,
       имеет смысл только для исходника;
-      * Updated
+      * LocalUpdated
         * для исходника -- выходные файлы корректны, не компилировался;
         * для библиотечного модуля -- выходные файлы корректны;
-        (если возможна проверка корректности для back-end,
+        (если возможна проверка корректности для back-end;
         гарантируется, что корректна хотя бы SymInfo);
+      * GlobalUpdated
+        * для исходников и библиотечных модулей аналогично LocalUpdated
+        с тем отличием, что GlobalUpdated также рекурсивно установлен
+        у всех импортируемых модулей;
       * Errors -- в процессе обработки произошла ошибка;
         * для исходника -- ошибки в процессе компиляции;
         * для библиотечного модуля -- выходные файлы повреждены.
@@ -311,84 +315,5 @@ ExtractOption-FindName {
   [Context e.Info] e.Name s.Option =
     [Context e.Info] ModuleNotFound;
 }
-
-//------------------------------------------------------------------------------
-
-/**
-  <ExtractModulesList t.Context>
-    == t.Context t.QualifiedName*
-*/
-$ENTRY ExtractModulesList
-  [Context e.Info] =
-    <DoExtractModulesList
-      () () e.Info
-    >;
-
-DoExtractModulesList {
-  (e.ScannedInfo) (e.Result)
-  ( (e.NextName) e.Options-B (RealName t.RealName) e.Options-E )
-  e.Tail =
-    <DoExtractModulesList
-      (e.ScannedInfo
-        ( (e.NextName)
-          e.Options-B (RealName t.RealName) e.Options-E
-        )
-      )
-      (e.Result
-        <MakeRealName t.RealName e.NextName>
-      )
-      e.Tail
-    >;
-
-  (e.ScannedInfo) (e.Result) =
-    [Context e.ScannedInfo] e.Result;
-}
-
-MakeRealName {
-  Unknown e.NextName = <MQualifiedName::Create e.NextName>;
-
-  t.RealName e.NextName = t.RealName;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-  <LastModule t.Context t.QualifiedName>
-    == t.UpdatedContext Success
-    == t.Context Fails
-*/
-$ENTRY LastModule
-  [Context e.Info] t.QualifiedName =
-    <LastModule-FindName
-      [Context e.Info]
-      <MStrings::Lower <MQualifiedName::Parse t.QualifiedName>>
-    >;
-
-LastModule-FindName {
-  [Context e.Info-B ( (e.Name) e.Options ) e.Info-E]
-  e.Name =
-    [Context e.Info-B e.Info-E ( (e.Name) e.Options )]
-    Success;
-
-  t.Context e.Name =
-    t.Context Fails;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-  <GetProgName t.Context>
-    == t.Context t.QualifiedName
-*/
-$ENTRY GetProgName
-  [Context
-    e.Info
-    ( (e.LastName) e.Options-B (RealName t.RealName) e.Options-E )
-  ] =
-    [Context
-      e.Info
-      ( (e.LastName) e.Options-B (RealName t.RealName) e.Options-E )
-    ]
-    <MakeRealName t.RealName e.LastName>;
 
 $END MContext.

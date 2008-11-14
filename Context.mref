@@ -38,21 +38,7 @@ UpdateError {
 }
 
 $ENTRY LastModule
-  t.Context e.Name =
-    <LastModule-Guard
-      <MContext::LastModule
-        t.Context
-        <MQualifiedName::Create (e.Name)>
-      >
-    >;
-
-LastModule-Guard {
-  t.Context Success =
-    t.Context;
-
-  t.Context Fails =
-    <MSelfDiag::Error 'Context::LastModule: module name not found'>;
-}
+  t.hContext e.Name = t.hContext;
 
 /**
   <ExtractOption t.Context s.Option e.ModName>
@@ -82,39 +68,6 @@ ExtractOption-Guard {
 
   t.Context MismatchCase =
     t.Context ModuleInfoNotFound;
-}
-
-$ENTRY GetProgName
-  t.Context =
-    <GetProgName-AsNoQualified
-      <MContext::GetProgName t.Context>
-    >;
-
-GetProgName-AsNoQualified
-  t.Context t.ProgName =
-    t.Context <MQualifiedSupport::UnQualify t.ProgName>;
-
-/**
-  <ExtractModulesList t.Context>
-    == t.Context (e.ModuleName)*
-*/
-$ENTRY ExtractModulesList
-  t.Context =
-    <ExtractList-UnQualify
-      <MContext::ExtractModulesList t.Context>
-    >;
-
-ExtractList-UnQualify
-  t.Context e.List =
-    t.Context
-    <DoUnQualify e.List>;
-
-DoUnQualify {
-  t.Qualified e.Tail =
-    ( <MQualifiedSupport::UnQualify t.Qualified> )
-    <DoUnQualify e.Tail>;
-
-  = ;
 }
 
 $END Context.

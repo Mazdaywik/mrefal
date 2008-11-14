@@ -31,10 +31,6 @@ MakeName--SwInContext {
       <s.FnRelative t.QualifiedName s.MgrName>
     >;
 
-  ( t.hContext OptionNotFound )
-  t.QualifiedName s.MgrName s.FnRelative =
-    t.hContext t.QualifiedName Fails;
-
   ( t.hContext ModuleNotFound )
   t.QualifiedName s.MgrName s.FnRelative =
     t.hContext t.QualifiedName Fails;
@@ -42,6 +38,10 @@ MakeName--SwInContext {
   ( t.hContext MismatchCase )
   t.QualifiedName s.MgrName s.FnRelative =
     t.hContext t.QualifiedName Fails;
+
+  /*
+    OptionNotFound не проверяем -- нарушение инварианта.
+  */
 }
 
 MakeName--SwMakeRelative {

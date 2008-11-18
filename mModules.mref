@@ -548,6 +548,8 @@ GetBEList-UpdateBackEnds
 GuardUpdateBackEnds
   t.hContext Success = t.hContext;
 
+//------------------------------------------------------------------------------
+
 /**
   <GetFEName t.hContext t.ModuleName>
     == t.hContext Known Library
@@ -629,15 +631,7 @@ $ENTRY OutName {
 }
 
 XXXName-Guard
-  Success t.QualifiedName e.Path =
-    <TrueSlash e.Path>;
-
-
-TrueSlash {
-  e.Path-B '/' e.Path-E = e.Path-B '\\' <TrueSlash e.Path-E>;
-
-  e.Path = e.Path;
-}
+  Success t.QualifiedName e.Path = e.Path;
 
 SymDirName = <MCreateDirIfNeed::Create 'Defs'>;
 
@@ -747,6 +741,11 @@ SwLookupLibrary {
   t.hContext t.Other1 t.Other2 =
     t.hContext ModuleNotFound;
 }
+
+/**
+  <DefaultModulePath> == e.DefaultModulePath
+*/
+$ENTRY DefaultModulePath = ('.') (<HomeDir>);
 
 /**
   <LookupModule-T t.hContext e.ModuleName>

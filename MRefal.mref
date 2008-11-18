@@ -7,7 +7,6 @@ $IMPORT MContext;
 $IMPORT MError;
 $IMPORT InOut;
 $IMPORT MLambda;
-$IMPORT MLinker;
 $IMPORT Modules;
 $IMPORT MModules;
 $IMPORT MOS;
@@ -27,15 +26,6 @@ $ENTRY Go =
   <MVersion::Show>
   <CompileList <MContext::Create> <LoadModuleList> >;
 
-Results {
-  t.Context Success =
-    <MContext::Destroy t.Context>;
-
-  t.Context Fails =
-    <MContext::Destroy t.Context>
-    <MError::Fatal 'Unknown error'>;
-}
-
 LoadModuleList
   = <SwLoadModuleList <MOS::ArgList>>;
 
@@ -44,18 +34,6 @@ SwLoadModuleList {
     <MError::Fatal 'Command line error: use MRefal module1 module2 ...'>;
 
   (e.ProgName) e.Modules = e.Modules;
-}
-
-ModuleOrFile
-  (e.Module) =
-    <SwModuleOrFile (<MStrings::Lower e.Module>) e.Module>;
-
-SwModuleOrFile {
-  ( e.FnameName '.mref' ) e.FnameNameExtCase s.Dot s.M s.R s.E s.F =
-    (Module e.FnameNameExtCase);
-
-  ( e.ModNameLower ) e.ModNameCase =
-    (Module <Modules::CanonicalModuleName e.ModNameCase>);
 }
 
 PrepareMP
@@ -77,8 +55,10 @@ DeleteEmpty {
 }
 
 CompileList {
-  t.hContext ('+new+') ('=MP:' e.ModulePath) e.Modules =
+  t.hContext (e.Action) ('=MP:' e.ModulePath) e.Modules =
     <CheckFoundResult
+      (e.Action)
+      ( <PrepareMP e.ModulePath> )
       <MLambda::MapReduce
         <MLambda::Composite
           & MLambda.UnBracket-H
@@ -95,22 +75,10 @@ CompileList {
         e.Modules
       >
     >;
-
-  t.hContext ('+old+') e.Modules =
-    <Results
-      <MLinker::LinkAll
-        <CompileModulesFromList
-          t.hContext
-          <MLambda::Map & ModuleOrFile e.Modules>
-        >
-      >
-    >;
-
-  t.hContext e.Modules =
-    <CompileList t.hContext ('+old+') e.Modules>;
 }
 
 CheckFoundResult {
+  (e.Action) (e.ModulePath)
   t.hContext e.Results-B ( (e.Module) NotFound ) e.Results-E =
     <MContext::Destroy t.hContext>
     <MLambda::Map
@@ -118,11 +86,11 @@ CheckFoundResult {
       e.Results-B ( (e.Module) NotFound ) e.Results-E
     >;
 
-  t.hContext e.ResultsFound =
+  (e.Action) (e.ModulePath) t.hContext e.ResultsFound =
     <MLambda::TerminateAccumulator
       & FinishMake
       <MLambda::Reduce
-        & Make
+        <MLambda::BindLeft & Make (e.Action) (e.ModulePath)>
         (t.hContext <MError::CreateErrList> Success)
         e.ResultsFound
       >
@@ -144,16 +112,27 @@ PrintNotFound {
 }
 
 Make {
+  (e.Action) (e.ModulePath)
   (t.hContext t.hErrorList Success)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
-    ( <MCompiler::Make t.hContext t.hErrorList t.QualifiedName> );
+    (
+      <MLambda::Apply
+        <SelectMaker e.Action>
+        t.hContext t.hErrorList e.ModulePath t.QualifiedName
+      >
+    );
 
+  (e.Action) (e.ModulePath)
   (t.hContext t.hErrorList Fails)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
     (t.hContext t.hErrorList Fails);
 }
 
+SelectMaker {
+  '+new+' = & MCompiler.Make-Dummy;
 
+  '+newnew+' = & MCompiler.Make;
+}
 
 FinishMake {
   ( t.hContext t.hErrorList Success ) =
@@ -163,16 +142,6 @@ FinishMake {
   ( t.hContext t.hErrorList Fails ) =
     <MContext::Destroy t.hContext>
     <MError::PrintErrorsAndStop t.hErrorList>;
-}
-
-CompileModulesFromList {
-  t.Context (Module e.ModName) e.Modules =
-    <CompileModulesFromList
-      <Compiler::CompileByModuleName t.Context e.ModName> e.Modules
-    >;
-
-  t.Context =
-    t.Context;
 }
 
 $END MRefal.

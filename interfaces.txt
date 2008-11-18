@@ -75,13 +75,13 @@ s.Error ::= InvalidMgr | InvalidOption
   == t.Context t.QualifiedName Success e.Path
   == t.Context t.QualifiedName Fails
 
+################################################################################
+Module MBEFE-Holder;
 =============================================================================
 Модуль реализует хранилище данных для диспетчеров входных и генерирующих
 частей. Работает по принципу атрибутной таблицы символов. Таблица индексируются
 двумя символами: именем диспетчера и именем атрибута.
 ==============================================================================
-################################################################################
-Module MBEFE-Holder;
 
 <UpdateEntry
   s.FnSwap
@@ -111,23 +111,21 @@ Module MClusters;
   == t.hIModule t.ImportedModule*
 
 <CheckNeedCompile
-  t.hContext (e.ModulePath) t.QualifiedName
+  t.hContext (e.ModulePath) t.ModuleName
 >
   == t.hContext t.QualifiedName s.Result
 
 s.Result ::=
-  NeedRecompile | Updated | Library | NotFound | SuccessRecompiled | Errors
+  NeedRecompile | Updated | Library | NotFound | SuccessCompiled | Errors
 
- TODO: Здесь надо проверять на Updated 
-
-<ListForLinking t.hContext t.QualifiedName>
-  == t.hContext Success t.QualifiedName*
+<ListForLinking t.hContext t.RootModuleName>
+  == t.hContext Success t.ModuleName*
   == t.hContext Fails
 
 ################################################################################
 Module MCompiler;
 
-<Make t.hContext t.hErrorList t.RootModuleName>
+<Make t.hContext t.hErrorList e.ModulePath t.RootModuleName>
   == t.hContext t.hErrorList Success
   == t.hContext t.hErrorList Fails
 
@@ -181,7 +179,9 @@ DefaultOptions
         * для исходников и библиотечных модулей аналогично LocalUpdated
         с тем отличием, что GlobalUpdated также рекурсивно установлен
         у всех импортируемых модулей;
-      * Errors -- в процессе обработки произошла ошибка;
+      * NeedRecompile -- имеет смысл только для исходника,
+        означает, что модуль нужно перекомпилировать;
+      * Errors -- в процессе обработки произошла ошибка:
         * для исходника -- ошибки в процессе компиляции;
         * для библиотечного модуля -- выходные файлы повреждены.
     */
@@ -195,8 +195,6 @@ DefaultOptions
       e.DateTime -- см. MainStructures.txt
     */
     (LastTime Unknown)
-
-    (NeedRecompile Unknown) // Unknown | True | False
 
     (ModuleType Program) // Program | Module
     (CachedSym None) // None | t.IModule
@@ -327,6 +325,20 @@ Module MFileSystem;
 <ExistFile-T e.FileName>
   == True e.FileName
   == False e.FileName
+
+<FilesInfo e.Mask>
+  == (
+    (e.FileName)
+    (DateTime e.DateTime)
+    (Size s.Size)
+    (LongName e.LongName)
+  )
+
+<FileAttribute s.Attribute e.FileName>
+  == FileNotFound
+  == (e.Value)
+
+s.Attribute ::= DateTime | Size | LongName
 
 <ParseFileName e.FileName>
   == (e.Directory) e.FileNameNoExt (e.Ext)
@@ -613,6 +625,8 @@ Module MModules;
   == t.hContext ModuleNotFound
   == t.hContext Library (Sym e.SymName) (Out e.OutName)
 
+<DefaultModulePath> == e.DefaultModulePath
+
 <LookupModule-T t.hContext e.ModuleName>
    == t.hContext
      s.Status
@@ -624,11 +638,11 @@ s.Status ::= one of
   ModuleNotFound NeedRecompile Library SrcNotUpdated SystemLibrary
   e.*Name may be None
 
+################################################################################
+Module MNameMaker;
 =============================================================================
 Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
 ==============================================================================
-################################################################################
-Module MNameMaker;
 
 <MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
   == t.Context t.QualifiedName Success e.FilePath
@@ -637,6 +651,32 @@ Module MNameMaker;
 <s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
   == t.QualifiedName Success e.RelativeName
   == t.QualifiedName Fails
+
+################################################################################
+Module MOrder;
+
+Сравнение по типам:
+() > Macro > Character > Other
+Скобочные термы сравниваются в лексиконографическом порядке.
+Макроцифры сравниваются по арифметическим правилам.
+Characters сравниваются по ASCII-значениям.
+Остальные символы считаются равными.
+
+<Compare-T t.Left t.Right>
+  == s.Result t.Left t.Right
+
+s.Result ::= '<' | '=' | '>'
+
+<Compare t.Left t.Right> == '<' | '=' | '>'
+
+<Sort e.Sequence>
+  == e.SortedSequence
+
+<Max e.Terms> == t.MaxTerm
+e.Terms != empty
+
+<Min e.Terms> == t.MinTerm
+e.Terms != empty
 
 ################################################################################
 Module MOS;
@@ -830,6 +870,22 @@ e.ModuleList = t.ModuleName*
 ################################################################################
 Module MStrings;
 
+<Upper e.Text> == e.UpperText
+<Lower e.Text> == e.LowerText
+
+<Length e.Expr> == s.Length
+<Length e.Expr> == s.Length e.Expr
+
+<First-Parse s.Count e.Expr> ==
+  (e.First) e.Tail
+
+<First s.Count e.Expr> == e.Truncate
+
+<Skip s.Count e.Expr> == e.Truncated
+
+<At s.Index e.Expr> == t.ElemAt
+Нумерация начинается с нуля.
+
 <Seq s.NFirst s.NLast>
   == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
 s.NFirst и s.NLast -- числа,
@@ -926,6 +982,8 @@ t.ModuleName ::= t.QualifiedName
 
 <SymReduce-T t.hIModule>
   == t.hIModule t.hISymModule
+
+ TODO: Доделать 
 
 <LoadInfo t.Context e.ModuleName>
   == t.UpdatedContext

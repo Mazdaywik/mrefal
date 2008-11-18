@@ -25,15 +25,21 @@ $ENTRY Init
 
 UnBracket (e.Expr) = e.Expr;
 
+//------------------------------------------------------------------------------
+
 $ENTRY Final
   = <MOS::System 'del ' <TempName> ' >nul 2>nul'>;
 
 TempName = <MSwapSupport::Read &G_TempFileName>;
 
+//------------------------------------------------------------------------------
+
 /**
   <ExistFile e.FileName> == True | False
 */
 $ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
+
+//------------------------------------------------------------------------------
 
 /**
   <ExistFile-T e.FileName>
@@ -43,21 +49,39 @@ $ENTRY ExistFile e.FileName = <MRefalRTS::ExistFile e.FileName>;
 $ENTRY ExistFile-T
   e.FileName = <MRefalRTS::ExistFile e.FileName> e.FileName;
 
+//------------------------------------------------------------------------------
+
+/**
+  <FilesInfo e.Mask>
+    == (
+      (e.FileName)
+      (DateTime e.DateTime)
+      (Size s.Size)
+      (LongName e.LongName)
+    )
+*/
 $ENTRY FilesInfo {
   e.Mask-B '"' e.Mask-E =
     <MSelfDiag::Error
       'MFileSystem::FilesInfo: argument must not have quotes'
     >;
 
-  e.Mask = <DoFilesInfo
-    <Quoting e.Mask>
-  >;
+  e.Mask =
+    <DoFilesInfo
+      <Quoting e.Mask>
+    >;
 }
 
 Quoting {
   e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
 
-  e.Mask = e.Mask;
+  e.Mask = <TrueSlash e.Mask>;
+}
+
+TrueSlash {
+  e.Begin '/' e.End = e.Begin '\\' <TrueSlash e.End>;
+
+  e.Path = e.Path;
 }
 
 DoFilesInfo
@@ -158,6 +182,15 @@ DigitOnly {
   (e.L_Digs) s.NoDig = ;
 }
 
+//------------------------------------------------------------------------------
+
+/**
+  <FileAttribute s.Attribute e.FileName>
+    == FileNotFound
+    == (e.Value)
+
+  s.Attribute ::= DateTime | Size | LongName
+*/
 $ENTRY FileAttribute
   s.Attribute e.FileName =
     <CheckExistAndGetAttrib
@@ -185,6 +218,8 @@ ExtractAttrib {
       'Found many files in ExtractAttrib ' t.OneFile e.Tail
     >;
 }
+
+//------------------------------------------------------------------------------
 
 /**
   <ParseFileName e.FileName>

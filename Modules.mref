@@ -16,8 +16,4 @@ $ENTRY OutName
 
 $ENTRY HomeDir = <MModules::HomeDir>;
 
-$ENTRY CanonicalModuleName
-  e.ModuleName =
-    <MModules::CanonicalModuleName e.ModuleName>;
-
 $END Modules.

@@ -123,18 +123,6 @@ CreatePath {
     e.NextSegment '/' <CreatePath e.Tail>;
 }
 
-/**--------------------------------------------------------------------------*/
-
-/**
-  <Equals t.QName1 t.QName2>
-    == True | False
-*/
-$ENTRY Equals {
-  [QName e.Segments] [QName e.Segments] = True;
-
-  t.QName1 t.QName2 = Fails;
-}
-
 /**
   <Equals-T t.QName1 t.QName2>
     == s.Result t.QName1 t.QName2
@@ -145,23 +133,6 @@ $ENTRY Equals-T {
     True [QName e.Segments] [QName e.Segments];
 
   t.QName1 t.QName2 = False t.QName1 t.QName2;
-}
-
-/**
-  <Equals-NoCase t.QName1 | t.QName2>
-    == True | False
-*/
-$ENTRY Equals-NoCase {
-  [QName e.Segments1] [QName e.Segments2] =
-    <SwEquals-NoCase
-      ( <MStrings::Lower e.Segments1> ) ( <MStrings::Lower e.Segments2> )
-    >;
-}
-
-SwEquals-NoCase {
-  (e.LowerSegments) (e.LowerSegments) = True;
-
-  (e.Other1) (e.Other2) = False;
 }
 
 $END MQualifiedName.

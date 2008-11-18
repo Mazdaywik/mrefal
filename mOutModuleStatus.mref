@@ -5,124 +5,124 @@ $IMPORT Math;
 $IMPORT MSwapSupport;
 
 $ENTRY Updated
-	e.ModuleName =
-		<Out Updated e.ModuleName>;
+  e.ModuleName =
+    <Out Updated e.ModuleName>;
 
 $ENTRY Compiling
-	e.ModuleName =
-		<Out Compiling e.ModuleName>;
+  e.ModuleName =
+    <Out Compiling e.ModuleName>;
 
 $ENTRY Compiled
-	e.ModuleName =
-		<Out Compiled e.ModuleName>;
+  e.ModuleName =
+    <Out Compiled e.ModuleName>;
 
 $ENTRY Library
-	e.ModuleName =
-		<Out Library e.ModuleName>;
+  e.ModuleName =
+    <Out Library e.ModuleName>;
 
 $ENTRY SystemLibrary
-	e.ModuleName =
-		<Out SystemLibrary e.ModuleName>;
+  e.ModuleName =
+    <Out SystemLibrary e.ModuleName>;
 
 $ENTRY Linking
-	e.ProgName =
-		<Out Linking e.ProgName>;
+  e.ProgName =
+    <Out Linking e.ProgName>;
 
 $SWAP G_OldStatus, G_Buffer;
 
 Out
-	s.NewStatus e.ModuleName =
-		<SwOut
-			s.NewStatus <G_OldStatus>
-			'`' e.ModuleName '\''
-		>;
+  s.NewStatus e.ModuleName =
+    <SwOut
+      s.NewStatus <G_OldStatus>
+      '`' e.ModuleName '\''
+    >;
 
 SwOut {
-	s.NewStatus Startup e.ModuleName =
-		<WriteLine s.NewStatus e.ModuleName>;
+  s.NewStatus Startup e.ModuleName =
+    <WriteLine s.NewStatus e.ModuleName>;
 
-	s.OldStatus s.OldStatus e.ModuleName =
-		<G_OldStatus s.OldStatus>
-		<Write e.ModuleName>;
+  s.OldStatus s.OldStatus e.ModuleName =
+    <G_OldStatus s.OldStatus>
+    <Write e.ModuleName>;
 
-	s.NewStatus s.OldStatus e.ModuleName =
-		<NewLine>
-		<WriteLine s.NewStatus e.ModuleName>;
+  s.NewStatus s.OldStatus e.ModuleName =
+    <NewLine>
+    <WriteLine s.NewStatus e.ModuleName>;
 }
 
 StatusStr {
-	Updated = 'Updated ';
-	Compiling = 'Compiling ';
-	Compiled = 'Compiled ';
-	Library = 'Library ';
-	Linking = 'Linking ';
-	SystemLibrary = 'System library ';
+  Updated = 'Updated ';
+  Compiling = 'Compiling ';
+  Compiled = 'Compiled ';
+  Library = 'Library ';
+  Linking = 'Linking ';
+  SystemLibrary = 'System library ';
 }
 
 MaxLength = 80;
 
 CheckLength
-	e.Line = <DoCheckLength <MaxLength> e.Line>;
+  e.Line = <DoCheckLength <MaxLength> e.Line>;
 
 Dec {
-	1 = Limit;
-	Limit = Limit;
-	s.Other = <Math::Dec s.Other>;
+  1 = Limit;
+  Limit = Limit;
+  s.Other = <Math::Dec s.Other>;
 }
 
 DoCheckLength {
-	Limit e.Line = Long;
-	s.Other = Short;
-	s.Other s.Char e.Line =
-		<DoCheckLength
-			<Dec s.Other> e.Line
-		>;
+  Limit e.Line = Long;
+  s.Other = Short;
+  s.Other s.Char e.Line =
+    <DoCheckLength
+      <Dec s.Other> e.Line
+    >;
 }
 
 WriteLine {
-	s.Status e.Name =
-		<NewLine>
-		<MSwapSupport::Write & G_OldStatus s.Status>
-		<MSwapSupport::Write
-			& G_Buffer
-			<StatusStr s.Status> e.Name
-		>;
+  s.Status e.Name =
+    <NewLine>
+    <MSwapSupport::Write & G_OldStatus s.Status>
+    <MSwapSupport::Write
+      & G_Buffer
+      <StatusStr s.Status> e.Name
+    >;
 }
 
 NewLine = <SwNewLine <G_Buffer>>;
 
 SwNewLine {
-	= /* <InOut::WriteLine> */;
-	e.Line = <InOut::WriteLine e.Line '.'>;
+  = /* <InOut::WriteLine> */;
+  e.Line = <InOut::WriteLine e.Line '.'>;
 }
 
 Write
-	e.Name =
-		<Write-CheckLength (<G_Buffer>) e.Name>;
+  e.Name =
+    <Write-CheckLength (<G_Buffer>) e.Name>;
 
 Write-CheckLength {
-	() e.Name = <WriteLine <G_OldStatus> e.Name>;
-	(e.Buffer) e.Line =
-		<SwWrite-CheckLength
-			<CheckLength e.Buffer e.Line>
-			<G_OldStatus> (e.Buffer) e.Line
-		>;
+  () e.Name = <WriteLine <G_OldStatus> e.Name>;
+  (e.Buffer) e.Line =
+    <SwWrite-CheckLength
+      <CheckLength e.Buffer e.Line>
+      <G_OldStatus> (e.Buffer) e.Line
+    >;
 }
 
 SwWrite-CheckLength {
-	Short s.Status (e.Buffer) e.Name =
-		<G_OldStatus s.Status> <G_Buffer e.Buffer ', ' e.Name>;
+  Short s.Status (e.Buffer) e.Name =
+    <G_OldStatus s.Status> <G_Buffer e.Buffer ', ' e.Name>;
 
-	Long s.Status (e.Buffer) e.Name =
-		<G_Buffer e.Buffer>
-		<WriteLine s.Status e.Name>;
+  Long s.Status (e.Buffer) e.Name =
+    <G_Buffer e.Buffer>
+    <WriteLine s.Status e.Name>;
 }
 
 $ENTRY Flush = <SwFlush <G_Buffer>>;
 
 SwFlush {
-	= ;
-	e.Line = <InOut::WriteLine e.Line '.'>;
+  = ;
+  e.Line = <InOut::WriteLine e.Line '.'>;
 }
 
 

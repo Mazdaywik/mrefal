@@ -195,7 +195,9 @@ DefaultOptions
         * для исходников и библиотечных модулей аналогично LocalUpdated
         с тем отличием, что GlobalUpdated также рекурсивно установлен
         у всех импортируемых модулей;
-      * Errors -- в процессе обработки произошла ошибка;
+      * NeedRecompile -- имеет смысл только для исходника,
+        означает, что модуль нужно перекомпилировать;
+      * Errors -- в процессе обработки произошла ошибка:
         * для исходника -- ошибки в процессе компиляции;
         * для библиотечного модуля -- выходные файлы повреждены.
     */
@@ -209,8 +211,6 @@ DefaultOptions
       e.DateTime -- см. MainStructures.txt
     */
     (LastTime Unknown)
-
-    (NeedRecompile Unknown) // Unknown | True | False
 
     (ModuleType Program) // Program | Module
     (CachedSym None) // None | t.IModule

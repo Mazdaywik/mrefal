@@ -8,10 +8,14 @@ $MODULE MClusters;
 ==============================================================================*/
 
 $IMPORT MContext;
+$IMPORT MFE-Mgr;
 $IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MModules;
+$IMPORT MOrder;
+$IMPORT MSelfDiag;
+$IMPORT MStrings;
 $IMPORT MSymModule;
 
 //------------------------------------------------------------------------------
@@ -37,7 +41,12 @@ DependencesList-SwAvail {
       t.hContext t.ModuleName
     >;
 
-  t.ModuleName t.hContext Found Updated =
+  t.ModuleName t.hContext Found GlobalUpdated =
+    <DependencesList-OnAvail
+      t.hContext t.ModuleName
+    >;
+
+  t.ModuleName t.hContext Found LocalUpdated =
     <DependencesList-OnAvail
       t.hContext t.ModuleName
     >;
@@ -110,7 +119,7 @@ ToRealNames-Aux {
 
 /**
   <CheckNeedCompile
-    t.hContext (e.ModulePath) t.QualifiedName
+    t.hContext (e.ModulePath) t.ModuleName
   >
     == t.hContext t.QualifiedName s.Result
 
@@ -118,134 +127,622 @@ ToRealNames-Aux {
     NeedRecompile | Updated | Library | NotFound | SuccessCompiled | Errors
 */
 $ENTRY CheckNeedCompile
-  t.hContext (e.ModulePath) t.QualifiedName =
-    t.hContext t.QualifiedName NotFound;
+  t.hContext (e.ModulePath) t.ModuleName =
+    <CheckNeedCompile-R
+      (/* стек */) t.hContext (e.ModulePath) t.ModuleName
+    >;
+
+/*
+  Для защиты от зацикливания вследствие рекурсии будем вести
+  отсчёт просматриваемых модулей в стеке.
+*/
+CheckNeedCompile-R
+  (e.Stack)
+  t.hContext (e.ModulePath) t.ModuleName =
+    <CheckNeedCompile-SwRoot
+      (e.Stack) (e.ModulePath)
+      <CheckNeedCompileOne
+        t.hContext (e.ModulePath) t.ModuleName
+      >
+    >;
+
+CheckNeedCompile-UpdateContext {
+  t.hContext t.ModuleName Updated =
+    <MSelfDiag::Log '<CheckNeedCompile-UpdateContext>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  s.Result = ' Updated>
+    <MSelfDiag::Log>
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName
+        (Status_NEW GlobalUpdated)
+      >
+    >
+    t.ModuleName Updated;
+
+  t.hContext t.ModuleName Library =
+    <MSelfDiag::Log '<CheckNeedCompile-UpdateContext>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  s.Result = **' Library>
+    <MSelfDiag::Log>
+    t.hContext t.ModuleName Library;
+
+  t.hContext t.ModuleName s.Result =
+    <MSelfDiag::Log '<CheckNeedCompile-UpdateContext>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  s.Result = ' s.Result>
+    <MSelfDiag::Log>
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName
+        (Status_NEW s.Result)
+      >
+    >
+    t.ModuleName s.Result;
+}
+
+GuardUpdateContext
+  t.hContext Success = t.hContext;
+
+CheckNeedCompile-SwRoot {
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName NeedRecompile =
+    t.hContext t.ModuleName NeedRecompile;
+
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName Library =
+    t.hContext t.ModuleName Library;
+
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName NotFound =
+    t.hContext t.ModuleName NotFound;
+
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName SuccessCompiled =
+    t.hContext t.ModuleName SuccessCompiled;
+
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName Errors =
+    t.hContext t.ModuleName Errors;
+
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName LocalUpdated =
+    <CheckNeedCompile-UpdateContext
+      <CheckNeedCompile-ScanImports
+        (e.Stack) (e.ModulePath) t.ModuleName
+        <DependencesList t.hContext t.ModuleName>
+      >
+    >;
+
+  (e.Stack) (e.ModulePath)
+  t.hContext t.ModuleName GlobalUpdated =
+    t.hContext t.ModuleName Updated;
+}
+
+CheckNeedCompile-ScanImports {
+  /*
+    В случае циклических связей возвратим NeedRecompile, т.к.
+    сюда не доходит t.hErrorList. Пускай лучше при перекомпиляции
+    будет выдано сообщение об ошибке.
+  */
+  (e.Stack-B t.RecursiveModule e.Stack-E )
+  (e.ModulePath) t.ModuleName
+  t.hContext Avail
+  e.Imports-B t.RecursiveModule e.Imports-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  (e.Stack) (e.ModulePath) t.ModuleName
+  t.hContext Avail e.Imports =
+    /*
+      Возможно, лучше заменить MapReduce на обычный
+      остаточно-рекурсивный цикл.
+    */
+    <CheckNeedCompile-ScanResults
+      t.ModuleName
+      <MLambda::MapReduce
+        <MLambda::Composite
+          <MLambda::BindLeft-H
+            <MLambda::BindLeft & CheckNeedCompile-R ( e.Stack t.ModuleName )>
+            (e.ModulePath)
+          >
+          & MLambda.Bracket-H
+        >
+        t.hContext e.Imports
+      >
+    >;
+
+  /*
+    Реакция на ошибки, возможно, неразумная.
+  */
+  (e.Stack) (e.ModulePath) t.ModuleName
+  t.hContext NotAvail =
+    t.hContext t.ModuleName NeedRecompile;
+
+  (e.Stack) (e.ModulePath) t.ModuleName
+  t.hContext Fails =
+    t.hContext t.ModuleName NeedRecompile;
+}
+
+CheckNeedCompile-ScanResults
+  t.ModuleName t.hContext e.Results =
+    <MSelfDiag::Log '<CheckNeedCompile-ScanResults>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  e.Results = ' e.Results>
+    <MSelfDiag::Log>
+    <?CheckNeedCompile-ScanResults
+      t.ModuleName t.hContext e.Results
+    >;
+
+?CheckNeedCompile-ScanResults {
+  t.ModuleName t.hContext
+  e.Results-B (t.ImportName NeedRecompile) e.Results-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext
+  e.Results-B (t.ImportName NotFound) e.Results-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext
+  e.Results-B (t.ImportName SuccessRecompiled) e.Results-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext
+  e.Results-B (t.ImportName Errors) e.Results-E =
+    t.hContext t.ModuleName Errors;
+
+  // Оставшийся случай e.Results ::= (t.ImportName Updated | Library)*
+  t.ModuleName t.hContext e.Results =
+    <CheckNeedCompile-CompareTimes
+      t.ModuleName
+      <MLambda::MapReduce
+        <MLambda::Composite
+          & GetLastTime
+          & MLambda.Bracket-H
+        >
+        t.hContext
+        t.ModuleName
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            <MLambda::BindLeft & MStrings.First 1>
+          >
+          e.Results
+        >
+      >
+    >;
+}
+
+CheckNeedCompile-CompareTimes
+  t.ModuleName t.hContext e.Times =
+    <MSelfDiag::Log '<CheckNeedCompile-CompareTimes>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  e.Times = ' e.Times>
+    <MSelfDiag::Log>
+    <?CheckNeedCompile-CompareTimes
+      t.ModuleName t.hContext e.Times
+    >;
+
+?CheckNeedCompile-CompareTimes {
+  t.ModuleName t.hContext
+  e.Times-B ( NotKnown ) e.Times-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext
+  e.Times-B ( NeedNotTime s.Reason ) e.Times-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext
+  e.Times-B ( Known PartialComplect ) e.Times-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext
+  e.Times-B ( Known FullComplect SrcModified e.Time ) e.Times-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext ( Known FullComplect SrcNotModified e.SrcTime )
+  e.DependedTimes =
+    <CheckNeedCompile-SwCompareTimes
+      t.ModuleName t.hContext
+      <MLambda::Map
+        <MLambda::Composite
+          <MLambda::BindLeft & MStrings.Skip 3>
+          & MLambda.Bracket
+          <MLambda::BindLeft & MOrder.Compare (e.SrcTime)>
+        >
+        e.DependedTimes
+      >
+    >;
+}
+
+CheckNeedCompile-SwCompareTimes {
+  t.ModuleName t.hContext e.Compares-B '<' e.Compares-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext e.Compares-B '=' e.Compares-E =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext e.Compares =
+    t.hContext t.ModuleName Updated;
+}
 
 //------------------------------------------------------------------------------
 
 /*
   <CheckNeedCompileOne
-    t.hContext (e.ModulePath) t.QualifiedName
+    t.hContext (e.ModulePath) t.ModuleName
   >
-    == t.hContext t.QualifiedName s.Result
+    == t.hContext t.ModuleName s.Result
 
   s.Result ::=
-    NeedRecompile | Updated | Library | NotFound |
-    SuccessCompiled | Errors | LocalUpdated
+    NeedRecompile | Library | NotFound |
+    SuccessCompiled | Errors | LocalUpdated | GlobalUpdated
 */
 CheckNeedCompileOne
-  t.hContext (e.ModulePath) t.QualifiedName =
+  t.hContext (e.ModulePath) t.ModuleName =
     <CheckNeedCompileOne-SwKnown
-      (e.ModulePath) t.QualifiedName
-      <MContext::ExtractOption t.hContext t.QualifiedName Status_NEW>
+      (e.ModulePath) t.ModuleName
+      <MContext::ExtractOption t.hContext t.ModuleName Status_NEW>
     >;
 
 CheckNeedCompileOne-SwKnown {
-  (e.ModulePath) t.QualifiedName
-  t.hContext ModuleNotFound =
+  (e.ModulePath) t.ModuleName t.hContext
+  ModuleNotFound =
     <CheckNeedCompileOne-OnUnknown
-      t.hContext (e.ModulePath) t.QualifiedName
+      t.hContext (e.ModulePath) t.ModuleName
     >;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext MismatchCase =
-    t.hContext t.QualifiedName NotFound;
+  (e.ModulePath) t.ModuleName t.hContext
+  MismatchCase =
+    t.hContext t.ModuleName NotFound;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Found Unknown =
+  (e.ModulePath) t.ModuleName t.hContext
+  Found Unknown =
     <CheckNeedCompileOne-OnUnknown
-      t.hContext (e.ModulePath) t.QualifiedName
+      t.hContext (e.ModulePath) t.ModuleName
     >;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Found Found =
+  (e.ModulePath) t.ModuleName t.hContext
+  Found Found =
     <CheckNeedCompileOne-OnUnknown
-      t.hContext (e.ModulePath) t.QualifiedName
+      t.hContext (e.ModulePath) t.ModuleName
     >;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Found SuccessCompiled =
-    t.hContext t.QualifiedName SuccessCompiled;
+  (e.ModulePath) t.ModuleName t.hContext
+  Found SuccessCompiled =
+    t.hContext t.ModuleName SuccessCompiled;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Found LocalUpdated =
-    t.hContext t.QualifiedName LocalUpdated;
+  (e.ModulePath) t.ModuleName t.hContext
+  Found LocalUpdated =
+    t.hContext t.ModuleName LocalUpdated;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Found GlobalUpdated =
-    t.hContext t.QualifiedName GlobalUpdated;
+  (e.ModulePath) t.ModuleName t.hContext
+  Found GlobalUpdated =
+    t.hContext t.ModuleName GlobalUpdated;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Found Errors =
-    t.hContext t.QualifiedName Errors;
+  (e.ModulePath) t.ModuleName t.hContext
+  Found NeedRecompile =
+    t.hContext t.ModuleName NeedRecompile;
+
+  (e.ModulePath) t.ModuleName t.hContext
+  Found Errors =
+    t.hContext t.ModuleName Errors;
 }
 
 CheckNeedCompileOne-OnUnknown
-  t.hContext (e.ModulePath) t.QualifiedName =
+  t.hContext (e.ModulePath) t.ModuleName =
     <CheckNeedCompileOne-Aux
-      t.QualifiedName
+      t.ModuleName
       <MModules::LookupImportModule
-        t.hContext (e.ModulePath) t.QualifiedName
+        t.hContext (e.ModulePath) t.ModuleName
       >
     >;
 
 CheckNeedCompileOne-Aux {
-  t.QualifiedName t.hContext Found Library e.BaseDirectory =
-    t.hContext t.QualifiedName Library;
+  t.ModuleName t.hContext Found Library e.BaseDirectory =
+    t.hContext t.ModuleName Library;
 
-  t.QualifiedName t.hContext NotFound =
-    t.hContext t.QualifiedName NotFound;
+  t.ModuleName t.hContext NotFound =
+    t.hContext t.ModuleName NotFound;
 
-  t.QualifiedName t.hContext Found s.FrontEnd e.BaseDirectory =
-    <CheckNeedCompileOne-ExistBackEnds
-      (t.QualifiedName s.FrontEnd e.BaseDirectory)
-      <MModules::GetBEList t.hContext t.QualifiedName>
+  t.ModuleName t.hContext Found s.FrontEnd e.BaseDirectory =
+    <CheckNeedCompileOne-SwGetLastTime
+      t.ModuleName
+      <GetLastTime t.hContext t.ModuleName>
     >;
 
-  t.QualifiedName t.hContext NotFound =
-    t.hContext t.QualifiedName NotFound;
+  t.ModuleName t.hContext NotFound =
+    t.hContext t.ModuleName NotFound;
 }
 
-CheckNeedCompileOne-ExistBackEnds {
-  (t.ModuleName s.FrontEnd e.BaseDirectory)
-  t.hContext Known e.BackEnds =
-    <CheckNeedCompileOne-ExistBackEnds-SwExist
-      (t.ModuleName s.FrontEnd e.BaseDirectory)
-      t.hContext
+CheckNeedCompileOne-SwGetLastTime {
+  t.ModuleName t.hContext Known FullComplect SrcModified e.Time =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext Known FullComplect SrcNotModified e.Time =
+    t.hContext t.ModuleName LocalUpdated;
+
+  t.ModuleName t.hContext Known FullComplect Library e.Time =
+    t.hContext t.ModuleName Library;
+
+  t.ModuleName t.hContext Known PartialComplect =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext NeedNotTime SuccessCompiled =
+    t.hContext t.ModuleName SuccessCompiled;
+
+  t.ModuleName t.hContext NeedNotTime NeedRecompile =
+    t.hContext t.ModuleName NeedRecompile;
+
+  t.ModuleName t.hContext NeedNotTime Errors =
+    t.hContext t.ModuleName Errors;
+
+  /*
+    Варианты с NotKnown тут не рассматриваем, т.к. после вызова
+    MModules::LookupImportModule модуль должен быть известен.
+  */
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  <GetLastTime t.hContext t.ModuleName>
+    == t.hContext Known FullComplect s.Updated e.Time
+    == t.hContext Known PartialComplect
+    // в случае, если Status_NEW ::= SuccessCompiled | NeedRecompile | Errors
+    == t.hContext NeedNotTime s.Reason
+    == t.hContext NotKnown
+  s.Updated ::= SrcModified | SrcNotModified | Library
+  s.Reason ::= SuccessCompiled | NeedRecompile | Errors
+*/
+GetLastTime
+  t.hContext t.ModuleName =
+    <MSelfDiag::Log '<GetLastTime>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <GetLastTime-Out
+      <?GetLastTime t.hContext t.ModuleName>
+    >;
+
+GetLastTime-Out {
+  t.hContext Known FullComplect s.Updated e.Time =
+    <MSelfDiag::Log '<GetLastTime-Out>'>
+    <MSelfDiag::Log '  Known, FullComplect'>
+    <MSelfDiag::Log '  s.Updated = ' s.Updated>
+    <MSelfDiag::Log '  e.Time = ' e.Time>
+    <MSelfDiag::Log>
+    t.hContext Known FullComplect s.Updated e.Time;
+
+  t.hContext Known PartialComplect =
+    <MSelfDiag::Log '<GetLastTime-Out>'>
+    <MSelfDiag::Log '  Known, PartialComplect'>
+    <MSelfDiag::Log>
+    t.hContext Known PartialComplect;
+
+  t.hContext NeedNotTime s.Reason =
+    <MSelfDiag::Log '<GetLastTime-Out>'>
+    <MSelfDiag::Log '  NeedNotTime'>
+    <MSelfDiag::Log '  s.Reason = ' s.Reason>
+    <MSelfDiag::Log>
+    t.hContext NeedNotTime s.Reason;
+
+  t.hContext NotKnown =
+    <MSelfDiag::Log '<GetLastTime-Out>'>
+    <MSelfDiag::Log '  NotKnown'>
+    <MSelfDiag::Log>
+    t.hContext NotKnown;
+}
+
+?GetLastTime
+  t.hContext t.ModuleName =
+    <GetLastTime-SwKnown
+      t.ModuleName
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::Composite
+            <MLambda::BindRight & MContext.ExtractOption t.ModuleName Type>
+            & MLambda.Bracket-H
+          >
+          <MLambda::Composite
+            <MLambda::BindRight
+              & MContext.ExtractOption t.ModuleName Status_NEW
+            >
+            & MLambda.Bracket-H
+          >
+          <MLambda::Composite
+            <MLambda::BindRight & MContext.ExtractOption t.ModuleName LastTime>
+            & MLambda.Bracket-H
+          >
+        >
+        t.hContext
+      >
+    >;
+
+GetLastTime-SwKnown {
+  t.ModuleName t.hContext
+  ( ModuleNotFound ) ( ModuleNotFound ) ( ModuleNotFound ) =
+    t.hContext NotKnown;
+
+  t.ModuleName t.hContext
+  ( MismatchCase ) ( MismatchCase ) ( MismatchCase ) =
+    t.hContext NotKnown;
+
+  t.ModuleName t.hContext
+  ( Found Unknown ) ( Found Unknown ) ( Found Unknown ) =
+    t.hContext NotKnown;
+
+  t.ModuleName t.hContext
+  ( Found s.ModuleType ) ( Found SuccessCompiled ) ( Found e.Time ) =
+    t.hContext NeedNotTime SuccessCompiled;
+
+  t.ModuleName t.hContext
+  ( Found s.ModuleType ) ( Found NeedRecompile ) ( Found e.Time ) =
+    t.hContext NeedNotTime NeedRecompile;
+
+  t.ModuleName t.hContext
+  ( Found s.ModuleType ) ( Found Errors ) ( Found e.Time ) =
+    t.hContext NeedNotTime Errors;
+
+  t.ModuleName t.hContext
+  ( Found s.ModuleType ) ( Found s.Status ) ( Found Unknown ) =
+    <GetLastTime-CalcTime
+      t.ModuleName s.ModuleType
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::Composite
+            <MLambda::BindRight & MModules.GetBEList t.ModuleName>
+            & MLambda.Bracket-H
+          >
+          <MLambda::Composite
+            <MLambda::BindRight & MModules.GetFEName t.ModuleName>
+            & MLambda.Bracket-H
+          >
+        >
+        t.hContext
+      >
+    >;
+
+  t.ModuleName t.hContext
+  ( Found Library ) ( Found s.Status ) ( Found e.Time ) =
+    t.hContext Known FullComplect Library e.Time;
+
+  t.ModuleName t.hContext
+  ( Found Source ) ( Found LocalUpdated ) ( Found e.Time ) =
+    t.hContext Known FullComplect SrcNotModified e.Time;
+
+  t.ModuleName t.hContext
+  ( Found Source ) ( Found GlobalUpdated ) ( Found e.Time ) =
+    t.hContext Known FullComplect SrcNotModified e.Time;
+
+  t.ModuleName t.hContext
+  ( Found s.ModuleType ) ( Found s.Status ) ( Found e.Time ) =
+    t.hContext Known FullComplect SrcModified e.Time;
+}
+
+GetLastTime-CalcTime {
+  t.ModuleName s.ModuleType t.hContext ( UnKnown ) ( UnKnown ) =
+    t.hContext NotKnown;
+
+  t.ModuleName Library t.hContext
+  ( Known e.BackEnds ) ( Known Library ) =
+    <GetLastTime-MakeResult-Library
+      t.ModuleName Library t.hContext
+      // Наличие не проверяем -- для библиотеки все файлы должны быть найдены.
+      <MOrder::Min
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            <MLambda::BindLeft & MStrings.Skip 1>
+            <MLambda::BindLeft & MFileSystem.FileAttribute DateTime>
+          >
+          e.BackEnds
+        >
+      >
+    >;
+
+  t.ModuleName Source t.hContext
+  ( Known e.BackEnds ) ( Known s.FEName e.FrontEndName ) =
+    <GetLastTime-CheckExists
+      t.ModuleName t.hContext
+      <MFileSystem::FileAttribute DateTime e.FrontEndName>
       <MLambda::Map
         <MLambda::Composite
           & MLambda.UnBracket
-          <MLambda::MakeHandled
-            & MFileSystem.ExistFile-T
-          >
+          <MLambda::BindLeft & MStrings.Skip 1>
+          & MFileSystem.ExistFile-T
           & MLambda.Bracket
         >
         e.BackEnds
       >
     >;
-
-  /*
-    Вариант с UnKnown не проверяем, т.к. это нарушение инварианта.
-  */
 }
 
-CheckNeedCompileOne-ExistBackEnds-SwExist {
-  (t.ModuleName s.FrontEnd e.BaseDirectory)
-  t.hContext
-  e.BEFiles-B (s.BackEnd False e.FileName) e.BEFiles-E =
-    t.hContext t.ModuleName NeedRecompile;
+GetLastTime-MakeResult-Library
+  t.ModuleName Library t.hContext (e.LastTime) =
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName
+        (LastTime e.LastTime)
+      >
+    >
+    Known FullComplect Library e.LastTime;
 
-  (t.ModuleName s.FrontEnd e.BaseDirectory)
-  t.hContext e.BEFiles =
-    /** TODO: Здесь надо проверять на Updated */
-    t.hContext t.ModuleName NeedRecompile;
+GetLastTime-CheckExists {
+  // Предполагаем, что файл исходного текста присутствует.
+  t.ModuleName t.hContext FileNotFound e.BackEnds =
+    // Неожиданно, мы недавно проверяли, что файл существует
+    <MSelfDiag::FailDown
+      & GetLastTime-CheckExists
+      t.ModuleName t.hContext FileNotFound
+    >;
+
+  t.ModuleName t.hContext (e.SrcTime)
+  e.BackEnds-B (False e.FileNotExists) e.BackEnds-E =
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName
+        (Status_NEW NeedRecompile)
+      >
+    >
+    Known PartialComplect;
+
+  t.ModuleName t.hContext (e.SrcTime) e.BackEnds =
+    <GetLastTime-OutsTime
+      t.ModuleName t.hContext (e.SrcTime)
+      <MOrder::Min
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            <MLambda::BindLeft & MStrings.Skip 1>
+            <MLambda::BindLeft & MFileSystem.FileAttribute DateTime>
+          >
+          e.BackEnds
+        >
+      >
+    >;
+}
+
+GetLastTime-OutsTime {
+  //Особенность сортировки -- имена считаются "меньше" скобок
+  t.ModuleName t.hContext (e.SrcTime) FileNotFound =
+    // Неожиданно. Для модуля типа "исходник" исходник должен быть
+    <MSelfDiag::FailDown
+      & GetLastTime-OutsTime
+      t.ModuleName t.hContext (e.SrcTime) FileNotFound
+    >;
+
+  t.ModuleName t.hContext (e.SrcTime) (e.MinOutTime) =
+    <GetLastTime-Compare
+      t.ModuleName t.hContext
+      <MOrder::Compare-T (e.SrcTime) (e.MinOutTime)>
+    >;
+}
+
+GetLastTime-Compare {
+  t.ModuleName t.hContext '<' (e.SrcTime) (e.MinOutTime) =
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName
+        (LastTime e.SrcTime)
+        (Status_NEW LocalUpdated)
+      >
+    >
+    Known FullComplect SrcNotModified e.SrcTime;
+
+  t.ModuleName t.hContext s.OtherOrder (e.SrcTime) (e.MinOutTime) =
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        t.hContext t.ModuleName
+        (LastTime e.MinOutTime)
+        (Status_NEW NeedRecompile)
+      >
+    >
+    Known FullComplect SrcModified e.MinOutTime;
 }
 
 //------------------------------------------------------------------------------
 
 /**
-  <ListForLinking t.hContext t.QualifiedName>
-    == t.hContext Success t.QualifiedName*
+  <ListForLinking t.hContext t.RootModuleName>
+    == t.hContext Success t.ModuleName*
     == t.hContext Fails
 */
 $ENTRY ListForLinking

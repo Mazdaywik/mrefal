@@ -26,6 +26,10 @@ UpperLowerTable =
   ('Uu') ('Vv') ('Ww') ('Xx') ('Yy')
   ('Zz');
 
+/**
+  <Upper e.Text> == e.UpperText
+  <Lower e.Text> == e.LowerText
+*/
 $ENTRY Upper
   e.Expr = <RMap &UpChar e.Expr>;
 
@@ -78,6 +82,10 @@ LoChar {
 
 //------------------------------------------------------------------------------
 
+/**
+  <Length e.Expr> == s.Length
+  <Length e.Expr> == s.Length e.Expr
+*/
 $ENTRY Length e.Expr = <UnLen <Length-T e.Expr> >;
 
 UnLen s.Length e.Expr = s.Length;
@@ -98,13 +106,56 @@ DoLength-T {
 
 //------------------------------------------------------------------------------
 
-$ENTRY First s.Count e.Expr = <DoFirst s.Count () e.Expr>;
+/**
+  <First-Parse s.Count e.Expr> ==
+    (e.First) e.Tail
+*/
+$ENTRY First-Parse s.Count e.Expr = <DoFirst s.Count () e.Expr>;
 
 DoFirst {
   0 (e.First) e.Last = (e.First) e.Last;
   s.Num (e.First) = (e.First);
   s.Num (e.First) t.Next e.Last =
     <DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <First s.Count e.Expr> == e.Truncate
+*/
+$ENTRY First
+  s.Count e.Expr =
+    <First-UnBracket <First-Parse s.Count e.Expr>>;
+
+First-UnBracket
+  (e.First) e.Rest = e.First;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Skip s.Count e.Expr> == e.Truncated
+*/
+$ENTRY Skip {
+  0 e.Expr = e.Expr;
+
+  s.Num t.First e.Expr =
+    <Skip <Math::Dec s.Num> e.Expr>;
+
+  s.Num = ;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <At s.Index e.Expr> == t.ElemAt
+  Нумерация начинается с нуля.
+*/
+$ENTRY At {
+  0 t.ElemAt e.Tail = t.ElemAt;
+
+  s.Index t.Next e.Tail =
+    <At <Math::Dec s.Index> e.Tail>;
 }
 
 //------------------------------------------------------------------------------
@@ -191,7 +242,7 @@ Fields-Rot
 FindField
   (e.Line) s.Length =
     <FindField-Aux
-      <First s.Length e.Line>
+      <First-Parse s.Length e.Line>
     >;
 
 FindField-Aux

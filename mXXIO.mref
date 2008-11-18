@@ -225,7 +225,7 @@ Cut {
   = ;
 
   e.LongLine =
-    <Cut-Aux <Str::First <StrLen> e.LongLine>>;
+    <Cut-Aux <Str::First-Parse <StrLen> e.LongLine>>;
 }
 
 StrLen = 63;

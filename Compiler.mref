@@ -26,6 +26,7 @@ $IMPORT MFE-Mgr;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT Modules;
+$IMPORT MModules;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
@@ -43,14 +44,7 @@ $ENTRY CompileByModuleName-Q
     <ParseAndCompile
       t.QualifiedName
       <LookupModule-T
-        <GuardUpdate
-          <MContext::UpdateInfo
-            t.hContext t.QualifiedName
-            (Sym 'Defs\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rsym')
-            (Out 'ROut\\' <MQualifiedSupport::UnQualify t.QualifiedName> '.rout')
-            (Src <MQualifiedSupport::UnQualify t.QualifiedName> '.mref')
-          >
-        >
+        t.hContext
         <MQualifiedSupport::LastSegment t.QualifiedName>
       >
     >;
@@ -63,9 +57,37 @@ $ENTRY CompileByModuleName
     <ParseAndCompile
       <MQualifiedName::Create (e.ModuleName)>
       <LookupModule-T
-        t.Context e.ModuleName
+        t.Context
+        e.ModuleName
       >
     >;
+
+CheckNeedCompile-Log
+  t.hContext t.QualifiedName s.Result =
+    <MSelfDiag::Log '<CheckNeedCompile>'>
+    <MSelfDiag::Log
+      't.QualifiedName = '
+      <QNameToText <MQualifiedName::Parse t.QualifiedName>>
+    >
+    <MSelfDiag::Log <CNCR s.Result>>
+    <MSelfDiag::Log>
+    t.hContext;
+
+QNameToText {
+  (e.Segment1) (e.Segment2) e.Tail =
+    <QNameToText (e.Segment1 '::' e.Segment2) e.Tail>;
+
+  (e.Segments) = e.Segments;
+}
+
+CNCR {
+  NeedRecompile = 'NeedRecompile';
+  Updated = 'Updated';
+  Library = 'Library';
+  NotFound = 'NotFound';
+  SuccessCompiled = 'SuccessCompiled';
+  Errors = 'Errors';
+}
 
 /**
   <LookupModule-T t.Context e.ModuleName>
@@ -92,6 +114,11 @@ LookupModule-T
     >;
 
 SwKnown {
+  (e.ModuleName) t.Context Found Unknown =
+    <OnUnknown
+      <Modules::LookupModule-T t.Context e.ModuleName>
+    >;
+
   (e.ModuleName) t.Context Found s.Status =
     <OnKnown-Src
       (e.ModuleName) s.Status
@@ -435,6 +462,12 @@ SwLoadFromOneModule {
       <MQualifiedName::Create (e.ModuleName)>
     >;
 
+  (e.ModuleName) t.hContext Found Unknown =
+    <LoadFromOneModule
+      <CompileIfNeed-Old t.hContext e.ModuleName>
+      <MQualifiedName::Create (e.ModuleName)>
+    >;
+
   /*
     Проверку на OptionNotFound и на MismatchCase не делаем.
     Это нарушение инварианта, программа должна вылететь с ошибкой.
@@ -495,7 +528,7 @@ SwCompileIfNeed-Old {
         (e.ModuleName)
         (Sym e.SymFile) (Out e.OutFile) (Src None)
         (Status Library)
-        (Status_NEW Updated)
+        (Status_NEW GlobalUpdated)
       > e.ModuleName
     >;
 
@@ -510,7 +543,7 @@ SwCompileIfNeed-Old {
         (Sym e.SymFile) (Out e.OutFile) (Src None)
         (Status Library)
         (BaseDirectory <Modules::HomeDir>)
-        (Status_NEW Updated)
+        (Status_NEW GlobalUpdated)
       > e.ModuleName
     >;
 
@@ -535,7 +568,7 @@ SwCompileIfNeed-Old {
         (e.ModuleName)
         (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
         (Status Updated)
-        (Status_NEW Updated)
+        (Status_NEW GlobalUpdated)
       >
       e.ModuleName
     >;
@@ -641,13 +674,27 @@ UpdateModuleInfo--SetStatus-Aux
     >;
 
 SelectStatus_NEW {
-  Updated = Updated;
+  Updated = GlobalUpdated;
 
   Recompiled = SuccessCompiled;
 }
 
 SwDoCheckCompileIfNeed-Old {
   t.ModuleName s.Status t.Context ModuleNotFound t.NextName =
+    <SwDoCheckCompileIfNeed-Old
+      t.ModuleName s.Status
+      <MContext::ExtractOption
+        <CompileIfNeed-Old
+          t.Context
+          <MQualifiedSupport::LastSegment t.NextName>
+        >
+        t.NextName
+        Status
+      >
+      t.NextName
+    >;
+
+  t.ModuleName s.Status t.Context Found Unknown t.NextName =
     <SwDoCheckCompileIfNeed-Old
       t.ModuleName s.Status
       <MContext::ExtractOption

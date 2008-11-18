@@ -3,28 +3,51 @@ $MODULE MCompiler;
 $IMPORT MBE-Mgr;
 $IMPORT MClusters;
 $IMPORT MModules;
+$IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 
 $IMPORT Compiler;
 
 /**
-  <Make t.hContext t.hErrorList t.RootModuleName>
+  <Make t.hContext t.hErrorList e.ModulePath t.RootModuleName>
     == t.hContext t.hErrorList Success
     == t.hContext t.hErrorList Fails
 */
-$ENTRY Make
-  t.hContext t.hErrorList t.RootModuleName =
+$ENTRY Make-Dummy
+  t.hContext t.hErrorList e.ModulePath t.RootModuleName =
     <Make-Aux
       <Link
-        <Compiler::CompileByModuleName-Q t.hContext t.RootModuleName>
+        <Compiler::CompileByModuleName-Q 
+          <OutNeedCompile
+            <MClusters::CheckNeedCompile
+              t.hContext (e.ModulePath) t.RootModuleName
+            >
+          >
+          t.RootModuleName
+        >
         t.RootModuleName
       >
       t.hErrorList
     >;
 
+OutNeedCompile {
+  t.hContext t.ModuleName s.Result =
+    <MSelfDiag::Log '<OutNeedCompile>'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  s.Result = ' s.Result>
+    <MSelfDiag::Log>
+    t.hContext;
+}
+
+$import MSelfDiag;
+
 Make-Aux
   t.hContext s.Result t.hErrorList =
     t.hContext t.hErrorList s.Result;
+
+$ENTRY Make
+  t.hContext t.hErrorList e.ModulePath t.RootModuleName =
+    t.hContext t.hErrorList Fails;
 
 //------------------------------------------------------------------------------
 
@@ -62,6 +85,8 @@ Link
 
 Link-Aux {
   ( (e.OutName) ) t.hContext Success e.Modules =
+    <MOutModuleStatus::Linking e.OutName>
+    <MOutModuleStatus::Flush>
     <MBE-Mgr::Link t.hContext (e.OutName) e.Modules>;
 
   ( (e.OutName) ) t.hContext Fails =

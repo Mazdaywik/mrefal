@@ -16,7 +16,7 @@ $IMPORT MModules;
 $IMPORT MOrder;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
-$IMPORT MSymModule;
+$IMPORT MSymModule_New;
 
 //------------------------------------------------------------------------------
 
@@ -52,12 +52,24 @@ DependencesList-SwAvail {
     >;
 
   t.ModuleName t.hContext Errors =
+    <MSelfDiag::Log '<DependencesList> Fails'>
+    <MSelfDiag::Log '  point #1'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log>
     t.hContext Fails;
 
   t.ModuleName t.hContext s.OtherStatus =
+    <MSelfDiag::Log '<DependencesList> NotAvail'>
+    <MSelfDiag::Log '  point #2'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log>
     t.hContext NotAvail;
 
   t.ModuleName t.hContext ModuleInfoNotFound =
+    <MSelfDiag::Log '<DependencesList> NotAvail'>
+    <MSelfDiag::Log '  point #3'>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log>
     t.hContext NotAvail;
 
   // В случае OptionNotFound здесь должен быть бабах.
@@ -66,7 +78,7 @@ DependencesList-SwAvail {
 DependencesList-OnAvail
   t.hContext t.ModuleName =
     <DependencesList-OnAvail-Aux
-      <MSymModule::LoadInfo_New t.hContext t.ModuleName>
+      <MSymModule_New::LoadInfo t.hContext t.ModuleName>
     >;
 
 DependencesList-OnAvail-Aux {
@@ -76,6 +88,10 @@ DependencesList-OnAvail-Aux {
     >;
 
   t.hContext Fails =
+    <MSelfDiag::Log '<DependencesList> Fails'>
+    <MSelfDiag::Log '  point #2'>
+    <MSelfDiag::Log '  t.ModuleName = X/3'>
+    <MSelfDiag::Log>
     t.hContext Fails;
 }
 
@@ -121,7 +137,7 @@ ToRealNames-Aux {
   <CheckNeedCompile
     t.hContext (e.ModulePath) t.ModuleName
   >
-    == t.hContext t.QualifiedName s.Result
+    == t.hContext t.ModuleName s.Result
 
   s.Result ::=
     NeedRecompile | Updated | Library | NotFound | SuccessCompiled | Errors
@@ -639,10 +655,10 @@ GetLastTime-CalcTime {
     >;
 
   t.ModuleName Source t.hContext
-  ( Known e.BackEnds ) ( Known s.FEName e.FrontEndName ) =
+  ( Known e.BackEnds ) ( Known s.FEName s.Init e.FrontEndName ) =
     <GetLastTime-CheckExists
       t.ModuleName t.hContext
-      <MFileSystem::FileAttribute DateTime e.FrontEndName>
+      <MFileSystem::FileAttribute DateTime s.Init e.FrontEndName>
       <MLambda::Map
         <MLambda::Composite
           & MLambda.UnBracket

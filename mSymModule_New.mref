@@ -1,0 +1,301 @@
+$MODULE MSymModule_New;
+
+/**
+  Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
+на диск, кеширование внутри контекста.
+*/
+
+$IMPORT FileIO;
+$IMPORT MBE-Mgr;
+$IMPORT MError;
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MOrder;
+$IMPORT MParser_Sym;
+$IMPORT MQualifiedName;
+
+/*------------------------------------------------------------------------------
+  Загрузка символической информации
+------------------------------------------------------------------------------*/
+
+/**
+  <LoadInfo t.Context t.ModuleName>
+    == t.Context Success t.IModule
+    == t.Context Fails
+  t.ModuleName ::= t.QualifiedName
+*/
+$ENTRY LoadInfo
+  t.Context t.ModuleName =
+    <LoadInfo_New-SwGetName
+      <MBE-Mgr::X_GetPath-T t.Context t.ModuleName SymInfo>
+    >;
+
+LoadInfo_New-SwGetName {
+  t.Context t.ModuleName Success e.FilePath =
+    t.Context
+    <LoadInfo_New-SwParseFile
+      <MParser_Sym::SymModule
+        <MError::CreateErrList>
+        t.ModuleName e.FilePath
+      >
+    >;
+
+  t.Context t.ModuleName Fails =
+    <MQualifiedName::Destroy t.ModuleName>
+    t.Context Fails;
+}
+
+LoadInfo_New-SwParseFile {
+  t.ErrorList Success Success t.IModule =
+    <MError::DestroyErrList t.ErrorList>
+    Success t.IModule;
+
+  t.ErrorList Success Warnings t.IModule =
+    <MError::PrintErrors t.ErrorList>
+    Success t.IModule;
+
+  t.ErrorList Success Errors t.IModule =
+    <MError::PrintErrors t.ErrorList>
+    <MIModule::Destroy t.IModule>
+    Fails;
+
+  t.ErrorList Fails =
+    <MError::PrintErrors t.ErrorList>
+    Fails;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <SymReduce-T t.hIModule>
+    == t.hIModule t.hISymModule
+*/
+$ENTRY SymReduce-T
+  t.hIModule =
+    <SymReduce-ModuleName
+      <MIModule::GetModuleName t.hIModule>
+    >;
+
+SymReduce-ModuleName
+  t.hIModule t.ModuleName =
+    <SymReduce-ModuleType
+      <MIModule::GetModuleAttribute t.hIModule ModuleType>
+      t.ModuleName
+    >;
+
+SymReduce-ModuleType {
+  t.hIModule Found s.ModuleType t.ModuleName =
+    <SymReduce-Imports
+      <MLambda::MapReduce
+        & AddRealName
+        <MIModule::GetImportList t.hIModule>
+      >
+      <MIModule::Create
+        t.ModuleName
+        (ModuleType s.ModuleType)
+      >
+    >;
+
+  /*
+    Остальные ситуации (ошибки) свидетельствуют о нарушении инварианта.
+  */
+}
+
+AddRealName
+  t.hIModule t.AliasName =
+    <AddRealName-Aux
+      t.AliasName
+      <MIModule::GetImportAttribute t.hIModule RealName t.AliasName>
+    >;
+
+AddRealName-Aux {
+  t.AliasName t.hIModule Found t.RealName =
+    t.hIModule (t.RealName t.AliasName);
+
+  /*
+    Остальные ошибки суть нарушения инварианта.
+  */
+}
+
+SymReduce-Imports
+  t.hIModule e.Imports t.hISymModule =
+    <SymReduce-Functions
+      <MLambda::MapReduce
+        & FilterEntries
+        <MIModule::GetFunctionList-Q
+          t.hIModule
+        >
+      >
+      <MLambda::Reduce
+        & AddImport t.hISymModule e.Imports
+      >
+    >;
+
+AddImport
+  t.hISymModule (t.RealName t.AliasName) =
+    <AddImport-Guard
+      <MIModule::UpdateImport
+        t.hISymModule t.AliasName
+        (RealName t.RealName)
+      >
+    >;
+
+AddImport-Guard
+  t.hISymModule Success = t.hISymModule;
+
+FilterEntries
+  t.hIModule t.Function =
+    <SwFilterEntries
+      t.Function
+      <MIModule::GetFunctionAttribute-Q
+        t.hIModule ScopeClass t.Function
+      >
+    >;
+
+SwFilterEntries { }
+
+SymReduce-Functions
+  t.hIModule e.Functions t.hISymModule =
+    /** TODO: Доделать */;
+
+/*------------------------------------------------------------------------------
+  Сохранение символической информации
+------------------------------------------------------------------------------*/
+
+Generate
+  t.IModule e.FileName =
+    <SaveToFile
+      (e.FileName)
+      <GenerateLines t.IModule>
+    >;
+
+SaveToFile
+  (e.FileName) t.IModule e.Lines =
+    t.IModule
+    <FileIO::Save (e.FileName) e.Lines>;
+
+GenerateLines
+  t.IModule =
+    <GenerateBorders
+      <MIModule::GetModuleName t.IModule>
+    >;
+
+GenerateBorders {
+  t.IModule t.ModuleName =
+    <MoveFirstLineToFront
+      <GenerateFunctions
+        <GetEntryList t.IModule>
+      >
+      ('$module ' <StringFromQualified t.ModuleName> ';')
+      ('$end ' <StringFromQualified t.ModuleName> '.')
+    >;
+}
+
+StringFromQualified
+  t.QualifiedName =
+    <StringFromQualified-Aux
+      <MQualifiedName::Parse t.QualifiedName>
+    >;
+
+StringFromQualified-Aux
+  (e.FirstSegment) e.Other =
+    <UnBracket
+      <MLambda::Reduce
+        & AddSegment
+        (e.FirstSegment)
+        e.Other
+      >
+    >;
+
+AddSegment
+  (e.Segments) (e.NextSegment) =
+    (e.Segments '::' e.NextSegment);
+
+UnBracket (e.Expr) = e.Expr;
+
+GetEntryList
+  t.IModule =
+    <MLambda::MapReduce
+      & ToEntry
+      <MIModule::GetFunctionList t.IModule>
+    >;
+
+ToEntry
+  t.IModule (e.NextFn) =
+    <SwToEntry
+      (e.NextFn)
+      <MIModule::GetFunctionAttribute
+        t.IModule ScopeClass e.NextFn
+      >
+    >;
+
+SwToEntry {
+  (e.NextFn) t.IModule Found Entry =
+    t.IModule (e.NextFn);
+
+  (e.NextFn) t.IModule Found s.OtherScope =
+    t.IModule;
+}
+
+MoveFirstLineToFront
+  t.IModule e.Lines t.FirstLine t.LastLine =
+    t.IModule t.FirstLine () e.Lines t.LastLine;
+
+GenerateFunctions
+  t.IModule e.Functions =
+    <MLambda::MapReduce
+      & GenerateImport 
+      <MIModule::GetImportList t.IModule>
+    >
+    ()
+    <MLambda::Map
+      & TypeFunction
+      <MOrder::Sort e.Functions>
+    >
+    ();
+
+TypeFunction
+  (e.FnName) = ( '$entry ' e.FnName ';' );
+
+GenerateImport
+  t.IModule t.NextImport =
+    <GenerateImport-Aux
+      t.NextImport
+      <MIModule::GetImportAttribute
+        t.IModule RealName t.NextImport
+      >
+    >;
+
+GenerateImport-Aux
+  t.Alias t.IModule Found t.RealName =
+    t.IModule
+    <SwGenerateImport-Aux
+      <MQualifiedName::Equals-T t.Alias t.RealName>
+    >;
+
+SwGenerateImport-Aux {
+  True t.Alias t.RealName =
+    ('$import ' <StringFromQualified t.Alias> ';');
+
+  False t.Alias t.RealName =
+    ('$import '
+      <StringFromQualified t.Alias>
+      ' = '
+      <StringFromQualified t.RealName>
+      ';'
+    );
+}
+
+/*------------------------------------------------------------------------------
+  Регистрация при загрузке модуля.
+------------------------------------------------------------------------------*/
+
+$ENTRY Init =
+  <MLambda::Nil & SymReduce-T>
+  <MBE-Mgr::Register
+    SymInfo &Generate &Link ('Defs') ('rsym')
+  >;
+
+Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.
+
+$END MSymModule_New.

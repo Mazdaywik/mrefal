@@ -18,17 +18,15 @@ $ENTRY Init
   = <MOS::System 'echo %random%>~suf.tmp'>
   <G_TempFileName
     <MOS::Env 'TEMP'> '\\~dirlist_'
-    <UnBracket <FileIO::Load '~suf.tmp'>>
+    <MLambda::UnBracket <FileIO::Load '~suf.tmp'>>
     '.tmp'
   >
   <MOS::System 'del ~suf.tmp'>;
 
-UnBracket (e.Expr) = e.Expr;
-
 //------------------------------------------------------------------------------
 
 $ENTRY Final
-  = <MOS::System 'del ' <TempName> ' >nul 2>nul'>;
+  = <MOS::System 'del \"' <TempName> '\" >nul 2>nul'>;
 
 TempName = <MSwapSupport::Read &G_TempFileName>;
 
@@ -52,6 +50,18 @@ $ENTRY ExistFile-T
 //------------------------------------------------------------------------------
 
 /**
+  <BackSlash e.FileName-B '/' e.FileName-E> == e.FileName-B '\\' e.FileName-E
+  <BackSlash e.FileName> == e.FileName
+*/
+$ENTRY BackSlash {
+  e.Begin '/' e.End = e.Begin '\\' <BackSlash e.End>;
+
+  e.Path = e.Path;
+}
+
+//------------------------------------------------------------------------------
+
+/**
   <FilesInfo e.Mask>
     == (
       (e.FileName)
@@ -68,20 +78,14 @@ $ENTRY FilesInfo {
 
   e.Mask =
     <DoFilesInfo
-      <Quoting e.Mask>
+      <BackSlash <Quoting e.Mask>>
     >;
 }
 
 Quoting {
   e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
 
-  e.Mask = <TrueSlash e.Mask>;
-}
-
-TrueSlash {
-  e.Begin '/' e.End = e.Begin '\\' <TrueSlash e.End>;
-
-  e.Path = e.Path;
+  e.Mask = e.Mask;
 }
 
 DoFilesInfo
@@ -215,7 +219,12 @@ ExtractAttrib {
 
   s.Attrib t.OneFile e.Tail =
     <MSelfDiag::Error
-      'Found many files in ExtractAttrib ' t.OneFile e.Tail
+      'Found many files in MFileSystem::ExtractAttrib ' t.OneFile e.Tail
+    >;
+
+  s.Attrib =
+    <MSelfDiag::Error
+      'Files not found in MFileSystem::ExtractAttrib'
     >;
 }
 
@@ -268,6 +277,20 @@ DoParseDirectory {
 
   (e.Directory s.Next) e.Name =
     <DoParseDirectory (e.Directory) s.Next e.Name>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <CanonicalPath e.Path>
+    == e.Canonical
+*/
+$ENTRY CanonicalPath
+  e.Path = <MLambda::Map & CanonicalChar e.Path>;
+
+CanonicalChar {
+  '\\' = '/';
+  s.Other = <MStrings::Lower s.Other>;
 }
 
 $END MFileSystem.

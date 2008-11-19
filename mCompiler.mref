@@ -17,7 +17,7 @@ $ENTRY Make-Dummy
   t.hContext t.hErrorList e.ModulePath t.RootModuleName =
     <Make-Aux
       <Link
-        <Compiler::CompileByModuleName-Q 
+        <Compiler::CompileByModuleName-Q
           <OutNeedCompile
             <MClusters::CheckNeedCompile
               t.hContext (e.ModulePath) t.RootModuleName
@@ -48,6 +48,41 @@ Make-Aux
 $ENTRY Make
   t.hContext t.hErrorList e.ModulePath t.RootModuleName =
     t.hContext t.hErrorList Fails;
+
+Compile
+  t.hContext t.hErrorList e.ModulePath t.ModuleName =
+    <Compile-SwNeedRecompile
+      (e.ModulePath) t.hErrorList
+      <MClusters::CheckNeedCompile
+        t.hContext (e.ModulePath) t.ModuleName
+      >
+    >;
+
+Compile-SwNeedRecompile {
+  (e.ModulePath) t.hErrorList t.hContext
+  t.ModuleName NeedRecompile =
+    ;
+
+  (e.ModulePath) t.hErrorList t.hContext
+  t.ModuleName Updated =
+    ;
+
+  (e.ModulePath) t.hErrorList t.hContext
+  t.ModuleName Library =
+    ;
+
+  (e.ModulePath) t.hErrorList t.hContext
+  t.ModuleName NotFound =
+    ;
+
+  (e.ModulePath) t.hErrorList t.hContext
+  t.ModuleName SuccessCompiled =
+    ;
+
+  (e.ModulePath) t.hErrorList t.hContext
+  t.ModuleName Errors =
+    ;
+}
 
 //------------------------------------------------------------------------------
 

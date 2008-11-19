@@ -2,6 +2,7 @@ $MODULE MBE-Mgr;
 
 $IMPORT MBEFE-Holder;
 $IMPORT MContext;
+$IMPORT MCreateDirIfNeed;
 $IMPORT MLambda;
 $IMPORT MNameMaker;
 $IMPORT MQualifiedName;
@@ -100,7 +101,10 @@ GeneratePer-Aux2 {
   t.Context t.IModule s.FnGenerator
   Success t.QualifiedName e.FileName =
     Success t.Context
-    <s.FnGenerator t.IModule e.FileName>
+    <s.FnGenerator
+      t.IModule
+      <MCreateDirIfNeed::CreatePathToFile e.FileName>
+    >
     t.QualifiedName;
 
   /* Случай, когда GetOutPath возвращает Fails не рассматриваем,

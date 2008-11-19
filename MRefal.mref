@@ -1,22 +1,16 @@
 $PROGRAM MRefal;
 
 // Эти модули используются
-$IMPORT Compiler;
+
 $IMPORT MCompiler;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT InOut;
 $IMPORT MLambda;
-$IMPORT Modules;
 $IMPORT MModules;
 $IMPORT MOS;
-$IMPORT Math;
 $IMPORT MQualifiedName;
-$IMPORT MQualifiedSupport;
-$IMPORT MStrings;
 $IMPORT MVersion;
-
-$IMPORT MSelfDiag;
 
 // Эти модули должны быть инициализированы
 $IMPORT MBackEnd_Refal5_init;

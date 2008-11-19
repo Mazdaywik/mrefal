@@ -43,7 +43,8 @@ $ENTRY ProgName = <Arg 0>;
   <Exit s.RetCode>
     завершение программы
 */
-$ENTRY Exit s.RetCode = <MRefalRTS::Exit s.RetCode>;
+$ENTRY Exit s.RetCode =
+  <MRefalRTS::Exit s.RetCode>;
 
 /**
   <EnvList>

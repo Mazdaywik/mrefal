@@ -161,12 +161,6 @@ DoUpdateOptions {
 //STARTCUT
 DefaultOptions
   =
-    /*
-      Информация о входных и выходных частях (старое)
-      Формат: None | e.FileName
-    */
-    (Sym None) (Out None) (Src None)
-
     // Информация о входных и выходных частях
     (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
     (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*

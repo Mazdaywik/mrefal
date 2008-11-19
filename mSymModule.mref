@@ -6,164 +6,18 @@ $MODULE MSymModule;
 */
 
 $IMPORT Context;
-$IMPORT FileIO;
-$IMPORT MBE-Mgr;
-$IMPORT MError;
+$IMPORT MClusters;
 $IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT Modules;
-$IMPORT MOrder;
-$IMPORT MParser_Sym;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
-$IMPORT MSelfDiag;
+$IMPORT MSymModule_New;
 
-/*------------------------------------------------------------------------------
-  Загрузка символической информации
-------------------------------------------------------------------------------*/
-
-/**
-  <LoadInfo_New t.Context t.ModuleName>
-    == t.Context Success t.IModule
-    == t.Context Fails
-  t.ModuleName ::= t.QualifiedName
-*/
-$ENTRY LoadInfo_New
-  t.Context t.ModuleName =
-    <LoadInfo_New-SwGetName
-      <MBE-Mgr::X_GetPath-T t.Context t.ModuleName SymInfo>
-    >;
-
-LoadInfo_New-SwGetName {
-  t.Context t.ModuleName Success e.FilePath =
-    t.Context
-    <LoadInfo_New-SwParseFile
-      <MParser_Sym::SymModule
-        <MError::CreateErrList>
-        t.ModuleName e.FilePath
-      >
-    >;
-
-  t.Context t.ModuleName Fails =
-    <MQualifiedName::Destroy t.ModuleName>
-    t.Context Fails;
-}
-
-LoadInfo_New-SwParseFile {
-  t.ErrorList Success Success t.IModule =
-    <MError::DestroyErrList t.ErrorList>
-    Success t.IModule;
-
-  t.ErrorList Success Warnings t.IModule =
-    <MError::PrintErrors t.ErrorList>
-    Success t.IModule;
-
-  t.ErrorList Success Errors t.IModule =
-    <MError::PrintErrors t.ErrorList>
-    <MIModule::Destroy t.IModule>
-    Fails;
-
-  t.ErrorList Fails =
-    <MError::PrintErrors t.ErrorList>
-    Fails;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-  <SymReduce-T t.hIModule>
-    == t.hIModule t.hISymModule
-*/
-$ENTRY SymReduce-T
-  t.hIModule =
-    <SymReduce-ModuleName
-      <MIModule::GetModuleName t.hIModule>
-    >;
-
-SymReduce-ModuleName
-  t.hIModule t.ModuleName =
-    <SymReduce-ModuleType
-      <MIModule::GetModuleAttribute t.hIModule ModuleType>
-      t.ModuleName
-    >;
-
-SymReduce-ModuleType {
-  t.hIModule Found s.ModuleType t.ModuleName =
-    <SymReduce-Imports
-      <MLambda::MapReduce
-        & AddRealName
-        <MIModule::GetImportList t.hIModule>
-      >
-      <MIModule::Create
-        t.ModuleName
-        (ModuleType s.ModuleType)
-      >
-    >;
-
-  /*
-    Остальные ситуации (ошибки) свидетельствуют о нарушении инварианта.
-  */
-}
-
-AddRealName
-  t.hIModule t.AliasName =
-    <AddRealName-Aux
-      t.AliasName
-      <MIModule::GetImportAttribute t.hIModule RealName t.AliasName>
-    >;
-
-AddRealName-Aux {
-  t.AliasName t.hIModule Found t.RealName =
-    t.hIModule (t.RealName t.AliasName);
-
-  /*
-    Остальные ошибки суть нарушения инварианта.
-  */
-}
-
-SymReduce-Imports
-  t.hIModule e.Imports t.hISymModule =
-    <SymReduce-Functions
-      <MLambda::MapReduce
-        & FilterEntries
-        <MIModule::GetFunctionList-Q
-          t.hIModule
-        >
-      >
-      <MLambda::Reduce
-        & AddImport t.hISymModule e.Imports
-      >
-    >;
-
-AddImport
-  t.hISymModule (t.RealName t.AliasName) =
-    <AddImport-Guard
-      <MIModule::UpdateImport
-        t.hISymModule t.AliasName
-        (RealName t.RealName)
-      >
-    >;
-
-AddImport-Guard
-  t.hISymModule Success = t.hISymModule;
-
-FilterEntries
-  t.hIModule t.Function =
-    <SwFilterEntries
-      t.Function
-      <MIModule::GetFunctionAttribute-Q
-        t.hIModule ScopeClass t.Function
-      >
-    >;
-
-SwFilterEntries { }
-
-SymReduce-Functions
-  t.hIModule e.Functions t.hISymModule =
-    /** TODO: Доделать */;
-
-//------------------------------------------------------------------------------
+LoadInfo_New
+  t.hContext t.ModuleName =
+    <MSymModule_New::LoadInfo t.hContext t.ModuleName>;
 
 /**
   <LoadInfo t.Context e.ModuleName>
@@ -174,42 +28,45 @@ SymReduce-Functions
     == t.Context SymInfoNotFound
 */
 $ENTRY LoadInfo
-  t.Context e.ModuleName =
-    <CheckActual-Old
-      <LookupSym t.Context e.ModuleName>
-    >;
-
-/* В тех случаях, когда информация в sym-файле отсутствует
-или не актуальна, возвращаем SymInfoNotFound */
-
-CheckActual-Old {
-  (e.ModuleName) t.Context Known s.Status e.SymFName =
-    <SymInfo-ToOld
-      <ExtractSymInfo
-        <LoadInfo_New
-          t.Context <MakeQualified e.SymFName>
-        >
+  t.hContext e.ModuleName =
+    <CheckActual
+      <MClusters::CheckNeedCompile
+        t.hContext
+        ( <Modules::DefaultModulePath> )
+        <MakeQualified e.ModuleName>
       >
     >;
 
-  (e.ModuleName) t.Context NotKnown s.Status e.SymFName =
-    <SwCheckActual-Old
-      t.Context
-      <ActualState-Old s.Status> e.SymFName
-    >;
-}
+CheckActual {
+  t.hContext t.ModuleName NeedRecompile =
+    t.hContext SymInfoNotFound;
 
-SwCheckActual-Old {
-  t.Context Actual e.SymFName =
+  t.hContext t.ModuleName Updated =
     <SymInfo-ToOld
       <ExtractSymInfo
-        <LoadInfo_New
-          t.Context <MakeQualified e.SymFName>
-        >
+        <LoadInfo_New t.hContext t.ModuleName>
       >
     >;
 
-  t.Context NotActual e.SymName = t.Context SymInfoNotFound;
+  t.hContext t.ModuleName Library =
+    <SymInfo-ToOld
+      <ExtractSymInfo
+        <LoadInfo_New t.hContext t.ModuleName>
+      >
+    >;
+
+  t.hContext t.ModuleName NotFound =
+    t.hContext SymInfoNotFound;
+
+  t.hContext t.ModuleName SuccessCompiled =
+    <SymInfo-ToOld
+      <ExtractSymInfo
+        <LoadInfo_New t.hContext t.ModuleName>
+      >
+    >;
+
+  t.hContext t.ModuleName Errors =
+    t.hContext SymInfoNotFound;
 }
 
 MakeQualified
@@ -221,14 +78,6 @@ MakeQualified
 MakeQualified-Aux
   (e.Directory) e.ModuleName (e.Ext) =
     <MQualifiedName::Create (e.ModuleName)>;
-
-ActualState-Old {
-  ModuleNotFound = NotActual;
-  NeedRecompile = NotActual;
-  Library = Actual;
-  SrcNotUpdated = Actual;
-  SystemLibrary = Actual;
-}
 
 ExtractSymInfo {
   t.Context Success t.IModule =
@@ -291,145 +140,6 @@ DoToQualified {
 
   (e.Qualified) (e.Prefix) = e.Qualified;
 }
-
-/*------------------------------------------------------------------------------
-  Сохранение символической информации
-------------------------------------------------------------------------------*/
-
-Generate
-  t.IModule e.FileName =
-    <SaveToFile
-      (e.FileName)
-      <GenerateLines t.IModule>
-    >;
-
-SaveToFile
-  (e.FileName) t.IModule e.Lines =
-    t.IModule
-    <FileIO::Save (e.FileName) e.Lines>;
-
-GenerateLines
-  t.IModule =
-    <GenerateBorders
-      <MIModule::GetModuleName t.IModule>
-    >;
-
-GenerateBorders {
-  t.IModule t.ModuleName =
-    <MoveFirstLineToFront
-      <GenerateFunctions
-        <GetEntryList t.IModule>
-      >
-      ('$module ' <StringFromQualified t.ModuleName> ';')
-      ('$end ' <StringFromQualified t.ModuleName> '.')
-    >;
-}
-
-StringFromQualified
-  t.QualifiedName =
-    <StringFromQualified-Aux
-      <MQualifiedName::Parse t.QualifiedName>
-    >;
-
-StringFromQualified-Aux
-  (e.FirstSegment) e.Other =
-    <UnBracket
-      <MLambda::Reduce
-        & AddSegment
-        (e.FirstSegment)
-        e.Other
-      >
-    >;
-
-AddSegment
-  (e.Segments) (e.NextSegment) =
-    (e.Segments '::' e.NextSegment);
-
-UnBracket (e.Expr) = e.Expr;
-
-GetEntryList
-  t.IModule =
-    <MLambda::MapReduce
-      & ToEntry
-      <MIModule::GetFunctionList t.IModule>
-    >;
-
-ToEntry
-  t.IModule (e.NextFn) =
-    <SwToEntry
-      (e.NextFn)
-      <MIModule::GetFunctionAttribute
-        t.IModule ScopeClass e.NextFn
-      >
-    >;
-
-SwToEntry {
-  (e.NextFn) t.IModule Found Entry =
-    t.IModule (e.NextFn);
-
-  (e.NextFn) t.IModule Found s.OtherScope =
-    t.IModule;
-}
-
-MoveFirstLineToFront
-  t.IModule e.Lines t.FirstLine t.LastLine =
-    t.IModule t.FirstLine () e.Lines t.LastLine;
-
-GenerateFunctions
-  t.IModule e.Functions =
-    <MLambda::MapReduce
-      & GenerateImport 
-      <MIModule::GetImportList t.IModule>
-    >
-    ()
-    <MLambda::Map
-      & TypeFunction
-      <MOrder::Sort e.Functions>
-    >
-    ();
-
-TypeFunction
-  (e.FnName) = ( '$entry ' e.FnName ';' );
-
-GenerateImport
-  t.IModule t.NextImport =
-    <GenerateImport-Aux
-      t.NextImport
-      <MIModule::GetImportAttribute
-        t.IModule RealName t.NextImport
-      >
-    >;
-
-GenerateImport-Aux
-  t.Alias t.IModule Found t.RealName =
-    t.IModule
-    <SwGenerateImport-Aux
-      <MQualifiedName::Equals-T t.Alias t.RealName>
-    >;
-
-SwGenerateImport-Aux {
-  True t.Alias t.RealName =
-    ('$import ' <StringFromQualified t.Alias> ';');
-
-  False t.Alias t.RealName =
-    ('$import '
-      <StringFromQualified t.Alias>
-      ' = '
-      <StringFromQualified t.RealName>
-      ';'
-    );
-}
-
-/*------------------------------------------------------------------------------
-  Регистрация при загрузке модуля.
-------------------------------------------------------------------------------*/
-
-$ENTRY Init =
-  <MBE-Mgr::Register
-    SymInfo &Generate &Link ('Defs') ('rsym')
-  >;
-
-Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.
 
 /*------------------------------------------------------------------------------
   Извлечение информации из таблицы символов
@@ -517,47 +227,5 @@ SymTableToSymInfo--CurModule
     (CurModule
       <MQualifiedSupport::UnQualify t.CurModule>
     );
-
-/*------------------------------------------------------------------------------
-  Ищет имя sym-файла, а также возвращает его статус
-------------------------------------------------------------------------------*/
-
-/**
-  <LookupSym t.Context e.ModuleName>
-    == (e.ModuleName) t.Context Known s.Status e.SymName
-    == (e.ModuleName) t.Context NotKnown s.Status e.SymName
-*/
-LookupSym
-  t.Context e.ModuleName =
-    <SwKnownModule
-      (e.ModuleName)
-      <Context::ExtractOption
-        t.Context Sym e.ModuleName
-      >
-    >;
-
-SwKnownModule {
-  (e.ModuleName) t.Context Found e.SymFile =
-    <OnKnown--CreateResult
-      (e.ModuleName)
-      <Context::ExtractOption
-        t.Context Status e.ModuleName
-      >
-      e.SymFile
-    >;
-
-  (e.ModuleName) t.Context ModuleInfoNotFound =
-    <OnUnknown--CreateResult
-      <Modules::LookupModule-T t.Context e.ModuleName>
-    >;
-}
-
-OnKnown--CreateResult
-  (e.ModuleName) t.Context Found s.Status e.SymName =
-    (e.ModuleName) t.Context Known s.Status e.SymName;
-
-OnUnknown--CreateResult
-  t.Context s.State (Sym e.SymName) t.Out t.Src e.ModuleName =
-    (e.ModuleName) t.Context NotKnown s.State e.SymName;
 
 $END MSymModule.

@@ -26,7 +26,6 @@ $IMPORT MFE-Mgr;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT Modules;
-$IMPORT MModules;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 $IMPORT MQualifiedSupport;
@@ -42,231 +41,88 @@ $IMPORT MSymModule;
 $ENTRY CompileByModuleName-Q
   t.hContext t.QualifiedName =
     <ParseAndCompile
-      t.QualifiedName
-      <LookupModule-T
+      <MClusters::CheckNeedCompile
         t.hContext
-        <MQualifiedSupport::LastSegment t.QualifiedName>
+        ( <Modules::DefaultModulePath> )
+        t.QualifiedName
       >
+      <MQualifiedSupport::UnQualify t.QualifiedName>
     >;
-
-GuardUpdate
-  t.hContext Success = t.hContext;
 
 $ENTRY CompileByModuleName
-  t.Context e.ModuleName =
+  t.hContext e.ModuleName =
     <ParseAndCompile
-      <MQualifiedName::Create (e.ModuleName)>
-      <LookupModule-T
-        t.Context
-        e.ModuleName
+      <MClusters::CheckNeedCompile
+        t.hContext
+        (<Modules::DefaultModulePath>)
+        <MQualifiedName::Create (e.ModuleName)>
       >
-    >;
-
-CheckNeedCompile-Log
-  t.hContext t.QualifiedName s.Result =
-    <MSelfDiag::Log '<CheckNeedCompile>'>
-    <MSelfDiag::Log
-      't.QualifiedName = '
-      <QNameToText <MQualifiedName::Parse t.QualifiedName>>
-    >
-    <MSelfDiag::Log <CNCR s.Result>>
-    <MSelfDiag::Log>
-    t.hContext;
-
-QNameToText {
-  (e.Segment1) (e.Segment2) e.Tail =
-    <QNameToText (e.Segment1 '::' e.Segment2) e.Tail>;
-
-  (e.Segments) = e.Segments;
-}
-
-CNCR {
-  NeedRecompile = 'NeedRecompile';
-  Updated = 'Updated';
-  Library = 'Library';
-  NotFound = 'NotFound';
-  SuccessCompiled = 'SuccessCompiled';
-  Errors = 'Errors';
-}
-
-/**
-  <LookupModule-T t.Context e.ModuleName>
-    == t.Context
-      s.Known s.Status
-      (Sym e.SymFileName)
-      (Out e.OutFileName)
-      (Src e.SrcFileName)
       e.ModuleName
-  s.Known ::= Known | NotKnown
-  s.Status ::=
-    if Known
-      Recompiled | Updated | Library | InCompiling
-    if NotKnown
-      ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
-*/
-LookupModule-T
-  t.Context e.ModuleName =
-    <SwKnown
-      (e.ModuleName)
-      <Context::ExtractOption
-        t.Context Status e.ModuleName
-      >
     >;
-
-SwKnown {
-  (e.ModuleName) t.Context Found Unknown =
-    <OnUnknown
-      <Modules::LookupModule-T t.Context e.ModuleName>
-    >;
-
-  (e.ModuleName) t.Context Found s.Status =
-    <OnKnown-Src
-      (e.ModuleName) s.Status
-      <Context::ExtractOption
-        t.Context Src e.ModuleName
-      >
-    >;
-
-  (e.ModuleName) t.Context ModuleInfoNotFound =
-    <OnUnknown
-      <Modules::LookupModule-T t.Context e.ModuleName>
-    >;
-}
-
-OnKnown-Src
-  (e.ModuleName) s.Status t.Context Found e.SrcName =
-    <OnKnown-Out
-      (e.ModuleName) s.Status
-      <Context::ExtractOption
-        t.Context Out e.ModuleName
-      >
-    > (Src e.SrcName)
-    e.ModuleName;
-
-OnKnown-Out
-  (e.ModuleName) s.Status t.Context Found e.OutName =
-    <OnKnown-Sym
-      (e.ModuleName) s.Status
-      <Context::ExtractOption
-        t.Context Sym e.ModuleName
-      >
-    > (Out e.OutName);
-
-OnKnown-Sym
-  (e.ModuleName) s.Status t.Context Found e.SymName =
-    t.Context Known s.Status
-    (Sym e.SymName);
-
-OnUnknown
-  t.Context s.Status (Sym e.SymName) (Out e.OutName) (Src e.SrcName) e.ModuleName =
-    t.Context
-    NotKnown s.Status
-    (Sym e.SymName)
-    (Out e.OutName)
-    (Src e.SrcName)
-    e.ModuleName;
-
 
 ParseAndCompile {
-  t.QualifiedName
-  t.Context NotKnown ModuleNotFound
-  t.SymName t.OutName t.SrcName e.ModuleName =
-    <MError::Fatal 'Module `' e.ModuleName '` not found'>;
+  t.Context t.ModuleName NotFound e.Name =
+    <MError::Fatal 'Module `' e.Name '` not found'>;
 
-  t.QualifiedName
-  t.Context
-  s.Known s.Status
-  (Sym e.SymName) (Out e.OutName) (Src e.SrcName)
-  e.Name =
-    <MOutModuleStatus::Compiling e.SrcName>
+  t.Context t.ModuleName s.OtherStatus e.Name =
+    <MOutModuleStatus::Compiling e.Name>
     <Compile-SwParseResult
-      t.QualifiedName
-      (File e.SrcName)
+      t.ModuleName
       t.Context
-      <MFE-Mgr::Load MRefal_FrontEnd
+      <MFE-Mgr::Load
+        MRefal_FrontEnd
         <MError::CreateErrList>
-        t.QualifiedName
+        t.ModuleName
         Current
       >
     >
-    <MOutModuleStatus::Compiled e.SrcName>;
+    <MOutModuleStatus::Compiled e.Name>;
 }
 
 Compile-SwParseResult {
-  t.QualifiedName
-  t.FileName t.Context t.ErrorList Success Success t.IModule =
+  t.QualifiedName t.Context t.ErrorList Success Success t.IModule =
     <MError::DestroyErrList t.ErrorList>
-    <Compile0 t.QualifiedName t.FileName t.Context t.IModule>;
+    <Compile0 t.QualifiedName t.Context t.IModule>;
 
-  t.QualifiedName
-  t.FileName t.Context t.ErrorList Success Warnings t.IModule =
+  t.QualifiedName t.Context t.ErrorList Success Warnings t.IModule =
     <MError::PrintErrors t.ErrorList>
-    <Compile0 t.QualifiedName t.FileName t.Context t.IModule>;
+    <Compile0 t.QualifiedName t.Context t.IModule>;
 
-  t.QualifiedName
-  t.FileName t.Context t.ErrorList Success Errors t.IModule =
+  t.QualifiedName t.Context t.ErrorList Success Errors t.IModule =
     <MError::PrintErrorsAndStop t.ErrorList>;
 
-  t.QualifiedName
-  t.FileName t.Context t.ErrorList Fails =
+  t.QualifiedName t.Context t.ErrorList Fails =
     <MError::PrintErrorsAndStop t.ErrorList>;
 }
 
 Compile0 {
-  t.ModuleName
-  (File e.FileName)
-  t.Context
-  t.IModule =
-    <Compile1
-      t.ModuleName
-      (File e.FileName)
+  t.ModuleName t.Context t.IModule =
+    <Compile2
+      (Module <MQualifiedSupport::UnQualify t.ModuleName> )
       t.Context
-      <MIModule::GetModuleName t.IModule>
+      <To_OldSymTable-T t.IModule>
     >;
 }
 
-Compile1 {
-  t.ModuleName
-  (File e.FileName)
+Compile2 {
+  (Module e.ModuleName)
   t.Context
-  t.IModule
-  t.ModuleName =
-    <Compile15
-      ( <MQualifiedSupport::UnQualify t.ModuleName> )
-      ( File e.FileName )
-      <MLambda::Apply
-        <MLambda::Parallel-H
-          <MLambda::Composite
-            & Modules.SymName
-            & MLambda.Bracket-H
+  t.Module
+  e.SymInfo =
+    <Generate
+      (e.ModuleName)
+      <CheckFnCalls
+        <LoadImportInfo
+          <Context::UpdateModuleInfo
+            t.Context (e.ModuleName)
+            (Status InCompiling)
           >
-          <MLambda::Composite
-            & Modules.OutName
-            & MLambda.Bracket-H
-          >
+          e.SymInfo
         >
-        t.Context
-        <MQualifiedSupport::UnQualify t.ModuleName>
+        t.Module
       >
-      t.IModule
     >;
 }
-
-Compile15
-  (e.ModuleName) (File e.FileName)
-  t.hContext (e.SymName) (e.OutName)
-  t.hIModule =
-    <Context::LastModule
-      <Compile2
-        (Module e.ModuleName)
-        (File e.FileName)
-        (Sym e.SymName)
-        (Out e.OutName)
-        t.hContext
-        <To_OldSymTable-T t.hIModule>
-      >
-      e.ModuleName
-    >;
 
 To_OldSymTable-T
   t.Module =
@@ -347,33 +203,6 @@ SymInfo-ModuleName
 MakeEntries
   e.Entries =
     (Functions e.Entries);
-
-Compile2 {
-  (Module e.ModuleName)
-  (File e.FileName) 
-  (Sym e.SymName)
-  (Out e.OutName)
-  t.Context
-  t.Module
-  e.SymInfo =
-    <Generate
-      (e.ModuleName)
-      <CheckFnCalls
-        <LoadImportInfo
-          <Context::UpdateModuleInfo
-            t.Context
-            (e.ModuleName)
-            (Sym e.SymName)
-            (Out e.OutName)
-            (Src e.FileName)
-            (Status InCompiling)
-          >
-          e.SymInfo
-        >
-        t.Module
-      >
-    >;
-}
 
 * <LoadImportInfo t.Context t.SymTable-Old>
 * == t.UpdatedContext t.UpdatedSymTable-Old'
@@ -503,74 +332,81 @@ FunctionsFromSym {
 * == t.UpdatedContext
 CompileIfNeed-Old {
   t.Context e.ModuleName =
-    <SwCompileIfNeed-Old
-      <Modules::LookupModule-T
-        t.Context e.ModuleName
+    <SwCompileIfNeed
+      <MClusters::CheckNeedCompile
+        t.Context
+        ( <Modules::DefaultModulePath> )
+        <MQualifiedName::Create (e.ModuleName)>
       >
     >;
 }
 
-SwCompileIfNeed-Old {
-  t.Context ModuleNotFound
-  (Sym None) (Out None) (Src None)
-  e.ModuleName =
-    <MError::Fatal
-      'Module ' e.ModuleName ' not found'
-    >;
+GuardUpdateContext
+  t.hContext Success = t.hContext;
 
-  t.Context Library
-  (Sym e.SymFile) (Out e.OutFile) (Src None)
-  e.ModuleName =
-    <MOutModuleStatus::Library e.ModuleName>
-    <CheckCompileIfNeed-Old
-      <Context::UpdateModuleInfo
-        t.Context
-        (e.ModuleName)
-        (Sym e.SymFile) (Out e.OutFile) (Src None)
-        (Status Library)
-        (Status_NEW GlobalUpdated)
-      > e.ModuleName
-    >;
-
-  t.Context SystemLibrary
-  (Sym e.SymFile) (Out e.OutFile) (Src None)
-  e.ModuleName =
-    <MOutModuleStatus::SystemLibrary e.ModuleName>
-    <CheckCompileIfNeed-Old
-      <Context::UpdateModuleInfo
-        t.Context
-        (e.ModuleName)
-        (Sym e.SymFile) (Out e.OutFile) (Src None)
-        (Status Library)
-        (BaseDirectory <Modules::HomeDir>)
-        (Status_NEW GlobalUpdated)
-      > e.ModuleName
-    >;
-
-  t.Context NeedRecompile
-  (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-  e.ModuleName =
-    <Context::UpdateModuleInfo
-      <CompileByModuleName t.Context e.ModuleName>
-      (e.ModuleName)
-      (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-      (Status Recompiled)
-      (Status_NEW SuccessCompiled)
-    >;
-
-
-  t.Context SrcNotUpdated
-  (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-  e.ModuleName =
-    <CheckCompileIfNeed-Old
-      <Context::UpdateModuleInfo
-        t.Context
-        (e.ModuleName)
-        (Sym e.SymFile) (Out e.OutFile) (Src e.SrcFile)
-        (Status Updated)
-        (Status_NEW GlobalUpdated)
+SwCompileIfNeed {
+  t.hContext t.ModuleName NeedRecompile =
+    <GuardUpdateContext
+      <MContext::UpdateInfo
+        <CompileByModuleName-Q t.hContext t.ModuleName>
+        t.ModuleName
+        (Status Recompiled)
+        (Status_NEW SuccessCompiled)
       >
-      e.ModuleName
+    >;
+
+  t.hContext t.ModuleName Updated =
+    <CheckCompileIfNeed-Old
+      <GuardUpdateContext
+        <MContext::UpdateInfo
+          t.hContext t.ModuleName
+          (Status Updated)
+          (Status_NEW GlobalUpdated)
+        >
+      >
+      <MQualifiedSupport::UnQualify t.ModuleName>
+    >;
+
+  t.hContext t.ModuleName Library =
+    <MOutModuleStatus::Library
+      <MQualifiedSupport::UnQualify t.ModuleName>
+    >
+    <CheckCompileIfNeed-Old
+      <GuardUpdateContext
+        <MContext::UpdateInfo
+          t.hContext t.ModuleName
+          (Status Library)
+          (Status_NEW GlobalUpdated)
+        >
+      >
+      <MQualifiedSupport::UnQualify t.ModuleName>
+    >;
+
+
+  t.hContext t.ModuleName NotFound =
+    <MError::Fatal
+      'Module '
+      <MQualifiedSupport::UnQualify t.ModuleName>
+      ' not found'
+    >;
+
+  t.hContext t.ModuleName SuccessCompiled =
+    <CheckCompileIfNeed-Old
+      <GuardUpdateContext
+        <MContext::UpdateInfo
+          t.hContext t.ModuleName
+          (Status Updated)
+          (Status_NEW GlobalUpdated)
+        >
+      >
+      <MQualifiedSupport::UnQualify t.ModuleName>
+    >;
+
+  t.hContext t.ModuleName Errors =
+    <MError::Fatal
+      'In module '
+      <MQualifiedSupport::UnQualify t.ModuleName>
+      ' found errors'
     >;
 }
 
@@ -644,31 +480,8 @@ DoCheckCompileIfNeed-Old {
 
 UpdateModuleInfo--SetStatus
   t.hContext (e.ModuleName) s.Status =
-    <UpdateModuleInfo--SetStatus-Aux
-      (e.ModuleName) s.Status
-      <MLambda::Apply
-        <MLambda::Parallel-H
-          <MLambda::Composite
-            & Modules.SymName
-            & MLambda.Bracket-H
-          >
-          <MLambda::Composite
-            & Modules.OutName
-            & MLambda.Bracket-H
-          >
-        >
-        t.hContext
-        e.ModuleName
-      >
-    >;
-
-UpdateModuleInfo--SetStatus-Aux
-  (e.ModuleName) s.Status t.hContext (e.SymName) (e.OutName) =
     <Context::UpdateModuleInfo
-      t.hContext
-      (e.ModuleName)
-      (Sym e.SymName)
-      (Out e.OutName)
+      t.hContext (e.ModuleName)
       (Status s.Status)
       (Status_NEW <SelectStatus_NEW s.Status>)
     >;
@@ -725,6 +538,12 @@ SwDoCheckCompileIfNeed-Old {
 
   t.ModuleName s.Status t.Context Found Updated t.NextName =
     t.ModuleName s.Status t.Context;
+
+  (e.ModuleName) s.Status t.hContext Found InCompiling t.NextName =
+    <MError::Fatal
+      'Cyclic dependensies in module ' e.ModuleName ' and in '
+      <MQualifiedSupport::UnQualify t.NextName>
+    >;
 
   /*
     Проверку на MismatchName не делаем -- пускай программа рушится.

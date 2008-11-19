@@ -1,19 +1,50 @@
 $MODULE Modules;
 
-$IMPORT MModules;
+$IMPORT MBE-Mgr;
+$IMPORT MError;
+$IMPORT MOS;
+$IMPORT MQualifiedName;
 
-$ENTRY LookupModule-T
-  t.hContext e.ModuleName =
-    <MModules::LookupModule-T t.hContext e.ModuleName>;
+$ENTRY SymName {
+  t.hContext e.ModName =
+    t.hContext
+    <XXXName-Guard
+      <MBE-Mgr::GetPath-T
+        SymInfo
+        <MQualifiedName::Create (e.ModName)>
+        Current
+      >
+    >;
+}
 
-$ENTRY SymName
-  t.hContext e.ModuleName =
-    <MModules::SymName t.hContext e.ModuleName>;
+$ENTRY OutName {
+  t.hContext e.ModName =
+    t.hContext
+    <XXXName-Guard
+      <MBE-Mgr::GetPath-T
+        Refal5BE
+        <MQualifiedName::Create (e.ModName)>
+        Current
+      >
+    >;
+}
 
-$ENTRY OutName
-  t.hContext e.ModuleName =
-    <MModules::OutName t.hContext e.ModuleName>;
+XXXName-Guard
+  Success t.QualifiedName e.Path = e.Path;
 
-$ENTRY HomeDir = <MModules::HomeDir>;
+$ENTRY HomeDir = <MOS::Env 'MR_Home'>;
+
+/**
+  <DefaultModulePath> == e.DefaultModulePath
+*/
+$ENTRY DefaultModulePath = ('.') (<HomeDir>);
+
+$ENTRY Init =
+  <CheckDefinedMRHome <HomeDir>>;
+
+CheckDefinedMRHome {
+  None = <MError::Fatal 'MR_Home not defined'>;
+  e.Path = ;
+}
 
 $END Modules.

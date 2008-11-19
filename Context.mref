@@ -37,9 +37,6 @@ UpdateError {
   MismatchCase = 'mismatch case';
 }
 
-$ENTRY LastModule
-  t.hContext e.Name = t.hContext;
-
 /**
   <ExtractOption t.Context s.Option e.ModName>
     == t.Context Found e.Option

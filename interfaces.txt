@@ -113,7 +113,7 @@ Module MClusters;
 <CheckNeedCompile
   t.hContext (e.ModulePath) t.ModuleName
 >
-  == t.hContext t.QualifiedName s.Result
+  == t.hContext t.ModuleName s.Result
 
 s.Result ::=
   NeedRecompile | Updated | Library | NotFound | SuccessCompiled | Errors
@@ -220,6 +220,11 @@ Module MCreateDirIfNeed;
 <Create e.DirName> == e.DirName
 
 <InfoDir> == 'Info'
+
+<CreatePathToFile e.FileName> == e.FileName
+  e.FileName ::= e.Dir1 '\\' e.Dir2 '\\' e.FName
+  '>md ' e.Dir1
+  '>md ' e.Dir1 '\\' e.Dir2
 
 ################################################################################
 Module MError;

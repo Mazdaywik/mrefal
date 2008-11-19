@@ -3,7 +3,7 @@ $MODULE MStartupSeqGenerator;
 $IMPORT Context;
 $IMPORT MIModule;
 $IMPORT MLambda;
-$IMPORT MSymModule;
+$IMPORT MSymModule = MSymModule_New;
 $IMPORT MQualifiedName;
 
 /**
@@ -60,7 +60,7 @@ UpdateStartInfo {
 LoadInfo
   t.hContext t.ModuleName =
     <LoadInfo-Aux
-      <MSymModule::LoadInfo_New t.hContext t.ModuleName>
+      <MSymModule::LoadInfo t.hContext t.ModuleName>
     >;
 
 LoadInfo-Aux {

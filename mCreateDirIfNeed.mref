@@ -1,33 +1,74 @@
 $MODULE MCreateDirIfNeed;
 
+$IMPORT MFileSystem;
 $IMPORT MOS;
 
-/**
-	<Create e.DirName> == e.DirName
-*/
-$ENTRY Create
-	e.DirName =
-		<CheckCreated
-			(<G_Dirs>) e.DirName
-		>;
+//------------------------------------------------------------------------------
 
 /**
-	<InfoDir> == 'Info'
+  <Create e.DirName> == e.DirName
 */
-$ENTRY InfoDir =
-	<Create 'Info'>;
+$ENTRY Create
+  e.DirName =
+    <CheckCreated
+      (<G_Dirs>)
+      <MFileSystem::BackSlash
+        <MFileSystem::CanonicalPath e.DirName>
+      >
+    >;
 
 $SWAP G_Dirs;
 
 CheckCreated {
-	(e.Dirs-B (e.DirName) e.Dirs-E) e.DirName =
-		<G_Dirs e.Dirs-B (e.DirName) e.Dirs-E>
-		e.DirName;
+  (e.Dirs-B (e.DirName) e.Dirs-E) e.DirName =
+    <G_Dirs e.Dirs-B (e.DirName) e.Dirs-E>
+    e.DirName;
 
-	(e.Dirs) e.DirName =
-		<G_Dirs e.Dirs (e.DirName)>
-		<MOS::System 'md ' e.DirName '>nul 2>nul'>
-		e.DirName;
+  (e.Dirs) e.DirName =
+    <G_Dirs e.Dirs (e.DirName)>
+    <MOS::System 'md ' e.DirName '>nul 2>nul'>
+    e.DirName;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <InfoDir> == 'Info'
+*/
+$ENTRY InfoDir =
+  <Create 'Info'>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CreatePathToFile e.FileName> == e.FileName
+    e.FileName ::= e.Dir1 '\\' e.Dir2 '\\' e.FName
+    '>md ' e.Dir1
+    '>md ' e.Dir1 '\\' e.Dir2
+*/
+$ENTRY CreatePathToFile
+  e.FileName =
+    <DoCreateCatalogs
+      () e.FileName
+    >;
+
+DoCreateCatalogs {
+  (e.Path) '/' e.FileName =
+    <DoCreateCatalogs
+      (<Create e.Path> '\\') e.FileName
+    >;
+
+  (e.Path) '\\' e.FileName =
+    <DoCreateCatalogs
+      (<Create e.Path> '\\') e.FileName
+    >;
+
+  (e.Path) s.NextChar e.FileName =
+    <DoCreateCatalogs
+      (e.Path s.NextChar) e.FileName
+    >;
+
+  (e.Path) = e.Path;
 }
 
 $END MCreateDirIfNeed.

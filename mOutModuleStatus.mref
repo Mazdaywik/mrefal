@@ -20,10 +20,6 @@ $ENTRY Library
   e.ModuleName =
     <Out Library e.ModuleName>;
 
-$ENTRY SystemLibrary
-  e.ModuleName =
-    <Out SystemLibrary e.ModuleName>;
-
 $ENTRY Linking
   e.ProgName =
     <Out Linking e.ProgName>;
@@ -56,7 +52,6 @@ StatusStr {
   Compiled = 'Compiled ';
   Library = 'Library ';
   Linking = 'Linking ';
-  SystemLibrary = 'System library ';
 }
 
 MaxLength = 80;

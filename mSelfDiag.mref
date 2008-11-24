@@ -26,9 +26,7 @@ $SWAP G_LogOpened;
 
 SwOpenLog {
   (Y) = ;
-  () =
-    <Nil <MRefalRTS::System 'md Info>nul 2>nul'> >
-    <MRefalRTS::Open 'w' 19 'Info/Log.txt'>;
+  () = <MRefalRTS::Open 'w' 19 '__log'>;
 }
 
 AssertAux {

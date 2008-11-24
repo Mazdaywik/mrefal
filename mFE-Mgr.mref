@@ -66,35 +66,6 @@ GetPath-Aux {
 //------------------------------------------------------------------------------
 
 /**
-  <X_GetPath-T t.Context t.QualifiedName s.FEName>
-    == t.Context t.QualifiedName Success e.FileName
-    == t.Context t.QualifiedName Fails
-*/
-$ENTRY X_GetPath-T
-  t.Context t.QualifiedName s.FEName =
-    <MNameMaker::MakeName
-      t.Context t.QualifiedName s.FEName
-      & MakeRelative
-    >;
-
-MakeRelative
-  t.QualifiedName s.FEName =
-    <MakeRelative--SwExistInfo
-      (<GetInfo s.FEName Ext>)
-      <MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
-    >;
-
-MakeRelative--SwExistInfo {
-  (Fails s.Error) t.QualifiedName e.Path =
-    t.QualifiedName Fails;
-
-  ( Success e.Ext ) t.QualifiedName e.Path =
-    t.QualifiedName Success e.Path '.' e.Ext;
-}
-
-//------------------------------------------------------------------------------
-
-/**
   <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
     == t.ErrorList Success s.Result t.IModule
     == t.ErrorList Fails
@@ -103,8 +74,7 @@ MakeRelative--SwExistInfo {
 $ENTRY Load
   s.FEName t.ErrorList t.QualifiedName e.BaseDir =
     <Load-Aux
-      ( <GetInfo s.FEName FnParser> )
-      t.ErrorList
+      s.FEName t.ErrorList
       <GetPath s.FEName t.QualifiedName e.BaseDir>
     >;
 
@@ -113,16 +83,35 @@ GetPath
     <GetPath-T s.FEName t.QualifiedName e.BaseDir>;
 
 Load-Aux {
-  ( Fails s.Error ) t.ErrorList s.Result t.QualifiedName e.Tail =
+  s.FEName t.ErrorList Fails t.QualifiedName =
     <MQualifiedName::Destroy t.QualifiedName>
     Fails t.ErrorList;
 
-  ( e.Returned ) t.ErrorList Fails t.QualifiedName =
-    <MQualifiedName::Destroy t.QualifiedName>
-    Fails t.ErrorList;
+  s.FEName t.ErrorList Success t.QualifiedName e.FileName =
+    <Load_New s.FEName t.ErrorList t.QualifiedName e.FileName>;
+}
 
-  ( Success s.FnParser ) t.ErrorList Success t.QualifiedName e.FileName =
-    <s.FnParser t.ErrorList t.QualifiedName e.FileName>;
+//------------------------------------------------------------------------------
+
+/**
+  <Load_New s.FEName t.hErrorList t.ModuleName e.PathToFile>
+    == t.ErrorList Success s.Result t.IModule
+    == t.ErrorList Fails
+  s.Result ::= Success | Warnings | Errors
+*/
+$ENTRY Load_New
+  s.FEName t.hErrorList t.ModuleName e.PathToFile =
+    <Load_New-Aux
+      ( <GetInfo s.FEName FnParser> )
+      t.hErrorList t.ModuleName e.PathToFile
+    >;
+
+Load_New-Aux {
+  ( Fails s.Error ) t.hErrorList t.ModuleName e.PathToFile =
+    Fails t.hErrorList;
+
+  ( Success s.FnParser ) t.hErrorList t.ModuleName e.PathToFile =
+    <s.FnParser t.hErrorList t.ModuleName e.PathToFile>;
 }
 
 //------------------------------------------------------------------------------

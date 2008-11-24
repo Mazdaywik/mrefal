@@ -87,7 +87,22 @@ SymReduce-ModuleType {
   t.hIModule Found s.ModuleType t.ModuleName =
     <SymReduce-Imports
       <MLambda::MapReduce
-        & AddRealName
+        <MLambda::Composite
+          <MLambda::Parallel-H
+            <MLambda::Composite
+              <MLambda::BindLeft-H & MIModule.GetImportAttribute RealName>
+              & MLambda.Bracket-H
+            >
+            <MLambda::Composite
+              <MLambda::BindLeft-H & MIModule.GetImportAttribute Position>
+              & MLambda.Bracket-H
+            >
+            <MLambda::MakeHandled
+              & MLambda.Identity
+            >
+          >
+          & MLambda.Bracket-H
+        >
         <MIModule::GetImportList t.hIModule>
       >
       <MIModule::Create
@@ -101,27 +116,28 @@ SymReduce-ModuleType {
   */
 }
 
-AddRealName
-  t.hIModule t.AliasName =
-    <AddRealName-Aux
-      t.AliasName
-      <MIModule::GetImportAttribute t.hIModule RealName t.AliasName>
-    >;
-
-AddRealName-Aux {
-  t.AliasName t.hIModule Found t.RealName =
-    t.hIModule (t.RealName t.AliasName);
-
-  /*
-    Остальные ошибки суть нарушения инварианта.
-  */
-}
-
 SymReduce-Imports
-  t.hIModule e.Imports t.hISymModule =
+  t.hIModule e.Imports t.hISymModule Success =
     <SymReduce-Functions
       <MLambda::MapReduce
-        & FilterEntries
+        <MLambda::Composite
+          <MLambda::Parallel-H
+            <MLambda::MakeHandled & MLambda.Identity>
+            <MLambda::Composite
+              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute-Q ScopeClass>
+              & MLambda.Bracket-H
+            >
+            <MLambda::Composite
+              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute-Q Position>
+              & MLambda.Bracket-H
+            >
+            <MLambda::Composite
+              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute-Q Qualified>
+              & MLambda.Bracket-H
+            >
+          >
+          & MLambda.Bracket-H
+        >
         <MIModule::GetFunctionList-Q
           t.hIModule
         >
@@ -132,31 +148,61 @@ SymReduce-Imports
     >;
 
 AddImport
-  t.hISymModule (t.RealName t.AliasName) =
-    <AddImport-Guard
+  t.hISymModule ((Found t.RealName) (Found t.SrcPos) t.AliasName) =
+    <UpdateIModule-Guard
       <MIModule::UpdateImport
         t.hISymModule t.AliasName
         (RealName t.RealName)
+        (Position t.SrcPos)
       >
     >;
 
-AddImport-Guard
+UpdateIModule-Guard
   t.hISymModule Success = t.hISymModule;
-
-FilterEntries
-  t.hIModule t.Function =
-    <SwFilterEntries
-      t.Function
-      <MIModule::GetFunctionAttribute-Q
-        t.hIModule ScopeClass t.Function
-      >
-    >;
-
-SwFilterEntries { }
 
 SymReduce-Functions
   t.hIModule e.Functions t.hISymModule =
-    /** TODO: Доделать */;
+    t.hIModule
+    <MLambda::Reduce
+      & AddFunction t.hISymModule e.Functions
+    >;
+
+AddFunction {
+  t.hISymModule
+  (t.FunctionName
+    (Found Entry) (Found t.SrcPos) (Found t.QualifiedName)
+  ) =
+    <UpdateIModule-Guard
+      <MIModule::UpdateFunction-Q
+        t.hISymModule t.FunctionName
+        (ScopeClass Entry)
+        (Position t.SrcPos)
+        (Qualified t.QualifiedName)
+      >
+    >;
+
+  t.hISymModule
+  (t.FunctionName
+    (Found s.ScopeClass)
+    (Found t.SrcPos)
+    (Found t.QualifiedName)
+  ) =
+    t.hISymModule;
+}
+
+/**
+  <SymReduce t.hIModule> == t.hISymModule
+*/
+$ENTRY SymReduce
+  t.hIModule =
+    <SymReduce-DeleteIModule
+      <SymReduce-T t.hIModule>
+    >;
+
+SymReduce-DeleteIModule
+  t.hIModule t.hISymModule =
+    <MIModule::Destroy t.hIModule>
+    t.hISymModule;
 
 /*------------------------------------------------------------------------------
   Сохранение символической информации
@@ -180,14 +226,30 @@ GenerateLines
       <MIModule::GetModuleName t.IModule>
     >;
 
-GenerateBorders {
-  t.IModule t.ModuleName =
+GenerateBorders
+  t.hIModule t.ModuleName =
+    <GenerateBorders-Aux
+      t.ModuleName
+      <MIModule::GetModuleAttribute t.hIModule ModuleType>
+    >;
+
+GenerateBorders-Aux {
+  t.ModuleName t.hIModule Found Main =
     <MoveFirstLineToFront
       <GenerateFunctions
-        <GetEntryList t.IModule>
+        <GetEntryList t.hIModule>
       >
-      ('$module ' <StringFromQualified t.ModuleName> ';')
-      ('$end ' <StringFromQualified t.ModuleName> '.')
+      ('$program ' <MQualifiedName::ToPrintable-Quad t.ModuleName> ';')
+      ('$end ' <MQualifiedName::ToPrintable-Quad t.ModuleName> '.')
+    >;
+
+  t.ModuleName t.hIModule Found Regular =
+    <MoveFirstLineToFront
+      <GenerateFunctions
+        <GetEntryList t.hIModule>
+      >
+      ('$module ' <MQualifiedName::ToPrintable-Quad t.ModuleName> ';')
+      ('$end ' <MQualifiedName::ToPrintable-Quad t.ModuleName> '.')
     >;
 }
 
@@ -291,7 +353,6 @@ SwGenerateImport-Aux {
 ------------------------------------------------------------------------------*/
 
 $ENTRY Init =
-  <MLambda::Nil & SymReduce-T>
   <MBE-Mgr::Register
     SymInfo &Generate &Link ('Defs') ('rsym')
   >;

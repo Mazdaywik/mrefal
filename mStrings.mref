@@ -282,4 +282,45 @@ Folding {
     ( t.ElemA t.NextB ) <Folding t.ElemA e.TailB>;
 }
 
+//------------------------------------------------------------------------------
+
+/**
+  <Unique e.Elems> == e.Set
+*/
+$ENTRY Unique {
+  e.Elems-B t.Double e.Elems-M t.Double e.Elems-E =
+    e.Elems-B <Unique t.Double e.Elems-M e.Elems-E>;
+
+  e.Elems = e.Elems;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Set-Intersect (e.Set1) (e.Set2)>
+    == e.Set1*Set2
+*/
+$ENTRY Set-Intersect {
+  (e.Set1-B t.Common e.Set1-E) (e.Set2-B t.Common e.Set2-E) =
+    t.Common
+    <Set-Intersect (e.Set1-E) (e.Set2-B e.Set2-E)>;
+
+  (e.Set1) (e.Set2) = ;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Set-Difference (e.Set1) (e.Set2)>
+    == e.Set1-Set2
+*/
+$ENTRY Set-Difference {
+  (e.Set1-B t.Common e.Set1-E) (e.Set2-B t.Common e.Set2-E) =
+    <Set-Difference
+      (e.Set1-B e.Set1-E) (e.Set2-B e.Set2-E)
+    >;
+
+  (e.Set1) (e.Set2) = e.Set1;
+}
+
 $END MStrings.

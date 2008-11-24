@@ -1,22 +1,8 @@
 ################################################################################
 Module Compiler;
 
-<CompileByModuleName-Q t.hContext t.QualifiedName>
+<Com`pileByModuleName-Q t.hContext t.QualifiedName>
   == t.hContext
-
-<LookupModule-T t.Context e.ModuleName>
-  == t.Context
-    s.Known s.Status
-    (Sym e.SymFileName)
-    (Out e.OutFileName)
-    (Src e.SrcFileName)
-    e.ModuleName
-s.Known ::= Known | NotKnown
-s.Status ::=
-  if Known
-    Recompiled | Updated | Library | InCompiling
-  if NotKnown
-    ModuleNotFound | Library | SystemLibrary | NeedRecompile | SrcNotUpdated
 
 ################################################################################
 Module Context;
@@ -116,7 +102,8 @@ Module MClusters;
   == t.hContext t.ModuleName s.Result
 
 s.Result ::=
-  NeedRecompile | Updated | Library | NotFound | SuccessCompiled | Errors
+  NeedRecompile | Updated | Library | NotFound
+  | SuccessCompiled | Errors | SuccessUpdated
 
 <ListForLinking t.hContext t.RootModuleName>
   == t.hContext Success t.ModuleName*
@@ -128,6 +115,32 @@ Module MCompiler;
 <Make t.hContext t.hErrorList e.ModulePath t.RootModuleName>
   == t.hContext t.hErrorList Success
   == t.hContext t.hErrorList Fails
+
+# STARTCUT
+Compile-AfterUpdateContext
+  t.hErrorList t.hIModule s.ModuleType t.hContext Success =
+    (t.hContext t.hErrorList) Success t.hIModule s.ModuleType;
+# ENDCUT
+
+<PrepareImportList t.hIModule t.NextImport>
+  == t.hIModule (t.NextImport t.RealName)
+
+<GetImportList-AnalyzeRecursiveLinks
+  (e.Stack) (e.ModulePath) t.ModuleName
+  t.hContext t.hErrorList t.hIModule e.Imports
+>
+  == FoundRecursives (e.Stack) (e.ModulePath) t.ModuleName
+  t.hContext t.hErrorList t.hIModule e.NonRecursiveImports
+  == NotFoundRecursives (e.Stack) (e.ModulePath) t.ModuleName
+  t.hContext t.hErrorList t.hIModule e.Imports
+e.Imports ::= (t.AliasName t.RealName)
+
+<AnalyzeValidSubModule (t.hErrorList t.hIModule s.Result) t.ImportRes>
+  == (t.hErrorList t.hIModule s.Result) t.hISubModule
+  == (t.hErrorList t.hIModule Errors)
+t.ImportRes ::=
+  (t.Success t.hISubModule s.ModuleType t.Alias)
+  | (Fails t.ImportName t.Alias)
 
 ################################################################################
 Module MContext;
@@ -145,12 +158,6 @@ s.Error ::= UnknownOption | MismatchCase
 # STARTCUT
 DefaultOptions
   =
-    /*
-      Информация о входных и выходных частях (старое)
-      Формат: None | e.FileName
-    */
-    (Sym None) (Out None) (Src None)
-
     // Информация о входных и выходных частях
     (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
     (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
@@ -173,12 +180,18 @@ DefaultOptions
       * LocalUpdated
         * для исходника -- выходные файлы корректны, не компилировался;
         * для библиотечного модуля -- выходные файлы корректны;
-        (если возможна проверка корректности для back-end;
-        гарантируется, что корректна хотя бы SymInfo);
+          (если возможна проверка корректности для back-end;
+          гарантируется, что корректна хотя бы SymInfo);
       * GlobalUpdated
         * для исходников и библиотечных модулей аналогично LocalUpdated
-        с тем отличием, что GlobalUpdated также рекурсивно установлен
-        у всех импортируемых модулей;
+          с тем отличием, что GlobalUpdated также рекурсивно установлен
+          у всех импортируемых модулей;
+      * SuccessUpdated
+        * для библиотеки -- библиотека рекурсивно просканирована и для
+          всех рекурсивных библиотек установлен SuccessUpdated,
+        * для исходника -- то же, что и GlobalUpdated, только для всех
+          импортируемых модулей (в т.ч. библиотечных) установлено
+          SuccessUpdated;
       * NeedRecompile -- имеет смысл только для исходника,
         означает, что модуль нужно перекомпилировать;
       * Errors -- в процессе обработки произошла ошибка:
@@ -196,7 +209,7 @@ DefaultOptions
     */
     (LastTime Unknown)
 
-    (ModuleType Program) // Program | Module
+    (ModuleType Main) // Main | Regular
     (CachedSym None) // None | t.IModule
     (BaseDirectory Current) // Current | e.FileName
     /*
@@ -260,6 +273,15 @@ Module MError;
 >
   == t.ErrorList
 
+<AddRecursiveLink t.hErrorList t.SrcPos t.ImportName>
+  == t.hErrorList
+
+<AddBrokenImport t.hErrorList t.SrcPos t.ImportName>
+  == t.hErrorList
+
+<AddImportHead t.hErrorList t.SrcPos t.ImportName>
+  == t.hErrorList
+
 <AddMismatchInternalAndExternalNames
   t.ErrorList t.SrcPos t.InternalName t.ExternalName
 >
@@ -307,11 +329,12 @@ Module MFE-Mgr;
   == Success t.QualifiedName e.FilePath
   == Fails t.QualifiedName
 
-<X_GetPath-T t.Context t.QualifiedName s.FEName>
-  == t.Context t.QualifiedName Success e.FileName
-  == t.Context t.QualifiedName Fails
-
 <Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
+  == t.ErrorList Success s.Result t.IModule
+  == t.ErrorList Fails
+s.Result ::= Success | Warnings | Errors
+
+<Load_New s.FEName t.hErrorList t.ModuleName e.PathToFile>
   == t.ErrorList Success s.Result t.IModule
   == t.ErrorList Fails
 s.Result ::= Success | Warnings | Errors
@@ -330,6 +353,9 @@ Module MFileSystem;
 <ExistFile-T e.FileName>
   == True e.FileName
   == False e.FileName
+
+<BackSlash e.FileName-B '/' e.FileName-E> == e.FileName-B '\\' e.FileName-E
+<BackSlash e.FileName> == e.FileName
 
 <FilesInfo e.Mask>
   == (
@@ -350,6 +376,9 @@ s.Attribute ::= DateTime | Size | LongName
 Пример:
 <ParseFileName 'c:\\Directory\\Document.doc'>
   == ('c;\\Directory\\') 'Document' ('doc')
+
+<CanonicalPath e.Path>
+  == e.Canonical
 
 ################################################################################
 Module MIModule;
@@ -454,10 +483,13 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
   == t.IModule (e.FnName)*
 
 <GetFunctionList-Q t.hIModule>
-  == t.hIModule t.ModuleName*
+  == t.hIModule t.FunctionName*
 
 <GetImportList t.IModule>
   == t.IModule t.ImportName*
+
+<GetImportList-RealNames t.hIModule>
+  == t.hIModule t.ImportName
 
 <GetADTList t.IModule>
   == t.IModule (e.ADT)*
@@ -620,29 +652,6 @@ Module MModules;
   == t.hContext Known s.FE-Name e.PathToFile
   == t.hContext UnKnown
 
-<SourceState e.ModName>
-  == ModuleNotFound
-  == Library
-  == NeedRecompile
-  == SrcNotUpdated
-
-<LookupLibrary t.hContext e.ModuleName>
-  == t.hContext ModuleNotFound
-  == t.hContext Library (Sym e.SymName) (Out e.OutName)
-
-<DefaultModulePath> == e.DefaultModulePath
-
-<LookupModule-T t.hContext e.ModuleName>
-   == t.hContext
-     s.Status
-     (Sym e.SymName)
-     (Out e.OutName)
-     (Src e.SrcName)
-     e.ModuleName
-s.Status ::= one of
-  ModuleNotFound NeedRecompile Library SrcNotUpdated SystemLibrary
-  e.*Name may be None
-
 ################################################################################
 Module MNameMaker;
 =============================================================================
@@ -656,6 +665,11 @@ Module MNameMaker;
 <s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
   == t.QualifiedName Success e.RelativeName
   == t.QualifiedName Fails
+
+################################################################################
+Module Modules;
+
+<DefaultModulePath> == e.DefaultModulePath
 
 ################################################################################
 Module MOrder;
@@ -775,13 +789,13 @@ s.Result ::= Success | Warnings | Errors
 ################################################################################
 Module MQualifiedName;
 
-<Create (e.Segment)*>
+<Create (e.Segment)+>
   == t.QualifiedName
 обратна Parse
 
 <Destroy t.QualifiedName> == empty
 
---------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 <AddSubName t.QualifiedName e.SubName>
   == t.UpdatedQualifiedName
@@ -795,7 +809,7 @@ Module MQualifiedName;
 <Append-T t.QualifiedAcceptor t.QualifiedForAppend>
   == t.UpdatedQualifierAcceptor t.QualifierForAppend
 
---------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 <Parse t.QualifiedName>
   == (e.SegmentName)*
@@ -804,11 +818,17 @@ Module MQualifiedName;
 <Parse-T t.QualifiedName>
   == t.QualifiedName (e.SegmentName)*
 
---------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 <ToRelativeFSPath-T t.QualifiedName>
   == t.QualifiedName
     e.Segment '/' e.Segment '/' ... '/' e.Segment
+
+<ToPrintable-Dot t.QualifiedName>
+  == e.DotName
+
+<ToPrintable-Quad t.QualifiedName>
+  == e.QuadName
 
 <Equals-T t.QName1 t.QName2>
   == s.Result t.QName1 t.QName2
@@ -829,6 +849,7 @@ Module MResolver;
 
 <Resolve t.Module t.ErrorList t.ResolveTable>
   == t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+s.ErrorStatus ::= Success | Errors
 
 ################################################################################
 Module MResolveTable;
@@ -916,6 +937,14 @@ e.Fields = s<num>*
   (2 A) (2 B) (2 C) (2 D)
   (3 A) (3 B) (3 C) (3 D)
 
+<Unique e.Elems> == e.Set
+
+<Set-Intersect (e.Set1) (e.Set2)>
+  == e.Set1*Set2
+
+<Set-Difference (e.Set1) (e.Set2)>
+  == e.Set1-Set2
+
 ################################################################################
 Module MSwapSupport;
 =============================================================================
@@ -980,16 +1009,6 @@ Module MSymModule;
 Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
 на диск, кеширование внутри контекста.
 
-<LoadInfo_New t.Context t.ModuleName>
-  == t.Context Success t.IModule
-  == t.Context Fails
-t.ModuleName ::= t.QualifiedName
-
-<SymReduce-T t.hIModule>
-  == t.hIModule t.hISymModule
-
- TODO: Доделать 
-
 <LoadInfo t.Context e.ModuleName>
   == t.UpdatedContext
     ( Module e.ModuleName )
@@ -1003,9 +1022,21 @@ t.ModuleName ::= t.QualifiedName
     ( Functions (e.FnName)* )
     ( Imports (e.ModName)* )
 
-<LookupSym t.Context e.ModuleName>
-  == (e.ModuleName) t.Context Known s.Status e.SymName
-  == (e.ModuleName) t.Context NotKnown s.Status e.SymName
+################################################################################
+Module MSymModule_New;
+
+Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
+на диск, кеширование внутри контекста.
+
+<LoadInfo t.Context t.ModuleName>
+  == t.Context Success t.IModule
+  == t.Context Fails
+t.ModuleName ::= t.QualifiedName
+
+<SymReduce-T t.hIModule>
+  == t.hIModule t.hISymModule
+
+<SymReduce t.hIModule> == t.hISymModule
 
 ################################################################################
 Module MSymStream;
@@ -1028,18 +1059,18 @@ Module MSymStream;
 строки;
 
 <ExtractFromSet (e.Set) t.SymStream>
-	== s.Char t.SymStream //Если символ из набора.
-	== t.SymStream //Если символ не из набора.
+  == s.Char t.SymStream //Если символ из набора.
+  == t.SymStream //Если символ не из набора.
 извлекает из потока символ из заданного набора; во втором случае символ
 возвращается в поток;
 
 <ExtractsFromSet (e.Set) t.SymStream>
-	== t.SymStream e.Chars
+  == t.SymStream e.Chars
 аналогично ExtractFromSet, но возвращает последовательность символов из
 заданного набора (которая может быть и пустой).
 
 <ExtractsFromSet-N (e.Set) t.SymStream s.NChars>
-	== t.SymStream e.Chars
+  == t.SymStream e.Chars
 аналогично ExtractsFromSet, но возвращает последовательность символов из
 заданного набора (которая может быть и пустой), причём её длина не может быть
 более s.NChars символов.

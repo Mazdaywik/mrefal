@@ -3,6 +3,27 @@ $MODULE MOutModuleStatus;
 $IMPORT InOut;
 $IMPORT Math;
 $IMPORT MSwapSupport;
+$IMPORT MQualifiedName;
+
+$ENTRY Updated-Q
+  t.QualifiedName =
+    <Updated '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+
+$ENTRY Compiling-Q
+  t.QualifiedName =
+    <Compiling '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+
+$ENTRY Compiled-Q
+  t.QualifiedName =
+    <Compiled '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+
+$ENTRY Library-Q
+  t.QualifiedName =
+    <Library '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+
+$ENTRY Fails-Q
+  t.QualifiedName =
+    <Out Fails '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
 
 $ENTRY Updated
   e.ModuleName =
@@ -52,6 +73,7 @@ StatusStr {
   Compiled = 'Compiled ';
   Library = 'Library ';
   Linking = 'Linking ';
+  Fails = 'Fails';
 }
 
 MaxLength = 80;

@@ -17,13 +17,14 @@ $IMPORT MStrings;
 $DATA QName;
 
 /**
-  <Create (e.Segment)*>
+  <Create (e.Segment)+>
     == t.QualifiedName
   обратна Parse
 */
-$ENTRY Create
+$ENTRY Create {
   e.Segments =
     [QName <CheckSegments e.Segments>];
+}
 
 CheckSegments {
   = ;
@@ -33,13 +34,15 @@ CheckSegments {
     <CheckSegments e.Tail>;
 }
 
+//------------------------------------------------------------------------------
+
 /**
   <Destroy t.QualifiedName> == empty
 */
 $ENTRY Destroy
   [QName e.Segments] = ;
 
-/**--------------------------------------------------------------------------*/
+/**---------------------------------------------------------------------------*/
 
 /**
   <AddSubName t.QualifiedName e.SubName>
@@ -51,6 +54,8 @@ $ENTRY AddSubName
     [QName
       e.Qualifiers (<CheckSegment e.SubName>)
     ];
+
+//------------------------------------------------------------------------------
 
 /**
   <AddSuperName t.QualifiedName e.SuperName>
@@ -70,6 +75,8 @@ CheckSegment {
   e.Segment = e.Segment;
 }
 
+//------------------------------------------------------------------------------
+
 /**
   <Append t.QualifiedAcceptor t.QualifiedForAppend>
     == t.UpdatedQualifierAcceptor
@@ -77,6 +84,8 @@ CheckSegment {
 $ENTRY Append
   [QName e.AcceptorSegments] [QName e.ForAppendSegments] =
     [QName e.AcceptorSegments e.ForAppendSegments];
+
+//------------------------------------------------------------------------------
 
 /**
   <Append-T t.QualifiedAcceptor t.QualifiedForAppend>
@@ -86,7 +95,7 @@ $ENTRY Append-T
   t.Acceptor t.ForAppend =
     <Append t.Acceptor t.ForAppend> t.ForAppend;
 
-/**--------------------------------------------------------------------------*/
+/**---------------------------------------------------------------------------*/
 
 /**
   <Parse t.QualifiedName>
@@ -97,6 +106,8 @@ $ENTRY Parse
   [QName e.Qualifiers] =
     e.Qualifiers;
 
+//------------------------------------------------------------------------------
+
 /**
   <Parse-T t.QualifiedName>
     == t.QualifiedName (e.SegmentName)*
@@ -105,7 +116,7 @@ $ENTRY Parse-T
   [QName e.Qualifiers] =
     [QName e.Qualifiers] e.Qualifiers;
 
-/**--------------------------------------------------------------------------*/
+/**---------------------------------------------------------------------------*/
 
 /**
   <ToRelativeFSPath-T t.QualifiedName>
@@ -114,14 +125,36 @@ $ENTRY Parse-T
 */
 $ENTRY ToRelativeFSPath-T
   [QName e.Segments] =
-    [QName e.Segments] <CreatePath e.Segments>;
+    [QName e.Segments]
+    <CreateTextual ('/') e.Segments>;
 
-CreatePath {
-  (e.OneSegment) = e.OneSegment;
+/**
+  <ToPrintable-Dot t.QualifiedName>
+    == e.DotName
+*/
+$ENTRY ToPrintable-Dot
+  [QName e.Segments] =
+    <CreateTextual ('.') e.Segments>;
 
-  (e.NextSegment) e.Tail =
-    e.NextSegment '/' <CreatePath e.Tail>;
+/**
+  <ToPrintable-Quad t.QualifiedName>
+    == e.QuadName
+*/
+$ENTRY ToPrintable-Quad
+  [QName e.Segments] =
+    <CreateTextual ('::') e.Segments>;
+
+CreateTextual {
+  (e.Parser) (e.OneSegment) = e.OneSegment;
+
+  (e.Parser) (e.NextSegment) e.Tail =
+    e.NextSegment e.Parser
+    <CreateTextual (e.Parser) e.Tail>;
 }
+
+    
+
+//------------------------------------------------------------------------------
 
 /**
   <Equals-T t.QName1 t.QName2>

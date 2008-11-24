@@ -15,19 +15,20 @@ $ENTRY Create
       <MFileSystem::BackSlash
         <MFileSystem::CanonicalPath e.DirName>
       >
+      ( <MFileSystem::BackSlash e.DirName> )
     >;
 
 $SWAP G_Dirs;
 
 CheckCreated {
-  (e.Dirs-B (e.DirName) e.Dirs-E) e.DirName =
+  (e.Dirs-B (e.DirName) e.Dirs-E) e.DirName (e.ForMkDir) =
     <G_Dirs e.Dirs-B (e.DirName) e.Dirs-E>
-    e.DirName;
+    e.ForMkDir;
 
-  (e.Dirs) e.DirName =
+  (e.Dirs) e.DirName (e.ForMkDir) =
     <G_Dirs e.Dirs (e.DirName)>
-    <MOS::System 'md ' e.DirName '>nul 2>nul'>
-    e.DirName;
+    <MOS::System 'md ' e.ForMkDir '>nul 2>nul'>
+    e.ForMkDir;
 }
 
 //------------------------------------------------------------------------------

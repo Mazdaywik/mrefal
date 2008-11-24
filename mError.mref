@@ -19,6 +19,8 @@ $ENTRY Fatal
     <InOut::WriteLine 'FATAL ERROR: ' e.Message>
     <MOS::Exit 1>;
 
+//------------------------------------------------------------------------------
+
 /**
   <LinkError e.Message>
     == fail down (errcode 1)
@@ -58,16 +60,22 @@ OutError {
 
 $DATA ErrorList;
 
+//------------------------------------------------------------------------------
+
 /**
   <CreateErrList> == t.hErrorList
 */
 $ENTRY CreateErrList = [ErrorList];
+
+//------------------------------------------------------------------------------
 
 /**
   <DestroyErrList t.hErrorList> == empty
 */
 $ENTRY DestroyErrList
   [ErrorList e.Errors] = ;
+
+//------------------------------------------------------------------------------
 
 /**
   <EmptyList t.ErrorList>
@@ -80,6 +88,8 @@ $ENTRY EmptyList {
   [ErrorList e.Errors] =
     [ErrorList e.Errors] NotEmpty;
 }
+
+//------------------------------------------------------------------------------
 
 /**
   <ContentLevel t.ErrorList>
@@ -106,6 +116,8 @@ AddToList {
     [ErrorList e.Errors t.Error];
 }
 
+//------------------------------------------------------------------------------
+
 /**
   <MergeLists t.List1 t.List2>
     == t.MergedList
@@ -113,6 +125,8 @@ AddToList {
 $ENTRY MergeLists
   t.List1 [ErrorList e.Errors2] =
     <MLambda::Reduce & AddToList t.List1 e.Errors2>;
+
+//------------------------------------------------------------------------------
 
 /**
   <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
@@ -138,6 +152,8 @@ $ENTRY AddUnexpected {
     >;
 }
 
+//------------------------------------------------------------------------------
+
 /**
   <AddNamesMismatch
     t.ErrorList t.TailPos
@@ -158,6 +174,72 @@ $ENTRY AddNamesMismatch
         '\''
       )
     >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddRecursiveLink t.hErrorList t.SrcPos t.ImportName>
+    == t.hErrorList
+*/
+$ENTRY AddRecursiveLink
+  t.hErrorList t.SrcPos t.ImportName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Recursive link in import '
+        <QualifiedNameToString t.ImportName>
+      )
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddBrokenImport t.hErrorList t.SrcPos t.ImportName>
+    == t.hErrorList
+*/
+$ENTRY AddBrokenImport
+  t.hErrorList t.SrcPos t.ImportName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Can\'t load import module '
+        <QualifiedNameToString t.ImportName>
+      )
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <DependedFromSource t.hErrorList t.SrcPos t.ImportName>
+    == t.hErrorList
+*/
+$ENTRY DependedFromSource
+  t.hErrorList t.SrcPos t.ImportName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Can\'t load import source module from library '
+        <QualifiedNameToString t.ImportName>
+      )
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddImportHead t.hErrorList t.SrcPos t.ImportName>
+    == t.hErrorList
+*/
+$ENTRY AddImportHead
+  t.hErrorList t.SrcPos t.ImportName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Can\'t import head module '
+        <QualifiedNameToString t.ImportName>
+      )
+    >;
+
+//------------------------------------------------------------------------------
 
 /**
   <AddMismatchInternalAndExternalNames
@@ -181,6 +263,8 @@ QualifiedNameToString
   t.QualifiedName =
     <TypeQualified <MQualifiedName::Parse t.QualifiedName>>;
 
+//------------------------------------------------------------------------------
+
 /**
   <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
     == t.UpdatedErrorList
@@ -191,6 +275,8 @@ $ENTRY AddRedeclaredIdentifier
       t.ErrorList
       ( Semantics t.SrcPos 'Identifier redeclared ' e.Identifier )
     >;
+
+//------------------------------------------------------------------------------
 
 /**
   <AddVarTypeMismatch t.hErrorList t.SrcPos e.VarName>
@@ -204,6 +290,8 @@ $ENTRY AddVarTypeMismatch
         t.SrcPos 'Two different variables has same index ' e.VarName
       )
     >;
+
+//------------------------------------------------------------------------------
 
 /**
   <AddUndeclaredVariable t.hErrorList t.SrcPos s.VarType e.Index>
@@ -222,6 +310,8 @@ $ENTRY AddUndeclaredVariable
 VarTypeToPrefix {
   EVar = 'e.'; SVar = 's.'; TVar = 't.';
 }
+
+//------------------------------------------------------------------------------
 
 /**
   <AddUnresolvedFunction t.hErrorList t.SrcPos s.ScopeClass e.FnName>
@@ -276,6 +366,8 @@ TypeQualified {
   (e.Name) = e.Name;
 }
 
+//------------------------------------------------------------------------------
+
 /**
   <PrintErrorsAndStop t.hErrorList>
     == fail down (errcode 1)
@@ -284,6 +376,8 @@ $ENTRY PrintErrorsAndStop
   t.ErrorList =
     <PrintErrors t.ErrorList>
     <MOS::Exit 1>;
+
+//------------------------------------------------------------------------------
 
 /**
   <PrintErrors t.hErrorList> == empty

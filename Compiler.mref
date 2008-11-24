@@ -35,7 +35,7 @@ $IMPORT MSelfDiag;
 $IMPORT MSymModule;
 
 /**
-  <CompileByModuleName-Q t.hContext t.QualifiedName>
+  <Com`pileByModuleName-Q t.hContext t.QualifiedName>
     == t.hContext
 */
 $ENTRY CompileByModuleName-Q
@@ -63,6 +63,14 @@ $ENTRY CompileByModuleName
 ParseAndCompile {
   t.Context t.ModuleName NotFound e.Name =
     <MError::Fatal 'Module `' e.Name '` not found'>;
+
+  t.Context t.ModuleName SuccessUpdated =
+    t.Context;
+
+  t.Context t.ModuleName Library e.Name =
+    <CompileIfNeed-Old
+      t.Context <MQualifiedSupport::LastSegment t.ModuleName>
+    >;
 
   t.Context t.ModuleName s.OtherStatus e.Name =
     <MOutModuleStatus::Compiling e.Name>
@@ -123,6 +131,8 @@ Compile2 {
       >
     >;
 }
+
+//------------------------------------------------------------------------------
 
 To_OldSymTable-T
   t.Module =
@@ -203,6 +213,8 @@ SymInfo-ModuleName
 MakeEntries
   e.Entries =
     (Functions e.Entries);
+
+//------------------------------------------------------------------------------
 
 * <LoadImportInfo t.Context t.SymTable-Old>
 * == t.UpdatedContext t.UpdatedSymTable-Old'
@@ -563,6 +575,8 @@ ImportsFromSym {
       e.ImportList
     >;
 }
+
+//------------------------------------------------------------------------------
 
 /* Разрешает вызовы функций. */
 

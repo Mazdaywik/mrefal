@@ -410,7 +410,7 @@ $ENTRY GetFunctionList
 
 /**
   <GetFunctionList-Q t.hIModule>
-    == t.hIModule t.ModuleName*
+    == t.hIModule t.FunctionName*
 */
 $ENTRY GetFunctionList-Q
   t.hIModule =
@@ -450,6 +450,29 @@ $ENTRY GetImportList
 Qualify {
   t.IModule (e.NextName) =
     t.IModule <MQualifiedName::Create (e.NextName)>;
+}
+
+/**
+  <GetImportList-RealNames t.hIModule>
+    == t.hIModule t.ImportName
+*/
+$ENTRY GetImportList-RealNames
+  t.hIModule =
+    <MLambda::MapReduce
+      & ToRealName
+      <GetImportList t.hIModule>
+    >;
+
+ToRealName
+  t.hIModule t.ImportName =
+    <ToRealName-Aux
+      t.ImportName
+      <GetImportAttribute t.hIModule RealName t.ImportName>
+    >;
+
+ToRealName-Aux {
+  t.ImportName t.hIModule Found t.RealName =
+    t.hIModule t.RealName;
 }
 
 //------------------------------------------------------------------------------

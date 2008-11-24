@@ -53,6 +53,14 @@ ProcessLine
   t.Table (e.Line) =
     <DoProcessLine t.Table () e.Line>;
 
+LookupAlias {
+  ( e.Table-B (e.Alias (e.RealName)) e.Table-E ) e.Alias =
+    ( (e.Alias (e.RealName) e.Table-B e.Table-E )
+    Found e.RealName;
+
+  ( e.Table ) e.Alias = ( e.Table ) NotFound e.Alias;
+}
+
 DoProcessLine {
   ( e.Table-B (e.Alias (e.RealName)) e.Table-E )
   ( e.Scanned '<' ) e.Alias ' ' e.Tail =

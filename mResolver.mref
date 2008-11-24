@@ -10,20 +10,26 @@ $IMPORT MResolveTable;
 /**
   <Resolve t.Module t.ErrorList t.ResolveTable>
     == t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+  s.ErrorStatus ::= Success | Errors
 */
 $ENTRY Resolve
   t.IModule t.ErrorList t.ResolveTable =
     <Resolve-Aux
-      t.IModule
-      t.ResolveTable t.ErrorList
+      t.ErrorList
+      <StartResolving
+        t.ResolveTable
+        <ExtractLocalInfo t.IModule>
+        <MError::CreateErrList>
+      >
     >;
 
 Resolve-Aux
-  t.IModule t.ResolveTable t.ErrorList =
-    <StartResolving
-      t.ResolveTable
-      <ExtractLocalInfo t.IModule>
-      t.ErrorList
+  t.hGlobalErrorList
+  t.ResolvedModule s.ErrorStatus t.hLocalErrorList =
+    t.ResolvedModule
+    s.ErrorStatus
+    <MError::MergeLists
+      t.hGlobalErrorList t.hLocalErrorList
     >;
 
 ExtractLocalInfo
@@ -194,6 +200,17 @@ DoResolvingFunctions {
     <CheckErrors t.ErrorList>;
 }
 
+CheckErrors
+  t.ErrorList =
+    <SwCheckErrors
+      <MError::EmptyList t.ErrorList>
+    >;
+
+SwCheckErrors {
+  t.ErrorList Empty = Success t.ErrorList;
+  t.ErrorList NotEmpty = Errors t.ErrorList;
+}
+
 ResolvingFunction
   t.IModule t.ErrorList t.ResolveTable
   e.Function =
@@ -204,12 +221,6 @@ ResolvingFunction
     >;
 
 ResolvingFunction-ScopeClass {
-  /*
-  t.IModule Found Swap
-  t.ErrorList t.ResolveTable e.Function =
-    t.IModule t.ErrorList t.ResolveTable;
-  */
-
   t.IModule Found s.ScopeClass
   t.ErrorList t.ResolveTable e.Function =
     <ResolvingFunction-Qualified
@@ -312,17 +323,6 @@ ResolvingBody {
         (e.Resolved) t.NextSentence
       > e.Tail
     >;
-}
-
-CheckErrors
-  t.ErrorList =
-    <SwCheckErrors
-      <MError::EmptyList t.ErrorList>
-    >;
-
-SwCheckErrors {
-  t.ErrorList Empty = Success t.ErrorList;
-  t.ErrorList NotEmpty = Errors t.ErrorList;
 }
 
 /*

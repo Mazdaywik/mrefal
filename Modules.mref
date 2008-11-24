@@ -1,38 +1,9 @@
 $MODULE Modules;
 
-$IMPORT MBE-Mgr;
 $IMPORT MError;
 $IMPORT MOS;
-$IMPORT MQualifiedName;
 
-$ENTRY SymName {
-  t.hContext e.ModName =
-    t.hContext
-    <XXXName-Guard
-      <MBE-Mgr::GetPath-T
-        SymInfo
-        <MQualifiedName::Create (e.ModName)>
-        Current
-      >
-    >;
-}
-
-$ENTRY OutName {
-  t.hContext e.ModName =
-    t.hContext
-    <XXXName-Guard
-      <MBE-Mgr::GetPath-T
-        Refal5BE
-        <MQualifiedName::Create (e.ModName)>
-        Current
-      >
-    >;
-}
-
-XXXName-Guard
-  Success t.QualifiedName e.Path = e.Path;
-
-$ENTRY HomeDir = <MOS::Env 'MR_Home'>;
+HomeDir = <MOS::Env 'MR_Home'>;
 
 /**
   <DefaultModulePath> == e.DefaultModulePath

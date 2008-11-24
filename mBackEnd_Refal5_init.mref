@@ -5,11 +5,11 @@ $IMPORT MBackEnd_Refal5;
 $IMPORT MLinker_Refal5;
 
 $ENTRY Init =
-	<MBE-Mgr::Register
-		Refal5BE
-		& MBackEnd_Refal5.Generate-T
-		& MLinker_Refal5.Link
-		('ROut') ('rout')
-	>;
+  <MBE-Mgr::Register
+    Refal5BE
+    & MBackEnd_Refal5.Generate-T
+    & MLinker_Refal5.Link
+    ('ROut') ('rout')
+  >;
 
 $END MBackEnd_Refal5_init.

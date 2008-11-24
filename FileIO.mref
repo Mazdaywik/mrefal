@@ -83,11 +83,6 @@ $ENTRY WriteLine-T {
     e.Line;
 }
 
-$ENTRY ExtractFileName {
-  [File s.Handle e.FileName] =
-    [File s.Handle e.FileName] e.FileName;
-}
-
 $ENTRY Load
   e.FileName =
     <DoLoad

@@ -749,7 +749,7 @@ Compile-OnUpdated-SwScanSubModules {
     <MLambda::Map & MIModule.Destroy e.ValidScannedImports>;
 
   t.hContext t.ModuleName
-  (t.hErrorList t.hSymIModule Fails)
+  (t.hErrorList t.hSymIModule Errors)
   e.ValidScannedImports =
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
@@ -837,6 +837,9 @@ ScanLibrarySubModule-Aux {
 
   t.AliasName (t.hContext t.hErrorList) Fails t.RealName =
     (t.hContext t.hErrorList) (Fails t.RealName t.AliasName);
+
+  t.AliasName (t.hContext t.hErrorList) IsNotLibrary t.RealName =
+    (t.hContext t.hErrorList) (IsNotLibrary t.RealName t.AliasName);
 }
 
 /*
@@ -944,7 +947,7 @@ Compile-OnLibrary-SwScanSubModules {
     <MLambda::Map & MIModule.Destroy e.ValidScannedImports>;
 
   t.hContext t.ModuleName
-  (t.hErrorList t.hSymIModule Fails)
+  (t.hErrorList t.hSymIModule Errors)
   e.InvalidScannedImports =
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName

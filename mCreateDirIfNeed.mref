@@ -27,7 +27,7 @@ CheckCreated {
 
   (e.Dirs) e.DirName (e.ForMkDir) =
     <G_Dirs e.Dirs (e.DirName)>
-    <MOS::System 'md ' e.ForMkDir '>nul 2>nul'>
+    <MFileSystem::MakeDir e.ForMkDir>
     e.ForMkDir;
 }
 

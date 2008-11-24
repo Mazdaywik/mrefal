@@ -62,6 +62,15 @@ $ENTRY BackSlash {
 //------------------------------------------------------------------------------
 
 /**
+  <MakeDir e.Directory> == empty
+*/
+$ENTRY MakeDir
+  e.Directory =
+    <MOS::System 'mkdir ' <Quoting e.Directory> ' 1>nul 2>nul'>;
+
+//------------------------------------------------------------------------------
+
+/**
   <FilesInfo e.Mask>
     == (
       (e.FileName)

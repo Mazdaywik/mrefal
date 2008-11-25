@@ -1,7 +1,6 @@
 $MODULE MCreateDirIfNeed;
 
 $IMPORT MFileSystem;
-$IMPORT MOS;
 
 //------------------------------------------------------------------------------
 

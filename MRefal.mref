@@ -123,9 +123,11 @@ Make {
 }
 
 SelectMaker {
-  '+new+' = & MCompiler.Make-Dummy;
+  '+new+' = & MCompiler.Make;
 
   '+newnew+' = & MCompiler.Make;
+
+  '+make+' = & MCompiler.Make;
 }
 
 FinishMake {

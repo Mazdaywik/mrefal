@@ -6,7 +6,7 @@ t.FunctionBody ::=
   ( t.Sentence* )
 
 t.Sentence ::=
-  t.PatternExpr t.ResultExpr
+  ( t.PatternExpr t.ResultExpr )
 
 t.PatternExpr ::=
   ( Pattern t.PatternTerm* )
@@ -40,14 +40,7 @@ t.ResultTerm ::=
 t.Callable ::=
   (Qualified t.SrcPos t.QualifiedName)
 
-После проверки t.ModuleElement и t.Callable меняются:
-
-t.ModuleElement ::=
-  (Function
-    s.ScopeClass
-    t.QualifiedName
-    t.FunctionBody
-  )
+После проверки t.Callable меняется:
 
 t.Callable ::=
   (s.CallType t.QualifiedName)
@@ -58,27 +51,6 @@ s.CallType ::=
   Swap
 
 Здесь t.QualifiedName -- АТД типа t.QualifiedName из модуля MQualifiedName
-
---------------------------------------------------------------------------------
-  Структура "Квалифицированное имя"
---------------------------------------------------------------------------------
-
-e.QualifiedName = (e.PartName)*
-
---------------------------------------------------------------------------------
-  Структура "Символическая информация"
---------------------------------------------------------------------------------
-
-e.SymInfo ::=
-  ( Module e.ModuleLocation) \
-  ( Functions (e.FnName)* ) \
-  ( Imports t.ImportLocation* )
-
-e.ModuleLocation ::=
-  (e.Directory) e.ModuleName
-
-t.ImportLocation ::=
-  ( e.ModuleLocation )
 
 --------------------------------------------------------------------------------
   Структура даннных "Переменная MODULEPATH"

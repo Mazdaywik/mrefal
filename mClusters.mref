@@ -549,6 +549,10 @@ GetLastTime-SwKnown {
     >;
 
   t.ModuleName t.hContext
+  ( Found s.Type ) ( Found SuccessUpdated ) ( Found e.Time ) =
+    t.hContext Known FullComplect SrcNotModified e.Time;
+
+  t.ModuleName t.hContext
   ( Found Library ) ( Found s.Status ) ( Found e.Time ) =
     t.hContext Known FullComplect Library e.Time;
 

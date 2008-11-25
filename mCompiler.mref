@@ -15,26 +15,11 @@ $IMPORT MSymModule = MSymModule_New;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 
-$IMPORT Compiler;
-
 /**
   <Make t.hContext t.hErrorList e.ModulePath t.RootModuleName>
     == t.hContext t.hErrorList Success
     == t.hContext t.hErrorList Fails
 */
-$ENTRY Make-Dummy
-  t.hContext t.hErrorList e.ModulePath t.RootModuleName =
-    <Make-Aux
-      <Link
-        <Compiler::CompileByModuleName-Q
-          t.hContext
-          t.RootModuleName
-        >
-        t.RootModuleName
-      >
-      t.hErrorList
-    >;
-
 $ENTRY Make
   t.hContext t.hErrorList e.ModulePath t.RootModuleName =
     <Make-SwResult
@@ -56,6 +41,7 @@ Make-SwResult {
   t.RootModuleName
   (t.hContext t.hErrorList) Success t.hIModule Regular =
     <MIModule::Destroy t.hIModule>
+    <MOutModuleStatus::Flush>
     t.hContext t.hErrorList Success;
 
   t.RootModuleName

@@ -68,12 +68,12 @@ SwOut {
 }
 
 StatusStr {
-  Updated = 'Updated ';
+  Updated =   'Updated ';
   Compiling = 'Compiling ';
-  Compiled = 'Compiled ';
-  Library = 'Library ';
-  Linking = 'Linking ';
-  Fails = 'Fails';
+  Compiled =  'Compiled ';
+  Library =   'Library ';
+  Linking =   'Linking ';
+  Fails =     '  FAILS';
 }
 
 MaxLength = 80;

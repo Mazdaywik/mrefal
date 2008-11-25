@@ -1,6 +1,5 @@
 $MODULE MStartupSeqGenerator;
 
-$IMPORT Context;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MSymModule = MSymModule_New;

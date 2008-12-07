@@ -208,9 +208,9 @@ DefaultOptions
       необходима ли перекомпиляция: импортирующие модули должны быть
       откомпилированы позже импортируемых.
       Unknown -- информация не доступна
-      e.DateTime -- см. MainStructures.txt
+      (e.MinTime) (e.MaxTime) -- см. MainStructures.txt
     */
-    (LastTime Unknown)
+    (MinMaxTime Unknown)
 
     (ModuleType Main) // Main | Regular
     (CachedSym None) // None | t.IModule

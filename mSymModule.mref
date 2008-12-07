@@ -1,4 +1,4 @@
-$MODULE MSymModule_New;
+$MODULE MSymModule;
 
 /**
   Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
@@ -359,4 +359,4 @@ $ENTRY Init =
 
 Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.
 
-$END MSymModule_New.
+$END MSymModule.

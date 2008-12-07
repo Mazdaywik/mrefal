@@ -261,7 +261,7 @@ $ENTRY AddMismatchInternalAndExternalNames
 
 QualifiedNameToString
   t.QualifiedName =
-    <TypeQualified <MQualifiedName::Parse t.QualifiedName>>;
+    <MQualifiedName::ToPrintable-Quad t.QualifiedName>;
 
 //------------------------------------------------------------------------------
 
@@ -314,56 +314,18 @@ VarTypeToPrefix {
 //------------------------------------------------------------------------------
 
 /**
-  <AddUnresolvedFunction t.hErrorList t.SrcPos s.ScopeClass e.FnName>
+  <AddUnresolvedFunction t.hErrorList t.SrcPos t.FnName>
     == t.hErrorList
 */
 $ENTRY AddUnresolvedFunction {
-  t.ErrorList
-  t.SrcPos Local e.FnName =
-    <AddToList
-      t.ErrorList
-      ( Semantics
-        t.SrcPos 'Undeclared local function \'' e.FnName '\''
-      )
-    >;
-
-  t.ErrorList
-  t.SrcPos QualifiedModule (e.ModName) e.FnName =
+  t.ErrorList t.SrcPos t.EntityName =
     <AddToList
       t.ErrorList
       ( Semantics
         t.SrcPos
-        'Undeclared module in <' e.ModName '::' e.FnName ' ... >'
+        'Unresolved calling <' <QualifiedNameToString t.EntityName> ' ... >'
       )
     >;
-
-  t.ErrorList
-  t.SrcPos QualifiedFunction (e.Module) e.FnName =
-    <AddToList
-      t.ErrorList
-      ( Semantics
-        t.SrcPos
-        'Module \'' e.Module '\' not contain entry function \'' e.FnName '\''
-      )
-    >;
-
-  t.ErrorList
-  t.SrcPos GenericQualified e.QualifiedName =
-    <AddToList
-      t.ErrorList
-      ( Semantics
-        t.SrcPos
-        'Unresolved calling <' <TypeQualified e.QualifiedName> ' ... >'
-      )
-    >;
-}
-
-TypeQualified {
-  (e.Qualifed) (e.SubQualified) e.Rest =
-    e.Qualifed '::'
-    <TypeQualified (e.SubQualified) e.Rest>;
-
-  (e.Name) = e.Name;
 }
 
 //------------------------------------------------------------------------------

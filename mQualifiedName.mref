@@ -85,16 +85,6 @@ $ENTRY Append
   [QName e.AcceptorSegments] [QName e.ForAppendSegments] =
     [QName e.AcceptorSegments e.ForAppendSegments];
 
-//------------------------------------------------------------------------------
-
-/**
-  <Append-T t.QualifiedAcceptor t.QualifiedForAppend>
-    == t.UpdatedQualifierAcceptor t.QualifierForAppend
-*/
-$ENTRY Append-T
-  t.Acceptor t.ForAppend =
-    <Append t.Acceptor t.ForAppend> t.ForAppend;
-
 /**---------------------------------------------------------------------------*/
 
 /**

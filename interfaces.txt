@@ -1,21 +1,4 @@
 ################################################################################
-Module Compiler;
-
-<Com`pileByModuleName-Q t.hContext t.QualifiedName>
-  == t.hContext
-
-################################################################################
-Module Context;
-
-<UpdateModuleInfo t.Context (e.ModName) e.NewOptionsList>
-  == t.UpdatedContext
-
-<ExtractOption t.Context s.Option e.ModName>
-  == t.Context Found e.Option
-  == t.Context ModuleInfoNotFound
-  !fail abort!
-
-################################################################################
 Module MBackEnd_Refal5;
 
 <Generate-T t.IModule e.OutName>
@@ -206,9 +189,9 @@ DefaultOptions
       необходима ли перекомпиляция: импортирующие модули должны быть
       откомпилированы позже импортируемых.
       Unknown -- информация не доступна
-      e.DateTime -- см. MainStructures.txt
+      (e.MinTime) (e.MaxTime) -- см. MainStructures.txt
     */
-    (LastTime Unknown)
+    (MinMaxTime Unknown)
 
     (ModuleType Main) // Main | Regular
     (CachedSym None) // None | t.IModule
@@ -300,7 +283,7 @@ Module MError;
 <AddUndeclaredVariable t.hErrorList t.SrcPos s.VarType e.Index>
   == t.hErrorList
 
-<AddUnresolvedFunction t.hErrorList t.SrcPos s.ScopeClass e.FnName>
+<AddUnresolvedFunction t.hErrorList t.SrcPos t.FnName>
   == t.hErrorList
 
 <PrintErrorsAndStop t.hErrorList>
@@ -333,12 +316,7 @@ Module MFE-Mgr;
   == Success t.QualifiedName e.FilePath
   == Fails t.QualifiedName
 
-<Load s.FEName t.ErrorList t.QualifiedName e.BaseDir>
-  == t.ErrorList Success s.Result t.IModule
-  == t.ErrorList Fails
-s.Result ::= Success | Warnings | Errors
-
-<Load_New s.FEName t.hErrorList t.ModuleName e.PathToFile>
+<Load s.FEName t.hErrorList t.ModuleName e.PathToFile>
   == t.ErrorList Success s.Result t.IModule
   == t.ErrorList Fails
 s.Result ::= Success | Warnings | Errors
@@ -402,6 +380,13 @@ Module MIModule;
 <GetModuleName t.IModule>
   == t.IModule t.QualifiedName
 
+<AbsolutName t.hIModule t.RelativeName>
+  == t.hIModule t.AbsolutName
+
+<RelativeName t.hIModule t.AbsolutName>
+  == t.hIModule Success t.RelativeName
+  == t.hIModule Fails
+
 ---------------------------------------------------------------------------
 
 <UpdateModule t.IModule e.Attribs>
@@ -427,11 +412,21 @@ s.Status ::=
 >
   == t.hIModule s.Status
 
-<UpdateImport t.IModule t.Import e.Attribs>
-  == t.IModule s.Status
+<UpdateImport t.hIModule t.Import e.Attribs>
+  == t.hIModule s.Status
+
+<UpdateImport-X
+  t.hIModule
+  (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
+>
+  == t.hIModule s.Status
 
 <UpdateADT t.IModule (e.Name) e.Attribs>
   == t.IModule s.Status
+
+<UpdateEntity_NoQualified
+  t.IModule s.Kind (e.ParsedName) e.Attribs
+>
 
 <UpdateEntity
   t.IModule s.Kind (e.EntityName) e.Attribs
@@ -445,7 +440,8 @@ s.Status ::=
 ValidAttribs {
   Function = ScopeClass Position Body Qualified;
   ModuleName = Position ModuleType;
-  ImportName = Position RealName;
+  ImportName = Position RealName AliasName;
+  ImportAlias = Position RealName AliasName;
   ADT = Position;
 }
 # ENDCUT
@@ -483,6 +479,10 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
 s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
+<GetKind t.hIModule t.EntityName>
+  == Success s.Kind
+  == NoName
+
 ---------------------------------------------------------------------------
 
 <GetFunctionList t.IModule>
@@ -494,11 +494,107 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 <GetImportList t.IModule>
   == t.IModule t.ImportName*
 
-<GetImportList-RealNames t.hIModule>
-  == t.hIModule t.ImportName
-
 <GetADTList t.IModule>
   == t.IModule (e.ADT)*
+
+################################################################################
+Module MLambda;
+
+<Apply t.Lambda e.Arg>
+  == e.Result
+
+<BindLeft t.Lambda e.Left>
+  == t.Lambda'
+<Apply t.Lambda' e.Arg>
+  === <Apply t.Lambda e.Left e.Arg>
+
+<BindLeft-H t.Lambda e.Left>
+  == t.Lambda'
+<Apply t.Lambda' t.Handle e.Arg>
+  == <Apply t.Lambda t.Handle e.Left e.Arg>
+
+<BindRight t.Lambda e.Right>
+  == t.Lambda'
+<Apply t.Lambda' e.Arg>
+  === <Apply t.Lambda e.Arg e.Right>
+
+<Composite t.Lambda_1 ... t.Lambda_N>
+  == t.CompositeLambda
+<Apply t.CompositeLambda e.Arg>
+  ===
+  <Apply
+    t.Lambda_N
+    <Apply
+      t.Lambda_N-1
+      ...
+      <Apply t.Lambda_1 e.Arg>
+      ...
+    >
+  >
+
+<MakeHandled t.Lambda>
+  == t.Lambda'
+<Apply t.Lambda' t.Handle e.Arg>
+  === t.Handle <Apply t.Lambda e.Arg>
+
+<Parallel t.Lambda_1 ... t.Lambda_N>
+  == t.Lambda'
+<Apply t.Lambda' e.Argument>
+  === <Apply t.Lambda_1 e.Argument> ... <Apply t.Lambda_N e.Argument>
+
+<Parallel-H e.Lambda_1 ... t.Lambda_N>
+  == t.Lambda'
+<Apply t.Lambda' t.Handle e.Argument>:
+<Apply t.Lambda t.Handle e.Argument>
+  === t.Handle_1 e.Result_1
+...
+<Apply t.Lambda_N t.Handle_N-1 e.Result_N-1>
+  === t.Handle' e.Result
+
+<Const e.Value>
+  == t.Lambda
+<Apply t.Lambda e.AnyArg> === e.Value
+
+---------------------------------------------------------------------------
+
+<Map t.Lambda t.Src*>
+  == e.Result*
+<Apply t.Lambda t.Src> == e.Result
+
+<Reduce t.Lambda t.Accum t.Src*>
+  == t.Accum'
+<Apply t.Lambda t.Accum t.Src> == t.Accum'
+
+<Reduce-R t.Lambda t.Accum t.Src*>
+  == t.Accum'
+<Apply t.Lambda t.Accum t.Src> == t.Accum'
+
+<MapReduce t.Lambda t.Accum t.Src*>
+  == t.Accum' e.Result*
+<Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+
+<MapReduce-R t.Lambda t.Accum t.Src*>
+  == t.Accum' e.Result*
+<Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+
+<TerminateAccumulator t.FnTerminator t.Accum e.Elems>
+  == <Apply t.FnTerminator t.Accum> e.Elems
+
+---------------------------------------------------------------------------
+
+<UnBracket (e.Brackets)> == e.Brackets
+
+<Bracket e.Expr> == (e.Expr)
+
+<UnBracket-H t.Handle (e.Brackets)>
+  == t.Handle e.Brackets
+
+<Bracket-H t.Handle e.Expr>
+  == t.Handle (e.Expr)
+
+<Nil e.Any> == empty
+
+<Identity e.Value> == e.Value
 
 ################################################################################
 Module MLinker_Refal5;
@@ -574,11 +670,6 @@ Module MNameMaker;
   == t.QualifiedName Fails
 
 ################################################################################
-Module Modules;
-
-<DefaultModulePath> == e.DefaultModulePath
-
-################################################################################
 Module MOrder;
 
 Сравнение по типам:
@@ -603,6 +694,31 @@ e.Terms != empty
 
 <Min e.Terms> == t.MinTerm
 e.Terms != empty
+
+################################################################################
+Module MOS;
+
+<System e.Command>
+  == empty
+
+<Arg s.Number>
+  == e.Arg
+  == empty
+
+<ArgList>
+  == (e.Argument)*
+
+<ProgName> == e.ProgName
+
+<Exit s.RetCode>
+  завершение программы
+
+<EnvList>
+  == (e.VariableName)*
+
+<Env e.Name>
+  == e.Value
+  == empty
 
 ################################################################################
 Module MParser_Common;
@@ -688,9 +804,6 @@ Module MQualifiedName;
 <Append t.QualifiedAcceptor t.QualifiedForAppend>
   == t.UpdatedQualifierAcceptor
 
-<Append-T t.QualifiedAcceptor t.QualifiedForAppend>
-  == t.UpdatedQualifierAcceptor t.QualifierForAppend
-
 ---------------------------------------------------------------------------
 
 <Parse t.QualifiedName>
@@ -752,6 +865,17 @@ Module MResolveTable;
 e.ValidScopes ::= s.ScopeClass*
 
 ################################################################################
+Module MSelfDiag;
+
+<Assert-??-T (e.Result) (e.Expected) [e.Message]>
+  == e.Result
+  fail down
+
+<Assert-?? (e.Result) (e.Expected) [e.Message]>
+  == empty
+  fail down
+
+################################################################################
 Module MStartupSeqGenerator;
 
 <GetFnList t.hContext e.ModuleList>
@@ -765,23 +889,130 @@ e.ModuleList = t.ModuleName*
   == t.StartInfo t.Context
 
 ################################################################################
+Module MStrings;
+
+<Upper e.Text> == e.UpperText
+<Lower e.Text> == e.LowerText
+
+<Length e.Expr> == s.Length
+<Length e.Expr> == s.Length e.Expr
+
+<First-Parse s.Count e.Expr> ==
+  (e.First) e.Tail
+
+<First s.Count e.Expr> == e.Truncate
+
+<Skip s.Count e.Expr> == e.Truncated
+
+<At s.Index e.Expr> == t.ElemAt
+Нумерация начинается с нуля.
+
+<Seq s.NFirst s.NLast>
+  == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
+s.NFirst и s.NLast -- числа,
+при чём должно быть s.NFirst <= s.NLast
+
+<Reverse e.Line> == e.eniL
+
+<Repeat s.Num e.Expr>
+  == e.Expr e.Expr ... e.Expr
+<Length <Repeat s.Num e.Expr>> == s.Num
+s.Num >= 0
+
+<Fields (e.Fields) e.Line>
+  == (e.SubField)*
+e.Fields = s<num>*
+
+<Decart ( t.ElemA* ) ( t.ElemB* )>
+  == (t.ElemA t.ElemB)*
+
+Пример:
+<Decart (1 2 3) (A B C D)> ==
+  (1 A) (1 B) (1 C) (1 D)
+  (2 A) (2 B) (2 C) (2 D)
+  (3 A) (3 B) (3 C) (3 D)
+
+<Unique e.Elems> == e.Set
+
+<Set-Intersect (e.Set1) (e.Set2)>
+  == e.Set1*Set2
+
+<Set-Difference (e.Set1) (e.Set2)>
+  == e.Set1-Set2
+
+################################################################################
+Module MSwapSupport;
+=============================================================================
+Модуль предоставляет функции для наиболее распространённых функций с
+динамическими ящиками: чтение, запись, добавление терма в начало/конец,
+чтение терма с начала/конца, операции с копилкой.
+==============================================================================
+
+<Read s.FnSwap>
+	== e.Content
+Содержимое ящика не изменяется.
+
+<Write s.FnSwap e.NewContent>
+	== empty
+Ящик получает значение e.NewContent
+
+<PushFront s.FnSwap t.Info>
+	== empty
+Эквивалентно <s.FnSwap t.Info <s.FnSwap>>
+
+<PushBack s.FnSwap t.Info>
+	== empty
+Эквивалентно <s.FnSwap <s.FnSwap> t.Info>
+
+<PopFront s.FnSwap>
+	== Success t.Value
+	== Fails
+Если <s.FnSwap> :: t.Value e.Content То
+	<s.FnSwap e.Content>
+	Success t.Value
+Иначе
+	Fails
+
+<PopBack s.FnSwap>
+	== Success t.Value
+	== Fails
+См. описание функции PopFront.
+
+<Br s.FnSwap e.Key '=' e.Value> == empty
+
+<Bury s.FnSwap (e.Key) e.Value> == empty
+
+<Dg s.FnSwap e.Key> == e.Value
+
+<Cp s.FnSwap e.Key> == e.Value
+
+<Rp s.FnSwap e.Key '=' e.Value> == empty
+
+<Replace s.FnSwap (e.Key) e.Value> == empty
+
+<Dgall s.FnSwap> == (e.Key '=' e.Value)*
+
+<DigAll s.FnSwap> == ((e.Key) e.Value)*
+
+<Cpall s.FnSwap> == (e.Key '=' e.Value)*
+
+<CopyAll s.FnSwap> == ((e.Key) e.Value)*
+
+################################################################################
 Module MSymModule;
 
 Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
 на диск, кеширование внутри контекста.
 
-<LoadInfo t.Context e.ModuleName>
-  == t.UpdatedContext
-    ( Module e.ModuleName )
-    ( Functions ((e.Qualifier)(e.FnName))* )
-    ( Imports (e.ModName)* )
-  == t.Context SymInfoNotFound
+<LoadInfo t.Context t.ModuleName>
+  == t.Context Success t.IModule
+  == t.Context Fails
+t.ModuleName ::= t.QualifiedName
 
-<SymTableToSymInfo-T t.IModule>
-  == t.IModule
-    ( CurModule e.ModName )
-    ( Functions (e.FnName)* )
-    ( Imports (e.ModName)* )
+<SymReduce-T t.hIModule>
+  == t.hIModule t.hISymModule
+
+<SymReduce t.hIModule> == t.hISymModule
 
 ################################################################################
 Module MSymStream;

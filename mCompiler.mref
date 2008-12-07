@@ -10,8 +10,7 @@ $IMPORT MLambda;
 $IMPORT MModules;
 $IMPORT MResolveTable;
 $IMPORT MResolver;
-$IMPORT MStrings;
-$IMPORT MSymModule = MSymModule_New;
+$IMPORT MSymModule;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 
@@ -560,7 +559,7 @@ Parse-SelectFE {
 
   t.hErrorList t.ModuleName t.hContext Known s.FEName e.Path =
     t.hContext
-    <MFE-Mgr::Load_New s.FEName t.hErrorList t.ModuleName e.Path>;
+    <MFE-Mgr::Load s.FEName t.hErrorList t.ModuleName e.Path>;
 
   t.hErrorList t.ModuleName t.hContext UnKnown =
     t.hContext t.hErrorList Fails;

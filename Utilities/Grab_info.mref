@@ -1,4 +1,4 @@
-$MODULE Grab_info;
+$PROGRAM Grab_info;
 
 $IMPORT FileIO;
 $IMPORT InOut;

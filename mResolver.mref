@@ -4,7 +4,6 @@ $IMPORT MError;
 $IMPORT MLambda;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
-$IMPORT MQualifiedSupport;
 $IMPORT MResolveTable;
 
 /**
@@ -161,10 +160,7 @@ AddAlias-Aux
   t.IModule Found t.RealName =
     (
       <MResolveTable::Add
-        t.ResolveTable t.AliasName ModuleAlias
-        <MQualifiedName::Create
-          (<MQualifiedSupport::LastSegment t.RealName>)
-        >
+        t.ResolveTable t.AliasName ModuleAlias t.RealName
       >
       t.IModule
     );
@@ -521,8 +517,7 @@ SwResolvingQualified {
   ( ('!' s.BracketType e.LMultiBracket) )
   e.Argument ('!' s.BracketType e.RMultiBracket) =
     <MError::AddUnresolvedFunction
-      t.ErrorList t.SrcPos GenericQualified
-      <MQualifiedName::Parse t.UnresolvedQualified>
+      t.ErrorList t.SrcPos t.UnresolvedQualified
     > t.ResolveTable
     (e.ResolvedSentences)
     ( ('!' Structure e.LMultiBracket) )

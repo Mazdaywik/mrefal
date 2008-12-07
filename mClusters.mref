@@ -16,7 +16,7 @@ $IMPORT MModules;
 $IMPORT MOrder;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
-$IMPORT MSymModule_New;
+$IMPORT MSymModule;
 
 //------------------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ DependencesList-SwAvail {
 DependencesList-OnAvail
   t.hContext t.ModuleName =
     <DependencesList-OnAvail-Aux
-      <MSymModule_New::LoadInfo t.hContext t.ModuleName>
+      <MSymModule::LoadInfo t.hContext t.ModuleName>
     >;
 
 DependencesList-OnAvail-Aux {
@@ -287,7 +287,7 @@ CheckNeedCompile-ScanResults {
       t.ModuleName
       <MLambda::MapReduce
         <MLambda::Composite
-          & GetLastTime
+          & GetTime
           & MLambda.Bracket-H
         >
         t.hContext
@@ -317,18 +317,19 @@ CheckNeedCompile-CompareTimes {
     t.hContext t.ModuleName NeedRecompile;
 
   t.ModuleName t.hContext
-  e.Times-B ( Known FullComplect SrcModified e.Time ) e.Times-E =
+  e.Times-B ( Known FullComplect SrcModified (e.MinTime) (e.MaxTime) ) e.Times-E =
     t.hContext t.ModuleName NeedRecompile;
 
-  t.ModuleName t.hContext ( Known FullComplect SrcNotModified e.SrcTime )
+  t.ModuleName t.hContext
+  ( Known FullComplect SrcNotModified (e.MinSrcTime) (e.MaxSrcTime) )
   e.DependedTimes =
     <CheckNeedCompile-SwCompareTimes
       t.ModuleName t.hContext
       <MLambda::Map
         <MLambda::Composite
-          <MLambda::BindLeft & MStrings.Skip 3>
-          & MLambda.Bracket
-          <MLambda::BindLeft & MOrder.Compare (e.SrcTime)>
+          & MLambda.UnBracket
+          <MLambda::BindLeft & MStrings.Skip 4>
+          <MLambda::BindLeft & MOrder.Compare (e.MaxSrcTime)>
         >
         e.DependedTimes
       >
@@ -432,7 +433,7 @@ CheckNeedCompileOne-Aux {
   t.ModuleName t.hContext Found s.FrontEnd e.BaseDirectory =
     <CheckNeedCompileOne-SwGetLastTime
       t.ModuleName
-      <GetLastTime t.hContext t.ModuleName>
+      <GetTime t.hContext t.ModuleName>
     >;
 
   t.ModuleName t.hContext NotFound =
@@ -440,13 +441,16 @@ CheckNeedCompileOne-Aux {
 }
 
 CheckNeedCompileOne-SwGetLastTime {
-  t.ModuleName t.hContext Known FullComplect SrcModified e.Time =
+  t.ModuleName t.hContext
+  Known FullComplect SrcModified (e.MinTime) (e.MaxTime) =
     t.hContext t.ModuleName NeedRecompile;
 
-  t.ModuleName t.hContext Known FullComplect SrcNotModified e.Time =
+  t.ModuleName t.hContext
+  Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime) =
     t.hContext t.ModuleName LocalUpdated;
 
-  t.ModuleName t.hContext Known FullComplect Library e.Time =
+  t.ModuleName t.hContext
+  Known FullComplect Library (e.MinTime) (e.MaxTime) =
     t.hContext t.ModuleName Library;
 
   t.ModuleName t.hContext Known PartialComplect =
@@ -470,8 +474,8 @@ CheckNeedCompileOne-SwGetLastTime {
 //------------------------------------------------------------------------------
 
 /*
-  <GetLastTime t.hContext t.ModuleName>
-    == t.hContext Known FullComplect s.Updated e.Time
+  <GetTime t.hContext t.ModuleName>
+    == t.hContext Known FullComplect s.Updated (e.MinTime) (e.MaxTime)
     == t.hContext Known PartialComplect
     // в случае, если Status_NEW ::= SuccessCompiled | NeedRecompile | Errors
     == t.hContext NeedNotTime s.Reason
@@ -479,7 +483,7 @@ CheckNeedCompileOne-SwGetLastTime {
   s.Updated ::= SrcModified | SrcNotModified | Library
   s.Reason ::= SuccessCompiled | NeedRecompile | Errors
 */
-GetLastTime
+GetTime
   t.hContext t.ModuleName =
     <GetLastTime-SwKnown
       t.ModuleName
@@ -496,7 +500,7 @@ GetLastTime
             & MLambda.Bracket-H
           >
           <MLambda::Composite
-            <MLambda::BindRight & MContext.ExtractOption t.ModuleName LastTime>
+            <MLambda::BindRight & MContext.ExtractOption t.ModuleName MinMaxTime>
             & MLambda.Bracket-H
           >
         >
@@ -518,11 +522,11 @@ GetLastTime-SwKnown {
     t.hContext NotKnown;
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found SuccessCompiled ) ( Found e.Time ) =
+  ( Found s.ModuleType ) ( Found SuccessCompiled ) ( Found e.?Time ) =
     t.hContext NeedNotTime SuccessCompiled;
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found NeedRecompile ) ( Found e.Time ) =
+  ( Found s.ModuleType ) ( Found NeedRecompile ) ( Found e.?Time ) =
     t.hContext NeedNotTime NeedRecompile;
 
   t.ModuleName t.hContext
@@ -549,24 +553,24 @@ GetLastTime-SwKnown {
     >;
 
   t.ModuleName t.hContext
-  ( Found s.Type ) ( Found SuccessUpdated ) ( Found e.Time ) =
-    t.hContext Known FullComplect SrcNotModified e.Time;
+  ( Found s.Type ) ( Found SuccessUpdated ) ( Found (e.MinTime) (e.MaxTime) ) =
+    t.hContext Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found Library ) ( Found s.Status ) ( Found e.Time ) =
-    t.hContext Known FullComplect Library e.Time;
+  ( Found Library ) ( Found s.Status ) ( Found (e.MinTime) (e.MaxTime) ) =
+    t.hContext Known FullComplect Library (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found Source ) ( Found LocalUpdated ) ( Found e.Time ) =
-    t.hContext Known FullComplect SrcNotModified e.Time;
+  ( Found Source ) ( Found LocalUpdated ) ( Found (e.MinTime) (e.MaxTime) ) =
+    t.hContext Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found Source ) ( Found GlobalUpdated ) ( Found e.Time ) =
-    t.hContext Known FullComplect SrcNotModified e.Time;
+  ( Found Source ) ( Found GlobalUpdated ) ( Found (e.MinTime) (e.MaxTime) ) =
+    t.hContext Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found s.Status ) ( Found e.Time ) =
-    t.hContext Known FullComplect SrcModified e.Time;
+  ( Found s.ModuleType ) ( Found s.Status ) ( Found (e.MinTime) (e.MaxTime) ) =
+    t.hContext Known FullComplect SrcModified (e.MinTime) (e.MaxTime);
 }
 
 GetLastTime-CalcTime {
@@ -578,7 +582,7 @@ GetLastTime-CalcTime {
     <GetLastTime-MakeResult-Library
       t.ModuleName Library t.hContext
       // Наличие не проверяем -- для библиотеки все файлы должны быть найдены.
-      <MOrder::Min
+      <MOrder::Sort
         <MLambda::Map
           <MLambda::Composite
             & MLambda.UnBracket
@@ -608,14 +612,14 @@ GetLastTime-CalcTime {
 }
 
 GetLastTime-MakeResult-Library
-  t.ModuleName Library t.hContext (e.LastTime) =
+  t.ModuleName Library t.hContext (e.MinTime) e.Times (e.MaxTime) =
     <GuardUpdateContext
       <MContext::UpdateInfo
         t.hContext t.ModuleName
-        (LastTime e.LastTime)
+        (MinMaxTime (e.MinTime) (e.MaxTime))
       >
     >
-    Known FullComplect Library e.LastTime;
+    Known FullComplect Library (e.MinTime) (e.MaxTime);
 
 GetLastTime-CheckExists {
   // Предполагаем, что файл исходного текста присутствует.
@@ -639,7 +643,7 @@ GetLastTime-CheckExists {
   t.ModuleName t.hContext (e.SrcTime) e.BackEnds =
     <GetLastTime-OutsTime
       t.ModuleName t.hContext (e.SrcTime)
-      <MOrder::Min
+      <MOrder::Sort
         <MLambda::Map
           <MLambda::Composite
             & MLambda.UnBracket
@@ -661,33 +665,33 @@ GetLastTime-OutsTime {
       t.ModuleName t.hContext (e.SrcTime) FileNotFound
     >;
 
-  t.ModuleName t.hContext (e.SrcTime) (e.MinOutTime) =
+  t.ModuleName t.hContext (e.SrcTime) (e.MinTime) e.Times (e.MaxTime) =
     <GetLastTime-Compare
-      t.ModuleName t.hContext
-      <MOrder::Compare-T (e.SrcTime) (e.MinOutTime)>
+      t.ModuleName t.hContext (e.MaxTime)
+      <MOrder::Compare-T (e.SrcTime) (e.MinTime)>
     >;
 }
 
 GetLastTime-Compare {
-  t.ModuleName t.hContext '<' (e.SrcTime) (e.MinOutTime) =
+  t.ModuleName t.hContext (e.MaxTime) '<' (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
       <MContext::UpdateInfo
         t.hContext t.ModuleName
-        (LastTime e.SrcTime)
+        (MinMaxTime (e.SrcTime) (e.MaxTime))
         (Status_NEW LocalUpdated)
       >
     >
-    Known FullComplect SrcNotModified e.SrcTime;
+    Known FullComplect SrcNotModified (e.SrcTime) (e.MaxTime);
 
-  t.ModuleName t.hContext s.OtherOrder (e.SrcTime) (e.MinOutTime) =
+  t.ModuleName t.hContext (e.MaxTime) s.OtherOrder (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
       <MContext::UpdateInfo
         t.hContext t.ModuleName
-        (LastTime e.MinOutTime)
+        (MinMaxTime (e.MinTime) (e.MaxTime))
         (Status_NEW NeedRecompile)
       >
     >
-    Known FullComplect SrcModified e.MinOutTime;
+    Known FullComplect SrcModified (e.MinTime) (e.MaxTime);
 }
 
 //------------------------------------------------------------------------------

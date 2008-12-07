@@ -1,0 +1,382 @@
+$MODULE TODO_list;
+
+$IMPORT FileIO;
+$IMPORT InOut;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MStrings;
+$IMPORT MUtilitiesBanner;
+
+$ENTRY Go =
+  <MUtilitiesBanner::Type 'TODO_list'>
+  <Main <MOS::ArgList>>;
+
+Main {
+  (e.ProgName) e.Arguments =
+    <ParseArguments ((ProgName e.ProgName)) e.Arguments>;
+}
+
+ParseArguments {
+  ((ProgName e.ProgName) e.Options-B (ToDoFile e.ToDoFile) e.Options-E)
+  ( '=TODO:' e.FileName ) e.Tail =
+    <Usage e.ProgName>;
+
+  ((ProgName e.ProgName) e.Options)
+  ( '=TODO:' e.ToDoFile' ) e.Tail =
+    <ParseArguments
+      ((ProgName e.ProgName)
+        e.Options
+        (ToDoFile <MStrings::Trim e.ToDoFile>)
+      )
+      e.Tail
+    >;
+
+  ((ProgName e.ProgName) e.Options-B (DoneFile e.DoneFile) e.Options-E)
+  ( '=DONE:' e.FileName ) e.Tail =
+    <Usage e.ProgName>;
+
+  ((ProgName e.ProgName) e.Options)
+  ( '=DONE:' e.DoneFile ) e.Tail =
+    <ParseArguments
+      ((ProgName e.ProgName)
+        e.Options
+        (DoneFile <MStrings::Trim e.DoneFile>)
+      )
+      e.Tail
+    >;
+
+  ((ProgName e.ProgName) e.Options-B (SrcFile e.SrcFile) e.Options-E)
+  ( '=SRC:' e.FileName ) e.Tail =
+    <Usage e.ProgName>;
+
+  ((ProgName e.ProgName) e.Options)
+  ( '=SRC:' e.SrcFile ) e.Tail =
+    <ParseArguments
+      ((ProgName e.ProgName)
+        e.Options
+        (SrcFile <MStrings::Trim e.SrcFile>)
+      )
+      e.Tail
+    >;
+
+  ((ProgName e.ProgName) e.Options-B (SrcFile e.SrcFile) e.Options-E) =
+    <RestoreMissing-Todo
+      ((ProgName e.ProgName) (SrcFile e.SrcFile)) e.Options
+    >;
+
+  ((ProgName e.ProgName) e.OtherOptions) =
+    <Usage e.ProgName>;
+}
+
+Usage
+  e.ProgName =
+    <InOut::WriteText
+      ('Usage:')
+      ('  ' e.ProgName ' =SRC:srcfile [=TODO:todofile] [=DONE:donefile]')
+    >;
+
+RestoreMissing-Todo {
+  ((ProgName e.ProgName) (SrcFile e.SrcFile))
+  e.Options-B (ToDoFile e.ToDoFile) e.Options-E =
+    <RestoreMissing-Done
+      ((ProgName e.ProgName) (SrcFile e.SrcFile) (ToDoFile e.ToDoFile))
+      e.Options-B e.Options-E
+    >;
+
+  ((ProgName e.ProgName) (SrcFile e.SrcFile)) e.Options =
+    <RestoreMissing-Done
+      ((ProgName e.ProgName)
+        (SrcFile e.SrcFile)
+        (ToDoFile 'TODOs.txt')
+      )
+      e.Options
+    >;
+}
+
+RestoreMissing-Done {
+  (e.Options) (DoneFile e.DoneFile) =
+    <ProcessTags
+      e.Options (DoneFile e.DoneFile)
+    >;
+
+  (e.Options) =
+    <ProcessTags
+      e.Options (DoneFile 'DONEs.txt')
+    >;
+}
+
+ProcessTags {
+  (ProgName e.ProgName)
+  (SrcFile e.SrcFile) (ToDoFile e.ToDoFile) (DoneFile e.DoneFile) =
+    <OutputInfo
+      (ProgName e.ProgName) (ToDoFile e.ToDoFile) (DoneFile e.DoneFile)
+      <Parse e.SrcFile>
+    >;
+}
+
+Parse
+  e.SrcFile =
+    <Parse-SwLinesProcessed
+      <MLambda::Map
+        & AnalyzeLine <FileIO::Load e.SrcFile>
+      >
+    >;
+
+AnalyzeLine
+  e.Line =
+    <AnalyzeLine-SwType
+      (e.Line) <MStrings::Trim e.Line>
+    >;
+
+AnalyzeLine-SwType {
+  // Дата формата [дд.мм.гггг - (ч)ч:мм:сс,сс]
+  (e.Line) '[' e.Date ' - ' e.Time ']' =
+    (Date '[' e.Date ' - ' e.Time ']');
+
+  (e.Line) '[' e.Tag ':' e.Description ']' =
+    (Tag
+      <SwitchTag <MStrings::Trim e.Tag>>
+      <MStrings::Trim e.Descriptions>
+    );
+
+  (e.Line) e.OtherLine =
+    (Line e.Line);
+}
+
+SwitchTag {
+  'TODO' = ToDo;
+  'DONE' = Done;
+  'TOTHINK' = ToThink;
+  'THINKED' = Thinked;
+  'ERROR' = Error;
+  'FIXED' = Fixed;
+  'CHANGED' = Changed;
+
+  e.UnknownTag =
+    BadTag 'Unknown tag [' e.UnknownTag '] '
+}
+
+/*ChangeTable {
+  t.TagTable ('TODO') e.Description =
+    <Add_TODO t.TagTable e.Description>;
+
+  t.TagTable ('DONE') e.Description =
+    <Add_DONE t.TagTable e.Description>;
+
+  t.TagTable ('ERROR') e.Description =
+    <Add_ERROR t.TagTable e.Description>;
+
+  t.TagTable ('FIXED') e.Description =
+    <Add_FIXED t.TagTable e.Description>;
+
+  t.TagTable ('CHANGED') e.Description =
+    <Add_CHANGED t.TagTable e.Description>;
+
+  t.TagTable (e.UnknownTag) e.Description =
+    <Add_BAD-TAG
+      t.TagTable 'Unknown tag [' e.UnknownTag '] ' e.Description
+    >;
+}*/
+
+
+
+//------------------------------------------------------------------------------
+
+Main_ {
+  (e.?ProgName) (e.FileForScan) =
+    <ExtractTags
+      ('TODOs.txt')
+      (e.FileForScan)
+      <FileIO::Load e.FileForScan>
+    >;
+
+  (e.?ProgName) (e.FileForScan) (e.OutputFile) =
+    <ExtractTags
+      (e.OutputFile)
+      (e.FileForScan)
+      <FileIO::Load e.FileForScan>
+    >;
+
+  (e.Progname) e.?Other =
+    <InOut::WriteLine 'usage: ' e.Progname ' changes_file.txt'>;
+}
+
+ExtractTags
+  (e.OutName) (e.FileForScan)
+  e.FileContent =
+    <SaveInfo
+      (e.OutName)
+      (e.FileForScan)
+      <DoExtractTags
+        <CreateTagTable>
+        e.FileContent
+      >
+    >;
+
+DoExtractTags {
+  t.TagTable (e.NextLine) e.Lines =
+    <DoExtractTags
+      <FindTag t.TagTable <Trim e.NextLine>>
+      e.Lines
+    >;
+
+  t.TagTable = t.TagTable;
+}
+
+FindTag {
+  // Дата формата [дд.мм.гггг - (ч)ч:мм:сс,сс] -- игнорируем
+  t.TagTable '[' e.Date ' - ' e.Time ']' =
+    t.TagTable;
+
+  t.TagTable '[' e.Tag ':' e.Description ']' =
+    <ChangeTable t.TagTable (<Trim e.Tag>) <Trim e.Description>>;
+
+  t.TagTable e.OtherLine = t.TagTable;
+}
+
+ChangeTable {
+  t.TagTable ('TODO') e.Description =
+    <Add_TODO t.TagTable e.Description>;
+
+  t.TagTable ('DONE') e.Description =
+    <Add_DONE t.TagTable e.Description>;
+
+  t.TagTable ('ERROR') e.Description =
+    <Add_ERROR t.TagTable e.Description>;
+
+  t.TagTable ('FIXED') e.Description =
+    <Add_FIXED t.TagTable e.Description>;
+
+  t.TagTable ('CHANGED') e.Description =
+    <Add_CHANGED t.TagTable e.Description>;
+
+  t.TagTable (e.UnknownTag) e.Description =
+    <Add_BAD-TAG
+      t.TagTable 'Unknown tag [' e.UnknownTag '] ' e.Description
+    >;
+}
+
+Trim {
+  '\t' e.Line = <Trim e.Line>;
+  ' ' e.Line = <Trim e.Line>;
+  e.Line = <TrimLast e.Line>;
+}
+
+TrimLast {
+  e.Line '\t' = <TrimLast e.Line>;
+  e.Line ' ' = <TrimLast e.Line>;
+  e.Line = e.Line;
+}
+
+*-------------------------------------------------------------------------------
+* Таблица тегов
+*-------------------------------------------------------------------------------
+
+CreateTagTable = ( );
+
+Add_TODO {
+  // Повторное TODO. Удаляем предыдущее, это помещаем в конец.
+  ( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
+    ( e.Tags-B e.Tags-E (TODO e.ToDo-Name) );
+
+  ( e.Tags ) e.ToDo-Name =
+    ( e.Tags (TODO e.ToDo-Name) );
+}
+
+Add_DONE {
+  // Удаляем соответствующее TODO
+  ( e.Tags-B (TODO e.ToDo-Name) e.Tags-E ) e.ToDo-Name =
+    ( e.Tags-B e.Tags-E );
+
+  // Соответствующий TODO отсутствует, добавляем как BAD-TAG
+  ( e.Tags ) e.Done-Name =
+    <Add_BAD-TAG ( e.Tags ) 'Widow DONE: ' e.Done-Name>;
+}
+
+Add_BAD-TAG {
+  ( e.Tags ) e.BadTag =
+    ( e.Tags (BAD-TAG e.BadTag) );
+}
+
+Add_ERROR {
+  // Повторное вхождение. Предыдущее удаляем, новое переносим в конец.
+  ( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
+    ( e.Tags-B e.Tags-E (ERROR e.Error-Name) );
+
+  ( e.Tags ) e.Error-Name =
+    ( e.Tags (ERROR e.Error-Name) );
+}
+
+Add_FIXED {
+  // Удаляем соответствующую ошибку
+  ( e.Tags-B (ERROR e.Error-Name) e.Tags-E ) e.Error-Name =
+    ( e.Tags-B e.Tags-E );
+
+  // Повторно не добавляем
+  ( e.Tags-B (FIXED e.Fixed-Name) e.Tags-E ) e.Fixed-Name =
+    ( e.Tags-B (FIXED e.Fixed-Name) e.Tags-E );
+
+  // Соответствующая ошибка отсутствует, добавляем как FIXED
+  ( e.Tags ) e.Fixed-Name =
+    ( e.Tags (FIXED e.Fixed-Name) );
+}
+
+Add_CHANGED {
+  // Повторно не добавляем
+  ( e.Tags-B (CHANGED e.Changed-Name) e.Tags-E ) e.Changed-Name =
+    ( e.Tags-B (CHANGED e.Changed-Name) e.Tags-E );
+
+  ( e.Tags-B ) e.Changed-Name =
+    ( e.Tags-B (CHANGED e.Changed-Name) );
+}
+
+SaveInfo
+  (e.OutName) (e.FileForScan) ( e.Tags ) =
+    <FileIO::Save
+      (e.OutName)
+      ('\tСписок актуальных задач из ' e.FileForScan)
+      ()
+      <OutTagList
+        <FilterTODO e.Tags>
+      >
+    >;
+
+FilterTODO {
+  (TODO e.Description) e.Tail =
+    (TODO e.Description)
+    <FilterTODO e.Tail>;
+
+  (ERROR e.Description) e.Tail =
+    (ERROR e.Description)
+    <FilterTODO e.Tail>;
+    
+  (BAD-TAG e.Description) e.Tail =
+    (BAD-TAG e.Description)
+    <FilterTODO e.Tail>;
+
+  (s.?OtherType e.?Description) e.Tail =
+    <FilterTODO e.Tail>;
+
+  = ;
+}
+
+OutTagList {
+  (s.Type e.Description) e.Tail =
+    ( <TypeLine s.Type e.Description> )
+    <OutTagList e.Tail>;
+
+  = ;
+}
+
+TypeLine {
+  s.Type e.Description =
+    '\t[' <TypeType s.Type> '] ' e.Description;
+}
+
+// Печатать тип
+TypeType {
+  TODO = 'TODO'; BAD-TAG = 'BAD-TAG'; ERROR = 'ERROR';
+  FIXED = 'FIXED'; CHANGED = 'CHANGED';
+}
+
+$END TODO_list.

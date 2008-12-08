@@ -66,7 +66,10 @@ LoadInfo-Aux {
   t.hContext Success t.hIModule =
     <LoadInfo-DeleteIModule
       t.hContext
-      <MIModule::GetFunctionList-Q t.hIModule>
+      <MLambda::MapReduce
+        & MIModule.AbsolutName
+        <MIModule::GetFunctionList t.hIModule>
+      >
     >;
 
   /*

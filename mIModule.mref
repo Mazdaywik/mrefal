@@ -60,6 +60,8 @@ $ENTRY GetModuleName
     [IModule (Name e.ParsedName) t.SymTable]
     <MQualifiedName::Create e.ParsedName>;
 
+//------------------------------------------------------------------------------
+
 /**
   <AbsolutName t.hIModule t.RelativeName>
     == t.hIModule t.AbsolutName
@@ -74,6 +76,8 @@ AbsolutName-Aux
   t.hIModule t.ModuleName t.RelativeName =
     t.hIModule
     <MQualifiedName::Append t.ModuleName t.RelativeName>;
+
+//------------------------------------------------------------------------------
 
 /**
   <RelativeName t.hIModule t.AbsolutName>
@@ -124,46 +128,19 @@ CheckUpdateModule {
 
 /**
   <UpdateFunction
-    t.IModule
-    (e.FunctionName)
-    (s.Attrib e.Value)*
-  >
-    == t.IModule s.Status
-
-  s.Status ::=
-    Success | InvalidKind | InvalidAttrib | InvariantError
-*/
-$ENTRY UpdateFunction
-  t.IModule (e.FnName) e.Attribs =
-    <UpdateEntity_NoQualified
-      t.IModule Function ((e.FnName)) e.Attribs
-    >;
-
-/**
-  <UpdateFunction-Q
     t.hIModule
     t.FunctionName
     (s.Attrib e.Value)
   >
     == t.hIModule s.Status
 */
-$ENTRY UpdateFunction-Q
+$ENTRY UpdateFunction
   t.hIModule t.FunctionName e.Attribs =
-    <UpdateEntity
+    <UpdateEntity-Relative
       t.hIModule Function ( <MQualifiedName::Parse t.FunctionName> ) e.Attribs
     >;
 
 //------------------------------------------------------------------------------
-
-/**
-  <UpdateImport t.hIModule t.Import e.Attribs>
-    == t.hIModule s.Status
-*/
-$ENTRY UpdateImport
-  t.hIModule t.Import e.Attribs =
-    <UpdateEntity_NoQualified
-      t.hIModule ImportName ( <MQualifiedName::Parse t.Import> ) e.Attribs
-    >;
 
 /**
   <UpdateImport-X
@@ -175,28 +152,68 @@ $ENTRY UpdateImport
 $ENTRY UpdateImport-X
   t.hIModule
   (Position t.Position) (RealName t.RealName) (AliasName t.AliasName) =
-    ;
+    <UpdateImport-X-Aux
+      t.hIModule (Position t.Position)
+      (RealName <MQualifiedName::Parse-T t.RealName>)
+      (AliasName <MQualifiedName::Parse t.AliasName>)
+    >;
+
+UpdateImport-X-Aux
+  [IModule (Name e.ModName) t.SymTable]
+  (Position t.Position)
+  (RealName t.RealName e.RealNameSegments)
+  (AliasName e.AliasNameSegments) =
+    <UpdateImport-X-Aux-UpdateRealName
+      <UpdateEntity
+        [IModule (Name e.ModName) t.SymTable] ImportAlias
+        (e.ModName e.AliasNameSegments)
+        (Position t.Position)
+        (RealName t.RealName)
+        (AliasName <MQualifiedName::Create e.ModName e.AliasNameSegments>)
+      >
+      (Position t.Position)
+      (RealName t.RealName e.RealNameSegments)
+      (AliasName
+        <MQualifiedName::Create e.ModName e.AliasNameSegments>
+      )
+    >;
+
+UpdateImport-X-Aux-UpdateRealName {
+  t.hIModule Success (Position t.Position)
+  (RealName t.RealName e.RealNameSegments)
+  (AliasName t.AliasName) =
+    <UpdateEntity
+      t.hIModule ImportName
+      ( e.RealNameSegments )
+      (Position t.Position)
+      (RealName t.RealName)
+      (AliasName t.AliasName)
+    >;
+
+  t.hIModule s.Error e.Attributes =
+    t.hIModule s.Error;
+}
 
 //------------------------------------------------------------------------------
 
 /**
-  <UpdateADT t.IModule (e.Name) e.Attribs>
+  <UpdateADT t.IModule t.Name e.Attribs>
     == t.IModule s.Status
 */
 $ENTRY UpdateADT
-  t.IModule (e.Name) e.Attribs =
-    <UpdateEntity_NoQualified
-      t.IModule ADT ((e.Name)) e.Attribs
+  t.IModule t.Name e.Attribs =
+    <UpdateEntity-Relative
+      t.IModule ADT (<MQualifiedName::Parse t.Name>) e.Attribs
     >;
 
 //------------------------------------------------------------------------------
 
 /**
-  <UpdateEntity_NoQualified
+  <UpdateEntity-Relative
     t.IModule s.Kind (e.ParsedName) e.Attribs
   >
 */
-UpdateEntity_NoQualified
+UpdateEntity-Relative
   [IModule (Name e.ModName) t.SymTable]
   s.Kind (e.Name) e.Attribs =
     <UpdateEntity
@@ -335,42 +352,38 @@ CheckGetAttribModule {
 //------------------------------------------------------------------------------
 
 /**
-  <GetFucntionAttribute t.IModule s.Attrib e.FnName>
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
-
-  s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
-*/
-$ENTRY GetFunctionAttribute {
-  t.IModule s.Attrib e.FnName =
-    <GetEntityAttribute_NoQualified
-      t.IModule Function s.Attrib (e.FnName)
-    >;
-}
-
-/**
-  <GetFunctionAttrubute-Q t.hIModule s.Attrib t.FnName>
+  <GetFunctionAttrubute t.hIModule s.Attrib t.FnName>
     == t.hIModule Found e.Value
     == t.hIModule s.ErrorStatus
 */
-$ENTRY GetFunctionAttribute-Q
+$ENTRY GetFunctionAttribute
   t.hIModule s.Attrib t.FnName =
-    <GetEntityAttribute
+    <GetEntityAttribute-Relative
       t.hIModule Function s.Attrib <MQualifiedName::Parse t.FnName>
     >;
 
 //------------------------------------------------------------------------------
 
 /**
-  <GetImportAttribute t.IModule s.Attrib t.Import>
-    == t.IModule Found e.Value
-    == t.IModule s.ErrorStatus
+  <GetImportAttribute-RealName t.hIModule s.Attrib t.Import>
+    == t.hIModule Found e.Value
+    == t.hIMoudle s.ErrorStatus
 */
-$ENTRY GetImportAttribute
-  t.IModule s.Attrib t.Import =
-    <GetEntityAttribute_NoQualified
-      t.IModule ImportName s.Attrib
-      <MQualifiedName::Parse t.Import>
+$ENTRY GetImportAttribute-RealName
+  t.hIModule s.Attrib t.RealName =
+    <GetEntityAttribute
+      t.hIModule ImportName s.Attrib <MQualifiedName::Parse t.RealName>
+    >;
+
+/**
+  <GetImportAttribute-AliasName t.hIModule s.Attrib t.Import>
+    == t.hIModule Found e.Value
+    == t.hIMoudle s.ErrorStatus
+*/
+$ENTRY GetImportAttribute-AliasName
+  t.hIModule s.Attrib t.AliasName =
+    <GetEntityAttribute
+      t.hIModule ImportAlias s.Attrib <MQualifiedName::Parse t.AliasName>
     >;
 
 //------------------------------------------------------------------------------
@@ -381,14 +394,14 @@ $ENTRY GetImportAttribute
     == t.IModule s.ErrorStatus
 */
 $ENTRY GetADTAttribute
-  t.IModule s.Attrib e.Name =
-    <GetEntityAttribute_NoQualified
-      t.IModule ADT s.Attrib (e.Name)
+  t.IModule s.Attrib t.Name =
+    <GetEntityAttribute-Relative
+      t.IModule ADT s.Attrib t.Name
     >;
 
 //------------------------------------------------------------------------------
 
-GetEntityAttribute_NoQualified
+GetEntityAttribute-Relative
   [IModule (Name e.ModName) t.SymTable]
   s.Kind s.Attrib e.Name =
     <GetEntityAttribute
@@ -492,67 +505,59 @@ GetKind-ReturnIModule {
 /**---------------------------------------------------------------------------*/
 
 /**
-  <GetFunctionList t.IModule>
-    == t.IModule (e.FnName)*
-*/
-$ENTRY GetFunctionList
-  t.IModule =
-    <FindEntityByKind_NQ t.IModule Function>;
-
-/**
-  <GetFunctionList-Q t.hIModule>
+  <GetFunctionList t.hIModule>
     == t.hIModule t.FunctionName*
 */
-$ENTRY GetFunctionList-Q
+$ENTRY GetFunctionList
   t.hIModule =
-    <FindEntityByKind t.hIModule Function>;
+    <FindEntityByKind-Relative t.hIModule Function>;
 
 //------------------------------------------------------------------------------
 
 /**
-  <GetImportList t.IModule>
-    == t.IModule t.ImportName*
+  <GetImportList-RealNames t.hIModule>
+    == t.hIModule t.RealImportName*
 */
-$ENTRY GetImportList
-  t.IModule =
-    // Хакерство: MapReduce особым образом работает с первым термом
-    <MLambda::MapReduce
-      & Qualify
-      <FindEntityByKind_NQ t.IModule ImportName>
-    >;
+$ENTRY GetImportList-RealNames
+  t.hIModule =
+    <FindEntityByKind t.hIModule ImportName>;
 
-Qualify {
-  t.IModule (e.NextName) =
-    t.IModule <MQualifiedName::Create (e.NextName)>;
-}
+/**
+  <GetImportList-Aliases t.hIModule>
+    == t.hIModule t.AliasImportName*
+*/
+$ENTRY GetImportList-Aliases
+  t.hIModule =
+    <FindEntityByKind t.hIModule ImportAlias>;
 
 //------------------------------------------------------------------------------
 
 /**
   <GetADTList t.IModule>
-    == t.IModule (e.ADT)*
+    == t.IModule t.ADT*
 */
 $ENTRY GetADTList
   t.IModule =
-    <FindEntityByKind_NQ t.IModule ADT>;
+    <FindEntityByKind-Relative t.IModule ADT>;
 
 //------------------------------------------------------------------------------
 
-FindEntityByKind_NQ
- t.IModule s.Kind =
-   <MLambda::MapReduce
-     <MLambda::Composite
-       <MLambda::MakeHandled
-         & MQualifiedName.Parse
-       >
-       & NotQualified
-     >
-     <FindEntityByKind t.IModule s.Kind>
-   >;
+FindEntityByKind-Relative
+  t.hIModule s.Kind =
+    <MLambda::MapReduce
+      & MakeRelativeName
+      <FindEntityByKind t.hIModule s.Kind>
+    >;
 
-NotQualified
-  [IModule (Name e.ModName) t.SymTable] e.ModName (e.Entity) =
-    [IModule (Name e.ModName) t.SymTable] (e.Entity);
+MakeRelativeName
+  t.hIModule t.AbsolutName =
+    <MakeRelativeName-Aux
+      <RelativeName t.hIModule t.AbsolutName>
+    >;
+
+MakeRelativeName-Aux
+  t.hIModule Success t.RelativeName =
+    t.hIModule t.RelativeName;
 
 FindEntityByKind {
   [IModule (Name e.Name) t.SymTable] s.Kind =

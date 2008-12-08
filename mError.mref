@@ -1,6 +1,8 @@
 $MODULE MError;
 
+$IMPORT FileIO;
 $IMPORT InOut;
+$IMPORT MFileSystem;
 $IMPORT MOS;
 $IMPORT MLambda;
 $IMPORT MLexer;
@@ -31,32 +33,7 @@ $ENTRY LinkError
     <InOut::WriteLine 'LINKER ERROR: ' e.Message>
     <MOS::Exit 1>;
 
-PrintError {
-  LexerError t.SrcPos e.Message =
-    <OutError t.SrcPos ('LEXER') e.Message>;
-
-  LexerUndefined t.SrcPos e.Text =
-    <OutError t.SrcPos ('LEXER') 'undefined text ' e.Text>;
-
-  Unexpected (s.Type t.SrcPos e.Info) e.Expected =
-    <OutError
-      t.SrcPos ('SYNTAX') 'Expected ' e.Expected ', got '
-      <MLexer::TokenToString (s.Type e.Info)>
-    >;
-
-  Semantics t.SrcPos e.Message =
-    <OutError t.SrcPos ('SEMANTICS') e.Message>;
-}
-
-OutError {
-  t.SrcPos (e.Kind) e.Message =
-    <MOutModuleStatus::Flush>
-    <InOut::WriteLine
-      e.Kind ' ERROR ('
-      <MSymStream::SrcPosToString t.SrcPos>
-      '): ' e.Message
-    >;
-}
+//------------------------------------------------------------------------------
 
 $DATA ErrorList;
 
@@ -266,14 +243,16 @@ QualifiedNameToString
 //------------------------------------------------------------------------------
 
 /**
-  <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
+  <AddRedeclaredIdentifier t.ErrorList t.SrcPos t.Identifier>
     == t.UpdatedErrorList
 */
 $ENTRY AddRedeclaredIdentifier
-  t.ErrorList t.SrcPos e.Identifier =
+  t.ErrorList t.SrcPos t.Identifier =
     <AddToList
       t.ErrorList
-      ( Semantics t.SrcPos 'Identifier redeclared ' e.Identifier )
+      ( Semantics t.SrcPos
+        'Identifier redeclared ' <QualifiedNameToString t.Identifier>
+      )
     >;
 
 //------------------------------------------------------------------------------
@@ -330,32 +309,72 @@ $ENTRY AddUnresolvedFunction {
 
 //------------------------------------------------------------------------------
 
-/**
-  <PrintErrorsAndStop t.hErrorList>
-    == fail down (errcode 1)
-*/
-$ENTRY PrintErrorsAndStop
-  t.ErrorList =
-    <PrintErrors t.ErrorList>
-    <MOS::Exit 1>;
-
-//------------------------------------------------------------------------------
+ErrorFile = '__errors';
 
 /**
   <PrintErrors t.hErrorList> == empty
 */
-$ENTRY PrintErrors
+$ENTRY PrintErrors {
+  [ErrorList] =
+    <DelErrorFile-SwExist
+      <MFileSystem::ExistFile-T <ErrorFile>>
+    >;
+
+  t.hErrorList =
+    <MOutModuleStatus::Flush>
+    <FileIO::Save
+      (<ErrorFile>)
+      <TextFromErrors t.hErrorList>
+    >
+    <InOut::WriteText
+      <TextFromErrors t.hErrorList>
+    >;
+}
+
+DelErrorFile-SwExist {
+  True e.ErrorFile =
+    <MOS::System 'del ' e.ErrorFile ' 1>nul 2>nul'>;
+
+  False e.ErrorFile = ;
+}
+
+TextFromErrors
   [ErrorList e.Errors] =
-    <DoPrintErrors
+    <DoTextFromErrors
       <MOrder::Sort e.Errors>
     >;
 
-DoPrintErrors {
+
+DoTextFromErrors {
   (e.Error) e.Errors =
     <PrintError e.Error>
-    <DoPrintErrors e.Errors>;
+    <DoTextFromErrors e.Errors>;
 
   = ;
+}
+
+//------------------------------------------------------------------------------
+
+PrintError {
+  LexerError t.SrcPos e.Message =
+    <OutError t.SrcPos ('LEXER') e.Message>;
+
+  LexerUndefined t.SrcPos e.Text =
+    <OutError t.SrcPos ('LEXER') 'undefined text ' e.Text>;
+
+  Unexpected (s.Type t.SrcPos e.Info) e.Expected =
+    <OutError
+      t.SrcPos ('SYNTAX') 'Expected ' e.Expected ', got '
+      <MLexer::TokenToString (s.Type e.Info)>
+    >;
+
+  Semantics t.SrcPos e.Message =
+    <OutError t.SrcPos ('SEMANTICS') e.Message>;
+}
+
+OutError {
+  t.SrcPos (e.Kind) e.Message =
+    ( e.Kind ' ERROR ('<MSymStream::SrcPosToString t.SrcPos> '): ' e.Message );
 }
 
 $END MError.

@@ -37,31 +37,29 @@ GenerateContent
     >;
 
 GenerateElement
-  t.IModule (e.NextFnName) =
+  t.hIModule t.NextFnName =
     <GenerateElement-Aux
-      <MIModule::GetFunctionAttribute
-        t.IModule Qualified e.NextFnName
-      >
-      (e.NextFnName)
+      <MIModule::AbsolutName t.hIModule t.NextFnName>
+      t.NextFnName
     >;
 
 GenerateElement-Aux
-  t.IModule Found t.QualifiedName (e.FnName) =
+  t.IModule t.QualifiedName t.FnName =
     <SwGenerateElement
       <MIModule::GetFunctionAttribute
-        t.IModule ScopeClass e.FnName
+        t.IModule ScopeClass t.FnName
       >
-      t.QualifiedName (e.FnName)
+      t.QualifiedName t.FnName
     >;
 
 SwGenerateElement {
-  t.IModule Found Swap t.SwapName (e.FnName) =
+  t.IModule Found Swap t.SwapName t.FnName =
     t.IModule
     <GenerateSwap t.SwapName>;
 
-  t.IModule Found s.FnScopeClass t.FnName (e.PlainFnName) =
+  t.IModule Found s.FnScopeClass t.FnName t.PlainFnName =
     <GenerateFunction
-      t.IModule s.FnScopeClass t.FnName e.PlainFnName
+      t.IModule s.FnScopeClass t.FnName t.PlainFnName
     >;
 }
 
@@ -84,11 +82,11 @@ GenerateSwap
     ('c }') ();
 
 GenerateFunction
-  t.IModule s.FnScopeClass t.QualifiedName e.FnName =
+  t.IModule s.FnScopeClass t.QualifiedName t.FnName =
     <GenerateFunction-Aux
       s.FnScopeClass t.QualifiedName
       <MIModule::GetFunctionAttribute
-        t.IModule Body e.FnName
+        t.IModule Body t.FnName
       >
     >;
 

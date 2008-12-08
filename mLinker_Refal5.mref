@@ -222,7 +222,7 @@ ListNames
 
 DoListNames {
   (e.Name) e.Tail =
-    ('\t' e.Name)
+    ('  ' e.Name)
     <DoListNames e.Tail>;
 
   = ;

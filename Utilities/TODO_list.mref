@@ -410,7 +410,7 @@ OutputInfo {
     <InOut::WriteText
       ('FOUND ERRORS')
       <MLambda::Map
-        & PrintHeaders
+        & PrintBadTagsEx
         (BadTag e.Info) e.Opened-E
       >
     >;
@@ -419,13 +419,22 @@ OutputInfo {
   (ListFile e.ListFile) (SrcFile e.SrcFile)
   ( e.Opened ) ( e.Closed ) =
     <SaveReport (e.ToDoFile) e.Opened>
-    <SaveReport (e.DoneFile) e.Closed>
+    <SaveReport (e.DoneFile)
+      <MStrings::Reverse e.Closed>
+    >
     <FileIO::Save
       (e.ListFile)
       ('  Список актуальных задач из ' e.SrcFile)
       ()
       <MLambda::Map & PrintHeaders e.Opened>
     >;
+}
+
+PrintBadTagsEx {
+  (BadTag (e.Description) e.Info) =
+    <PrintHeaders (BadTag (e.Description) e.Info)>;
+
+  (s.OtherTag (e.Description) e.Info) = ;
 }
 
 PrintHeaders
@@ -443,6 +452,7 @@ SwPrintTag {
   Error = 'ERROR';
   Fixed = 'FIXED';
   Changed = 'CHANGED';
+  BadTag = 'BAD-TAG';
 }
 
 SaveReport

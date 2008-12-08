@@ -10,6 +10,7 @@ $IMPORT MLambda;
 $IMPORT MModules;
 $IMPORT MResolveTable;
 $IMPORT MResolver;
+$IMPORT MStrings;
 $IMPORT MSymModule;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
@@ -212,8 +213,8 @@ Compile-Recompile-SwParse {
         (e.Stack) (e.ModulePath) t.ModuleName
         t.hContext t.hErrorList
         <MLambda::MapReduce
-          & PrepareImportList
-          <MIModule::GetImportList t.hRawIModule>
+          & PrepareImportList-Aliases
+          <MIModule::GetImportList-Aliases t.hRawIModule>
         >
       >
     >;
@@ -224,14 +225,16 @@ Compile-Recompile-SwParse {
 }
 
 /**
-  <PrepareImportList t.hIModule t.NextImport>
+  <PrepareImportList-Aliases t.hIModule t.NextImportAlias>
     == t.hIModule (t.NextImport t.RealName)
 */
-PrepareImportList
+PrepareImportList-Aliases
   t.hIModule t.NextImport =
     <PrepareImportList-Aux
       t.NextImport
-      <MIModule::GetImportAttribute t.hIModule RealName t.NextImport>
+      <MIModule::GetImportAttribute-AliasName
+        t.hIModule RealName t.NextImport
+      >
     >;
 
 PrepareImportList-Aux
@@ -266,7 +269,7 @@ GetImportList-AnalyzeRecursiveLinks {
         & GetSrcPosForImport
         t.hIModule
         <Recursives-SetIntersect
-          (e.Imports-B t.RecursiveLink e.Imports-E)
+          (e.Imports-B (t.Alias t.RecursiveLink) e.Imports-E)
           (e.Stack-B t.RecursiveLink e.Stack-E)
         >
       >
@@ -300,11 +303,11 @@ Recursives-SetIntersect {
 }
 
 GetSrcPosForImport
-  t.hIModule t.ImportName =
+  t.hIModule t.ImportNameAlias =
     <GetSrcPosForImport-Aux
-      t.ImportName
-      <MIModule::GetImportAttribute
-        t.hIModule Position t.ImportName
+      t.ImportNameAlias
+      <MIModule::GetImportAttribute-AliasName
+        t.hIModule Position t.ImportNameAlias
       >
     >;
 
@@ -393,7 +396,12 @@ Compile-Recompile-CheckSubModules
 
 GetFunctionList-IfExist {
   t.hRawIModule =
-    ( <MIModule::GetFunctionList-Q t.hRawIModule> );
+    (
+      <MLambda::MapReduce
+        & MIModule.AbsolutName
+        <MIModule::GetFunctionList t.hRawIModule>
+      >
+    );
 
   = ;
 }
@@ -413,8 +421,8 @@ AnalyzeValidSubModule {
     <AnalyzeValidSubModule-AddError
       & MError.AddBrokenImport
       t.hErrorList t.ImportName
-      <MIModule::GetImportAttribute
-        t.hRawIModule Position t.Alias
+      <MIModule::GetImportAttribute-RealName
+        t.hRawIModule Position t.ImportName
       >
     >;
 
@@ -426,8 +434,8 @@ AnalyzeValidSubModule {
     <AnalyzeValidSubModule-AddError
       & MError.DependedFromSource
       t.hErrorList t.ImportName
-      <MIModule::GetImportAttribute
-        t.hRawIModule Position t.Alias
+      <MIModule::GetImportAttribute-RealName
+        t.hRawIModule Position t.ImportName
       >
     >;
 
@@ -458,8 +466,8 @@ AnalyzeValidSubModule-ImportProgram
     <AnalyzeValidSubModule-AddError
       & MError.AddImportHead
       t.hErrorList t.ImportName
-      <MIModule::GetImportAttribute
-        t.hRawIModule Position t.Alias
+      <MIModule::GetImportAttribute-RealName
+        t.hRawIModule Position t.ImportName
       >
     >;
 
@@ -583,8 +591,8 @@ Compile-OnUpdated {
         (e.Stack) (e.ModulePath) t.ModuleName
         t.hContext t.hErrorList
         <MLambda::MapReduce
-          & PrepareImportList
-          <MIModule::GetImportList t.hSymIModule>
+          & PrepareImportList-Aliases
+          <MIModule::GetImportList-Aliases t.hSymIModule>
         >
       >
     >;
@@ -773,8 +781,8 @@ Compile-AnalyzeLibrary {
         (e.Stack) (e.ModulePath) t.ModuleName
         t.hContext t.hErrorList
         <MLambda::MapReduce
-          & PrepareImportList
-          <MIModule::GetImportList t.hSymIModule>
+          & PrepareImportList-Aliases
+          <MIModule::GetImportList-Aliases t.hSymIModule>
         >
       >
     >;

@@ -7,45 +7,33 @@ $IMPORT MQualifiedName;
 
 $ENTRY Updated-Q
   t.QualifiedName =
-    <Updated '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+    <Out-Q Updated t.QualifiedName>;
 
 $ENTRY Compiling-Q
   t.QualifiedName =
-    <Compiling '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+    <Out-Q Compiling t.QualifiedName>;
 
 $ENTRY Compiled-Q
   t.QualifiedName =
-    <Compiled '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+    <Out-Q Compiled t.QualifiedName>;
 
 $ENTRY Library-Q
   t.QualifiedName =
-    <Library '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+    <Out-Q Library t.QualifiedName>;
 
 $ENTRY Fails-Q
   t.QualifiedName =
-    <Out Fails '*' <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
-
-$ENTRY Updated
-  e.ModuleName =
-    <Out Updated e.ModuleName>;
-
-$ENTRY Compiling
-  e.ModuleName =
-    <Out Compiling e.ModuleName>;
-
-$ENTRY Compiled
-  e.ModuleName =
-    <Out Compiled e.ModuleName>;
-
-$ENTRY Library
-  e.ModuleName =
-    <Out Library e.ModuleName>;
+    <Out-Q Fails t.QualifiedName>;
 
 $ENTRY Linking
   e.ProgName =
     <Out Linking e.ProgName>;
 
 $SWAP G_OldStatus, G_Buffer;
+
+Out-Q
+ s.NewStatus t.QualifiedName =
+   <Out s.NewStatus <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
 
 Out
   s.NewStatus e.ModuleName =
@@ -71,7 +59,7 @@ StatusStr {
   Updated =   'Updated ';
   Compiling = 'Compiling ';
   Compiled =  'Compiled ';
-  Library =   'Library ';
+  Library =   'Load library ';
   Linking =   'Linking ';
   Fails =     '  FAILS';
 }

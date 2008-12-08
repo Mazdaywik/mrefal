@@ -96,29 +96,7 @@ DependencesList-OnAvail-OnSuccess
     == t.hIModule t.ImportedModule*
 */
 $ENTRY DependencesFromIModule
-  t.hIModule =
-    <MLambda::MapReduce
-      & ToRealNames <MIModule::GetImportList t.hIModule>
-    >;
-
-ToRealNames
-  t.hIModule t.ShortAlias =
-    <ToRealNames-Aux
-      <MIModule::GetImportAttribute t.hIModule RealName t.ShortAlias>
-    >;
-
-ToRealNames-Aux {
-  t.hIModule Found t.ImportName =
-    t.hIModule t.ImportName;
-
-  /*
-    Все имена получаем посредством функции MIModule::GetImportList, поэтому
-    все они являются именами модулей и присутствуют в MIModule. Поэтому, если
-    атрибут RealName присутствует, то эта функция должна отработать успешно.
-    Если же атрибут RealName будет позже исключён, то пускай программа
-    радостно рухнет на этой функции.
-  */
-}
+  t.hIModule = <MIModule::GetImportList-RealNames t.hIModule>;
 
 //------------------------------------------------------------------------------
 

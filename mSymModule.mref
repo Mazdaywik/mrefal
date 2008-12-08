@@ -90,11 +90,15 @@ SymReduce-ModuleType {
         <MLambda::Composite
           <MLambda::Parallel-H
             <MLambda::Composite
-              <MLambda::BindLeft-H & MIModule.GetImportAttribute RealName>
+              <MLambda::BindLeft-H
+                & MIModule.GetImportAttribute-AliasName RealName
+              >
               & MLambda.Bracket-H
             >
             <MLambda::Composite
-              <MLambda::BindLeft-H & MIModule.GetImportAttribute Position>
+              <MLambda::BindLeft-H
+                & MIModule.GetImportAttribute-AliasName Position
+              >
               & MLambda.Bracket-H
             >
             <MLambda::MakeHandled
@@ -103,7 +107,7 @@ SymReduce-ModuleType {
           >
           & MLambda.Bracket-H
         >
-        <MIModule::GetImportList t.hIModule>
+        <MIModule::GetImportList-Aliases t.hIModule>
       >
       <MIModule::Create
         t.ModuleName
@@ -124,21 +128,21 @@ SymReduce-Imports
           <MLambda::Parallel-H
             <MLambda::MakeHandled & MLambda.Identity>
             <MLambda::Composite
-              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute-Q ScopeClass>
+              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute ScopeClass>
               & MLambda.Bracket-H
             >
             <MLambda::Composite
-              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute-Q Position>
+              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute Position>
               & MLambda.Bracket-H
             >
             <MLambda::Composite
-              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute-Q Qualified>
+              <MLambda::BindLeft-H & MIModule.GetFunctionAttribute Qualified>
               & MLambda.Bracket-H
             >
           >
           & MLambda.Bracket-H
         >
-        <MIModule::GetFunctionList-Q
+        <MIModule::GetFunctionList
           t.hIModule
         >
       >
@@ -150,10 +154,11 @@ SymReduce-Imports
 AddImport
   t.hISymModule ((Found t.RealName) (Found t.SrcPos) t.AliasName) =
     <UpdateIModule-Guard
-      <MIModule::UpdateImport
-        t.hISymModule t.AliasName
-        (RealName t.RealName)
+      <MIModule::UpdateImport-X
+        t.hISymModule
         (Position t.SrcPos)
+        (RealName t.RealName)
+        (AliasName t.AliasName)
       >
     >;
 
@@ -173,7 +178,7 @@ AddFunction {
     (Found Entry) (Found t.SrcPos) (Found t.QualifiedName)
   ) =
     <UpdateIModule-Guard
-      <MIModule::UpdateFunction-Q
+      <MIModule::UpdateFunction
         t.hISymModule t.FunctionName
         (ScopeClass Entry)
         (Position t.SrcPos)
@@ -283,19 +288,19 @@ GetEntryList
     >;
 
 ToEntry
-  t.IModule (e.NextFn) =
+  t.IModule t.NextFn =
     <SwToEntry
-      (e.NextFn)
+      t.NextFn
       <MIModule::GetFunctionAttribute
-        t.IModule ScopeClass e.NextFn
+        t.IModule ScopeClass t.NextFn
       >
     >;
 
 SwToEntry {
-  (e.NextFn) t.IModule Found Entry =
-    t.IModule (e.NextFn);
+  t.NextFn t.IModule Found Entry =
+    t.IModule t.NextFn;
 
-  (e.NextFn) t.IModule Found s.OtherScope =
+  t.NextFn t.IModule Found s.OtherScope =
     t.IModule;
 }
 
@@ -307,32 +312,51 @@ GenerateFunctions
   t.IModule e.Functions =
     <MLambda::MapReduce
       & GenerateImport 
-      <MIModule::GetImportList t.IModule>
+      <MIModule::GetImportList-Aliases t.IModule>
     >
     ()
     <MLambda::Map
-      & TypeFunction
-      <MOrder::Sort e.Functions>
+      <MLambda::Composite
+        & MLambda.UnBracket
+        & MQualifiedName.Create
+        & TypeFunction
+      >
+      <MOrder::Sort
+        <MLambda::Map
+          <MLambda::Composite
+            & MQualifiedName.Parse
+            & MLambda.Bracket
+          >
+          e.Functions
+        >
+      >
     >
     ();
 
 TypeFunction
-  (e.FnName) = ( '$entry ' e.FnName ';' );
+  t.FnName = ( '$entry ' <MQualifiedName::ToPrintable-Quad t.FnName> ';' );
 
 GenerateImport
   t.IModule t.NextImport =
     <GenerateImport-Aux
       t.NextImport
-      <MIModule::GetImportAttribute
+      <MIModule::GetImportAttribute-AliasName
         t.IModule RealName t.NextImport
       >
     >;
 
 GenerateImport-Aux
-  t.Alias t.IModule Found t.RealName =
-    t.IModule
+  t.LongAlias t.hIModule Found t.RealName =
+    <GenerateImport-ShortAlias
+      t.RealName
+      <MIModule::RelativeName t.hIModule t.LongAlias>
+    >;
+
+GenerateImport-ShortAlias
+  t.RealName t.hIModule Success t.ShortAlias =
+    t.hIModule
     <SwGenerateImport-Aux
-      <MQualifiedName::Equals-T t.Alias t.RealName>
+      <MQualifiedName::Equals-T t.ShortAlias t.RealName>
     >;
 
 SwGenerateImport-Aux {

@@ -105,7 +105,7 @@ Compile-AfterUpdateContext
     (t.hContext t.hErrorList) Success t.hIModule s.ModuleType;
 # ENDCUT
 
-<PrepareImportList t.hIModule t.NextImport>
+<PrepareImportList-Aliases t.hIModule t.NextImportAlias>
   == t.hIModule (t.NextImport t.RealName)
 
 <GetImportList-AnalyzeRecursiveLinks
@@ -277,6 +277,9 @@ Module MError;
 <AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
   == t.UpdatedErrorList
 
+<AddRedeclaredIdentifier-Qualified t.ErrorList t.SrcPos t.Identifier>
+  == t.UpdatedErrorList
+
 <AddVarTypeMismatch t.hErrorList t.SrcPos e.VarName>
   == t.hErrorList
 
@@ -285,9 +288,6 @@ Module MError;
 
 <AddUnresolvedFunction t.hErrorList t.SrcPos t.FnName>
   == t.hErrorList
-
-<PrintErrorsAndStop t.hErrorList>
-  == fail down (errcode 1)
 
 <PrintErrors t.hErrorList> == empty
 
@@ -396,23 +396,10 @@ s.Status ::=
   Success | InvalidAttrib | InvariantError
 
 <UpdateFunction
-  t.IModule
-  (e.FunctionName)
-  (s.Attrib e.Value)*
->
-  == t.IModule s.Status
-
-s.Status ::=
-  Success | InvalidKind | InvalidAttrib | InvariantError
-
-<UpdateFunction-Q
   t.hIModule
   t.FunctionName
   (s.Attrib e.Value)
 >
-  == t.hIModule s.Status
-
-<UpdateImport t.hIModule t.Import e.Attribs>
   == t.hIModule s.Status
 
 <UpdateImport-X
@@ -424,7 +411,7 @@ s.Status ::=
 <UpdateADT t.IModule (e.Name) e.Attribs>
   == t.IModule s.Status
 
-<UpdateEntity_NoQualified
+<UpdateEntity-Relative
   t.IModule s.Kind (e.ParsedName) e.Attribs
 >
 
@@ -453,19 +440,17 @@ ValidAttribs {
 
 s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 
-<GetFucntionAttribute t.IModule s.Attrib e.FnName>
-  == t.IModule Found e.Value
-  == t.IModule s.ErrorStatus
-
-s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
-
-<GetFunctionAttrubute-Q t.hIModule s.Attrib t.FnName>
+<GetFunctionAttrubute t.hIModule s.Attrib t.FnName>
   == t.hIModule Found e.Value
   == t.hIModule s.ErrorStatus
 
-<GetImportAttribute t.IModule s.Attrib t.Import>
-  == t.IModule Found e.Value
-  == t.IModule s.ErrorStatus
+<GetImportAttribute-RealName t.hIModule s.Attrib t.Import>
+  == t.hIModule Found e.Value
+  == t.hIMoudle s.ErrorStatus
+
+<GetImportAttribute-AliasName t.hIModule s.Attrib t.Import>
+  == t.hIModule Found e.Value
+  == t.hIMoudle s.ErrorStatus
 
 <GetADTAttributes t.IModule s.Attrib e.Name>
   == t.IModule Found e.Value
@@ -485,14 +470,14 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 
 ---------------------------------------------------------------------------
 
-<GetFunctionList t.IModule>
-  == t.IModule (e.FnName)*
-
-<GetFunctionList-Q t.hIModule>
+<GetFunctionList t.hIModule>
   == t.hIModule t.FunctionName*
 
-<GetImportList t.IModule>
-  == t.IModule t.ImportName*
+<GetImportList-RealNames t.hIModule>
+  == t.hIModule t.RealImportName*
+
+<GetImportList-Aliases t.hIModule>
+  == t.hIModule t.AliasImportName*
 
 <GetADTList t.IModule>
   == t.IModule (e.ADT)*
@@ -780,8 +765,8 @@ s.Result ::= Success | Warnings | Errors
 Module MParser_Sym;
 
 <SymModule t.ErrorList t.QualifiedName e.FileName>
-	== t.ErrorList Success s.Result t.IModule
-	== t.ErrorList Fails
+  == t.ErrorList Success s.Result t.IModule
+  == t.ErrorList Fails
 s.Result ::= Success | Warnings | Errors
 
 ################################################################################
@@ -831,10 +816,6 @@ s.Result ::= True | False
 
 ################################################################################
 Module MQualifiedSupport;
-
-<UnQualify t.QualifiedName>
-  == e.Name
-t.QualifiedName должен содержать один сегмент.
 
 <LastSegment t.Qualified>
   == e.Last

@@ -1,1 +1,0 @@
-compile_mr +new+ "=MP:.;Libs__" Ends__\MLexer.mref SRPrep IOLib

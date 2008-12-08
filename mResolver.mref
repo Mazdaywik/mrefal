@@ -44,21 +44,21 @@ AddScopes
     <DoAddScope t.IModule e.FnList>;
 
 DoAddScope {
-  t.IModule e.FnList (e.Next) =
+  t.IModule e.FnList t.Next =
     <SwDoAddScope
       <MIModule::GetFunctionAttribute
-        t.IModule ScopeClass e.Next
+        t.IModule ScopeClass t.Next
       >
-      e.FnList (e.Next)
+      e.FnList t.Next
     >;
 
   t.IModule = t.IModule;
 }
 
 SwDoAddScope {
-  t.IModule Found s.ScopeClass e.FnList (e.Next) =
+  t.IModule Found s.ScopeClass e.FnList t.Next =
     <DoAddScope t.IModule e.FnList>
-    (s.ScopeClass e.Next);
+    (s.ScopeClass t.Next);
 
   /*
     Другие ошибки являются нарушением инварианта. В этом случае программа
@@ -74,10 +74,9 @@ ExtractLocalInfo-ADT
     >;
 
 DoExtractLocalInfo-ADT {
-  t.IModule (e.ADTName) e.ADTs (e.LocalScope) =
+  t.IModule t.ADTName e.ADTs (e.LocalScope) =
     <DoExtractLocalInfo-ADT
-      t.IModule e.ADTs
-      (e.LocalScope (ADT e.ADTName))
+      t.IModule e.ADTs (e.LocalScope (ADT t.ADTName))
     >;
 
   t.IModule (e.LocalScope) =
@@ -104,7 +103,7 @@ FillTable {
   e.LocalScope =
     <FillModuleAliases
       <MLambda::Reduce
-        <MLambda::BindLeft &AddLocalScopeElem t.CurrentModule>
+        <MLambda::BindLeft & AddLocalScopeElem t.CurrentModule>
         t.ResolveTable e.LocalScope
       >
       t.IModule t.ErrorList
@@ -113,13 +112,11 @@ FillTable {
 
 AddLocalScopeElem {
   t.L_CurrentModule t.ResolveTable
-  (s.ScopeClass e.FunctionName) =
+  (s.ScopeClass t.FunctionName) =
     <MResolveTable::Add
-      t.ResolveTable
-      <MQualifiedName::Create (e.FunctionName)>
-      s.ScopeClass
-      <MQualifiedName::AddSubName
-        t.L_CurrentModule e.FunctionName
+      t.ResolveTable t.FunctionName s.ScopeClass
+      <MQualifiedName::Append
+        t.L_CurrentModule t.FunctionName
       >
     >;
 }
@@ -128,7 +125,7 @@ FillModuleAliases
   t.ResolveTable t.IModule t.ErrorList =
     <FillModuleAliases-Aux
       t.ResolveTable
-      <MIModule::GetImportList t.IModule>
+      <MIModule::GetImportList-Aliases t.IModule>
     >
     t.ErrorList;
 
@@ -150,7 +147,7 @@ AddAlias
     <AddAlias-Aux
       t.ResolveTable
       t.NextAliasName
-      <MIModule::GetImportAttribute
+      <MIModule::GetImportAttribute-AliasName
         t.IModule RealName t.NextAliasName
       >
     >;
@@ -181,11 +178,11 @@ ResolvingElements-Aux
 
 DoResolvingFunctions {
   t.IModule t.ErrorList t.ResolveTable
-  (e.NextFunction) e.Tail =
+  t.NextFunction e.Tail =
     <DoResolvingFunctions
       <ResolvingFunction
         t.IModule t.ErrorList t.ResolveTable
-        e.NextFunction
+        t.NextFunction
       >
       e.Tail
     >;
@@ -208,42 +205,41 @@ SwCheckErrors {
 }
 
 ResolvingFunction
-  t.IModule t.ErrorList t.ResolveTable
-  e.Function =
+  t.IModule t.ErrorList t.ResolveTable t.Function =
     <ResolvingFunction-ScopeClass
-      <MIModule::GetFunctionAttribute t.IModule ScopeClass e.Function>
+      <MIModule::GetFunctionAttribute t.IModule ScopeClass t.Function>
       t.ErrorList t.ResolveTable
-      e.Function
+      t.Function
     >;
 
 ResolvingFunction-ScopeClass {
   t.IModule Found s.ScopeClass
-  t.ErrorList t.ResolveTable e.Function =
+  t.ErrorList t.ResolveTable t.Function =
     <ResolvingFunction-Qualified
       s.ScopeClass
-      <MIModule::GetFunctionAttribute t.IModule Qualified e.Function>
-      t.ErrorList t.ResolveTable e.Function
+      <MIModule::GetFunctionAttribute t.IModule Qualified t.Function>
+      t.ErrorList t.ResolveTable t.Function
     >;
 }
 
 ResolvingFunction-Qualified
   s.ScopeClass
   t.IModule Found t.QualifiedName
-  t.ErrorList t.ResolveTable e.Function =
+  t.ErrorList t.ResolveTable t.Function =
     <SwResolvingFunction-Qualified
       s.ScopeClass
       t.IModule t.ErrorList
       <MResolveTable::Lookup
         t.ResolveTable (s.ScopeClass) t.QualifiedName
       >
-      e.Function
+      t.Function
     >;
 
 /*
   <SwResolvedFunction-Qualified
     s.ScopeClass t.IModule t.ErrorList
     t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-    e.FunctionName
+    t.FunctionName
   >
     == t.IModule t.ErrorList t.ResolveTable
 */
@@ -251,10 +247,10 @@ SwResolvingFunction-Qualified {
   Swap
   t.IModule t.ErrorList
   t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-  e.Function =
+  t.Function =
     <CheckSuccess
       <MIModule::UpdateFunction
-        t.IModule (e.Function)
+        t.IModule t.Function
         (ScopeClass Swap)
         (Qualified t.ExternalQualifier)
       >
@@ -264,19 +260,19 @@ SwResolvingFunction-Qualified {
   s.ScopeClass
   t.IModule t.ErrorList
   t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-  e.Function =
+  t.Function =
     <ResolvingFunction-Body
       <MIModule::GetFunctionAttribute
         <CheckSuccess
           <MIModule::UpdateFunction
-            t.IModule (e.Function)
+            t.IModule t.Function
             (ScopeClass s.ScopeClass)
             (Qualified t.ExternalQualifier)
           >
         >
-        Body e.Function
+        Body t.Function
       >
-      t.ErrorList t.ResolveTable e.Function
+      t.ErrorList t.ResolveTable t.Function
     >;
 }
 
@@ -292,28 +288,27 @@ CheckSuccess
 */
 ResolvingFunction-Body
   t.IModule Found (e.Sentences)
-  t.ErrorList t.ResolveTable e.FnName =
+  t.ErrorList t.ResolveTable t.FnName =
     <ResolvingBody
-      (e.FnName)
+      t.FnName
       t.IModule t.ErrorList t.ResolveTable
       (/* Распознанные выражения */) e.Sentences
     >;
 
 ResolvingBody {
-  (e.FnName) t.IModule t.ErrorList t.ResolveTable
+  t.FnName t.IModule t.ErrorList t.ResolveTable
   (e.Resolved) =
     <CheckSuccess
       <MIModule::UpdateFunction
-        t.IModule (e.FnName)
-        (Body (e.Resolved))
+        t.IModule t.FnName (Body (e.Resolved))
       >
     >
     t.ErrorList t.ResolveTable;
 
-  (e.FnName) t.IModule t.ErrorList t.ResolveTable
+  t.FnName t.IModule t.ErrorList t.ResolveTable
   (e.Resolved) t.NextSentence e.Tail =
     <ResolvingBody
-      (e.FnName) t.IModule
+      t.FnName t.IModule
       <ResolvingSentence
         t.ErrorList t.ResolveTable
         (e.Resolved) t.NextSentence

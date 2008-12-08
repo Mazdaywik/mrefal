@@ -135,7 +135,8 @@ NSwapBlock {
   t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NSwapBlock-AfterName
       <MParser_Common::AddNewFunction
-        t.IModule t.SrcPos (e.Ident)
+        t.IModule t.SrcPos
+        <MQualifiedName::Create (e.Ident)>
         (ScopeClass Swap)
         (Qualified <MQualifiedName::Create (e.Ident)>)
         t.ErrorList
@@ -186,7 +187,8 @@ NDataBlock {
   t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NDataBlock-AfterName
       <MParser_Common::AddNewADT
-        t.IModule t.SrcPos (e.Ident)
+        t.IModule t.SrcPos
+        <MQualifiedName::Create (e.Ident)>
         t.ErrorList
       >
       <MLexer::NextToken t.Lexer>
@@ -252,7 +254,8 @@ NFunctionDefinition-Closing
   ( t.FunctionBody ( Function s.ScopeClass (e.Name) t.SrcPos ) )
   t.ErrorList t.Lexer t.NextToken =
     <MParser_Common::AddNewFunction
-      t.IModule t.SrcPos (e.Name)
+      t.IModule t.SrcPos
+      <MQualifiedName::Create (e.Name)>
       (Body t.FunctionBody)
       (ScopeClass s.ScopeClass)
       (Qualified <MQualifiedName::Create (e.Name)>)

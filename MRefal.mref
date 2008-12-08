@@ -133,11 +133,11 @@ SelectMaker {
 FinishMake {
   ( t.hContext t.hErrorList Success ) =
     <MContext::Destroy t.hContext>
-    <MError::PrintErrorsAndStop t.hErrorList>;
+    <MError::PrintErrors t.hErrorList>;
 
   ( t.hContext t.hErrorList Fails ) =
     <MContext::Destroy t.hContext>
-    <MError::PrintErrorsAndStop t.hErrorList>;
+    <MError::PrintErrors t.hErrorList>;
 }
 
 $END MRefal.

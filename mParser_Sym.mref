@@ -3,116 +3,118 @@ $MODULE MParser_Sym;
 $IMPORT MError;
 $IMPORT MLexer;
 $IMPORT MParser_Common;
+$IMPORT MQualifiedName;
 
 /**
-	<SymModule t.ErrorList t.QualifiedName e.FileName>
-		== t.ErrorList Success s.Result t.IModule
-		== t.ErrorList Fails
-	s.Result ::= Success | Warnings | Errors
+  <SymModule t.ErrorList t.QualifiedName e.FileName>
+    == t.ErrorList Success s.Result t.IModule
+    == t.ErrorList Fails
+  s.Result ::= Success | Warnings | Errors
 */
 $ENTRY SymModule
-	t.ErrorList t.QualifiedName e.FileName =
-		<MParser_Common::GeneralizeInfo
-			t.ErrorList
-			t.QualifiedName
-			<MParser_Common::Parse
-				&NSymModuleBody e.FileName
-			>
-		>;
+  t.ErrorList t.QualifiedName e.FileName =
+    <MParser_Common::GeneralizeInfo
+      t.ErrorList
+      t.QualifiedName
+      <MParser_Common::Parse
+        &NSymModuleBody e.FileName
+      >
+    >;
 
 //------------------------------------------------------------------------------
 // Синтаксический анализ sym-модуля
 //------------------------------------------------------------------------------
 
 NFunctionDeclaration {
-	t.IModule t.ErrorList t.Lexer (Identifier t.SrcPos e.FnName) =
-		<NFunctionDeclaration-ExpectEndSent
-			<MParser_Common::AddNewFunction
-				t.IModule t.SrcPos (e.FnName)
-				(ScopeClass Entry)
-				t.ErrorList
-			>
-			<MLexer::NextToken t.Lexer>
-		>;
+  t.IModule t.ErrorList t.Lexer (Identifier t.SrcPos e.FnName) =
+    <NFunctionDeclaration-ExpectEndSent
+      <MParser_Common::AddNewFunction
+        t.IModule t.SrcPos
+        <MQualifiedName::Create (e.FnName)>
+        (ScopeClass Entry)
+        t.ErrorList
+      >
+      <MLexer::NextToken t.Lexer>
+    >;
 
-	t.IModule
-	t.ErrorList t.Lexer t.Unexpected =
-		t.IModule
-		<MError::AddUnexpected
-			t.ErrorList t.Unexpected 'function name'
-		>
-		t.Lexer t.Unexpected;
+  t.IModule
+  t.ErrorList t.Lexer t.Unexpected =
+    t.IModule
+    <MError::AddUnexpected
+      t.ErrorList t.Unexpected 'function name'
+    >
+    t.Lexer t.Unexpected;
 }
 
 NFunctionDeclaration-ExpectEndSent {
-	t.IModule t.ErrorList t.Lexer (EndSent t.SrcPos) =
-		t.IModule
-		t.ErrorList <MLexer::NextToken t.Lexer>;
+  t.IModule t.ErrorList t.Lexer (EndSent t.SrcPos) =
+    t.IModule
+    t.ErrorList <MLexer::NextToken t.Lexer>;
 
-	/* Делаем вид, что точка с запятой была */
-	t.IModule t.ErrorList t.Lexer t.OtherToken =
-		t.IModule
-		<MError::AddUnexpected
-			t.ErrorList t.OtherToken 'semicolon'
-		>
-		t.Lexer t.OtherToken;
+  /* Делаем вид, что точка с запятой была */
+  t.IModule t.ErrorList t.Lexer t.OtherToken =
+    t.IModule
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'semicolon'
+    >
+    t.Lexer t.OtherToken;
 }
 
 
 //------------------------------------------------------------------------------
 
 /*
-	<NSymModuleBody
-		t.IModule t.ErrorList t.Lexer t.NextToken
-	>
-		== t.ErrorList Success t.IModule
-		== t.ErrorList Fails
+  <NSymModuleBody
+    t.IModule t.ErrorList t.Lexer t.NextToken
+  >
+    == t.ErrorList Success t.IModule
+    == t.ErrorList Fails
 */
 NSymModuleBody {
-	t.IModule
-	t.ErrorList t.Lexer (Directive t.SrcPos Import) =
-		<NSymModuleBody
-			<MParser_Common::NImportBlock
-				t.IModule
-				t.ErrorList <MLexer::NextToken t.Lexer>
-			>
-		>;
+  t.IModule
+  t.ErrorList t.Lexer (Directive t.SrcPos Import) =
+    <NSymModuleBody
+      <MParser_Common::NImportBlock
+        t.IModule
+        t.ErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
 
-	t.IModule
-	t.ErrorList t.Lexer (Directive t.SrcPos Entry) =
-		<NSymModuleBody
-			<NFunctionDeclaration
-				t.IModule
-				t.ErrorList <MLexer::NextToken t.Lexer>
-			>
-		>;
+  t.IModule
+  t.ErrorList t.Lexer (Directive t.SrcPos Entry) =
+    <NSymModuleBody
+      <NFunctionDeclaration
+        t.IModule
+        t.ErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
 
-	t.IModule
-	t.ErrorList t.Lexer (Directive t.SrcPos End) =
-		<MParser_Common::NModuleTailer
-			t.IModule
-			t.ErrorList t.Lexer (Directive t.SrcPos End)
-		>;
+  t.IModule
+  t.ErrorList t.Lexer (Directive t.SrcPos End) =
+    <MParser_Common::NModuleTailer
+      t.IModule
+      t.ErrorList t.Lexer (Directive t.SrcPos End)
+    >;
 
-	t.IModule
-	t.ErrorList t.Lexer (EndOfText t.SrcPos) =
-		<MError::AddUnexpected
-			t.ErrorList (EndOfText t.SrcPos)
-			'import or function declaration'
-		>
-		Success
-		t.IModule
-		<MLexer::Destroy t.Lexer>;
+  t.IModule
+  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+    <MError::AddUnexpected
+      t.ErrorList (EndOfText t.SrcPos)
+      'import or function declaration'
+    >
+    Success
+    t.IModule
+    <MLexer::Destroy t.Lexer>;
 
-	t.IModule
-	t.ErrorList t.Lexer t.Unexpected =
-		<NSymModuleBody
-			t.IModule
-			<MError::AddUnexpected
-				t.ErrorList t.Unexpected 'import or function declaration'
-			>
-			<MLexer::NextToken t.Lexer>
-		>;
+  t.IModule
+  t.ErrorList t.Lexer t.Unexpected =
+    <NSymModuleBody
+      t.IModule
+      <MError::AddUnexpected
+        t.ErrorList t.Unexpected 'import or function declaration'
+      >
+      <MLexer::NextToken t.Lexer>
+    >;
 }
 
 $END MParser_Sym.

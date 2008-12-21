@@ -2,6 +2,7 @@ $MODULE MCompiler;
 
 $IMPORT MBE-Mgr;
 $IMPORT MClusters;
+$IMPORT MContext-Nutro;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MFE-Mgr;
@@ -171,10 +172,7 @@ Compile-Recompile-UpdateContext {
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
       <GuardUpdate
-        <MContext::UpdateInfo
-          t.hContext t.ModuleName
-          (Status_NEW Errors)
-        >
+        <MContext::SetStatusNew t.hContext t.ModuleName Errors>
       >
       t.hErrorList
     )
@@ -190,7 +188,7 @@ Compile-Recompile-UpdateContext-Aux
     <MOutModuleStatus::Compiled-Q t.ModuleName>
     <Compile-AfterUpdateContext
       t.hErrorList t.hIModule s.ModuleType
-      <MContext::UpdateInfo
+      <MContext-Nutro::UpdateInfo
         t.hContext t.ModuleName
         (Status_NEW SuccessCompiled)
         (RealName t.ModuleName)
@@ -387,6 +385,7 @@ Compile-Recompile-CheckSubModules
       <MLambda::MapReduce
         <MLambda::Composite
           & AnalyzeValidSubModule
+          & RelativeModuleName
           <MLambda::MakeHandled & GetFunctionList-IfExist>
         >
         (t.hErrorList t.hRawIModule s.Result)
@@ -394,11 +393,29 @@ Compile-Recompile-CheckSubModules
       >
     >;
 
+RelativeModuleName {
+  (t.hErrorList t.hRawIModule s.Result) =
+    (t.hErrorList t.hRawIModule s.Result);
+
+  (t.hErrorList t.hRawIModule s.Result)
+  (t.hImportModule t.ImportModuleAlias) =
+    <RelativeModuleName-Aux
+      t.hErrorList s.Result t.hImportModule
+      <MIModule::RelativeName t.hRawIModule t.ImportModuleAlias>
+    >;
+}
+
+RelativeModuleName-Aux
+  t.hErrorList s.Result t.hImportModule
+  t.hRawIModule Success t.RelativeImportAlias =
+    (t.hErrorList t.hRawIModule s.Result)
+    (t.hImportModule t.RelativeImportAlias);
+
 GetFunctionList-IfExist {
-  t.hRawIModule =
+  (t.hRawIModule t.SubModuleAlias) =
     (
       <MLambda::MapReduce
-        & MIModule.AbsolutName
+        <MLambda::BindLeft & GetFunctionList-PairNames t.SubModuleAlias>
         <MIModule::GetFunctionList t.hRawIModule>
       >
     );
@@ -406,9 +423,20 @@ GetFunctionList-IfExist {
   = ;
 }
 
+GetFunctionList-PairNames
+  t.SubModuleAlias t.hIModule t.FunctionName =
+    <GetFunctionList-PairNames-Aux
+      <MQualifiedName::Append t.SubModuleAlias t.FunctionName>
+      <MIModule::AbsolutName t.hIModule t.FunctionName>
+    >;
+
+GetFunctionList-PairNames-Aux
+ t.AliasName t.hIModule t.RealName =
+   t.hIModule (t.RealName t.AliasName);
+
 /**
   <AnalyzeValidSubModule (t.hErrorList t.hIModule s.Result) t.ImportRes>
-    == (t.hErrorList t.hIModule s.Result) t.hISubModule
+    == (t.hErrorList t.hIModule s.Result) (t.hISubModule t.SubModuleAlias)
     == (t.hErrorList t.hIModule Errors)
   t.ImportRes ::=
     (t.Success t.hISubModule s.ModuleType t.Alias)
@@ -448,7 +476,7 @@ AnalyzeValidSubModule {
 
   (t.hErrorList t.hRawIModule s.Result)
   (Success t.hISubModule Regular t.Alias) =
-    (t.hErrorList t.hRawIModule s.Result) t.hISubModule;
+    (t.hErrorList t.hRawIModule s.Result) (t.hISubModule t.Alias);
 }
 
 AnalyzeValidSubModule-AddError
@@ -474,7 +502,8 @@ AnalyzeValidSubModule-ImportProgram
 /*
   <Compile-Recompile-Resolve
     t.ModuleName t.hContext s.Result
-    (t.hErrorList t.hRawModule) (t.hISubModule t.Function*)*
+    (t.hErrorList t.hRawModule)
+    (t.hISubModule (t.RealFunctionName t.AliasFunctionName)*)*
   >
 */
 Compile-Recompile-Resolve
@@ -503,9 +532,9 @@ AddImportedInfoToResolveTable
     >;
 
 AddFunctionToResolveTable
-  t.hResolveTable t.FunctionName =
+  t.hResolveTable (t.RealFunctionName t.AliasFunctionName)=
     <MResolveTable::Add
-      t.hResolveTable t.FunctionName Entry t.FunctionName
+      t.hResolveTable t.AliasFunctionName Entry t.RealFunctionName
     >;
 
 Compile-Recompile-SwResolve {
@@ -609,9 +638,7 @@ Compile-OnUpdated-OnLibrary-Fails
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
       <GuardUpdate
-        <MContext::UpdateInfo
-          t.hContext t.ModuleName (Status_NEW Errors)
-        >
+        <MContext::SetStatusNew t.hContext t.ModuleName Errors>
       >
       t.hErrorList
     )
@@ -739,7 +766,7 @@ Compile-OnUpdated-SwScanSubModules {
         <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
       >
     >
-    <MLambda::Map & MIModule.Destroy e.ValidScannedImports>;
+    <MLambda::Map & DestroyScannedImports e.ValidScannedImports>;
 
   t.hContext t.ModuleName
   (t.hErrorList t.hSymIModule Errors)
@@ -747,15 +774,20 @@ Compile-OnUpdated-SwScanSubModules {
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
     >
-    <MLambda::Map & MIModule.Destroy t.hSymIModule e.ValidScannedImports>;
+    <MIModule::Destroy t.hSymIModule>
+    <MLambda::Map & DestroyScannedImports e.ValidScannedImports>;
 }
+
+DestroyScannedImports
+  (t.hSymIModule t.Alias) =
+    <MIModule::Destroy t.hSymIModule>;
 
 MakeSuccessUpdated
   t.hContext t.hErrorList t.ModuleName
   Success t.hSymIModule s.ModuleType =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::UpdateInfo
+      <MContext-Nutro::UpdateInfo
         t.hContext t.ModuleName
         (Status_NEW SuccessUpdated)
         (RealName t.ModuleName)
@@ -864,7 +896,7 @@ OnLibrary-ScanSubModule-SwNeedCompile {
   t.hContext t.ModuleName SuccessUpdated =
     <OnLibrary-SwIsLibrary
       t.hErrorList t.ModuleName
-      <MContext::ExtractOption t.hContext t.ModuleName Type>
+      <MContext-Nutro::ExtractOption t.hContext t.ModuleName Type>
     >;
 
   (e.Stack) (e.ModulePath) t.hErrorList
@@ -937,7 +969,7 @@ Compile-OnLibrary-SwScanSubModules {
         <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
       >
     >
-    <MLambda::Map & MIModule.Destroy e.ValidScannedImports>;
+    <MLambda::Map & DestroyScannedImports e.ValidScannedImports>;
 
   t.hContext t.ModuleName
   (t.hErrorList t.hSymIModule Errors)
@@ -945,7 +977,8 @@ Compile-OnLibrary-SwScanSubModules {
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
     >
-    <MLambda::Map & MIModule.Destroy t.hSymIModule e.InvalidScannedImports>;
+    <MIModule::Destroy t.hSymIModule>
+    <MLambda::Map & DestroyScannedImports e.InvalidScannedImports>;
 }
 
 MakeSuccessLibrary
@@ -953,7 +986,7 @@ MakeSuccessLibrary
   Success t.hSymIModule s.ModuleType =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::UpdateInfo
+      <MContext-Nutro::UpdateInfo
         t.hContext t.ModuleName
         (Status_NEW SuccessUpdated)
         (RealName t.ModuleName)
@@ -980,10 +1013,7 @@ Compile-OnSuccessCompiled {
   t.hErrorList t.ModuleName t.hContext Fails =
     (
       <GuardUpdate
-        <MContext::UpdateInfo
-          t.hContext t.ModuleName
-          (Status_NEW Errors)
-        >
+        <MContext::SetStatusNew t.hContext t.ModuleName Errors>
       >
       t.hErrorList
     )

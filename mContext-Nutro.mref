@@ -1,0 +1,11 @@
+$MODULE MContext-Nutro;
+
+$IMPORT MContext;
+
+$ENTRY UpdateInfo
+  e.Arg = <MContext::UpdateInfo-E e.Arg>;
+
+$ENTRY ExtractOption
+  e.Arg = <MContext::ExtractOption-E e.Arg>;
+
+$END MContext-Nutro.

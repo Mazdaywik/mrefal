@@ -1,4 +1,4 @@
-Запрещённые имена: Library
+Запрещённые имена: Library, None
 
 FrontEnds:
   MRefal_FrontEnd

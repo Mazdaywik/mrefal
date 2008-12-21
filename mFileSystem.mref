@@ -10,6 +10,7 @@ $IMPORT FileIO;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 $IMPORT MSwapSupport;
+$IMPORT MXXIO;
 $IMPORT Types;
 
 $SWAP G_TempFileName;
@@ -21,14 +22,33 @@ $ENTRY Init
     <MLambda::UnBracket <FileIO::Load '~suf.tmp'>>
     '.tmp'
   >
-  <MOS::System 'del ~suf.tmp'>;
+  <MOS::System 'del ~suf.tmp'>
+  <MR-Extent-CheckVersion>;
+
+MR-Extent-CheckVersion
+  =
+    <SwMR-Extent-CheckVersion
+      <MOS::System 'mr-extent VERSION >'<TempName>>
+      <MXXIO::Load <TempName>>
+    >;
+
+SwMR-Extent-CheckVersion {
+  Success 'mr-extent' 0 1 =
+    /* Всё правильно */;
+
+  Success e.OtherAttribs =
+    <MSelfDiag::Error 'Invalid version of utility mr-extent'>;
+
+  Fails =
+    <MSelfDiag::Error 'Utility mr-exxtent not found'>;
+}
+
+TempName = <MSwapSupport::Read &G_TempFileName>;
 
 //------------------------------------------------------------------------------
 
 $ENTRY Final
   = <MOS::System 'del \"' <TempName> '\" >nul 2>nul'>;
-
-TempName = <MSwapSupport::Read &G_TempFileName>;
 
 //------------------------------------------------------------------------------
 
@@ -206,35 +226,34 @@ DigitOnly {
 */
 $ENTRY FileAttribute
   s.Attribute e.FileName =
-    <CheckExistAndGetAttrib
-      s.Attribute
-      <ExistFile-T e.FileName>
+    <MOS::System 'mr-extent INFO ' e.FileName ' >'<TempName>>
+    <SwFileAttribute
+      s.Attribute <MXXIO::Load <TempName>>
     >;
 
-CheckExistAndGetAttrib {
-  s.Attribute False e.FileName = FileNotFound;
-  s.Attribute True e.FileName =
-    <ExtractAttrib s.Attribute <FilesInfo e.FileName>>;
-}
-
-ExtractAttrib {
-  s.Attrib ( t.Path e.Att-B (s.Attrib e.Value) e.Att-E ) =
-    (e.Value);
-
-  s.Attrib ( t.Path e.Attribs ) =
+SwFileAttribute {
+  s.Attribute Fails =
     <MSelfDiag::Error
-      'Unknown file attribute ' s.Attrib
+      'Files not found in MFileSystem::FileAttribute'
     >;
 
-  s.Attrib t.OneFile e.Tail =
-    <MSelfDiag::Error
-      'Found many files in MFileSystem::ExtractAttrib ' t.OneFile e.Tail
-    >;
+  s.Attribute Success 'N' = FileNotFound;
 
-  s.Attrib =
-    <MSelfDiag::Error
-      'Files not found in MFileSystem::ExtractAttrib'
-    >;
+  DateTime Success
+  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+    (s.Year s.Month s.Day s.Hour s.Minute s.Second);
+
+  Size Success
+  'D' s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+    (Directory);
+
+  Size Success
+  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+    (s.Size);
+
+  LongName Success
+  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+    (e.LongName);
 }
 
 //------------------------------------------------------------------------------

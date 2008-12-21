@@ -29,7 +29,118 @@ $ENTRY Create = [Context];
 $ENTRY Destroy
   [Context e.Info] = ;
 
+/**---------------------------------------------------------------------------*/
+//STARTCUT
+DefaultOptions
+  =
+    // Информация о входных и выходных частях
+    (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
+    (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
+
+    // Информация о настоящем имени модуля (контекст индексируется без учёта
+    // регистра, но регистр надо проверять)
+    (RealName Unknown) // Unknown | t.QualifiedName
+
+    // Информация о статусе компилирования
+
+    // Библиотека или файл с исходником
+    (Type Unknown) // Unknown | Library | Source
+
+    /*
+      Был ли обработан?
+      * Unknown -- если не инициализровано;
+      * Found -- модуль только обнаружен;
+      * SuccessCompiled -- успешно откомпилирован,
+      имеет смысл только для исходника;
+      * LocalUpdated
+        * для исходника -- выходные файлы корректны, не компилировался;
+        * для библиотечного модуля -- выходные файлы корректны;
+          (если возможна проверка корректности для back-end;
+          гарантируется, что корректна хотя бы SymInfo);
+      * GlobalUpdated
+        * для исходников и библиотечных модулей аналогично LocalUpdated
+          с тем отличием, что GlobalUpdated также рекурсивно установлен
+          у всех импортируемых модулей;
+      * SuccessUpdated
+        * для библиотеки -- библиотека рекурсивно просканирована и для
+          всех рекурсивных библиотек установлен SuccessUpdated,
+        * для исходника -- то же, что и GlobalUpdated, только для всех
+          импортируемых модулей (в т.ч. библиотечных) установлено
+          SuccessUpdated;
+      * NeedRecompile -- имеет смысл только для исходника,
+        означает, что модуль нужно перекомпилировать;
+      * Errors -- в процессе обработки произошла ошибка:
+        * для исходника -- ошибки в процессе компиляции;
+        * для библиотечного модуля -- выходные файлы повреждены.
+    */
+    (Status_NEW Unknown)
+
+    /*
+      Время последней модификации. Нужно для того, чтобы определить,
+      необходима ли перекомпиляция: импортирующие модули должны быть
+      откомпилированы позже импортируемых.
+      Unknown -- информация не доступна
+      (e.MinTime) (e.MaxTime) -- см. MainStructures.txt
+    */
+    (MinMaxTime Unknown)
+
+    (ModuleType Main) // Main | Regular
+    (CachedSym None) // None | t.IModule
+    (BaseDirectory Current) // Current | e.FileName
+    ;
+//ENDCUT
+/**---------------------------------------------------------------------------*/
+
+/*
+  Внутренние функции реализации контекста
+*/
+
 //------------------------------------------------------------------------------
+
+/*
+  <IsKnown t.hContext t.ModuleName>
+    == t.hContext Known
+    == t.hContext MismatchCase
+    == t.hContext NotKnown
+*/
+IsKnown
+  [Context e.Info] t.ModuleName =
+    <IsKnown-CheckName
+      (e.Info)
+      ( <MStrings::Lower <MQualifiedName::Parse t.ModuleName>> )
+      t.ModuleName
+    >;
+
+IsKnown-CheckName {
+  (
+    e.Info-B
+    ((e.Name) e.Options-B (RealName Unknown) e.Options-E)
+    e.Info-E
+  ) (e.Name) t.RealName =
+    [Context
+      e.Info-B
+      ((e.Name) e.Options-B (RealName Unknown) e.Options-E)
+      e.Info-E
+    ] Known;
+
+  (
+    e.Info-B
+    ((e.Name) e.Options-B (RealName t.RealName) e.Options-E)
+    e.Info-E
+  ) (e.Name) t.RealName =
+    [Context
+      e.Info-B
+      ((e.Name) e.Options-B (RealName t.RealName) e.Options-E)
+      e.Info-E
+    ] Known;
+
+  ( e.Info-B ((e.Name) e.Options) e.Info-E )
+  (e.Name) t.RealName =
+    [Context e.Info-B ((e.Name) e.Options) e.Info-E] MismatchCase;
+
+  (e.Info) (e.Name) t.RealName =
+    [Context e.Info] NotKnown;
+}
 
 /**
   <UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
@@ -37,7 +148,9 @@ $ENTRY Destroy
     == t.hContext Fails s.Error
   s.Error ::= UnknownOption | MismatchCase
 */
-$ENTRY UpdateInfo
+$ENTRY UpdateInfo-E e.Arg = <UpdateInfo e.Arg>;
+
+UpdateInfo
   [Context e.Info] t.QualifiedName e.NewOptions =
     <UpdateInfo-FindName
       [Context e.Info]
@@ -157,73 +270,6 @@ DoUpdateOptions {
     Fails;
 }
 
-/**---------------------------------------------------------------------------*/
-//STARTCUT
-DefaultOptions
-  =
-    // Информация о входных и выходных частях
-    (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
-    (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
-
-    // Информация о настоящем имени модуля (контекст индексируется без учёта
-    // регистра, но регистр надо проверять)
-    (RealName Unknown) // Unknown | t.QualifiedName
-
-    // Информация о статусе компилирования
-
-    // Библиотека или файл с исходником
-    (Type Unknown) // Unknown | Library | Source
-
-    /*
-      Был ли обработан?
-      * Unknown -- если не инициализровано;
-      * Found -- модуль только обнаружен;
-      * SuccessCompiled -- успешно откомпилирован,
-      имеет смысл только для исходника;
-      * LocalUpdated
-        * для исходника -- выходные файлы корректны, не компилировался;
-        * для библиотечного модуля -- выходные файлы корректны;
-          (если возможна проверка корректности для back-end;
-          гарантируется, что корректна хотя бы SymInfo);
-      * GlobalUpdated
-        * для исходников и библиотечных модулей аналогично LocalUpdated
-          с тем отличием, что GlobalUpdated также рекурсивно установлен
-          у всех импортируемых модулей;
-      * SuccessUpdated
-        * для библиотеки -- библиотека рекурсивно просканирована и для
-          всех рекурсивных библиотек установлен SuccessUpdated,
-        * для исходника -- то же, что и GlobalUpdated, только для всех
-          импортируемых модулей (в т.ч. библиотечных) установлено
-          SuccessUpdated;
-      * NeedRecompile -- имеет смысл только для исходника,
-        означает, что модуль нужно перекомпилировать;
-      * Errors -- в процессе обработки произошла ошибка:
-        * для исходника -- ошибки в процессе компиляции;
-        * для библиотечного модуля -- выходные файлы повреждены.
-    */
-    (Status_NEW Unknown)
-
-    /*
-      Время последней модификации. Нужно для того, чтобы определить,
-      необходима ли перекомпиляция: импортирующие модули должны быть
-      откомпилированы позже импортируемых.
-      Unknown -- информация не доступна
-      (e.MinTime) (e.MaxTime) -- см. MainStructures.txt
-    */
-    (MinMaxTime Unknown)
-
-    (ModuleType Main) // Main | Regular
-    (CachedSym None) // None | t.IModule
-    (BaseDirectory Current) // Current | e.FileName
-    /*
-      Объединяло Type и Status_NEW, устаревшее.
-      Unknown | InCompiling | Library | Recompiled | Updated
-    */
-    (Status Unknown)
-    ;
-//ENDCUT
-/**---------------------------------------------------------------------------*/
-
 //------------------------------------------------------------------------------
 
 /**
@@ -233,7 +279,9 @@ DefaultOptions
     == t.hContext ModuleNotFound
     == t.hContext MismatchCase
 */
-$ENTRY ExtractOption
+$ENTRY ExtractOption-E e.Arg = <ExtractOption e.Arg>;
+
+ExtractOption
   [Context e.Info] t.QualifiedName s.Option =
     <ExtractOption-CheckName
       [Context e.Info]
@@ -314,6 +362,286 @@ ExtractOption-FindName {
 
   [Context e.Info] e.Name s.Option =
     [Context e.Info] ModuleNotFound;
+}
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции уровня поиска модулей.
+*/
+
+/**
+  <CreateModule
+    t.hContext t.ModuleName
+    t.FrontEndInfo
+    t.BackEndInfo
+    (BaseDirectory e.BaseDirectory)
+  >
+    == t.hContext Success
+    == t.hContext Fails Redefinition
+
+  t.FrontEndInfo ::=
+    (FrontEnd s.FrontEnd e.PathToFrontEnd) | (FrontEnd None)
+  t.BackEndInfo ::=
+    (BackEnds (s.BackEnd e.PathToBackEnd)*) | (BackEnds Unknowns)
+*/
+$ENTRY CreateModule
+  t.hContext t.ModuleName
+  (FrontEnd s.FrontEnd e.PathToFrontEnd)
+  (BackEnds e.BackEnds)
+  (BaseDirectory e.BaseDirectory) =
+    <CreateModule-SwDefined
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName
+      (FrontEnd s.FrontEnd e.PathToFrontEnd)
+      (BackEnds e.BackEnds)
+      (Type <SwType s.FrontEnd>)
+      (Status_NEW Found)
+      (BaseDirectory e.BaseDirectory)
+    >;
+
+SwType { None = Library; s.Other = Source; }
+
+CreateModule-SwDefined {
+  t.hContext NotKnown
+  t.ModuleName e.NewOptions =
+    <CreateModule-SwCreated
+      <UpdateInfo t.hContext t.ModuleName e.NewOptions>
+    >;
+
+  t.hContext Known
+  t.ModuleName e.NewOptions =
+    t.hContext Fails Redefinition;
+
+  t.hContext MismatchCase
+  t.ModuleName e.NewOptions =
+    t.hContext Fails Redefinition;
+
+  // Вариант UnknownOption не рассматриваем -- нарушение инварианта
+}
+
+CreateModule-SwCreated {
+  t.hContext Success = t.hContext Success;
+
+  // Вариант UnknownOption не рассматриваем -- нарушение инварианта
+
+  /*
+    Вариант MismatchCase не рассматриваем -- в контексте не должна была
+    присутствовать иноформация о модуле до добавления
+  */
+}
+
+/**
+  <GetFrontEnd t.hContext t.ModuleName>
+    == t.hContext Success None
+    == t.hContext Success s.FrontEnd e.Path
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetFrontEnd
+  t.hContext t.ModuleName =
+    <GetFrontEnd-Aux
+      <ExtractOption t.hContext t.ModuleName FrontEnd>
+    >;
+
+GetFrontEnd-Aux {
+  t.hContext Found None = t.hContext Success None;
+
+  t.hContext Found s.FrontEnd e.Path =
+    t.hContext Success s.FrontEnd e.Path;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**
+  <GetBackEndList t.hContext t.ModuleName>
+    == t.hContext Success (s.BackEnd e.Path)*
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetBackEndList
+   t.hContext t.ModuleName =
+     <GetBackEndList-Aux
+       <ExtractOption t.hContext t.ModuleName BackEnds>
+     >;
+
+GetBackEndList-Aux {
+  t.hContext Found e.BackEndList = t.hContext Success e.BackEndList;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**
+  <GetBaseDirectory t.hContext t.ModuleName>
+    == t.hContext Success e.BaseDirectory
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetBaseDirectory
+  t.hContext t.ModuleName =
+    <GetBaseDirectory-Aux
+      <ExtractOption t.hContext t.ModuleName BaseDirectory>
+    >;
+
+GetBaseDirectory-Aux {
+  t.hContext Found e.BaseDirectory = t.hContext Success e.BaseDirectory;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции "сырого" уровня.
+*/
+
+/**
+  <SetMinMaxTime t.hContext t.ModuleName (e.MinTime) (e.MaxTime)>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY SetMinMaxTime
+  t.hContext t.ModuleName (e.MinTime) (e.MaxTime) =
+    <SetMinMaxTime-SwKnown
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName (e.MinTime) (e.MaxTime)
+    >;
+
+SetMinMaxTime-SwKnown {
+  t.hContext Known t.ModuleName (e.MinTime) (e.MaxTime) =
+    <SetMinMaxTime-Aux
+      <UpdateInfo
+        t.hContext t.ModuleName (MinMaxTime (e.MinTime) (e.MaxTime))
+      >
+    >;
+
+  t.hContext NotKnown t.ModuleName (e.MinTime) (e.MaxTime) =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase t.ModuleName (e.MinTime) (e.MaxTime) =
+    t.hContext Fails MismatchCase;
+}
+
+SetMinMaxTime-Aux {
+  t.hContext Success = t.hContext Success;
+
+  // Остальные варианты невозможны
+}
+
+/**
+  <GetMinMaxTime t.hContext t.ModuleName>
+    == t.hContext Success Unknown
+    == t.hContext Success (e.MinTime) (e.MaxTime)
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetMinMaxTime
+  t.hContext t.ModuleName =
+    <GetMinMaxTime-Aux
+      <ExtractOption t.hContext t.ModuleName MinMaxTime>
+    >;
+
+GetMinMaxTime-Aux {
+  t.hContext Found Unknown = t.hContext Success Unknown;
+
+  t.hContext Found (e.MinTime) (e.MaxTime) =
+    t.hContext Success (e.MinTime) (e.MaxTime);
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции уровня компиляции.
+*/
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции, оставленные для совместимости.
+*/
+
+/**
+  <SetStatusNew t.hContext t.ModuleName s.Status>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY SetStatusNew
+  t.hContext t.ModuleName s.Status =
+    <SetStatusNew-SwKnown
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName s.Status
+    >;
+
+SetStatusNew-SwKnown {
+  t.hContext Known t.ModuleName s.Status =
+    <SetStatusNew-Aux
+      <UpdateInfo t.hContext t.ModuleName (Status_NEW s.Status)>
+    >;
+
+  t.hContext NotKnown t.ModuleName s.Status =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase t.ModuleName s.Status =
+    t.hContext Fails MismatchCase;
+}
+
+SetStatusNew-Aux {
+  t.hContext Success = t.hContext Success;
+
+  // Остальные варианты суть нарушение инварианта
+}
+
+/**
+  <GetStatusNew t.hContext t.ModuleName>
+    == t.hContext Success s.StatusNew
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetStatusNew
+  t.hContext t.ModuleName =
+    <GetStatusNew-Aux
+      <ExtractOption t.hContext t.ModuleName Status_NEW>
+    >;
+
+GetStatusNew-Aux {
+  t.hContext Found s.StatusNew = t.hContext Success s.StatusNew;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**
+  <GetType t.hContext t.ModuleName>
+    == t.hContext Success s.Type
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetType
+  t.hContext t.ModuleName =
+    <GetType-Aux
+      <ExtractOption t.hContext t.ModuleName Type>
+    >;
+
+GetType-Aux {
+  t.hContext Found s.Type = t.hContext Success s.Type;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 }
 
 $END MContext.

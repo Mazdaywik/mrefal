@@ -30,42 +30,43 @@ DependencesList
   t.hContext t.ModuleName =
     <DependencesList-SwAvail
       t.ModuleName
-      <MContext::ExtractOption
-        t.hContext t.ModuleName Status_NEW
+      <MContext::GetStatusNew
+        t.hContext t.ModuleName
       >
     >;
 
 DependencesList-SwAvail {
-  t.ModuleName t.hContext Found SuccessCompiled =
+  t.ModuleName t.hContext Success SuccessCompiled =
     <DependencesList-OnAvail
       t.hContext t.ModuleName
     >;
 
-  t.ModuleName t.hContext Found GlobalUpdated =
+  t.ModuleName t.hContext Success GlobalUpdated =
     <DependencesList-OnAvail
       t.hContext t.ModuleName
     >;
 
-  t.ModuleName t.hContext Found LocalUpdated =
+  t.ModuleName t.hContext Success LocalUpdated =
     <DependencesList-OnAvail
       t.hContext t.ModuleName
     >;
 
-  t.ModuleName t.hContext Found SuccessUpdated =
+  t.ModuleName t.hContext Success SuccessUpdated =
     <DependencesList-OnAvail
       t.hContext t.ModuleName
     >;
 
-  t.ModuleName t.hContext Errors =
+  t.ModuleName t.hContext Success Errors =
     t.hContext Fails;
 
-  t.ModuleName t.hContext s.OtherStatus =
+  t.ModuleName t.hContext Success s.OtherStatus =
     t.hContext NotAvail;
 
-  t.ModuleName t.hContext ModuleInfoNotFound =
+  t.ModuleName t.hContext Fails ModuleInfoNotFound =
     t.hContext NotAvail;
 
-  // В случае OptionNotFound здесь должен быть бабах.
+  t.ModuleName t.hContext Fails MismatchCase =
+    t.hContext NotAvail;
 }
 
 DependencesList-OnAvail
@@ -133,9 +134,8 @@ CheckNeedCompile-R
 CheckNeedCompile-UpdateContext {
   t.hContext t.ModuleName Updated =
     <GuardUpdateContext
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName
-        (Status_NEW GlobalUpdated)
+      <MContext::SetStatusNew
+        t.hContext t.ModuleName GlobalUpdated
       >
     >
     t.ModuleName Updated;
@@ -145,9 +145,8 @@ CheckNeedCompile-UpdateContext {
 
   t.hContext t.ModuleName s.Result =
     <GuardUpdateContext
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName
-        (Status_NEW s.Result)
+      <MContext::SetStatusNew
+        t.hContext t.ModuleName s.Result
       >
     >
     t.ModuleName s.Result;
@@ -341,54 +340,54 @@ CheckNeedCompileOne
   t.hContext (e.ModulePath) t.ModuleName =
     <CheckNeedCompileOne-SwKnown
       (e.ModulePath) t.ModuleName
-      <MContext::ExtractOption t.hContext t.ModuleName Status_NEW>
+      <MContext::GetStatusNew t.hContext t.ModuleName>
     >;
 
 CheckNeedCompileOne-SwKnown {
   (e.ModulePath) t.ModuleName t.hContext
-  ModuleNotFound =
+  Fails ModuleNotFound =
     <CheckNeedCompileOne-OnUnknown
       t.hContext (e.ModulePath) t.ModuleName
     >;
 
   (e.ModulePath) t.ModuleName t.hContext
-  MismatchCase =
+  Fails MismatchCase =
     t.hContext t.ModuleName NotFound;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found Unknown =
+  Success Unknown =
     <CheckNeedCompileOne-OnUnknown
       t.hContext (e.ModulePath) t.ModuleName
     >;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found Found =
+  Success Found =
     <CheckNeedCompileOne-OnUnknown
       t.hContext (e.ModulePath) t.ModuleName
     >;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found SuccessCompiled =
+  Success SuccessCompiled =
     t.hContext t.ModuleName SuccessCompiled;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found SuccessUpdated =
+  Success SuccessUpdated =
     t.hContext t.ModuleName SuccessUpdated;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found LocalUpdated =
+  Success LocalUpdated =
     t.hContext t.ModuleName LocalUpdated;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found GlobalUpdated =
+  Success GlobalUpdated =
     t.hContext t.ModuleName GlobalUpdated;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found NeedRecompile =
+  Success NeedRecompile =
     t.hContext t.ModuleName NeedRecompile;
 
   (e.ModulePath) t.ModuleName t.hContext
-  Found Errors =
+  Success Errors =
     t.hContext t.ModuleName Errors;
 }
 
@@ -468,17 +467,15 @@ GetTime
       <MLambda::Apply
         <MLambda::Parallel-H
           <MLambda::Composite
-            <MLambda::BindRight & MContext.ExtractOption t.ModuleName Type>
+            <MLambda::BindRight & MContext.GetType t.ModuleName>
             & MLambda.Bracket-H
           >
           <MLambda::Composite
-            <MLambda::BindRight
-              & MContext.ExtractOption t.ModuleName Status_NEW
-            >
+            <MLambda::BindRight & MContext.GetStatusNew t.ModuleName>
             & MLambda.Bracket-H
           >
           <MLambda::Composite
-            <MLambda::BindRight & MContext.ExtractOption t.ModuleName MinMaxTime>
+            <MLambda::BindRight & MContext.GetMinMaxTime t.ModuleName>
             & MLambda.Bracket-H
           >
         >
@@ -488,31 +485,31 @@ GetTime
 
 GetLastTime-SwKnown {
   t.ModuleName t.hContext
-  ( ModuleNotFound ) ( ModuleNotFound ) ( ModuleNotFound ) =
+  ( Fails ModuleNotFound ) ( Fails ModuleNotFound ) ( Fails ModuleNotFound ) =
     t.hContext NotKnown;
 
   t.ModuleName t.hContext
-  ( MismatchCase ) ( MismatchCase ) ( MismatchCase ) =
+  ( Fails MismatchCase ) ( Fails MismatchCase ) ( Fails MismatchCase ) =
     t.hContext NotKnown;
 
   t.ModuleName t.hContext
-  ( Found Unknown ) ( Found Unknown ) ( Found Unknown ) =
+  ( Success Unknown ) ( Success Unknown ) ( Success Unknown ) =
     t.hContext NotKnown;
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found SuccessCompiled ) ( Found e.?Time ) =
+  ( Success s.ModuleType ) ( Success SuccessCompiled ) ( Success e.?Time ) =
     t.hContext NeedNotTime SuccessCompiled;
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found NeedRecompile ) ( Found e.?Time ) =
+  ( Success s.ModuleType ) ( Success NeedRecompile ) ( Success e.?Time ) =
     t.hContext NeedNotTime NeedRecompile;
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found Errors ) ( Found e.Time ) =
+  ( Success s.ModuleType ) ( Success Errors ) ( Success e.Time ) =
     t.hContext NeedNotTime Errors;
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found s.Status ) ( Found Unknown ) =
+  ( Success s.ModuleType ) ( Success s.Status ) ( Success Unknown ) =
     <GetLastTime-CalcTime
       t.ModuleName s.ModuleType
       <MLambda::Apply
@@ -531,23 +528,23 @@ GetLastTime-SwKnown {
     >;
 
   t.ModuleName t.hContext
-  ( Found s.Type ) ( Found SuccessUpdated ) ( Found (e.MinTime) (e.MaxTime) ) =
+  ( Success s.Type ) ( Success SuccessUpdated ) ( Success (e.MinTime) (e.MaxTime) ) =
     t.hContext Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found Library ) ( Found s.Status ) ( Found (e.MinTime) (e.MaxTime) ) =
+  ( Success Library ) ( Success s.Status ) ( Success (e.MinTime) (e.MaxTime) ) =
     t.hContext Known FullComplect Library (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found Source ) ( Found LocalUpdated ) ( Found (e.MinTime) (e.MaxTime) ) =
+  ( Success Source ) ( Success LocalUpdated ) ( Success (e.MinTime) (e.MaxTime) ) =
     t.hContext Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found Source ) ( Found GlobalUpdated ) ( Found (e.MinTime) (e.MaxTime) ) =
+  ( Success Source ) ( Success GlobalUpdated ) ( Success (e.MinTime) (e.MaxTime) ) =
     t.hContext Known FullComplect SrcNotModified (e.MinTime) (e.MaxTime);
 
   t.ModuleName t.hContext
-  ( Found s.ModuleType ) ( Found s.Status ) ( Found (e.MinTime) (e.MaxTime) ) =
+  ( Success s.ModuleType ) ( Success s.Status ) ( Success (e.MinTime) (e.MaxTime) ) =
     t.hContext Known FullComplect SrcModified (e.MinTime) (e.MaxTime);
 }
 
@@ -592,9 +589,8 @@ GetLastTime-CalcTime {
 GetLastTime-MakeResult-Library
   t.ModuleName Library t.hContext (e.MinTime) e.Times (e.MaxTime) =
     <GuardUpdateContext
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName
-        (MinMaxTime (e.MinTime) (e.MaxTime))
+      <MContext::SetMinMaxTime
+        t.hContext t.ModuleName (e.MinTime) (e.MaxTime)
       >
     >
     Known FullComplect Library (e.MinTime) (e.MaxTime);
@@ -611,9 +607,8 @@ GetLastTime-CheckExists {
   t.ModuleName t.hContext (e.SrcTime)
   e.BackEnds-B (False e.FileNotExists) e.BackEnds-E =
     <GuardUpdateContext
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName
-        (Status_NEW NeedRecompile)
+      <MContext::SetStatusNew
+        t.hContext t.ModuleName NeedRecompile
       >
     >
     Known PartialComplect;
@@ -653,20 +648,26 @@ GetLastTime-OutsTime {
 GetLastTime-Compare {
   t.ModuleName t.hContext (e.MaxTime) '<' (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName
-        (MinMaxTime (e.SrcTime) (e.MaxTime))
-        (Status_NEW LocalUpdated)
+      <MContext::SetStatusNew
+        <GuardUpdateContext
+          <MContext::SetMinMaxTime
+            t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
+          >
+        >
+        t.ModuleName LocalUpdated
       >
     >
     Known FullComplect SrcNotModified (e.SrcTime) (e.MaxTime);
 
   t.ModuleName t.hContext (e.MaxTime) s.OtherOrder (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName
-        (MinMaxTime (e.MinTime) (e.MaxTime))
-        (Status_NEW NeedRecompile)
+      <MContext::SetStatusNew
+        <GuardUpdateContext
+          <MContext::SetMinMaxTime
+            t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
+          >
+        >
+        t.ModuleName NeedRecompile
       >
     >
     Known FullComplect SrcModified (e.MinTime) (e.MaxTime);

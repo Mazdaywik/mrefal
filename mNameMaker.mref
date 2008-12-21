@@ -4,7 +4,7 @@ $MODULE MNameMaker;
   Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
 ==============================================================================*/
 
-$IMPORT MContext;
+$IMPORT MContext = MContext-Nutro;
 
 /**
   <MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>

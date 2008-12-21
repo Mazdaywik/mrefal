@@ -119,7 +119,7 @@ Compile-AfterUpdateContext
 e.Imports ::= (t.AliasName t.RealName)
 
 <AnalyzeValidSubModule (t.hErrorList t.hIModule s.Result) t.ImportRes>
-  == (t.hErrorList t.hIModule s.Result) t.hISubModule
+  == (t.hErrorList t.hIModule s.Result) (t.hISubModule t.SubModuleAlias)
   == (t.hErrorList t.hIModule Errors)
 t.ImportRes ::=
   (t.Success t.hISubModule s.ModuleType t.Alias)
@@ -132,11 +132,6 @@ Module MContext;
 <Create> == t.Context
 
 <Destroy t.Context> == empty
-
-<UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
-  == t.hUpdatedContext Success
-  == t.hContext Fails s.Error
-s.Error ::= UnknownOption | MismatchCase
 
 ---------------------------------------------------------------------------
 # STARTCUT
@@ -196,20 +191,66 @@ DefaultOptions
     (ModuleType Main) // Main | Regular
     (CachedSym None) // None | t.IModule
     (BaseDirectory Current) // Current | e.FileName
-    /*
-      Объединяло Type и Status_NEW, устаревшее.
-      Unknown | InCompiling | Library | Recompiled | Updated
-    */
-    (Status Unknown)
     ;
 # ENDCUT
 ---------------------------------------------------------------------------
+
+<UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
+  == t.hUpdatedContext Success
+  == t.hContext Fails s.Error
+s.Error ::= UnknownOption | MismatchCase
 
 <ExtractOption t.hContext t.QualifiedName s.Option>
   == t.hContext Found e.Option
   == t.hContext OptionNotFound
   == t.hContext ModuleNotFound
   == t.hContext MismatchCase
+
+---------------------------------------------------------------------------
+
+Функции уровня поиска модулей.
+
+<CreateModule
+  t.hContext t.ModuleName
+  t.FrontEndInfo
+  t.BackEndInfo
+  (BaseDirectory e.BaseDirectory)
+>
+  == t.hContext Success
+  == t.hContext Fails Redefinition
+
+t.FrontEndInfo ::=
+  (FrontEnd s.FrontEnd e.PathToFrontEnd) | (FrontEnd None)
+t.BackEndInfo ::=
+  (BackEnds (s.BackEnd e.PathToBackEnd)*) | (BackEnds Unknowns)
+
+<GetFrontEnd t.hContext t.ModuleName>
+  == t.hContext Success None
+  == t.hContext Success s.FrontEnd e.Path
+  == t.hContext Fails ModuleNotFound
+  == t.hContext Fails MismatchCase
+
+<GetBackEndList t.hContext t.ModuleName>
+  == t.hContext Success (s.BackEnd e.Path)*
+  == t.hContext Fails ModuleNotFound
+  == t.hContext Fails MismatchCase
+
+<GetBaseDirectory t.hContext t.ModuleName>
+  == t.hContext Success e.BaseDirectory
+  == t.hContext Fails ModuleNotFound
+  == t.hContext Fails MismatchCase
+
+---------------------------------------------------------------------------
+
+Функции "сырого" уровня.
+
+---------------------------------------------------------------------------
+
+Функции уровня компиляции.
+
+---------------------------------------------------------------------------
+
+Функции, оставленные для совместимости.
 
 ################################################################################
 Module MCreateDirIfNeed;
@@ -274,10 +315,7 @@ Module MError;
 >
   == t.ErrorList
 
-<AddRedeclaredIdentifier t.ErrorList t.SrcPos e.Identifier>
-  == t.UpdatedErrorList
-
-<AddRedeclaredIdentifier-Qualified t.ErrorList t.SrcPos t.Identifier>
+<AddRedeclaredIdentifier t.ErrorList t.SrcPos t.Identifier>
   == t.UpdatedErrorList
 
 <AddVarTypeMismatch t.hErrorList t.SrcPos e.VarName>
@@ -408,7 +446,7 @@ s.Status ::=
 >
   == t.hIModule s.Status
 
-<UpdateADT t.IModule (e.Name) e.Attribs>
+<UpdateADT t.IModule t.Name e.Attribs>
   == t.IModule s.Status
 
 <UpdateEntity-Relative
@@ -480,7 +518,7 @@ s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
   == t.hIModule t.AliasImportName*
 
 <GetADTList t.IModule>
-  == t.IModule (e.ADT)*
+  == t.IModule t.ADT*
 
 ################################################################################
 Module MLambda;
@@ -813,12 +851,6 @@ Module MQualifiedName;
 <Equals-T t.QName1 t.QName2>
   == s.Result t.QName1 t.QName2
 s.Result ::= True | False
-
-################################################################################
-Module MQualifiedSupport;
-
-<LastSegment t.Qualified>
-  == e.Last
 
 ################################################################################
 Module MResolver;

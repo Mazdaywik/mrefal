@@ -218,49 +218,39 @@ $ENTRY LookupImportModule
     <LookupImportModule-SwKnown
       (e.ModulePath)
       t.QualifiedName
-      <MContext::ExtractOption
-        t.hContext t.QualifiedName FrontEnd
-      >
+      <MContext::GetFrontEnd t.hContext t.QualifiedName>
    >;
 
 
 LookupImportModule-SwKnown {
   (e.ModulePath) t.QualifiedName
-  t.hContext Found None =
+  t.hContext Success None =
     <LookupImportModule-Known
       t.QualifiedName Library
-      <MContext::ExtractOption
-        t.hContext
-        t.QualifiedName
-        BaseDirectory
-      >
+      <MContext::GetBaseDirectory t.hContext t.QualifiedName>
     >;
 
   (e.ModulePath) t.QualifiedName
-  t.hContext Found s.FrontEnd e.Path =
+  t.hContext Success s.FrontEnd e.Path =
     <LookupImportModule-Known
        t.QualifiedName s.FrontEnd
-       <MContext::ExtractOption
-         t.hContext
-         t.QualifiedName
-         BaseDirectory
-       >
+       <MContext::GetBaseDirectory t.hContext t.QualifiedName>
      >;
 
   (e.ModulePath) t.QualifiedName t.hContext
-  ModuleNotFound =
+  Fails ModuleNotFound =
     <LookupImportModule-Unknown
       t.hContext t.QualifiedName e.ModulePath
     >;
 
   (e.ModulePath) t.QualifiedName t.hContext
-  MismatchCase =
+  Fails MismatchCase =
     t.hContext NotFound;
 }
 
 LookupImportModule-Known {
   t.QualifiedName s.FrontEnd
-  t.hContext Found e.BaseDirectory =
+  t.hContext Success e.BaseDirectory =
     t.hContext Found s.FrontEnd e.BaseDirectory;
 
   // Остальное -- нарушение инварианта
@@ -364,33 +354,58 @@ CheckVariant-T-SrcAux {
 
 CheckVariant-T-SrcAux-SwExist {
   t.hContext
-  (s.FrontEnd t.QualifiedName e.BaseDirectory)
+  (s.FrontEnd t.ModuleName e.BaseDirectory)
   True e.FrontEndName =
-    <GuardInvariant
-      <MContext::UpdateInfo
-        t.hContext t.QualifiedName
-        (FrontEnd s.FrontEnd e.FrontEndName)
-        (Type Source)
-        (Status_NEW Found)
-        (BaseDirectory <SelectBaseDirectory e.BaseDirectory>)
+    <CheckVariant-T-SrcAux-SwExist-Finish
+      t.hContext t.ModuleName
+      (s.FrontEnd e.FrontEndName)
+      (<SelectBaseDirectory e.BaseDirectory>)
+      <MLambda::Map
+        <MLambda::BindLeft & GetBEPath t.ModuleName e.BaseDirectory>
+        <MBE-Mgr::GetList>
       >
-    >
-    (Found t.QualifiedName s.FrontEnd e.BaseDirectory);
+    >;
 
   t.hContext
-  (s.FrontEnd t.QualifiedName e.BaseDirectory)
+  (s.FrontEnd t.ModuleName e.BaseDirectory)
   False e.FrontEndName =
     t.hContext NotFound;
 }
-
-GuardInvariant
-  t.hContext Success = t.hContext;
 
 SelectBaseDirectory {
   '.' = Current;
 
   e.BaseDirectory = e.BaseDirectory;
 }
+
+GetBEPath
+  t.ModuleName e.BaseDirectory s.BackEndName =
+    <GetBEPath-Aux
+      s.BackEndName
+      <MBE-Mgr::GetPath-T s.BackEndName t.ModuleName e.BaseDirectory>
+    >;
+
+GetBEPath-Aux
+  s.BackEndName Success t.ModuleName e.Path =
+    (s.BackEndName e.Path);
+
+CheckVariant-T-SrcAux-SwExist-Finish
+  t.hContext t.ModuleName
+  (s.FrontEnd e.FrontEndName)
+  (e.BaseDirectory)
+  e.BackEnds =
+    <GuardInvariant
+      <MContext::CreateModule
+        t.hContext t.ModuleName
+        (FrontEnd s.FrontEnd e.FrontEndName)
+        (BackEnds e.BackEnds)
+        (BaseDirectory e.BaseDirectory)
+      >
+    >
+    (Found t.ModuleName s.FrontEnd e.BaseDirectory);
+
+GuardInvariant
+  t.hContext Success = t.hContext;
 
 CheckVariant-T-LibAux {
   t.hContext t.QualifiedName
@@ -429,12 +444,10 @@ CheckVariant-T-LibAux-SwExist {
 
   t.hContext t.QualifiedName (e.BaseDirectory) e.BE-Files =
     <GuardInvariant
-      <MContext::UpdateInfo
+      <MContext::CreateModule
         t.hContext t.QualifiedName
         (FrontEnd None)
         (BackEnds e.BE-Files)
-        (Type Library)
-        (Status_NEW Found)
         (BaseDirectory <SelectBaseDirectory e.BaseDirectory>)
       >
     >
@@ -463,81 +476,16 @@ SwDoCheckVariant-CmdLine {
 $ENTRY GetBEList
   t.hContext t.ModuleName =
     <GetBEList-CheckKnown
-      t.ModuleName
-      <MContext::ExtractOption
-        t.hContext t.ModuleName Status_NEW
-      >
+      <MContext::GetBackEndList t.hContext t.ModuleName>
     >;
 
 GetBEList-CheckKnown {
-  t.ModuleName t.hContext ModuleNotFound =
-    t.hContext UnKnown;
+  t.hContext Success e.BackEnds = t.hContext Known e.BackEnds;
 
-  t.ModuleName t.hContext MismatchCase =
-    t.hContext UnKnown;
+  t.hContext Fails ModuleNotFound = t.hContext UnKnown;
 
-  t.ModuleName t.hContext Found Unknown =
-    t.hContext UnKnown;
-
-  t.ModuleName t.hContext Found s.Type =
-    <GetBEList-BackEnds
-      t.ModuleName
-      <MContext::ExtractOption
-        t.hContext t.ModuleName BackEnds
-      >
-    >;
-
-  /*
-    Отсутствие опции не проверяем -- это нарушение инварианта
-  */
+  t.hContext Fails MismatchCase = t.hContext UnKnown;
 }
-
-GetBEList-BackEnds {
-  t.ModuleName t.hContext Found Unknowns =
-    <GetBEList-Finish
-      t.ModuleName
-      <MLambda::MapReduce
-        <MLambda::Composite
-          <MLambda::Parallel-H
-            <MLambda::MakeHandled & MLambda.Identity>
-            <MLambda::BindLeft-H
-              & MBE-Mgr.X_GetPath-T
-              t.ModuleName
-            >
-          >
-          & MLambda.Bracket-H
-        >
-        t.hContext
-        <MBE-Mgr::GetList>
-      >
-    >;
-
-  t.ModuleName t.hContext Found e.BackEnds =
-    t.hContext Known e.BackEnds;
-}
-
-GetBEList-Finish
-  t.ModuleName t.hContext e.BackEnds =
-    <GetBEList-UpdateBackEnds
-      t.hContext t.ModuleName
-      <MLambda::Map & ToPairNameFile e.BackEnds>
-    >;
-
-ToPairNameFile
-  (s.BackEnd t.ModuleName Success e.Path) = (s.BackEnd e.Path);
-
-GetBEList-UpdateBackEnds
-  t.hContext t.ModuleName e.BackEnds =
-    <GuardUpdateBackEnds
-      <MContext::UpdateInfo
-        t.hContext t.ModuleName 
-        (BackEnds e.BackEnds)
-      >
-    >
-    Known e.BackEnds;
-
-GuardUpdateBackEnds
-  t.hContext Success = t.hContext;
 
 //------------------------------------------------------------------------------
 
@@ -550,42 +498,17 @@ GuardUpdateBackEnds
 $ENTRY GetFEName
   t.hContext t.ModuleName =
     <GetFEName-CheckKnown
-      t.ModuleName
-      <MContext::ExtractOption t.hContext t.ModuleName Status_NEW>
+      <MContext::GetFrontEnd t.hContext t.ModuleName>
     >;
 
 GetFEName-CheckKnown {
-  t.ModuleName t.hContext ModuleNotFound =
-    t.hContext UnKnown;
+  t.hContext Success None = t.hContext Known Library;
 
-  t.ModuleName t.hContext MismatchCase =
-    t.hContext UnKnown;
+  t.hContext Success s.FrontEnd e.Path = t.hContext Known s.FrontEnd e.Path;
 
-  t.ModuleName t.hContext Found Unknown =
-    t.hContext UnKnown;
+  t.hContext Fails ModuleNotFound = t.hContext UnKnown;
 
-  t.ModuleName t.hContext Found s.Other =
-    <GetFEName-Aux
-      t.ModuleName
-      <MContext::ExtractOption t.hContext t.ModuleName FrontEnd>
-    >;
-}
-
-GetFEName-Aux {
-  t.ModuleName t.hContext Found Unknowns =
-    /*
-      Неожиданно. Если модуль уже известен, то он должен оказаться либо
-      библиотечным, либо иметь свой front-end.
-    */
-    <MSelfDiag::FailDown
-      & GetFEName-Aux t.ModuleName t.hContext Found Unknowns
-    >;
-
-  t.ModuleName t.hContext Found None =
-    t.hContext Known Library;
-
-  t.ModuleName t.hContext Found s.FrontEnd e.Path =
-    t.hContext Known s.FrontEnd e.Path;
+  t.hContext Fails MismatchCase = t.hContext UnKnown;
 }
 
 $END MModules.

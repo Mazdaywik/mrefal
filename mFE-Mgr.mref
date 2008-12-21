@@ -1,7 +1,6 @@
 $MODULE MFE-Mgr;
 
 $IMPORT MBEFE-Holder;
-$IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
 /*==============================================================================

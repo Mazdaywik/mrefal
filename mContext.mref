@@ -43,8 +43,11 @@ DefaultOptions
 
     // Информация о статусе компилирования
 
+    (Type Errors) // Errors | Changed | Updated | Library
+    (Status Found) // Found | Raw | Ready
+
     // Библиотека или файл с исходником
-    (Type Unknown) // Unknown | Library | Source
+    (Type-Old Unknown) // Unknown | Library | Source
 
     /*
       Был ли обработан?
@@ -142,14 +145,12 @@ IsKnown-CheckName {
     [Context e.Info] NotKnown;
 }
 
-/**
+/*
   <UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
     == t.hUpdatedContext Success
     == t.hContext Fails s.Error
   s.Error ::= UnknownOption | MismatchCase
 */
-$ENTRY UpdateInfo-E e.Arg = <UpdateInfo e.Arg>;
-
 UpdateInfo
   [Context e.Info] t.QualifiedName e.NewOptions =
     <UpdateInfo-FindName
@@ -272,15 +273,13 @@ DoUpdateOptions {
 
 //------------------------------------------------------------------------------
 
-/**
+/*
   <ExtractOption t.hContext t.QualifiedName s.Option>
     == t.hContext Found e.Option
     == t.hContext OptionNotFound
     == t.hContext ModuleNotFound
     == t.hContext MismatchCase
 */
-$ENTRY ExtractOption-E e.Arg = <ExtractOption e.Arg>;
-
 ExtractOption
   [Context e.Info] t.QualifiedName s.Option =
     <ExtractOption-CheckName
@@ -395,7 +394,8 @@ $ENTRY CreateModule
       t.ModuleName
       (FrontEnd s.FrontEnd e.PathToFrontEnd)
       (BackEnds e.BackEnds)
-      (Type <SwType s.FrontEnd>)
+      (Type-Old <SwType s.FrontEnd>)
+      (Status Found)
       (Status_NEW Found)
       (BaseDirectory e.BaseDirectory)
     >;
@@ -633,7 +633,7 @@ GetStatusNew-Aux {
 $ENTRY GetType
   t.hContext t.ModuleName =
     <GetType-Aux
-      <ExtractOption t.hContext t.ModuleName Type>
+      <ExtractOption t.hContext t.ModuleName Type-Old>
     >;
 
 GetType-Aux {
@@ -642,6 +642,42 @@ GetType-Aux {
   t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
 
   t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**
+  <SaveFullInfo t.hContext t.RealModuleName s.ModuleType s.Changed>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+  s.Changed ::= SuccessCompiled | SuccessUpdated
+*/
+$ENTRY SaveFullInfo
+  t.hContext t.RealModuleName s.ModuleType s.Changed =
+    <SaveFullInfo-SwKnown
+      <IsKnown t.hContext t.RealModuleName>
+      t.RealModuleName
+      (Status_NEW s.Changed)
+      (RealName t.RealModuleName)
+      (ModuleType s.ModuleType)
+    >;
+
+SaveFullInfo-SwKnown {
+  t.hContext Known t.ModuleName e.NewOptions =
+    <SaveFullInfo-Aux
+      <UpdateInfo t.hContext t.ModuleName e.NewOptions>
+    >;
+
+  t.hContext NotKnown t.ModuleName e.NewOptions =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase t.ModuleName e.NewOptions =
+    t.hContext Fails MismatchCase;
+}
+
+SaveFullInfo-Aux {
+  t.hContext Success = t.hContext Success;
+
+  // Другие варианты недопустимы
 }
 
 $END MContext.

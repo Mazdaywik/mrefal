@@ -4,7 +4,7 @@ $MODULE MNameMaker;
   Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
 ==============================================================================*/
 
-$IMPORT MContext = MContext-Nutro;
+$IMPORT MContext;
 
 /**
   <MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
@@ -18,25 +18,23 @@ $IMPORT MContext = MContext-Nutro;
 $ENTRY MakeName
   t.Context t.QualifiedName s.MgrName s.FnRelative =
     <MakeName--SwInContext
-      ( <MContext::ExtractOption
-        t.Context t.QualifiedName BaseDirectory
-      > )
+      ( <MContext::GetBaseDirectory t.Context t.QualifiedName> )
       t.QualifiedName s.MgrName s.FnRelative
     >;
 
 MakeName--SwInContext {
-  ( t.hContext Found e.BaseName )
+  ( t.hContext Success e.BaseName )
   t.QualifiedName s.MgrName s.FnRelative =
     <MakeName--SwMakeRelative
       t.hContext (e.BaseName)
       <s.FnRelative t.QualifiedName s.MgrName>
     >;
 
-  ( t.hContext ModuleNotFound )
+  ( t.hContext Fails ModuleNotFound )
   t.QualifiedName s.MgrName s.FnRelative =
     t.hContext t.QualifiedName Fails;
 
-  ( t.hContext MismatchCase )
+  ( t.hContext Fails MismatchCase )
   t.QualifiedName s.MgrName s.FnRelative =
     t.hContext t.QualifiedName Fails;
 

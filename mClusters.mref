@@ -771,8 +771,7 @@ Slaves
   (t.Master e.Slaves) = e.Slaves;
 
 DoTopologicalSort {
-  ( e.Result )
-  ( e.AllSlaves-B t.Master e.AllSlaves-E ) ( e.NotHead )
+  ( e.Result ) ( e.AllSlaves-B t.Master e.AllSlaves-E ) ( e.NotHead )
   ( t.Master e.Slaves ) e.Tail =
     <DoTopologicalSort
       ( e.Result )
@@ -781,8 +780,8 @@ DoTopologicalSort {
       e.Tail
     >;
 
-  ( e.Result )
-  ( e.AllSlaves ) ( e.NotHead ) (t.Head e.Slaves) e.Tail =
+  ( e.Result ) ( e.AllSlaves ) ( e.NotHead )
+  (t.Head e.Slaves) e.Tail =
     <DoTopologicalSort
       ( e.Result t.Head )
       ( <FindSlaves e.Tail e.NotHead> )

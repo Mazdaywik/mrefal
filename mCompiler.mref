@@ -2,7 +2,6 @@ $MODULE MCompiler;
 
 $IMPORT MBE-Mgr;
 $IMPORT MClusters;
-$IMPORT MContext-Nutro;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MFE-Mgr;
@@ -188,11 +187,8 @@ Compile-Recompile-UpdateContext-Aux
     <MOutModuleStatus::Compiled-Q t.ModuleName>
     <Compile-AfterUpdateContext
       t.hErrorList t.hIModule s.ModuleType
-      <MContext-Nutro::UpdateInfo
-        t.hContext t.ModuleName
-        (Status_NEW SuccessCompiled)
-        (RealName t.ModuleName)
-        (ModuleType s.ModuleType)
+      <MContext::SaveFullInfo
+        t.hContext t.ModuleName s.ModuleType SuccessCompiled
       >
     >;
 
@@ -787,11 +783,8 @@ MakeSuccessUpdated
   Success t.hSymIModule s.ModuleType =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext-Nutro::UpdateInfo
-        t.hContext t.ModuleName
-        (Status_NEW SuccessUpdated)
-        (RealName t.ModuleName)
-        (ModuleType s.ModuleType)
+      <MContext::SaveFullInfo
+        t.hContext t.ModuleName s.ModuleType SuccessUpdated
       >
     >;
 
@@ -896,7 +889,7 @@ OnLibrary-ScanSubModule-SwNeedCompile {
   t.hContext t.ModuleName SuccessUpdated =
     <OnLibrary-SwIsLibrary
       t.hErrorList t.ModuleName
-      <MContext-Nutro::ExtractOption t.hContext t.ModuleName Type>
+      <MContext::GetType t.hContext t.ModuleName>
     >;
 
   (e.Stack) (e.ModulePath) t.hErrorList
@@ -921,16 +914,16 @@ OnLibrary-ScanSubModule-SwNeedCompile {
 }
 
 OnLibrary-SwIsLibrary {
-  t.hErrorList t.ModuleName t.hContext Found Unknown =
+  t.hErrorList t.ModuleName t.hContext Success Unknown =
     (t.hContext t.hErrorList) Fails t.ModuleName;
 
-  t.hErrorList t.ModuleName t.hContext Found Library =
+  t.hErrorList t.ModuleName t.hContext Success Library =
     <OnLibrary-MakeSuccessResult
       t.hErrorList t.ModuleName
       <MSymModule::LoadInfo t.hContext t.ModuleName>
     >;
 
-  t.hErrorList t.ModuleName t.hContext Found Source =
+  t.hErrorList t.ModuleName t.hContext Success Source =
     (t.hContext t.hErrorList) IsNotLibrary t.ModuleName;
 }
 
@@ -986,11 +979,8 @@ MakeSuccessLibrary
   Success t.hSymIModule s.ModuleType =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext-Nutro::UpdateInfo
-        t.hContext t.ModuleName
-        (Status_NEW SuccessUpdated)
-        (RealName t.ModuleName)
-        (ModuleType s.ModuleType)
+      <MContext::SaveFullInfo
+        t.hContext t.ModuleName s.ModuleType SuccessUpdated
       >
     >;
 

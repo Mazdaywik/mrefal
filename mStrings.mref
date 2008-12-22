@@ -164,7 +164,7 @@ $ENTRY At {
   <Seq s.NFirst s.NLast>
     == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
   s.NFirst и s.NLast -- числа,
-  при чём должно быть s.NFirst <= s.NLast
+  причём должно быть s.NFirst <= s.NLast
 */
 $ENTRY Seq {
   s.Last s.Last = s.Last;

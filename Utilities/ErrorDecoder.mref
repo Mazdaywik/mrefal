@@ -51,7 +51,15 @@ Dot {
 
 ProcessLine
   t.Table (e.Line) =
-    <DoProcessLine t.Table () e.Line>;
+    <DoProcessLine
+      t.Table
+      (
+        ' 1234567890\'\t\n{}=;)>\\'
+        'abcdefghijklmnopqrstuvwxyz'
+        'ABCD FGHIJK MNOPQR  UV XYZ'
+      )
+      () e.Line
+    >;
 
 LookupAlias {
   ( e.Table-B (e.Alias (e.RealName)) e.Table-E ) e.Alias =
@@ -62,68 +70,91 @@ LookupAlias {
 }
 
 DoProcessLine {
+  ( e.Table ) ( e.InitNoAlias-B s.Next e.InitNoAlias-E )
+  ( e.Scanned ) s.Next e.Tail =
+    <DoProcessLine
+      ( e.Table ) ( s.Next e.InitNoAlias-B e.InitNoAlias-E )
+      ( e.Scanned s.Next ) e.Tail
+    >;
+
   ( e.Table-B (e.Alias (e.RealName)) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned '<' ) e.Alias ' ' e.Tail =
     <DoProcessLine
       ( (e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       (e.Scanned '<' e.RealName ' ' ) e.Tail
     >;
 
   ( e.Table-B (e.Alias (e.RealName)) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned '<' ) e.Alias =
     <DoProcessLine
       ( (e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       (e.Scanned '<' e.RealName )
     >;
 
   ( e.Table-B (e.Alias ('__StructureBrackets')) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned '(' ) e.Alias ' ' e.Tail =
     <DoProcessLine
       ( (e.Alias ('__StructureBrackets')) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       ( e.Scanned '(' ) e.Tail
     >;
 
   ( e.Table-B (e.Alias ('__StructureBrackets')) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned '(' ) e.Alias =
     <DoProcessLine
       ( (e.Alias ('__StructureBrackets')) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       ( e.Scanned '(' )
     >;
 
   ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned '(' ) s.Init e.Alias ' ' e.Tail =
     <DoProcessLine
       ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       ( e.Scanned <CheckInit-Type s.Init> e.RealName ' ' ) e.Tail
     >;
 
   ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned '(' ) s.Init e.Alias =
     <DoProcessLine
       ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       ( e.Scanned <CheckInit-Type s.Init> e.RealName )
     >;
 
   ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned ) s.Init e.Alias ' ' e.Tail =
     <DoProcessLine
       ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       ( e.Scanned <CheckInit s.Init> e.RealName ' ' ) e.Tail
     >;
 
   ( e.Table-B (s.Init e.Alias (e.RealName)) e.Table-E )
+  ( e.InitNoAlias )
   ( e.Scanned ) s.Init e.Alias =
     <DoProcessLine
       ( (s.Init e.Alias (e.RealName)) e.Table-B e.Table-E )
+      ( e.InitNoAlias )
       ( e.Scanned <CheckInit s.Init> e.RealName )
     >;
 
-  t.Table ( e.Scanned ) s.Next e.Tail =
+  t.Table ( e.InitNoAlias ) ( e.Scanned ) s.Next e.Tail =
     <DoProcessLine
-      t.Table ( e.Scanned s.Next ) e.Tail
+      t.Table ( e.InitNoAlias ) ( e.Scanned s.Next ) e.Tail
     >;
 
-  t.Table ( e.Scanned ) = t.Table ( e.Scanned );
+  t.Table ( e.InitNoAlias ) ( e.Scanned ) = t.Table ( e.Scanned );
 }
 
 CheckInit {

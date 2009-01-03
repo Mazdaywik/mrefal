@@ -50,35 +50,6 @@ DefaultOptions
     (Type-Old Unknown) // Unknown | Library | Source
 
     /*
-      Был ли обработан?
-      * Unknown -- если не инициализровано;
-      * Found -- модуль только обнаружен;
-      * SuccessCompiled -- успешно откомпилирован,
-      имеет смысл только для исходника;
-      * LocalUpdated
-        * для исходника -- выходные файлы корректны, не компилировался;
-        * для библиотечного модуля -- выходные файлы корректны;
-          (если возможна проверка корректности для back-end;
-          гарантируется, что корректна хотя бы SymInfo);
-      * GlobalUpdated
-        * для исходников и библиотечных модулей аналогично LocalUpdated
-          с тем отличием, что GlobalUpdated также рекурсивно установлен
-          у всех импортируемых модулей;
-      * SuccessUpdated
-        * для библиотеки -- библиотека рекурсивно просканирована и для
-          всех рекурсивных библиотек установлен SuccessUpdated,
-        * для исходника -- то же, что и GlobalUpdated, только для всех
-          импортируемых модулей (в т.ч. библиотечных) установлено
-          SuccessUpdated;
-      * NeedRecompile -- имеет смысл только для исходника,
-        означает, что модуль нужно перекомпилировать;
-      * Errors -- в процессе обработки произошла ошибка:
-        * для исходника -- ошибки в процессе компиляции;
-        * для библиотечного модуля -- выходные файлы повреждены.
-    */
-    (Status_NEW Unknown)
-
-    /*
       Время последней модификации. Нужно для того, чтобы определить,
       необходима ли перекомпиляция: импортирующие модули должны быть
       откомпилированы позже импортируемых.
@@ -363,6 +334,79 @@ ExtractOption-FindName {
     [Context e.Info] ModuleNotFound;
 }
 
+//------------------------------------------------------------------------------
+
+/**
+  <GetRealName t.hContext t.ModuleName>
+    == t.hContext Success t.RealName
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails UnknownRealName
+*/
+$ENTRY GetRealName
+  t.hContext t.ModuleName =
+    <GetRealName-Aux
+      t.hContext
+      <MStrings::Lower <MQualifiedName::Parse t.ModuleName>>
+    >;
+
+GetRealName-Aux {
+  [Context
+    e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
+  ] e.Name =
+    [Context
+      e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
+    ] Fails UnknownRealName;
+
+  [Context
+    e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
+  ] e.Name =
+    [Context
+      e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
+    ] Success t.RealName;
+
+  [Context e.Info] e.Name =
+    [Context e.Info] Fails ModuleNotFound;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetStatusType t.hContext t.ModuleName>
+    == t.hContext Success s.Status s.Type
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetStatusType
+  t.hContext t.ModuleName =
+    <GetStatusType-SwKnown
+      <IsKnown t.hContext t.ModuleName> t.ModuleName
+    >;
+
+GetStatusType-SwKnown {
+  t.hContext Known t.ModuleName =
+    <GetStatusType-ReadStatus
+      <ExtractOption t.hContext t.ModuleName Status>
+      t.ModuleName
+    >;
+
+  t.hContext MismatchCase t.ModuleName =
+    t.hContext Fails MismatchCase;
+
+  t.hContext NotKnown t.ModuleName =
+    t.hContext Fails ModuleNotFound;
+}
+
+GetStatusType-ReadStatus
+  t.hContext Found s.Status t.ModuleName =
+    <GetStatusType-ReadType
+      s.Status
+      <ExtractOption t.hContext t.ModuleName Type>
+    >;
+
+GetStatusType-ReadType
+  s.Status t.hContext Found s.Type =
+    t.hContext Success s.Status s.Type;
+
 /**---------------------------------------------------------------------------*/
 
 /**
@@ -372,6 +416,7 @@ ExtractOption-FindName {
 /**
   <CreateModule
     t.hContext t.ModuleName
+    (Type s.Type)
     t.FrontEndInfo
     t.BackEndInfo
     (BaseDirectory e.BaseDirectory)
@@ -386,17 +431,18 @@ ExtractOption-FindName {
 */
 $ENTRY CreateModule
   t.hContext t.ModuleName
+  (Type s.Type)
   (FrontEnd s.FrontEnd e.PathToFrontEnd)
   (BackEnds e.BackEnds)
   (BaseDirectory e.BaseDirectory) =
     <CreateModule-SwDefined
       <IsKnown t.hContext t.ModuleName>
       t.ModuleName
+      (Type s.Type)
       (FrontEnd s.FrontEnd e.PathToFrontEnd)
       (BackEnds e.BackEnds)
       (Type-Old <SwType s.FrontEnd>)
       (Status Found)
-      (Status_NEW Found)
       (BaseDirectory e.BaseDirectory)
     >;
 
@@ -503,6 +549,45 @@ GetBaseDirectory-Aux {
 */
 
 /**
+  <SetRawType t.hContext t.ModuleName s.Type>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+    == t.hContext Fails CantUpdate
+*/
+$ENTRY SetRawType
+  t.hContext t.ModuleName s.Type =
+    <SetRawType-SwKnown
+      <GetStatusType t.hContext t.ModuleName>
+      t.ModuleName s.Type
+    >;
+
+SetRawType-SwKnown {
+  t.hContext Success Found s.OldType t.ModuleName s.NewType =
+    <GuardUpdateInfo
+      <UpdateInfo
+        t.hContext t.ModuleName (Status Raw) (Type s.NewType)
+      >
+    >;
+
+  t.hContext Success Raw s.NewType t.ModuleName s.NewType =
+    t.hContext Success;
+
+  t.hContext Success s.OtherStatus s.OldType t.ModuleName s.NewType =
+    t.hContext Fails CantUpdate;
+
+  t.hContext Fails ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext Fails MismatchCase = t.hContext Fails MismatchCase;
+}
+
+GuardUpdateInfo {
+  t.hContext Success = t.hContext Success;
+
+  // Остальные варианты невозможны
+}
+
+/**
   <SetMinMaxTime t.hContext t.ModuleName (e.MinTime) (e.MaxTime)>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
@@ -517,7 +602,7 @@ $ENTRY SetMinMaxTime
 
 SetMinMaxTime-SwKnown {
   t.hContext Known t.ModuleName (e.MinTime) (e.MaxTime) =
-    <SetMinMaxTime-Aux
+    <GuardUpdateInfo
       <UpdateInfo
         t.hContext t.ModuleName (MinMaxTime (e.MinTime) (e.MaxTime))
       >
@@ -528,12 +613,6 @@ SetMinMaxTime-SwKnown {
 
   t.hContext MismatchCase t.ModuleName (e.MinTime) (e.MaxTime) =
     t.hContext Fails MismatchCase;
-}
-
-SetMinMaxTime-Aux {
-  t.hContext Success = t.hContext Success;
-
-  // Остальные варианты невозможны
 }
 
 /**
@@ -573,28 +652,36 @@ GetMinMaxTime-Aux {
 */
 
 /**
-  <SetStatusNew t.hContext t.ModuleName s.Status>
+  <SetStatusNew t.hContext t.ModuleName s.Status (s.StatusX s.Type)>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
     == t.hContext Fails MismatchCase
 */
-$ENTRY SetStatusNew
-  t.hContext t.ModuleName s.Status =
+$ENTRY SetStatusNew_
+  t.hContext t.ModuleName s.StatusNew (s.Status s.Type) =
     <SetStatusNew-SwKnown
       <IsKnown t.hContext t.ModuleName>
-      t.ModuleName s.Status
+      t.ModuleName s.StatusNew
+      (s.Status s.Type)
     >;
 
 SetStatusNew-SwKnown {
-  t.hContext Known t.ModuleName s.Status =
+  t.hContext Known t.ModuleName s.StatusNew
+  (s.Status s.Type) =
     <SetStatusNew-Aux
-      <UpdateInfo t.hContext t.ModuleName (Status_NEW s.Status)>
+      <UpdateInfo
+        t.hContext t.ModuleName
+        (Status s.Status)
+        (Type s.Type)
+      >
     >;
 
-  t.hContext NotKnown t.ModuleName s.Status =
+  t.hContext NotKnown t.ModuleName s.Status
+  (s.Status s.Type) =
     t.hContext Fails ModuleNotFound;
 
-  t.hContext MismatchCase t.ModuleName s.Status =
+  t.hContext MismatchCase t.ModuleName s.Status
+  (s.Status s.Type) =
     t.hContext Fails MismatchCase;
 }
 
@@ -602,26 +689,6 @@ SetStatusNew-Aux {
   t.hContext Success = t.hContext Success;
 
   // Остальные варианты суть нарушение инварианта
-}
-
-/**
-  <GetStatusNew t.hContext t.ModuleName>
-    == t.hContext Success s.StatusNew
-    == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
-*/
-$ENTRY GetStatusNew
-  t.hContext t.ModuleName =
-    <GetStatusNew-Aux
-      <ExtractOption t.hContext t.ModuleName Status_NEW>
-    >;
-
-GetStatusNew-Aux {
-  t.hContext Found s.StatusNew = t.hContext Success s.StatusNew;
-
-  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 }
 
 /**
@@ -645,18 +712,19 @@ GetType-Aux {
 }
 
 /**
-  <SaveFullInfo t.hContext t.RealModuleName s.ModuleType s.Changed>
+  <SaveFullInfo_ t.hContext t.RealModuleName s.ModuleType s.Changed s.Type>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
     == t.hContext Fails MismatchCase
   s.Changed ::= SuccessCompiled | SuccessUpdated
 */
-$ENTRY SaveFullInfo
-  t.hContext t.RealModuleName s.ModuleType s.Changed =
+$ENTRY SaveFullInfo_
+  t.hContext t.RealModuleName s.ModuleType s.Changed s.Type =
     <SaveFullInfo-SwKnown
       <IsKnown t.hContext t.RealModuleName>
       t.RealModuleName
-      (Status_NEW s.Changed)
+      (Type s.Type)
+      (Status Ready)
       (RealName t.RealModuleName)
       (ModuleType s.ModuleType)
     >;

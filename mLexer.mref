@@ -77,8 +77,9 @@ SwC-CPP-Comment {
     <EatC-Comment t.SymStream>;
 
   t.SymStream s.Other =
-    <MSymStream::ReturnChar
-      <MSymStream::ReturnChar t.SymStream s.Other> '/'
+    <MakeError
+      <MSymStream::ReturnChar t.SymStream s.Other>
+      'unexpected \"/\"'
     >;
 }
 

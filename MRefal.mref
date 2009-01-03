@@ -128,6 +128,10 @@ SelectMaker {
   '+newnew+' = & MCompiler.Make;
 
   '+make+' = & MCompiler.Make;
+
+  '+linkonly+' = & MCompiler.LinkOnly;
+
+  '+build+' = & MCompiler.Build;
 }
 
 FinishMake {

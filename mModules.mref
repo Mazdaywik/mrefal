@@ -188,11 +188,13 @@ GenVariants-CmdLine-Aux {
     t.hContext NotFound;
 
   t.hContext e.RawVariants (e.ModuleName) (e.AvailFrontEnds) =
-    <CheckVariants
-      t.hContext
-      <MLambda::Map
-        <MLambda::BindLeft & FinishVariant e.ModuleName>
-        <MStrings::Decart (e.RawVariants ) (e.AvailFrontEnds Library)>
+    <CorrectFormat-CmdLine
+      <CheckVariants
+        t.hContext
+        <MLambda::Map
+          <MLambda::BindLeft & FinishVariant e.ModuleName>
+          <MStrings::Decart (e.RawVariants ) (e.AvailFrontEnds Library)>
+        >
       >
     >;
 }
@@ -204,61 +206,50 @@ FinishVariant
       e.BaseDirectory
     );
 
+CorrectFormat-CmdLine {
+  t.hContext Found s.Type t.ModuleName s.FrontEnd e.BaseDirectory =
+    t.hContext Found t.ModuleName s.FrontEnd e.BaseDirectory;
+
+  t.hContext NotFound = t.hContext NotFound;
+}
+
 //------------------------------------------------------------------------------
 
 /**
   <LookupImportModule
     t.hContext (e.ModulePath) t.QualifiedName
   >
-    == t.hContext Found s.FrontEndName e.BaseDirectory
-    == t.hContext NotFound
+    == t.hContext Success s.Status s.Type
+    == t.hContext Fails MismatchCase
 */
 $ENTRY LookupImportModule
-  t.hContext (e.ModulePath) t.QualifiedName =
+  t.hContext (e.ModulePath) t.ModuleName =
     <LookupImportModule-SwKnown
       (e.ModulePath)
-      t.QualifiedName
-      <MContext::GetFrontEnd t.hContext t.QualifiedName>
+      t.ModuleName
+      <MContext::GetStatusType t.hContext t.ModuleName>
    >;
 
-
 LookupImportModule-SwKnown {
-  (e.ModulePath) t.QualifiedName
-  t.hContext Success None =
-    <LookupImportModule-Known
-      t.QualifiedName Library
-      <MContext::GetBaseDirectory t.hContext t.QualifiedName>
-    >;
+  (e.ModulePath) t.ModuleName
+  t.hContext Success s.Status s.Type =
+    t.hContext Success s.Status s.Type;
 
-  (e.ModulePath) t.QualifiedName
-  t.hContext Success s.FrontEnd e.Path =
-    <LookupImportModule-Known
-       t.QualifiedName s.FrontEnd
-       <MContext::GetBaseDirectory t.hContext t.QualifiedName>
-     >;
-
-  (e.ModulePath) t.QualifiedName t.hContext
-  Fails ModuleNotFound =
+  (e.ModulePath) t.ModuleName
+  t.hContext Fails ModuleNotFound =
     <LookupImportModule-Unknown
-      t.hContext t.QualifiedName e.ModulePath
+      t.hContext t.ModuleName e.ModulePath
     >;
 
-  (e.ModulePath) t.QualifiedName t.hContext
-  Fails MismatchCase =
-    t.hContext NotFound;
-}
-
-LookupImportModule-Known {
-  t.QualifiedName s.FrontEnd
-  t.hContext Success e.BaseDirectory =
-    t.hContext Found s.FrontEnd e.BaseDirectory;
-
-  // Остальное -- нарушение инварианта
+  (e.ModulePath) t.ModuleName
+  t.hContext Fails MismatchCase =
+    t.hContext Fails MismatchCase;
 }
 
 LookupImportModule-Unknown
   t.hContext t.QualifiedName e.ModulePath =
     <CheckVariants-Import-CorrectFormat
+      t.QualifiedName
       <CheckVariants
         t.hContext
         <MLambda::Map
@@ -277,29 +268,40 @@ MakeImportVariant
     ( s.FrontEnd t.L-ModuleName e.MP-Catalog );
 
 CheckVariants-Import-CorrectFormat {
-  t.hContext Found t.QualifiedName s.FrontEnd e.BaseDirectory =
-    t.hContext Found s.FrontEnd e.BaseDirectory;
+  t.ModuleName
+  t.hContext Found s.Type t.QualifiedName s.FrontEnd e.BaseDirectory =
+    t.hContext Success Found s.Type;
 
+  t.ModuleName
   t.hContext NotFound =
-    t.hContext NotFound;
+    <GuardInvariant
+      <MContext::CreateModule
+        t.hContext t.ModuleName
+        (Type Errors)
+        (FrontEnd None)
+        (BackEnds Unknown)
+        (BaseDirectory Current)
+      >
+    >
+    Success Found Errors;
 }
 
 //------------------------------------------------------------------------------
 
 /*
   <CheckVariants t.hContext e.Variants>
-    == t.hContext Found t.QualifiedName s.FrontEnd e.BaseDirectory
+    == t.hContext Found s.Type t.QualifiedName s.FrontEnd e.BaseDirectory
     == t.hContext NonFound;
 */
 CheckVariants
   t.hContext e.Variants =
-    <DoCheckVariants-CmdLine
+    <DoCheckVariants
       t.hContext e.Variants
     >;
 
-DoCheckVariants-CmdLine {
+DoCheckVariants {
   t.hContext (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =
-    <SwDoCheckVariant-CmdLine
+    <SwDoCheckVariant
       <CheckVariant-T
         t.hContext
         s.FrontEnd t.QualifiedName e.BaseDirectory
@@ -308,6 +310,18 @@ DoCheckVariants-CmdLine {
     >;
 
   t.hContext = t.hContext NotFound;
+}
+
+SwDoCheckVariant {
+  t.hContext
+  (Found s.Type t.QualifiedName s.FrontEndName e.BaseDirectory)
+  e.Tail =
+    t.hContext Found s.Type t.QualifiedName s.FrontEndName e.BaseDirectory;
+
+  t.hContext NotFound e.Tail =
+    <DoCheckVariants
+      t.hContext e.Tail
+    >;
 }
 
 CheckVariant-T {
@@ -361,7 +375,7 @@ CheckVariant-T-SrcAux-SwExist {
       (s.FrontEnd e.FrontEndName)
       (<SelectBaseDirectory e.BaseDirectory>)
       <MLambda::Map
-        <MLambda::BindLeft & GetBEPath t.ModuleName e.BaseDirectory>
+        <MLambda::BindLeft & GetBEPath-CheckExist t.ModuleName e.BaseDirectory>
         <MBE-Mgr::GetList>
       >
     >;
@@ -378,18 +392,38 @@ SelectBaseDirectory {
   e.BaseDirectory = e.BaseDirectory;
 }
 
-GetBEPath
+GetBEPath-CheckExist
   t.ModuleName e.BaseDirectory s.BackEndName =
-    <GetBEPath-Aux
+    <GetBEPath-CheckExist-Aux
       s.BackEndName
       <MBE-Mgr::GetPath-T s.BackEndName t.ModuleName e.BaseDirectory>
     >;
 
-GetBEPath-Aux
+GetBEPath-CheckExist-Aux
   s.BackEndName Success t.ModuleName e.Path =
-    (s.BackEndName e.Path);
+    (s.BackEndName <MFileSystem::ExistFile-T e.Path>);
 
-CheckVariant-T-SrcAux-SwExist-Finish
+CheckVariant-T-SrcAux-SwExist-Finish {
+  t.hContext t.ModuleName
+  (s.FrontEnd e.FrontEndName)
+  (e.BaseDirectory)
+  e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E =
+    <GuardInvariant
+      <MContext::CreateModule
+        t.hContext t.ModuleName
+        (Type Changed)
+        (FrontEnd s.FrontEnd e.FrontEndName)
+        (BackEnds
+          <MLambda::Map
+            & BackEnds-DelTF
+            e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E
+          >
+        )
+        (BaseDirectory e.BaseDirectory)
+      >
+    >
+    (Found Changed t.ModuleName s.FrontEnd e.BaseDirectory);
+
   t.hContext t.ModuleName
   (s.FrontEnd e.FrontEndName)
   (e.BaseDirectory)
@@ -397,12 +431,17 @@ CheckVariant-T-SrcAux-SwExist-Finish
     <GuardInvariant
       <MContext::CreateModule
         t.hContext t.ModuleName
+        (Type Updated)
         (FrontEnd s.FrontEnd e.FrontEndName)
-        (BackEnds e.BackEnds)
+        (BackEnds <MLambda::Map & BackEnds-DelTF e.BackEnds>)
         (BaseDirectory e.BaseDirectory)
       >
     >
-    (Found t.ModuleName s.FrontEnd e.BaseDirectory);
+    (Found Updated t.ModuleName s.FrontEnd e.BaseDirectory);
+}
+
+BackEnds-DelTF
+  (s.BEName s.TrueFalse e.Path) = (s.BEName e.Path);
 
 GuardInvariant
   t.hContext Success = t.hContext;
@@ -446,45 +485,13 @@ CheckVariant-T-LibAux-SwExist {
     <GuardInvariant
       <MContext::CreateModule
         t.hContext t.QualifiedName
+        (Type Library)
         (FrontEnd None)
         (BackEnds e.BE-Files)
         (BaseDirectory <SelectBaseDirectory e.BaseDirectory>)
       >
     >
-    (Found t.QualifiedName Library e.BaseDirectory);
-}
-
-SwDoCheckVariant-CmdLine {
-  t.hContext
-  (Found t.QualifiedName s.FrontEndName e.BaseDirectory)
-  e.Tail =
-    t.hContext Found t.QualifiedName s.FrontEndName e.BaseDirectory;
-
-  t.hContext NotFound e.Tail =
-    <DoCheckVariants-CmdLine
-      t.hContext e.Tail
-    >;
-}
-
-//------------------------------------------------------------------------------
-
-/**
-  <GetBEList t.hContext t.ModuleName>
-    == t.hContext Known (s.BE-Name e.PathToFile)*
-    == t.hContext UnKnown
-*/
-$ENTRY GetBEList
-  t.hContext t.ModuleName =
-    <GetBEList-CheckKnown
-      <MContext::GetBackEndList t.hContext t.ModuleName>
-    >;
-
-GetBEList-CheckKnown {
-  t.hContext Success e.BackEnds = t.hContext Known e.BackEnds;
-
-  t.hContext Fails ModuleNotFound = t.hContext UnKnown;
-
-  t.hContext Fails MismatchCase = t.hContext UnKnown;
+    (Found Library t.QualifiedName Library e.BaseDirectory);
 }
 
 //------------------------------------------------------------------------------

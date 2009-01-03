@@ -88,6 +88,12 @@ s.Result ::=
   NeedRecompile | Updated | Library | NotFound
   | SuccessCompiled | Errors | SuccessUpdated
 
+<CheckNeedCompile-Make
+  t.hContext (e.ModulePath) t.ModuleName
+>
+  == t.hContext t.ModuleName Success s.Status s.Type
+  == t.hContext t.ModuleName Fails MismatchCase
+
 <ListForLinking t.hContext t.RootModuleName>
   == t.hContext Success t.ModuleName*
   == t.hContext Fails
@@ -154,35 +160,6 @@ DefaultOptions
     (Type-Old Unknown) // Unknown | Library | Source
 
     /*
-      Был ли обработан?
-      * Unknown -- если не инициализровано;
-      * Found -- модуль только обнаружен;
-      * SuccessCompiled -- успешно откомпилирован,
-      имеет смысл только для исходника;
-      * LocalUpdated
-        * для исходника -- выходные файлы корректны, не компилировался;
-        * для библиотечного модуля -- выходные файлы корректны;
-          (если возможна проверка корректности для back-end;
-          гарантируется, что корректна хотя бы SymInfo);
-      * GlobalUpdated
-        * для исходников и библиотечных модулей аналогично LocalUpdated
-          с тем отличием, что GlobalUpdated также рекурсивно установлен
-          у всех импортируемых модулей;
-      * SuccessUpdated
-        * для библиотеки -- библиотека рекурсивно просканирована и для
-          всех рекурсивных библиотек установлен SuccessUpdated,
-        * для исходника -- то же, что и GlobalUpdated, только для всех
-          импортируемых модулей (в т.ч. библиотечных) установлено
-          SuccessUpdated;
-      * NeedRecompile -- имеет смысл только для исходника,
-        означает, что модуль нужно перекомпилировать;
-      * Errors -- в процессе обработки произошла ошибка:
-        * для исходника -- ошибки в процессе компиляции;
-        * для библиотечного модуля -- выходные файлы повреждены.
-    */
-    (Status_NEW Unknown)
-
-    /*
       Время последней модификации. Нужно для того, чтобы определить,
       необходима ли перекомпиляция: импортирующие модули должны быть
       откомпилированы позже импортируемых.
@@ -197,12 +174,24 @@ DefaultOptions
     ;
 # ENDCUT
 ---------------------------------------------------------------------------
+
+<GetRealName t.hContext t.ModuleName>
+  == t.hContext Success t.RealName
+  == t.hContext Fails ModuleNotFound
+  == t.hContext Fails UnknownRealName
+
+<GetStatusType t.hContext t.ModuleName>
+  == t.hContext Success s.Status s.Type
+  == t.hContext Fails ModuleNotFound
+  == t.hContext Fails MismatchCase
+
 ---------------------------------------------------------------------------
 
 Функции уровня поиска модулей.
 
 <CreateModule
   t.hContext t.ModuleName
+  (Type s.Type)
   t.FrontEndInfo
   t.BackEndInfo
   (BaseDirectory e.BaseDirectory)
@@ -235,6 +224,12 @@ t.BackEndInfo ::=
 
 Функции "сырого" уровня.
 
+<SetRawType t.hContext t.ModuleName s.Type>
+  == t.hContext Success
+  == t.hContext Fails ModuleNotFound
+  == t.hContext Fails MismatchCase
+  == t.hContext Fails CantUpdate
+
 <SetMinMaxTime t.hContext t.ModuleName (e.MinTime) (e.MaxTime)>
   == t.hContext Success
   == t.hContext Fails ModuleNotFound
@@ -254,13 +249,8 @@ t.BackEndInfo ::=
 
 Функции, оставленные для совместимости.
 
-<SetStatusNew t.hContext t.ModuleName s.Status>
+<SetStatusNew t.hContext t.ModuleName s.Status (s.StatusX s.Type)>
   == t.hContext Success
-  == t.hContext Fails ModuleNotFound
-  == t.hContext Fails MismatchCase
-
-<GetStatusNew t.hContext t.ModuleName>
-  == t.hContext Success s.StatusNew
   == t.hContext Fails ModuleNotFound
   == t.hContext Fails MismatchCase
 
@@ -269,7 +259,7 @@ t.BackEndInfo ::=
   == t.hContext Fails ModuleNotFound
   == t.hContext Fails MismatchCase
 
-<SaveFullInfo t.hContext t.RealModuleName s.ModuleType s.Changed>
+<SaveFullInfo_ t.hContext t.RealModuleName s.ModuleType s.Changed s.Type>
   == t.hContext Success
   == t.hContext Fails ModuleNotFound
   == t.hContext Fails MismatchCase
@@ -689,12 +679,8 @@ Module MModules;
 <LookupImportModule
   t.hContext (e.ModulePath) t.QualifiedName
 >
-  == t.hContext Found s.FrontEndName e.BaseDirectory
-  == t.hContext NotFound
-
-<GetBEList t.hContext t.ModuleName>
-  == t.hContext Known (s.BE-Name e.PathToFile)*
-  == t.hContext UnKnown
+  == t.hContext Success s.Status s.Type
+  == t.hContext Fails MismatchCase
 
 <GetFEName t.hContext t.ModuleName>
   == t.hContext Known Library

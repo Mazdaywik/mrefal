@@ -122,7 +122,7 @@ SwCheckNeedCompile-LinkOnly {
 
   t.ModuleName t.hContext Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Updated
+      t.hContext t.ModuleName Errors
     >;
 
   t.ModuleName t.hContext Success Found Updated =

@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut/MStrings.rout
+r file ROut\MStrings.rout
 
 b Entry::MStrings::Numb
 c $Entry::MStrings::Numb$ {
@@ -103,8 +103,8 @@ c 	s.$Index::Length$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) =
 c 		s.$Index::Length$ e.$Index::Scanned$ ;
 c }
 
-b Entry::MStrings::First
-c $Entry::MStrings::First$ {
+b Entry::MStrings::First-Parse
+c $Entry::MStrings::First-Parse$ {
 c 	s.$Index::Count$ e.$Index::Expr$ =
 c 		<$Local::MStrings::DoFirst$ s.$Index::Count$ ( $ADT::__StructureBrackets$ ) e.$Index::Expr$ > ;
 c }
@@ -117,6 +117,36 @@ c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) =
 c 		( $ADT::__StructureBrackets$ e.$Index::First$ ) ;
 c 	s.$Index::Num$ ( $ADT::__StructureBrackets$ e.$Index::First$ ) t.$Index::Next$ e.$Index::Last$ =
 c 		<$Local::MStrings::DoFirst$ <$Entry::Math::Dec$ s.$Index::Num$ > ( $ADT::__StructureBrackets$ e.$Index::First$ t.$Index::Next$ ) e.$Index::Last$ > ;
+c }
+
+b Entry::MStrings::First
+c $Entry::MStrings::First$ {
+c 	s.$Index::Count$ e.$Index::Expr$ =
+c 		<$Local::MStrings::First-UnBracket$ <$Entry::MStrings::First-Parse$ s.$Index::Count$ e.$Index::Expr$ > > ;
+c }
+
+b Local::MStrings::First-UnBracket
+c $Local::MStrings::First-UnBracket$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Rest$ =
+c 		e.$Index::First$ ;
+c }
+
+b Entry::MStrings::Skip
+c $Entry::MStrings::Skip$ {
+c 	0 e.$Index::Expr$ =
+c 		e.$Index::Expr$ ;
+c 	s.$Index::Num$ t.$Index::First$ e.$Index::Expr$ =
+c 		<$Entry::MStrings::Skip$ <$Entry::Math::Dec$ s.$Index::Num$ > e.$Index::Expr$ > ;
+c 	s.$Index::Num$ =
+c 		;
+c }
+
+b Entry::MStrings::At
+c $Entry::MStrings::At$ {
+c 	0 t.$Index::ElemAt$ e.$Index::Tail$ =
+c 		t.$Index::ElemAt$ ;
+c 	s.$Index::Index$ t.$Index::Next$ e.$Index::Tail$ =
+c 		<$Entry::MStrings::At$ <$Entry::Math::Dec$ s.$Index::Index$ > e.$Index::Tail$ > ;
 c }
 
 b Entry::MStrings::Seq
@@ -184,7 +214,7 @@ c }
 b Local::MStrings::FindField
 c $Local::MStrings::FindField$ {
 c 	( $ADT::__StructureBrackets$ e.$Index::Line$ ) s.$Index::Length$ =
-c 		<$Local::MStrings::FindField-Aux$ <$Entry::MStrings::First$ s.$Index::Length$ e.$Index::Line$ > > ;
+c 		<$Local::MStrings::FindField-Aux$ <$Entry::MStrings::First-Parse$ s.$Index::Length$ e.$Index::Line$ > > ;
 c }
 
 b Local::MStrings::FindField-Aux
@@ -213,5 +243,29 @@ c 	t.$Index::ElemA$ t.$Index::ElemB$ =
 c 		( $ADT::__StructureBrackets$ t.$Index::ElemA$ t.$Index::ElemB$ ) ;
 c 	t.$Index::ElemA$ t.$Index::NextB$ e.$Index::TailB$ =
 c 		( $ADT::__StructureBrackets$ t.$Index::ElemA$ t.$Index::NextB$ ) <$Local::MStrings::Folding$ t.$Index::ElemA$ e.$Index::TailB$ > ;
+c }
+
+b Entry::MStrings::Unique
+c $Entry::MStrings::Unique$ {
+c 	e.$Index::Elems-B$ t.$Index::Double$ e.$Index::Elems-M$ t.$Index::Double$ e.$Index::Elems-E$ =
+c 		e.$Index::Elems-B$ <$Entry::MStrings::Unique$ t.$Index::Double$ e.$Index::Elems-M$ e.$Index::Elems-E$ > ;
+c 	e.$Index::Elems$ =
+c 		e.$Index::Elems$ ;
+c }
+
+b Entry::MStrings::Set-Intersect
+c $Entry::MStrings::Set-Intersect$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Set1-B$ t.$Index::Common$ e.$Index::Set1-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Set2-B$ t.$Index::Common$ e.$Index::Set2-E$ ) =
+c 		t.$Index::Common$ <$Entry::MStrings::Set-Intersect$ ( $ADT::__StructureBrackets$ e.$Index::Set1-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Set2-B$ e.$Index::Set2-E$ ) > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Set1$ ) ( $ADT::__StructureBrackets$ e.$Index::Set2$ ) =
+c 		;
+c }
+
+b Entry::MStrings::Set-Difference
+c $Entry::MStrings::Set-Difference$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Set1-B$ t.$Index::Common$ e.$Index::Set1-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Set2-B$ t.$Index::Common$ e.$Index::Set2-E$ ) =
+c 		<$Entry::MStrings::Set-Difference$ ( $ADT::__StructureBrackets$ e.$Index::Set1-B$ e.$Index::Set1-E$ ) ( $ADT::__StructureBrackets$ e.$Index::Set2-B$ e.$Index::Set2-E$ ) > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Set1$ ) ( $ADT::__StructureBrackets$ e.$Index::Set2$ ) =
+c 		e.$Index::Set1$ ;
 c }
 

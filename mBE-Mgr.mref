@@ -4,7 +4,6 @@ $IMPORT MBEFE-Holder;
 $IMPORT MContext;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MLambda;
-$IMPORT MNameMaker;
 $IMPORT MQualifiedName;
 
 /**=============================================================================
@@ -236,10 +235,37 @@ GetPath-Aux {
 */
 $ENTRY X_GetPath-T
   t.Context t.QualifiedName s.BEName =
-    <MNameMaker::MakeName
+    <MakeName
       t.Context t.QualifiedName s.BEName
-      & MakeRelative
     >;
+
+MakeName
+  t.Context t.QualifiedName s.MgrName =
+    <MakeName--SwInContext
+      ( <MContext::GetBaseDirectory t.Context t.QualifiedName> )
+      t.QualifiedName s.MgrName
+    >;
+
+MakeName--SwInContext {
+  ( t.hContext Success e.BaseName )
+  t.QualifiedName s.MgrName =
+    <MakeName--SwMakeRelative
+      t.hContext (e.BaseName)
+      <MakeRelative t.QualifiedName s.MgrName>
+    >;
+
+  ( t.hContext Fails ModuleNotFound )
+  t.QualifiedName s.MgrName =
+    t.hContext t.QualifiedName Fails;
+
+  ( t.hContext Fails MismatchCase )
+  t.QualifiedName s.MgrName =
+    t.hContext t.QualifiedName Fails;
+
+  /*
+    OptionNotFound не проверяем -- нарушение инварианта.
+  */
+}
 
 MakeRelative
   t.QualifiedName s.BEName =
@@ -261,4 +287,19 @@ MakeRelative-Aux {
     t.QualifiedName Success e.Folder '/' e.Path '.' e.Ext;
 }
 
+MakeName--SwMakeRelative {
+  t.Context (Current)
+  t.QualifiedName Success e.RelativeName =
+    t.Context t.QualifiedName Success e.RelativeName;
+
+  t.Context (e.BaseName)
+  t.QualifiedName Success e.RelativeName =
+    t.Context t.QualifiedName Success e.BaseName '/' e.RelativeName;
+
+  t.Context (e.BaseName)
+  t.QualifiedName Fails =
+    t.Context t.QualifiedName Fails;
+}
+
 $END MBE-Mgr.
+

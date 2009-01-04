@@ -10,7 +10,6 @@ $IMPORT MLambda;
 $IMPORT MModules;
 $IMPORT MResolveTable;
 $IMPORT MResolver;
-$IMPORT MStrings;
 $IMPORT MSymModule;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
@@ -217,8 +216,8 @@ Compile-Recompile-UpdateContext {
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
       <GuardUpdate
-        <MContext::SetStatusNew_
-          t.hContext t.ModuleName Errors (Ready Errors)
+        <MContext::FinishModule
+          t.hContext t.ModuleName Regular Errors
         >
       >
       t.hErrorList
@@ -235,8 +234,8 @@ Compile-Recompile-UpdateContext-Aux
     <MOutModuleStatus::Compiled-Q t.ModuleName>
     <Compile-AfterUpdateContext
       t.hErrorList t.hIModule s.ModuleType
-      <MContext::SaveFullInfo_
-        t.hContext t.ModuleName s.ModuleType SuccessCompiled Changed
+      <MContext::FinishModule
+        t.hContext t.ModuleName s.ModuleType Changed
       >
     >;
 
@@ -630,19 +629,19 @@ Parse
   t.hContext t.hErrorList t.ModuleName =
     <Parse-SelectFE
       t.hErrorList t.ModuleName
-      <MModules::GetFEName t.hContext t.ModuleName>
+      <MContext::GetFrontEnd t.hContext t.ModuleName>
     >;
 
 Parse-SelectFE {
-  t.hErrorList t.ModuleName t.hContext Known Library =
+  t.hErrorList t.ModuleName t.hContext Success None =
     // Неожиданно. Вообще-то тут не может быть библиотека.
     t.hContext t.hErrorList Fails;
 
-  t.hErrorList t.ModuleName t.hContext Known s.FEName e.Path =
+  t.hErrorList t.ModuleName t.hContext Success s.FEName e.Path =
     t.hContext
     <MFE-Mgr::Load s.FEName t.hErrorList t.ModuleName e.Path>;
 
-  t.hErrorList t.ModuleName t.hContext UnKnown =
+  t.hErrorList t.ModuleName t.hContext Fails s.Reason =
     t.hContext t.hErrorList Fails;
 }
 
@@ -683,8 +682,8 @@ Compile-OnUpdated-OnLibrary-Fails
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
       <GuardUpdate
-        <MContext::SetStatusNew_
-          t.hContext t.ModuleName Errors (Ready Errors)
+        <MContext::FinishModule
+          t.hContext t.ModuleName Regular Errors
         >
       >
       t.hErrorList
@@ -844,8 +843,8 @@ MakeSuccessUpdated
   Success t.hSymIModule s.ModuleType =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::SaveFullInfo_
-        t.hContext t.ModuleName s.ModuleType SuccessUpdated Updated
+      <MContext::FinishModule
+        t.hContext t.ModuleName s.ModuleType Updated
       >
     >;
 
@@ -1039,8 +1038,8 @@ MakeSuccessLibrary
   Success t.hSymIModule s.ModuleType =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::SaveFullInfo_
-        t.hContext t.ModuleName s.ModuleType SuccessUpdated Library
+      <MContext::FinishModule
+        t.hContext t.ModuleName s.ModuleType Library
       >
     >;
 
@@ -1063,8 +1062,8 @@ Compile-OnSuccessCompiled {
   t.hErrorList t.ModuleName t.hContext Fails =
     (
       <GuardUpdate
-        <MContext::SetStatusNew_
-          t.hContext t.ModuleName Errors (Ready Errors)
+        <MContext::FinishModule
+          t.hContext t.ModuleName Regular Errors
         >
       >
       t.hErrorList

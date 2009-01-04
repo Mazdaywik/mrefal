@@ -494,28 +494,4 @@ CheckVariant-T-LibAux-SwExist {
     (Found Library t.QualifiedName Library e.BaseDirectory);
 }
 
-//------------------------------------------------------------------------------
-
-/**
-  <GetFEName t.hContext t.ModuleName>
-    == t.hContext Known Library
-    == t.hContext Known s.FE-Name e.PathToFile
-    == t.hContext UnKnown
-*/
-$ENTRY GetFEName
-  t.hContext t.ModuleName =
-    <GetFEName-CheckKnown
-      <MContext::GetFrontEnd t.hContext t.ModuleName>
-    >;
-
-GetFEName-CheckKnown {
-  t.hContext Success None = t.hContext Known Library;
-
-  t.hContext Success s.FrontEnd e.Path = t.hContext Known s.FrontEnd e.Path;
-
-  t.hContext Fails ModuleNotFound = t.hContext UnKnown;
-
-  t.hContext Fails MismatchCase = t.hContext UnKnown;
-}
-
 $END MModules.

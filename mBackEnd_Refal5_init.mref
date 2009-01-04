@@ -9,7 +9,7 @@ $ENTRY Init =
     Refal5BE
     & MBackEnd_Refal5.Generate-T
     & MLinker_Refal5.Link
-    ('ROut') ('rout')
+    ('~ROut') ('rout')
   >;
 
 $END MBackEnd_Refal5_init.

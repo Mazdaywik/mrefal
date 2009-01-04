@@ -79,14 +79,17 @@ Module MClusters;
 <DependencesFromIModule t.hIModule>
   == t.hIModule t.ImportedModule*
 
-<CheckNeedCompile
+<CheckNeedCompile-LinkOnly
   t.hContext (e.ModulePath) t.ModuleName
 >
-  == t.hContext t.ModuleName s.Result
+  == t.hContext t.ModuleName Success s.Status s.Type
+  == t.hContext t.ModuleName Fails MismatchCase
 
-s.Result ::=
-  NeedRecompile | Updated | Library | NotFound
-  | SuccessCompiled | Errors | SuccessUpdated
+<CheckNeedCompile-Build
+  t.hContext (e.ModulePath) t.ModuleName
+>
+  == t.hContext t.ModuleName Success s.Status s.Type
+  == t.hContext t.ModuleName Fails MismatchCase
 
 <CheckNeedCompile-Make
   t.hContext (e.ModulePath) t.ModuleName
@@ -102,6 +105,14 @@ s.Result ::=
 Module MCompiler;
 
 <Make t.hContext t.hErrorList e.ModulePath t.RootModuleName>
+  == t.hContext t.hErrorList Success
+  == t.hContext t.hErrorList Fails
+
+<LinkOnly t.hContext t.hErrorList e.ModulePath t.RootModuleName>
+  == t.hContext t.hErrorList Success
+  == t.hContext t.hErrorList Fails
+
+<Build t.hContext t.hErrorList e.ModulePath t.RootModuleName>
   == t.hContext t.hErrorList Success
   == t.hContext t.hErrorList Fails
 
@@ -155,9 +166,6 @@ DefaultOptions
 
     (Type Errors) // Errors | Changed | Updated | Library
     (Status Found) // Found | Raw | Ready
-
-    // Библиотека или файл с исходником
-    (Type-Old Unknown) // Unknown | Library | Source
 
     /*
       Время последней модификации. Нужно для того, чтобы определить,
@@ -245,25 +253,11 @@ t.BackEndInfo ::=
 
 Функции уровня компиляции.
 
----------------------------------------------------------------------------
-
-Функции, оставленные для совместимости.
-
-<SetStatusNew t.hContext t.ModuleName s.Status (s.StatusX s.Type)>
+<FinishModule t.hContext t.RealModuleName s.ModuleType s.Type>
   == t.hContext Success
   == t.hContext Fails ModuleNotFound
   == t.hContext Fails MismatchCase
-
-<GetType t.hContext t.ModuleName>
-  == t.hContext Success s.Type
-  == t.hContext Fails ModuleNotFound
-  == t.hContext Fails MismatchCase
-
-<SaveFullInfo_ t.hContext t.RealModuleName s.ModuleType s.Changed s.Type>
-  == t.hContext Success
-  == t.hContext Fails ModuleNotFound
-  == t.hContext Fails MismatchCase
-s.Changed ::= SuccessCompiled | SuccessUpdated
+  == t.hContext Fails CantUpdate
 
 ################################################################################
 Module MCreateDirIfNeed;
@@ -681,25 +675,6 @@ Module MModules;
 >
   == t.hContext Success s.Status s.Type
   == t.hContext Fails MismatchCase
-
-<GetFEName t.hContext t.ModuleName>
-  == t.hContext Known Library
-  == t.hContext Known s.FE-Name e.PathToFile
-  == t.hContext UnKnown
-
-################################################################################
-Module MNameMaker;
-=============================================================================
-Служебный модуль, используемый только в диспетчерах front- и back-end'ов.
-==============================================================================
-
-<MakeName t.Context t.QualifiedName s.(BE/FE)Name s.FnRelativeNameMaker>
-  == t.Context t.QualifiedName Success e.FilePath
-  == t.Context t.QualifiedName Fails
-
-<s.FnRelativeNameMaker t.QualifiedName s.(BE/FE)Name>
-  == t.QualifiedName Success e.RelativeName
-  == t.QualifiedName Fails
 
 ################################################################################
 Module MOrder;

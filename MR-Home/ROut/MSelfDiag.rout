@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut/MSelfDiag.rout
+r file ROut\MSelfDiag.rout
 
 b Entry::MSelfDiag::Error
 c $Entry::MSelfDiag::Error$ {
@@ -41,7 +41,7 @@ c $Local::MSelfDiag::SwOpenLog$ {
 c 	( $ADT::__StructureBrackets$ $Ident::Y$ ) =
 c 		;
 c 	( $ADT::__StructureBrackets$ ) =
-c 		<$Local::MSelfDiag::Nil$ <$Entry::MRefalRTS::System$ 'md Info>nul 2>nul' > > <$Entry::MRefalRTS::Open$ 'w' 19 'Info/Log.txt' > ;
+c 		<$Entry::MRefalRTS::Open$ 'w' 19 '__log' > ;
 c }
 
 b Local::MSelfDiag::AssertAux

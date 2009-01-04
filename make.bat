@@ -1,7 +1,7 @@
 @echo off
-refgo -c128 mrefal MRefal.mref %1
+refgo -c128 -t mrefal +build+ "=MP:.;MR-Home" MRefal.mref
 if not errorlevel 1 (
-	refgo Utilities/VersionUpdater /verfile:Info/Version.txt /srcfile:mVersion.mref>nul
+  refgo Utilities/VersionUpdater /verfile:Info/Version.txt /srcfile:mVersion.mref>nul
 ) else (
-	rem echo Errors. Version not updated.
+  rem echo Errors. Version not updated.
 )

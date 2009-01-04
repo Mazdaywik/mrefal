@@ -378,7 +378,7 @@ SwGenerateImport-Aux {
 
 $ENTRY Init =
   <MBE-Mgr::Register
-    SymInfo &Generate &Link ('Defs') ('rsym')
+    SymInfo &Generate &Link ('~Defs') ('rsym')
   >;
 
 Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.

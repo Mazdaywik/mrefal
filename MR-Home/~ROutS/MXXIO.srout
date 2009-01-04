@@ -1,0 +1,267 @@
+v ROUT3 Module Refal 0.1
+r file ~ROutS\MXXIO.srout
+
+b Entry::MXXIO::Load
+c $Entry::MXXIO::Load$ {
+c 	e.$Index::FileName$ =
+c 		<$Local::MXXIO::ParseXXIO$ <$Entry::MLambda::Map$ $Local::MXXIO::UnBracket$ <$Entry::FileIO::Load$ e.$Index::FileName$ > > > ;
+c }
+
+b Local::MXXIO::UnBracket
+c $Local::MXXIO::UnBracket$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Expr$ ) =
+c 		e.$Index::Expr$ ;
+c }
+
+b Local::MXXIO::ParseXXIO
+c $Local::MXXIO::ParseXXIO$ {
+c 	e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ '$$' ( $ADT::__StructureBrackets$ ) e.$Index::Text$ > ;
+c }
+
+b Local::MXXIO::DoParse
+c $Local::MXXIO::DoParse$ {
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '#(' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '(' ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '#)' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ')' ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '##' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '#' ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '#' e.$Index::Text$ =
+c 		<$Local::MXXIO::ParseNumber$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '(' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ ( $ADT::__StructureBrackets$ t.$Index::MultiBracket$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ ) e.$Index::Text$ > ;
+c 	( $ADT::__StructureBrackets$ t.$Index::MultiBracket$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::InBrackets$ ) ')' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ( $ADT::__StructureBrackets$ e.$Index::InBrackets$ ) ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '\\' e.$Index::Text$ =
+c 		<$Local::MXXIO::Escape$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ > ;
+c 	'$$' ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ')' e.$Index::Text$ =
+c 		$Ident::Fails$ ;
+c 	t.$Index::MutliBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Ordinary$ e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MutliBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ s.$Index::Ordinary$ ) e.$Index::Text$ > ;
+c 	'$$' ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) =
+c 		$Ident::Success$ e.$Index::Scanned$ ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::ParseNumber
+c $Local::MXXIO::ParseNumber$ {
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ =
+c 		<$Local::MXXIO::ParseNumber-FirstDigit$ ( $ADT::__StructureBrackets$ '0123456789' ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ > ;
+c }
+
+b Local::MXXIO::ParseNumber-FirstDigit
+c $Local::MXXIO::ParseNumber-FirstDigit$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Num-B$ s.$Index::Num$ e.$Index::Num-E$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Num$ e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParseNumber$ ( $ADT::__StructureBrackets$ e.$Index::Num-B$ s.$Index::Num$ e.$Index::Num-E$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ s.$Index::Num$ ) e.$Index::Text$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Num$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::DoParseNumber
+c $Local::MXXIO::DoParseNumber$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Num-B$ s.$Index::Num$ e.$Index::Num-E$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::Digits$ ) s.$Index::Num$ e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParseNumber$ ( $ADT::__StructureBrackets$ e.$Index::Num-B$ s.$Index::Num$ e.$Index::Num-E$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::Digits$ s.$Index::Num$ ) e.$Index::Text$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Num$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::Digits$ ) ' ' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ <$Entry::MStrings::Numb$ e.$Index::Digits$ > ) e.$Index::Text$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Num$ ) t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::Digits$ ) e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ <$Entry::MStrings::Numb$ e.$Index::Digits$ > ) e.$Index::Text$ > ;
+c }
+
+b Local::MXXIO::Escape
+c $Local::MXXIO::Escape$ {
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) 'n' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\n' ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) 't' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\t' ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '\\' e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\\' ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) 'd' e.$Index::Text$ =
+c 		<$Local::MXXIO::ParseASCIICode$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::ParseASCIICode
+c $Local::MXXIO::ParseASCIICode$ {
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Hi$ s.$Index::Mid$ s.$Index::Lo$ e.$Index::Text$ =
+c 		<$Local::MXXIO::SwParseASCIICode$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) <$Local::MXXIO::IsDigit$ s.$Index::Hi$ > <$Local::MXXIO::IsDigit$ s.$Index::Mid$ > <$Local::MXXIO::IsDigit$ s.$Index::Lo$ > e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) e.$Index::Text$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::SwParseASCIICode
+c $Local::MXXIO::SwParseASCIICode$ {
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ $Ident::True$ s.$Index::Hi$ ) ( $ADT::__StructureBrackets$ $Ident::True$ s.$Index::Mid$ ) ( $ADT::__StructureBrackets$ $Ident::True$ s.$Index::Lo$ ) e.$Index::Text$ =
+c 		<$Local::MXXIO::DoParse$ t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ <$Entry::MStrings::Chr$ <$Entry::MStrings::Numb$ s.$Index::Hi$ s.$Index::Mid$ s.$Index::Lo$ > > ) e.$Index::Text$ > ;
+c 	t.$Index::MultiBracket$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) t.$Index::Other1$ t.$Index::Other2$ t.$Index::Other3$ e.$Index::Text$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::IsDigit
+c $Local::MXXIO::IsDigit$ {
+c 	s.$Index::Char$ =
+c 		<$Local::MXXIO::SwIsDigit$ s.$Index::Char$ '0123456789' > ;
+c }
+
+b Local::MXXIO::SwIsDigit
+c $Local::MXXIO::SwIsDigit$ {
+c 	s.$Index::Dig$ e.$Index::Dig-B$ s.$Index::Dig$ e.$Index::Dig-E$ =
+c 		( $ADT::__StructureBrackets$ $Ident::True$ s.$Index::Dig$ ) ;
+c 	s.$Index::Char$ e.$Index::Dig$ =
+c 		( $ADT::__StructureBrackets$ $Ident::False$ ) ;
+c }
+
+b Local::MXXIO::AtomType
+c $Local::MXXIO::AtomType$ {
+c 	s.$Index::Atom$ =
+c 		<$Local::MXXIO::SwAtomType$ s.$Index::Atom$ <$Entry::MStrings::Chr$ s.$Index::Atom$ > <$Entry::MStrings::Ord$ s.$Index::Atom$ > > ;
+c }
+
+b Local::MXXIO::SwAtomType
+c $Local::MXXIO::SwAtomType$ {
+c 	s.$Index::Atom$ s.$Index::Atom$ s.$Index::Atom$ =
+c 		$Ident::Ident$ s.$Index::Atom$ ;
+c 	s.$Index::Num$ s.$Index::Char$ s.$Index::Num$ =
+c 		$Ident::Number$ s.$Index::Num$ ;
+c 	s.$Index::Char$ s.$Index::Char$ s.$Index::Num$ =
+c 		$Ident::Char$ s.$Index::Char$ ;
+c }
+
+b Entry::MXXIO::Save
+c $Entry::MXXIO::Save$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::FileName$ ) e.$Index::ForSave$ =
+c 		<$Local::MXXIO::SwSave$ ( $ADT::__StructureBrackets$ e.$Index::FileName$ ) <$Local::MXXIO::Serialize$ e.$Index::ForSave$ > > ;
+c }
+
+b Local::MXXIO::SwSave
+c $Local::MXXIO::SwSave$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::FileName$ ) $Ident::Success$ e.$Index::Serialized$ =
+c 		$Ident::Success$ <$Entry::FileIO::Save$ ( $ADT::__StructureBrackets$ e.$Index::FileName$ ) <$Local::MXXIO::Cut$ e.$Index::Serialized$ > > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::FileName$ ) $Ident::Fails$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::Cut
+c $Local::MXXIO::Cut$ {
+c 	=
+c 		;
+c 	e.$Index::LongLine$ =
+c 		<$Local::MXXIO::Cut-Aux$ <$Entry::MStrings::First-Parse$ <$Local::MXXIO::StrLen$ > e.$Index::LongLine$ > > ;
+c }
+
+b Local::MXXIO::StrLen
+c $Local::MXXIO::StrLen$ {
+c 	=
+c 		63 ;
+c }
+
+b Local::MXXIO::Cut-Aux
+c $Local::MXXIO::Cut-Aux$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Cutted$ ) e.$Index::Rest$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Cutted$ ) <$Local::MXXIO::Cut$ e.$Index::Rest$ > ;
+c }
+
+b Local::MXXIO::Serialize
+c $Local::MXXIO::Serialize$ {
+c 	e.$Index::ForSave$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ ) e.$Index::ForSave$ '$$' > ;
+c }
+
+b Local::MXXIO::DoSerialize
+c $Local::MXXIO::DoSerialize$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '(' e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '#(' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ')' e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '#)' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Other$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::SerializeAtom$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Other$ e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::InBracket$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '(' ) e.$Index::InBracket$ ( $ADT::__StructureBrackets$ e.$Index::ForSave$ t.$Index::MultiBracket$ ) > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ e.$Index::ForSave$ t.$Index::MultiBracket$ ) =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ')' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) '$$' =
+c 		$Ident::Success$ e.$Index::Scanned$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) t.$Index::OtherTerm$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::SerializeAtom
+c $Local::MXXIO::SerializeAtom$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Atom$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::SwSerializeAtom$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) <$Local::MXXIO::AtomType$ s.$Index::Atom$ > e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c }
+
+b Local::MXXIO::SwSerializeAtom
+c $Local::MXXIO::SwSerializeAtom$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) $Ident::Number$ s.$Index::Number$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '#' <$Entry::MStrings::Symb$ s.$Index::Number$ > ' ' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) $Ident::Char$ s.$Index::Char$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::SerializeChar$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Char$ e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) $Ident::Ident$ s.$Index::Char$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Local::MXXIO::SerializeChar
+c $Local::MXXIO::SerializeChar$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) s.$Index::Char$ e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::SwSerializeChar$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) <$Local::MXXIO::CharRep$ s.$Index::Char$ > e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c }
+
+b Local::MXXIO::SwSerializeChar
+c $Local::MXXIO::SwSerializeChar$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ $Ident::Normal$ s.$Index::Char$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ s.$Index::Char$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ $Ident::NewLine$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\\n' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ $Ident::Tab$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\\t' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ $Ident::BS$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\\\\' ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Scanned$ ) ( $ADT::__StructureBrackets$ $Ident::ForCoding$ s.$Index::AsciiCode$ ) e.$Index::ForSave$ t.$Index::MultiBracket$ =
+c 		<$Local::MXXIO::DoSerialize$ ( $ADT::__StructureBrackets$ e.$Index::Scanned$ '\\d' <$Local::MXXIO::Numb3$ s.$Index::AsciiCode$ > ) e.$Index::ForSave$ t.$Index::MultiBracket$ > ;
+c }
+
+b Local::MXXIO::Numb3
+c $Local::MXXIO::Numb3$ {
+c 	s.$Index::AsciiCode$ =
+c 		<$Local::MXXIO::Numb3-Aux$ <$Entry::MStrings::Symb$ s.$Index::AsciiCode$ > > ;
+c }
+
+b Local::MXXIO::Numb3-Aux
+c $Local::MXXIO::Numb3-Aux$ {
+c 	s.$Index::1$ =
+c 		'00' s.$Index::1$ ;
+c 	s.$Index::1$ s.$Index::2$ =
+c 		'0' s.$Index::1$ s.$Index::2$ ;
+c 	s.$Index::1$ s.$Index::2$ s.$Index::3$ e.$Index::NeVlezlo$ =
+c 		s.$Index::1$ s.$Index::2$ s.$Index::3$ ;
+c }
+
+b Local::MXXIO::CharRep
+c $Local::MXXIO::CharRep$ {
+c 	'\n' =
+c 		( $ADT::__StructureBrackets$ $Ident::NewLine$ ) ;
+c 	'\t' =
+c 		( $ADT::__StructureBrackets$ $Ident::Tab$ ) ;
+c 	'\\' =
+c 		( $ADT::__StructureBrackets$ $Ident::BS$ ) ;
+c 	s.$Index::Other$ =
+c 		<$Local::MXXIO::CharRep-Aux$ s.$Index::Other$ <$Entry::MStrings::Ord$ s.$Index::Other$ > > ;
+c }
+
+b Local::MXXIO::CharRep-Aux
+c $Local::MXXIO::CharRep-Aux$ {
+c 	s.$Index::Other$ s.$Index::AsciiCode$ =
+c 		<$Local::MXXIO::SwCharRep$ s.$Index::Other$ s.$Index::AsciiCode$ <$Entry::Math::Compare$ 32 s.$Index::AsciiCode$ > <$Entry::Math::Compare$ s.$Index::AsciiCode$ 127 > > ;
+c }
+
+b Local::MXXIO::SwCharRep
+c $Local::MXXIO::SwCharRep$ {
+c 	s.$Index::Char$ s.$Index::AsciiCode$ '<' '<' =
+c 		( $ADT::__StructureBrackets$ $Ident::Normal$ s.$Index::Char$ ) ;
+c 	s.$Index::Char$ s.$Index::AsciiCode$ s.$Index::Other1$ s.$Index::Other2$ =
+c 		( $ADT::__StructureBrackets$ $Ident::ForCoding$ s.$Index::AsciiCode$ ) ;
+c }
+

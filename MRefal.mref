@@ -123,10 +123,6 @@ Make {
 }
 
 SelectMaker {
-  '+new+' = & MCompiler.Make;
-
-  '+newnew+' = & MCompiler.Make;
-
   '+make+' = & MCompiler.Make;
 
   '+linkonly+' = & MCompiler.LinkOnly;

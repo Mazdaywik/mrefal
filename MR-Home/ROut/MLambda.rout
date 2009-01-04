@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut/MLambda.rout
+r file ROut\MLambda.rout
 
 b Entry::MLambda::Apply
 c $Entry::MLambda::Apply$ {

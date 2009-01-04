@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut/FileIO.rout
+r file ROut\FileIO.rout
 
 b Swap::FileIO::G_Handles
 c $Swap::FileIO::G_Handles$ {
@@ -80,12 +80,6 @@ b Entry::FileIO::WriteLine-T
 c $Entry::FileIO::WriteLine-T$ {
 c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
 c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > e.$Index::Line$ ;
-c }
-
-b Entry::FileIO::ExtractFileName
-c $Entry::FileIO::ExtractFileName$ {
-c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
-c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::FileName$ ;
 c }
 
 b Entry::FileIO::Load

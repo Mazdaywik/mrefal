@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut/MOrder.rout
+r file ROut\MOrder.rout
 
 b Entry::MOrder::Compare-T
 c $Entry::MOrder::Compare-T$ {
@@ -129,5 +129,45 @@ c 	'>' ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrac
 c 		t.$Index::First2$ <$Local::MOrder::Merge$ ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) > ;
 c 	s.$Index::Other$ ( $ADT::__StructureBrackets$ t.$Index::First1$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) =
 c 		t.$Index::First1$ <$Local::MOrder::Merge$ ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) > ;
+c }
+
+b Local::MOrder::Max2
+c $Local::MOrder::Max2$ {
+c 	t.$Index::X$ t.$Index::Y$ =
+c 		<$Local::MOrder::SwMax2$ <$Entry::MOrder::Compare-T$ t.$Index::X$ t.$Index::Y$ > > ;
+c }
+
+b Local::MOrder::SwMax2
+c $Local::MOrder::SwMax2$ {
+c 	'<' t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::Y$ ;
+c 	s.$Index::Order$ t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::X$ ;
+c }
+
+b Entry::MOrder::Max
+c $Entry::MOrder::Max$ {
+c 	t.$Index::First$ e.$Index::Terms$ =
+c 		<$Entry::MLambda::Reduce$ $Local::MOrder::Max2$ t.$Index::First$ e.$Index::Terms$ > ;
+c }
+
+b Local::MOrder::Min2
+c $Local::MOrder::Min2$ {
+c 	t.$Index::X$ t.$Index::Y$ =
+c 		<$Local::MOrder::SwMin2$ <$Entry::MOrder::Compare-T$ t.$Index::X$ t.$Index::Y$ > > ;
+c }
+
+b Local::MOrder::SwMin2
+c $Local::MOrder::SwMin2$ {
+c 	'<' t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::X$ ;
+c 	s.$Index::Order$ t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::Y$ ;
+c }
+
+b Entry::MOrder::Min
+c $Entry::MOrder::Min$ {
+c 	t.$Index::First$ e.$Index::Terms$ =
+c 		<$Entry::MLambda::Reduce$ $Local::MOrder::Min2$ t.$Index::First$ e.$Index::Terms$ > ;
 c }
 

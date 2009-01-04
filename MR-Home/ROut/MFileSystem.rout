@@ -1,5 +1,5 @@
 v ROUT3 Module Refal 0.1
-r file ROut/MFileSystem.rout
+r file ROut\MFileSystem.rout
 
 b Swap::MFileSystem::G_TempFileName
 c $Swap::MFileSystem::G_TempFileName$ {
@@ -11,25 +11,35 @@ c }
 b Entry::MFileSystem::Init
 c $Entry::MFileSystem::Init$ {
 c 	=
-c 		<$Entry::MOS::System$ 'echo %random%>~suf.tmp' > <$Swap::MFileSystem::G_TempFileName$ <$Entry::MOS::Env$ 'TEMP' > '\\~dirlist_' <$Local::MFileSystem::UnBracket$ <$Entry::FileIO::Load$ '~suf.tmp' > > '.tmp' > <$Entry::MOS::System$ 'del ~suf.tmp' > ;
+c 		<$Entry::MOS::System$ 'echo %random%>~suf.tmp' > <$Swap::MFileSystem::G_TempFileName$ <$Entry::MOS::Env$ 'TEMP' > '\\~dirlist_' <$Entry::MLambda::UnBracket$ <$Entry::FileIO::Load$ '~suf.tmp' > > '.tmp' > <$Entry::MOS::System$ 'del ~suf.tmp' > <$Local::MFileSystem::MR-Extent-CheckVersion$ > ;
 c }
 
-b Local::MFileSystem::UnBracket
-c $Local::MFileSystem::UnBracket$ {
-c 	( $ADT::__StructureBrackets$ e.$Index::Expr$ ) =
-c 		e.$Index::Expr$ ;
-c }
-
-b Entry::MFileSystem::Final
-c $Entry::MFileSystem::Final$ {
+b Local::MFileSystem::MR-Extent-CheckVersion
+c $Local::MFileSystem::MR-Extent-CheckVersion$ {
 c 	=
-c 		<$Entry::MOS::System$ 'del ' <$Local::MFileSystem::TempName$ > ' >nul 2>nul' > ;
+c 		<$Local::MFileSystem::SwMR-Extent-CheckVersion$ <$Entry::MOS::System$ 'mr-extent VERSION >' <$Local::MFileSystem::TempName$ > > <$Entry::MXXIO::Load$ <$Local::MFileSystem::TempName$ > > > ;
+c }
+
+b Local::MFileSystem::SwMR-Extent-CheckVersion
+c $Local::MFileSystem::SwMR-Extent-CheckVersion$ {
+c 	$Ident::Success$ 'mr-extent' 0 1 =
+c 		;
+c 	$Ident::Success$ e.$Index::OtherAttribs$ =
+c 		<$Entry::MSelfDiag::Error$ 'Invalid version of utility mr-extent' > ;
+c 	$Ident::Fails$ =
+c 		<$Entry::MSelfDiag::Error$ 'Utility mr-exxtent not found' > ;
 c }
 
 b Local::MFileSystem::TempName
 c $Local::MFileSystem::TempName$ {
 c 	=
 c 		<$Entry::MSwapSupport::Read$ $Swap::MFileSystem::G_TempFileName$ > ;
+c }
+
+b Entry::MFileSystem::Final
+c $Entry::MFileSystem::Final$ {
+c 	=
+c 		<$Entry::MOS::System$ 'del \"' <$Local::MFileSystem::TempName$ > '\" >nul 2>nul' > ;
 c }
 
 b Entry::MFileSystem::ExistFile
@@ -44,12 +54,26 @@ c 	e.$Index::FileName$ =
 c 		<$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > e.$Index::FileName$ ;
 c }
 
+b Entry::MFileSystem::BackSlash
+c $Entry::MFileSystem::BackSlash$ {
+c 	e.$Index::Begin$ '/' e.$Index::End$ =
+c 		e.$Index::Begin$ '\\' <$Entry::MFileSystem::BackSlash$ e.$Index::End$ > ;
+c 	e.$Index::Path$ =
+c 		e.$Index::Path$ ;
+c }
+
+b Entry::MFileSystem::MakeDir
+c $Entry::MFileSystem::MakeDir$ {
+c 	e.$Index::Directory$ =
+c 		<$Entry::MOS::System$ 'mkdir ' <$Local::MFileSystem::Quoting$ e.$Index::Directory$ > ' 1>nul 2>nul' > ;
+c }
+
 b Entry::MFileSystem::FilesInfo
 c $Entry::MFileSystem::FilesInfo$ {
 c 	e.$Index::Mask-B$ '\"' e.$Index::Mask-E$ =
 c 		<$Entry::MSelfDiag::Error$ 'MFileSystem::FilesInfo: argument must not have quotes' > ;
 c 	e.$Index::Mask$ =
-c 		<$Local::MFileSystem::DoFilesInfo$ <$Local::MFileSystem::Quoting$ e.$Index::Mask$ > > ;
+c 		<$Local::MFileSystem::DoFilesInfo$ <$Entry::MFileSystem::BackSlash$ <$Local::MFileSystem::Quoting$ e.$Index::Mask$ > > > ;
 c }
 
 b Local::MFileSystem::Quoting
@@ -131,25 +155,23 @@ c }
 b Entry::MFileSystem::FileAttribute
 c $Entry::MFileSystem::FileAttribute$ {
 c 	s.$Index::Attribute$ e.$Index::FileName$ =
-c 		<$Local::MFileSystem::CheckExistAndGetAttrib$ s.$Index::Attribute$ <$Entry::MFileSystem::ExistFile-T$ e.$Index::FileName$ > > ;
+c 		<$Entry::MOS::System$ 'mr-extent INFO ' e.$Index::FileName$ ' >' <$Local::MFileSystem::TempName$ > > <$Local::MFileSystem::SwFileAttribute$ s.$Index::Attribute$ <$Entry::MXXIO::Load$ <$Local::MFileSystem::TempName$ > > > ;
 c }
 
-b Local::MFileSystem::CheckExistAndGetAttrib
-c $Local::MFileSystem::CheckExistAndGetAttrib$ {
-c 	s.$Index::Attribute$ $Ident::False$ e.$Index::FileName$ =
+b Local::MFileSystem::SwFileAttribute
+c $Local::MFileSystem::SwFileAttribute$ {
+c 	s.$Index::Attribute$ $Ident::Fails$ =
+c 		<$Entry::MSelfDiag::Error$ 'Files not found in MFileSystem::FileAttribute' > ;
+c 	s.$Index::Attribute$ $Ident::Success$ 'N' =
 c 		$Ident::FileNotFound$ ;
-c 	s.$Index::Attribute$ $Ident::True$ e.$Index::FileName$ =
-c 		<$Local::MFileSystem::ExtractAttrib$ s.$Index::Attribute$ <$Entry::MFileSystem::FilesInfo$ e.$Index::FileName$ > > ;
-c }
-
-b Local::MFileSystem::ExtractAttrib
-c $Local::MFileSystem::ExtractAttrib$ {
-c 	s.$Index::Attrib$ ( $ADT::__StructureBrackets$ t.$Index::Path$ e.$Index::Att-B$ ( $ADT::__StructureBrackets$ s.$Index::Attrib$ e.$Index::Value$ ) e.$Index::Att-E$ ) =
-c 		( $ADT::__StructureBrackets$ e.$Index::Value$ ) ;
-c 	s.$Index::Attrib$ ( $ADT::__StructureBrackets$ t.$Index::Path$ e.$Index::Attribs$ ) =
-c 		<$Entry::MSelfDiag::Error$ 'Unknown file attribute ' s.$Index::Attrib$ > ;
-c 	s.$Index::Attrib$ t.$Index::OneFile$ e.$Index::Tail$ =
-c 		<$Entry::MSelfDiag::Error$ 'Found many files in ExtractAttrib ' t.$Index::OneFile$ e.$Index::Tail$ > ;
+c 	$Ident::DateTime$ $Ident::Success$ s.$Index::Size$ s.$Index::Year$ s.$Index::Month$ s.$Index::Day$ s.$Index::Hour$ s.$Index::Minute$ s.$Index::Second$ e.$Index::LongName$ =
+c 		( $ADT::__StructureBrackets$ s.$Index::Year$ s.$Index::Month$ s.$Index::Day$ s.$Index::Hour$ s.$Index::Minute$ s.$Index::Second$ ) ;
+c 	$Ident::Size$ $Ident::Success$ 'D' s.$Index::Year$ s.$Index::Month$ s.$Index::Day$ s.$Index::Hour$ s.$Index::Minute$ s.$Index::Second$ e.$Index::LongName$ =
+c 		( $ADT::__StructureBrackets$ $Ident::Directory$ ) ;
+c 	$Ident::Size$ $Ident::Success$ s.$Index::Size$ s.$Index::Year$ s.$Index::Month$ s.$Index::Day$ s.$Index::Hour$ s.$Index::Minute$ s.$Index::Second$ e.$Index::LongName$ =
+c 		( $ADT::__StructureBrackets$ s.$Index::Size$ ) ;
+c 	$Ident::LongName$ $Ident::Success$ s.$Index::Size$ s.$Index::Year$ s.$Index::Month$ s.$Index::Day$ s.$Index::Hour$ s.$Index::Minute$ s.$Index::Second$ e.$Index::LongName$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::LongName$ ) ;
 c }
 
 b Entry::MFileSystem::ParseFileName
@@ -186,5 +208,19 @@ c 	( $ADT::__StructureBrackets$ ) e.$Index::Name$ =
 c 		( $ADT::__StructureBrackets$ ) e.$Index::Name$ ;
 c 	( $ADT::__StructureBrackets$ e.$Index::Directory$ s.$Index::Next$ ) e.$Index::Name$ =
 c 		<$Local::MFileSystem::DoParseDirectory$ ( $ADT::__StructureBrackets$ e.$Index::Directory$ ) s.$Index::Next$ e.$Index::Name$ > ;
+c }
+
+b Entry::MFileSystem::CanonicalPath
+c $Entry::MFileSystem::CanonicalPath$ {
+c 	e.$Index::Path$ =
+c 		<$Entry::MLambda::Map$ $Local::MFileSystem::CanonicalChar$ e.$Index::Path$ > ;
+c }
+
+b Local::MFileSystem::CanonicalChar
+c $Local::MFileSystem::CanonicalChar$ {
+c 	'\\' =
+c 		'/' ;
+c 	s.$Index::Other$ =
+c 		<$Entry::MStrings::Lower$ s.$Index::Other$ > ;
 c }
 

@@ -57,7 +57,6 @@ DefaultOptions
 
     (ModuleType Main) // Main | Regular
     (CachedSym None) // None | t.IModule
-    (BaseDirectory Current) // Current | e.FileName
     ;
 //ENDCUT
 /**---------------------------------------------------------------------------*/
@@ -430,8 +429,7 @@ $ENTRY CreateModule
   t.hContext t.ModuleName
   (Type s.Type)
   (FrontEnd s.FrontEnd e.PathToFrontEnd)
-  (BackEnds e.BackEnds)
-  (BaseDirectory e.BaseDirectory) =
+  (BackEnds e.BackEnds) =
     <CreateModule-SwDefined
       <IsKnown t.hContext t.ModuleName>
       t.ModuleName
@@ -439,7 +437,6 @@ $ENTRY CreateModule
       (FrontEnd s.FrontEnd e.PathToFrontEnd)
       (BackEnds e.BackEnds)
       (Status Found)
-      (BaseDirectory e.BaseDirectory)
     >;
 
 CreateModule-SwDefined {
@@ -516,25 +513,32 @@ GetBackEndList-Aux {
 }
 
 /**
-  <GetBaseDirectory t.hContext t.ModuleName>
-    == t.hContext Success e.BaseDirectory
+  <GetBackEnd t.hContext t.ModuleName s.BackEnd>
+    == t.hContext Success e.Path
     == t.hContext Fails ModuleNotFound
     == t.hContext Fails MismatchCase
+    == t.hContext Fails BackEndNotFound
 */
-$ENTRY GetBaseDirectory
-  t.hContext t.ModuleName =
-    <GetBaseDirectory-Aux
-      <ExtractOption t.hContext t.ModuleName BaseDirectory>
+$ENTRY GetBackEnd
+  t.hContext t.ModuleName s.BackEnd =
+    <GetBackEnd-Aux
+      <GetBackEndList t.hContext t.ModuleName> s.BackEnd
     >;
 
-GetBaseDirectory-Aux {
-  t.hContext Found e.BaseDirectory = t.hContext Success e.BaseDirectory;
+GetBackEnd-Aux {
+  t.hContext Success e.BackEnds-B (s.BackEnd e.Path) e.BackEnds-E
+  s.BackEnd =
+    t.hContext Success e.Path;
 
-  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+  t.hContext Success e.BackEnds s.BackEnd =
+    t.hContext Fails BackEndNotFound;
 
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+  t.hContext Fails ModuleNotFound s.BackEnd =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext Fails MismatchCase =
+    t.hContext Fails MismatchCase;
 }
-
 
 /**---------------------------------------------------------------------------*/
 

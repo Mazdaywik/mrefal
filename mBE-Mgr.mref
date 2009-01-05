@@ -64,52 +64,38 @@ DoGenerate {
 }
 
 GenerateBy
-  t.hContext t.IModule t.QualifiedName s.BackEndName =
+  t.hContext t.IModule t.ModuleName s.BackEndName =
     <GenerateBy-Aux
-      ( <MContext::GetBaseDirectory t.hContext t.QualifiedName> )
-      t.IModule t.QualifiedName
+      ( <MContext::GetBackEnd t.hContext t.ModuleName s.BackEndName> )
+      t.IModule t.ModuleName
       s.BackEndName <GetInfo s.BackEndName Generator>
     >;
 
 GenerateBy-Aux {
   ( t.Context e.Info )
-  t.IModule t.QualifiedName s.BackEndName
+  t.IModule t.ModuleName s.BackEndName
   Fails s.Error =
-    Fails t.Context t.IModule t.QualifiedName;
+    Fails t.Context t.IModule t.ModuleName;
 
-  ( t.Context Fails ModuleNotFound )
-  t.IModule t.QualifiedName s.BackEndName
+  ( t.hContext Fails ModuleNotFound )
+  t.hIModule t.ModuleName s.BackEndName
   Success s.FnGenerator =
-    Fails t.Context t.IModule t.QualifiedName;
+    Fails t.hContext t.hIModule t.ModuleName;
 
   ( t.hContext Fails MismatchCase )
-  t.hIModule t.QualifiedName s.BackEndName
+  t.hIModule t.ModuleName s.BackEndName
   Success s.FnGenerator =
-    Fails t.hContext t.hIModule t.QualifiedName;
+    Fails t.hContext t.hIModule t.ModuleName;
 
-  ( t.Context Success e.BaseDirectory )
-  t.IModule t.QualifiedName s.BackEndName
+  ( t.hContext Success e.FileName )
+  t.hIModule t.ModuleName s.BackEndName
   Success s.FnGenerator =
-    <GenerateBy-Aux2
-      t.Context t.IModule s.FnGenerator
-      <GetPath-T s.BackEndName t.QualifiedName e.BaseDirectory>
-    >;
-}
-
-GenerateBy-Aux2 {
-  t.Context t.IModule s.FnGenerator
-  Success t.QualifiedName e.FileName =
-    Success t.Context
+    Success t.hContext
     <s.FnGenerator
-      t.IModule
+      t.hIModule
       <MCreateDirIfNeed::CreatePathToFile e.FileName>
     >
-    t.QualifiedName;
-
-  /* Случай, когда GetOutPath возвращает Fails не рассматриваем,
-  т.к. неудача возникает только при неудаче функции GetBEInfo,
-  а последняя ветвь функции GeneratePer-Aux выполняется при
-  успешной GetBEInfo */
+    t.ModuleName;
 }
 
 //------------------------------------------------------------------------------
@@ -166,11 +152,12 @@ SwapFirsts
 MakeObjNames
   s.L-BEName t.hContext t.ModuleName =
     <MakeObjNames-Guard
-      <X_GetPath-T t.hContext t.ModuleName s.L-BEName>
+      t.ModuleName
+      <MContext::GetBackEnd t.hContext t.ModuleName s.L-BEName>
     >;
 
 MakeObjNames-Guard
-  t.hContext t.ModuleName Success e.Path =
+  t.ModuleName t.hContext Success e.Path =
     t.hContext (t.ModuleName e.Path);
 
 //------------------------------------------------------------------------------
@@ -226,80 +213,4 @@ GetPath-Aux {
     Success t.QualifiedName e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
 }
 
-//------------------------------------------------------------------------------
-
-/**
-  <X_GetPath-T t.Context t.QualifiedName s.BEName>
-    == t.Context t.QualifiedName Success e.Path
-    == t.Context t.QualifiedName Fails
-*/
-$ENTRY X_GetPath-T
-  t.Context t.QualifiedName s.BEName =
-    <MakeName
-      t.Context t.QualifiedName s.BEName
-    >;
-
-MakeName
-  t.Context t.QualifiedName s.MgrName =
-    <MakeName--SwInContext
-      ( <MContext::GetBaseDirectory t.Context t.QualifiedName> )
-      t.QualifiedName s.MgrName
-    >;
-
-MakeName--SwInContext {
-  ( t.hContext Success e.BaseName )
-  t.QualifiedName s.MgrName =
-    <MakeName--SwMakeRelative
-      t.hContext (e.BaseName)
-      <MakeRelative t.QualifiedName s.MgrName>
-    >;
-
-  ( t.hContext Fails ModuleNotFound )
-  t.QualifiedName s.MgrName =
-    t.hContext t.QualifiedName Fails;
-
-  ( t.hContext Fails MismatchCase )
-  t.QualifiedName s.MgrName =
-    t.hContext t.QualifiedName Fails;
-
-  /*
-    OptionNotFound не проверяем -- нарушение инварианта.
-  */
-}
-
-MakeRelative
-  t.QualifiedName s.BEName =
-    <MakeRelative-Aux
-      ( <GetInfo s.BEName Folder> )
-      ( <GetInfo s.BEName Ext> )
-      <MQualifiedName::ToRelativeFSPath-T t.QualifiedName>
-    >;
-
-MakeRelative-Aux {
-  ( Fails s.Error ) ( e.ResultExt ) t.QualifiedName e.Path =
-    t.QualifiedName Fails;
-
-  ( Success e.Folder ) ( Fails s.Error ) t.QualifiedName e.Path =
-    t.QualifiedName Fails;
-
-  ( Success e.Folder ) ( Success e.Ext )
-  t.QualifiedName e.Path =
-    t.QualifiedName Success e.Folder '/' e.Path '.' e.Ext;
-}
-
-MakeName--SwMakeRelative {
-  t.Context (Current)
-  t.QualifiedName Success e.RelativeName =
-    t.Context t.QualifiedName Success e.RelativeName;
-
-  t.Context (e.BaseName)
-  t.QualifiedName Success e.RelativeName =
-    t.Context t.QualifiedName Success e.BaseName '/' e.RelativeName;
-
-  t.Context (e.BaseName)
-  t.QualifiedName Fails =
-    t.Context t.QualifiedName Fails;
-}
-
 $END MBE-Mgr.
-

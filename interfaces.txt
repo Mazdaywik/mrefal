@@ -40,10 +40,6 @@ s.Error ::= InvalidMgr | InvalidOption
   == Success t.QualifiedName e.OutPath
   == Fails t.QualifiedName
 
-<X_GetPath-T t.Context t.QualifiedName s.BEName>
-  == t.Context t.QualifiedName Success e.Path
-  == t.Context t.QualifiedName Fails
-
 ################################################################################
 Module MBEFE-Holder;
 =============================================================================
@@ -178,7 +174,6 @@ DefaultOptions
 
     (ModuleType Main) // Main | Regular
     (CachedSym None) // None | t.IModule
-    (BaseDirectory Current) // Current | e.FileName
     ;
 # ENDCUT
 ---------------------------------------------------------------------------
@@ -223,10 +218,11 @@ t.BackEndInfo ::=
   == t.hContext Fails ModuleNotFound
   == t.hContext Fails MismatchCase
 
-<GetBaseDirectory t.hContext t.ModuleName>
-  == t.hContext Success e.BaseDirectory
+<GetBackEnd t.hContext t.ModuleName s.BackEnd>
+  == t.hContext Success e.Path
   == t.hContext Fails ModuleNotFound
   == t.hContext Fails MismatchCase
+  == t.hContext Fails BackEndNotFound
 
 ---------------------------------------------------------------------------
 
@@ -395,14 +391,6 @@ s.Attribute ::= DateTime | Size | LongName
 <DirList e.DirectoryName>
   == Success (e.FileName)*
   == Fails
-
-<FilesInfo e.Mask>
-  == (
-    (e.FileName)
-    (DateTime e.DateTime)
-    (Size s.Size)
-    (LongName e.LongName)
-  )*
 
 <ParseFileName e.FileName>
   == (e.Directory) e.FileNameNoExt (e.Ext)

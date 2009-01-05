@@ -116,14 +116,7 @@ $ENTRY GetExt-T
       s.FEName <GetInfo s.FEName Ext>
     >;
 
-NoExtForBackEnd { }
-
-GetExt-Guard {
-  // Отсутствие расширения -- нарушение инварианта
-  s.FEName InfoNotFound =
-    <NoExtForBackEnd s.FEName>;
-
+GetExt-Guard
   s.FEName Success e.Ext = s.FEName e.Ext;
-}
 
 $END MFE-Mgr.

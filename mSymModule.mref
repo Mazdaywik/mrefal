@@ -7,6 +7,7 @@ $MODULE MSymModule;
 
 $IMPORT FileIO;
 $IMPORT MBE-Mgr;
+$IMPORT MContext;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MLambda;
@@ -27,11 +28,12 @@ $IMPORT MQualifiedName;
 $ENTRY LoadInfo
   t.Context t.ModuleName =
     <LoadInfo_New-SwGetName
-      <MBE-Mgr::X_GetPath-T t.Context t.ModuleName SymInfo>
+      t.ModuleName
+      <MContext::GetBackEnd t.Context t.ModuleName SymInfo>
     >;
 
 LoadInfo_New-SwGetName {
-  t.Context t.ModuleName Success e.FilePath =
+  t.ModuleName t.Context Success e.FilePath =
     t.Context
     <LoadInfo_New-SwParseFile
       <MParser_Sym::SymModule
@@ -40,7 +42,7 @@ LoadInfo_New-SwGetName {
       >
     >;
 
-  t.Context t.ModuleName Fails =
+  t.ModuleName t.Context Fails s.Reason =
     <MQualifiedName::Destroy t.ModuleName>
     t.Context Fails;
 }

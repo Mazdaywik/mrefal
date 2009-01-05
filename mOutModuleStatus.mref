@@ -2,32 +2,61 @@ $MODULE MOutModuleStatus;
 
 $IMPORT InOut;
 $IMPORT Math;
+$IMPORT MLambda;
 $IMPORT MSwapSupport;
 $IMPORT MQualifiedName;
 
 $ENTRY Updated-Q
   t.QualifiedName =
+    <FlushCompilingRecompiled>
     <Out-Q Updated t.QualifiedName>;
 
 $ENTRY Compiling-Q
-  t.QualifiedName =
-    <Out-Q Compiling t.QualifiedName>;
+  t.ModuleName =
+    <MSwapSupport::PushBack & G_Compiling (Compiling t.ModuleName)>;
 
 $ENTRY Compiled-Q
-  t.QualifiedName =
-    <Out-Q Compiled t.QualifiedName>;
+  t.ModuleName =
+    <Compiled-Aux
+      ( <MSwapSupport::Read & G_Compiling> ) t.ModuleName
+    >;
+
+Compiled-Aux {
+  ( e.Compiling (Compiling t.ModuleName) ) t.ModuleName =
+    <MSwapSupport::Write & G_Compiling e.Compiling>
+    <MSwapSupport::PushBack & G_Recompiled (Recompiled t.ModuleName)>;
+
+  ( e.Compiling ) t.ModuleName =
+    <Out-Q Compiled t.ModuleName>;
+}
 
 $ENTRY Library-Q
   t.QualifiedName =
+    <FlushCompilingRecompiled>
     <Out-Q Library t.QualifiedName>;
 
 $ENTRY Fails-Q
   t.QualifiedName =
+    <FlushCompilingRecompiled>
     <Out-Q Fails t.QualifiedName>;
 
 $ENTRY Linking
   e.ProgName =
+    <FlushCompilingRecompiled>
     <Out Linking e.ProgName>;
+
+$SWAP G_Compiling, G_Recompiled;
+
+FlushCompilingRecompiled =
+  <MLambda::Map
+    <MLambda::Composite
+      & MLambda.UnBracket
+      & Out-Q
+    >
+    <G_Compiling> <G_Recompiled>
+  >;
+
+//------------------------------------------------------------------------------
 
 $SWAP G_OldStatus, G_Buffer;
 
@@ -56,12 +85,13 @@ SwOut {
 }
 
 StatusStr {
-  Updated =   'Updated ';
-  Compiling = 'Compiling ';
-  Compiled =  'Compiled ';
-  Library =   'Load library ';
-  Linking =   'Linking ';
-  Fails =     '  FAILS';
+  Updated =    'Updated ';
+  Compiling =  'Compiling ';
+  Compiled =   'Compiled ';
+  Recompiled = 'Recompiled ';
+  Library =    'Load library ';
+  Linking =    'Linking ';
+  Fails =      'FAILS ';
 }
 
 MaxLength = 80;

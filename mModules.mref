@@ -280,7 +280,6 @@ CheckVariants-Import-CorrectFormat {
         (Type Errors)
         (FrontEnd None)
         (BackEnds Unknown)
-        (BaseDirectory Current)
       >
     >
     Success Found Errors;
@@ -419,7 +418,6 @@ CheckVariant-T-SrcAux-SwExist-Finish {
             e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E
           >
         )
-        (BaseDirectory e.BaseDirectory)
       >
     >
     (Found Changed t.ModuleName s.FrontEnd e.BaseDirectory);
@@ -434,7 +432,6 @@ CheckVariant-T-SrcAux-SwExist-Finish {
         (Type Updated)
         (FrontEnd s.FrontEnd e.FrontEndName)
         (BackEnds <MLambda::Map & BackEnds-DelTF e.BackEnds>)
-        (BaseDirectory e.BaseDirectory)
       >
     >
     (Found Updated t.ModuleName s.FrontEnd e.BaseDirectory);
@@ -488,7 +485,6 @@ CheckVariant-T-LibAux-SwExist {
         (Type Library)
         (FrontEnd None)
         (BackEnds e.BE-Files)
-        (BaseDirectory <SelectBaseDirectory e.BaseDirectory>)
       >
     >
     (Found Library t.QualifiedName Library e.BaseDirectory);

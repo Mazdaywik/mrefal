@@ -386,19 +386,23 @@ Module MFileSystem;
 
 <MakeDir e.Directory> == empty
 
+<FileAttribute s.Attribute e.FileName>
+  == FileNotFound
+  == (e.Value)
+
+s.Attribute ::= DateTime | Size | LongName
+
+<DirList e.DirectoryName>
+  == Success (e.FileName)*
+  == Fails
+
 <FilesInfo e.Mask>
   == (
     (e.FileName)
     (DateTime e.DateTime)
     (Size s.Size)
     (LongName e.LongName)
-  )
-
-<FileAttribute s.Attribute e.FileName>
-  == FileNotFound
-  == (e.Value)
-
-s.Attribute ::= DateTime | Size | LongName
+  )*
 
 <ParseFileName e.FileName>
   == (e.Directory) e.FileNameNoExt (e.Ext)
@@ -835,6 +839,13 @@ Module MQualifiedName;
 <Equals-T t.QName1 t.QName2>
   == s.Result t.QName1 t.QName2
 s.Result ::= True | False
+
+################################################################################
+Module MR-Extent;
+
+<Call e.MR-Extent-Command>
+  == Success e.MR-Extent-Result
+  == Fails
 
 ################################################################################
 Module MResolver;

@@ -4,92 +4,91 @@ $IMPORT FS = MFileSystem;
 $IMPORT DWR = MDosWinRecoder;
 
 /*==============================================================================
-	Внутренний формат
-	[DirEntry (e<num>.Time) (e.Size) e<char>.FileName]
-		e.Size ::= s.Num | Directory
-		e.Time ::= s.Year s.Month s.Day s.Hour s.Minute s.Second
+  Внутренний формат
+  [DirEntry (e<num>.Time) (e.Size) e<char>.FileName]
+    e.Size ::= s.Num | Directory
+    e.Time ::= s.Year s.Month s.Day s.Hour s.Minute s.Second
 ==============================================================================*/
 $DATA DirEntry;
 
 /**
-	<GetList e<char>.DirName>
-		== e<DirEntry>.List
+  <GetList e<char>.DirName>
+    == e<DirEntry>.List
 */
 $ENTRY GetList
-	e.DirName =
-		<MakeList
-			<FS::FilesInfo e.DirName>
-		>;
-
-MakeMask {
-	e.DirName-B '/' e.DirName-E =
-		<MakeMask e.DirName-B '\\' e.DirName-E>;
-
-	e.DirName '\\' = e.DirName '\\';
-
-	e.DirName ':' = e.DirName ':';
-
-	e.DirName = e.DirName '\\';
-}
+  e.DirName =
+    <MakeList
+      (e.DirName) <FS::DirList e.DirName>
+    >;
 
 MakeList {
-	((e.Path) t.DateTime t.Size (LongName '.')) e.Tail =
-		<MakeList e.Tail>;
+  (e.DirName) Success e.Tail = <MakeList (e.DirName) e.Tail>;
 
-	((e.Path) t.DateTime t.Size (LongName '..')) e.Tail =
-		<MakeList e.Tail>;
+  (e.DirName) Fails e.Tail = <MakeList (e.DirName) e.Tail>;
 
-	((e.Path) (DateTime e.Time) (Size s.Size) (LongName e.Name)) e.Tail =
-		[DirEntry (e.Time) (s.Size) (e.Path)]
-		<MakeList e.Tail>;
+  (e.DirName) ('.') e.Tail = <MakeList (e.DirName) e.Tail>;
 
-	= ;
+  (e.DirName) ('..') e.Tail = <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) (e.Name) e.Tail =
+    <MakeDirEntry e.DirName '/' e.Name>
+    <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) = ;
 }
 
+MakeDirEntry
+  e.Name =
+    [DirEntry
+      <FS::FileAttribute DateTime e.Name>
+      <FS::FileAttribute Size e.Name>
+      (e.Name)
+    ];
+
 /**
-	<GetName t.DirEntry>
-		== e.FileName
+  <GetName t.DirEntry>
+    == e.FileName
 */
 $ENTRY GetName
-	[DirEntry t.DateTime t.Size (e.FileName)] = e.FileName;
+  [DirEntry t.DateTime t.Size (e.FileName)] = e.FileName;
 
 /**
-	<GetSize t.DirEntry>
-		== s.Size
-		== Directory
+  <GetSize t.DirEntry>
+    == s.Size
+    == Directory
 */
 $ENTRY GetSize
-	[DirEntry t.DateTime (s.Size) t.FileName] = s.Size;
+  [DirEntry t.DateTime (s.Size) t.FileName] = s.Size;
 
 /**
-	<GetTime t.DirEntry>
-		== e.Time
+  <GetTime t.DirEntry>
+    == e.Time
 */
 $ENTRY GetTime
-	[DirEntry (e.Time) t.Size t.FileName] = e.Time;
+  [DirEntry (e.Time) t.Size t.FileName] = e.Time;
 
 /**
-	<GetListRec e.DirName>
-		== e<DirEntry>.List
+  <GetListRec e.DirName>
+    == e<DirEntry>.List
 */
 $ENTRY GetListRec
-	e.DirName =
-		<ScanForRecursive <GetList e.DirName>>;
+  e.DirName =
+    <ScanForRecursive <GetList e.DirName>>;
 
 ScanForRecursive {
-	e.IsNotDirs
-	[DirEntry t.Time (Directory) (e.FileName)]
-	e.Tail =
-		e.IsNotDirs
-		[DirEntry t.Time (Directory) (e.FileName)]
-		<ScanForRecursive
-			<GetList
-				<MSelfDiag::Log-T e.FileName>
-			>
-			e.Tail
-		>;
+  e.IsNotDirs
+  [DirEntry t.Time (Directory) (e.FileName)]
+  e.Tail =
+    e.IsNotDirs
+    [DirEntry t.Time (Directory) (e.FileName)]
+    <ScanForRecursive
+      <GetList
+        <MSelfDiag::Log-T e.FileName>
+      >
+      e.Tail
+    >;
 
-	e.IsNotDirs = e.IsNotDirs;
+  e.IsNotDirs = e.IsNotDirs;
 }
 
 $import MSelfDiag;

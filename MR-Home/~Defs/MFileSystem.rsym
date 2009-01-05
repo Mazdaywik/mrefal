@@ -3,9 +3,9 @@ $module MFileSystem;
 $import MRefalRTS;
 $import MDosWinRecoder;
 $import MLambda;
-$import MOrder;
 $import MOS;
 $import FileIO;
+$import MR-Extent;
 $import MSelfDiag;
 $import MStrings;
 $import MSwapSupport;
@@ -14,6 +14,7 @@ $import Types;
 
 $entry BackSlash;
 $entry CanonicalPath;
+$entry DirList;
 $entry ExistFile;
 $entry ExistFile-T;
 $entry FileAttribute;

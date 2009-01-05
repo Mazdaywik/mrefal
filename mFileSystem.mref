@@ -2,53 +2,11 @@ $MODULE MFileSystem;
 
 $IMPORT MRefalRTS;
 
-$IMPORT MDosWinRecoder;
 $IMPORT MLambda;
-$IMPORT MOrder;
 $IMPORT MOS;
-$IMPORT FileIO;
+$IMPORT MR-Extent;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
-$IMPORT MSwapSupport;
-$IMPORT MXXIO;
-$IMPORT Types;
-
-$SWAP G_TempFileName;
-
-$ENTRY Init
-  = <MOS::System 'echo %random%>~suf.tmp'>
-  <G_TempFileName
-    <MOS::Env 'TEMP'> '\\~dirlist_'
-    <MLambda::UnBracket <FileIO::Load '~suf.tmp'>>
-    '.tmp'
-  >
-  <MOS::System 'del ~suf.tmp'>
-  <MR-Extent-CheckVersion>;
-
-MR-Extent-CheckVersion
-  =
-    <SwMR-Extent-CheckVersion
-      <MOS::System 'mr-extent VERSION >'<TempName>>
-      <MXXIO::Load <TempName>>
-    >;
-
-SwMR-Extent-CheckVersion {
-  Success 'mr-extent' 0 1 =
-    /* Всё правильно */;
-
-  Success e.OtherAttribs =
-    <MSelfDiag::Error 'Invalid version of utility mr-extent'>;
-
-  Fails =
-    <MSelfDiag::Error 'Utility mr-exxtent not found'>;
-}
-
-TempName = <MSwapSupport::Read &G_TempFileName>;
-
-//------------------------------------------------------------------------------
-
-$ENTRY Final
-  = <MOS::System 'del \"' <TempName> '\" >nul 2>nul'>;
 
 //------------------------------------------------------------------------------
 
@@ -91,133 +49,6 @@ $ENTRY MakeDir
 //------------------------------------------------------------------------------
 
 /**
-  <FilesInfo e.Mask>
-    == (
-      (e.FileName)
-      (DateTime e.DateTime)
-      (Size s.Size)
-      (LongName e.LongName)
-    )
-*/
-$ENTRY FilesInfo {
-  e.Mask-B '"' e.Mask-E =
-    <MSelfDiag::Error
-      'MFileSystem::FilesInfo: argument must not have quotes'
-    >;
-
-  e.Mask =
-    <DoFilesInfo
-      <BackSlash <Quoting e.Mask>>
-    >;
-}
-
-Quoting {
-  e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
-
-  e.Mask = e.Mask;
-}
-
-DoFilesInfo
-  e.Mask =
-    <MOS::System
-      'dir ' e.Mask '>' <TempName> ' 2>nul'
-    >
-    <ParseListing
-      <MDosWinRecoder::DosToWin
-        <FileIO::Load <TempName>>
-      >
-    >;
-
-ParseListing {
-  t.?Hdr1 t.?Hdr2 () (e.?Text1 s.Disk ':' e.Path) () e.Tail =
-    <ReadFileList (s.Disk ':' e.Path) e.Tail>;
-
-  = <MSelfDiag::Error 'Directory listing error: out is empty'>;
-
-  e.Other = <MSelfDiag::Error 'Directory listing error: ' e.Other>;
-}
-
-ReadFileList
-  (e.Path) e.Lines =
-    <MLambda::Map
-      <MLambda::BindLeft & AppendPath (e.Path)>
-      <MLambda::Map
-        & ParseLine
-        e.Lines
-      >
-    >;
-
-AppendPath {
-  (e.L_Path)
-  ( e.OtherInfo (LongName e.Name) ) =
-    (
-      (e.L_Path '\\' e.Name)
-      e.OtherInfo
-      (LongName e.Name)
-    );
-
-  (e.L_Path) = ;
-}
-
-/*
-  Формат строки:
-    10 Дата
-    7  Время
-    19 Размер
-    Остальное -- длинное имя.
-*/
-ParseLine {
-  ('   ' e.Tail) = ;
-  (e.Line) =
-    <ProcessFields
-      <MLambda::Map
-        & MStrings.Trim
-        <MStrings::Fields (10 7 19) e.Line>
-      >
-    >;
-}
-
-ProcessFields
-  (e.Date '.' e.Month '.' e.Year)
-  (e.Hours ':' e.Minutes)
-  (e.Size) (e.LongName) =
-    (
-      (DateTime
-        <MStrings::Numb e.Year>
-        <MStrings::Numb e.Month>
-        <MStrings::Numb e.Date>
-        <MStrings::Numb e.Hours>
-        <MStrings::Numb e.Minutes>
-        0 // Секунды
-      )
-      (Size <ParseSize e.Size>)
-      (LongName e.LongName)
-    );
-
-ParseSize {
-  e.Begin ' ' e.End = <ParseSize e.Begin e.End>;
-  '<' e.Catalog '>' = Directory;
-  e.Digits =
-    <MStrings::Numb
-      <DigitsOnly e.Digits>
-    >;
-}
-
-DigitsOnly
-  e.Line =
-    <MLambda::Map
-      <MLambda::BindLeft & DigitOnly (<Types::Digits>)>
-      e.Line
-    >;
-
-DigitOnly {
-  (e.L_Dig-B s.Dig e.L_Dig-E) s.Dig = s.Dig;
-  (e.L_Digs) s.NoDig = ;
-}
-
-//------------------------------------------------------------------------------
-
-/**
   <FileAttribute s.Attribute e.FileName>
     == FileNotFound
     == (e.Value)
@@ -226,13 +57,14 @@ DigitOnly {
 */
 $ENTRY FileAttribute
   s.Attribute e.FileName =
-    <MOS::System 'mr-extent INFO ' e.FileName ' >'<TempName>>
     <SwFileAttribute
-      s.Attribute <MXXIO::Load <TempName>>
+      s.Attribute
+      <MR-Extent::Call 'INFO ' <Quoting e.FileName>>
+      (e.FileName)
     >;
 
 SwFileAttribute {
-  s.Attribute Fails =
+  s.Attribute Fails (e.FileName) =
     <MSelfDiag::Error
       'Files not found in MFileSystem::FileAttribute'
     >;
@@ -240,20 +72,51 @@ SwFileAttribute {
   s.Attribute Success 'N' = FileNotFound;
 
   DateTime Success
-  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
     (s.Year s.Month s.Day s.Hour s.Minute s.Second);
 
   Size Success
-  'D' s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+  'D' s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
     (Directory);
 
   Size Success
-  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
     (s.Size);
 
   LongName Success
-  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName =
+  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
     (e.LongName);
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <DirList e.DirectoryName>
+    == Success (e.FileName)*
+    == Fails
+*/
+$ENTRY DirList
+  e.DirectoryName =
+    <DirListing-SwLoad
+      <MR-Extent::Call 'LIST ' <Quoting e.DirectoryName>>
+    >;
+
+DirListing-SwLoad {
+  Success 'S' e.FileNames-B 'F' e.FileNames-E = Fails;
+
+  Success 'S' e.FileNames = Success e.FileNames;
+
+  Success 'F' = Fails;
+
+  Fails = Fails;
+}
+
+//------------------------------------------------------------------------------
+
+Quoting {
+  e.Mask-B ' ' e.Mask-E = '"' e.Mask-B ' ' e.Mask-E '"';
+
+  e.Mask = e.Mask;
 }
 
 //------------------------------------------------------------------------------

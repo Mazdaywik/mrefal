@@ -1,0 +1,114 @@
+v ROUT3 Module Refal 0.1
+r file ~ROut\FileIO.rout
+
+b Swap::FileIO::G_Handles
+c $Swap::FileIO::G_Handles$ {
+c 	e.$Index::NewValue$ =
+c 		<Dg ('::FileIO::G_Handles')>
+c 		<Br ('::FileIO::G_Handles') '=' e.$Index::NewValue$ >;
+c }
+
+b Entry::FileIO::Init
+c $Entry::FileIO::Init$ {
+c 	=
+c 		<$Swap::FileIO::G_Handles$ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 > ;
+c }
+
+b Local::FileIO::GetHandle
+c $Local::FileIO::GetHandle$ {
+c 	=
+c 		<$Entry::MSwapSupport::PopFront$ $Swap::FileIO::G_Handles$ > ;
+c }
+
+b Local::FileIO::ReleaseHandle
+c $Local::FileIO::ReleaseHandle$ {
+c 	s.$Index::Handle$ =
+c 		<$Entry::MSwapSupport::PushFront$ $Swap::FileIO::G_Handles$ s.$Index::Handle$ > ;
+c }
+
+b Entry::FileIO::Open
+c $Entry::FileIO::Open$ {
+c 	'r' e.$Index::FileName$ =
+c 		<$Local::FileIO::CheckExistAndOpenForRead$ <$Entry::MRefalRTS::ExistFile$ e.$Index::FileName$ > e.$Index::FileName$ > ;
+c 	'w' e.$Index::FileName$ =
+c 		<$Local::FileIO::SwOpen$ <$Local::FileIO::GetHandle$ > 'w' e.$Index::FileName$ > ;
+c 	s.$Index::OtherMode$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ s.$Index::OtherMode$ ' -- unknown open file mode (' 'file \'' e.$Index::FileName$ '\')' > ;
+c }
+
+b Local::FileIO::CheckExistAndOpenForRead
+c $Local::FileIO::CheckExistAndOpenForRead$ {
+c 	$Ident::True$ e.$Index::FileName$ =
+c 		<$Local::FileIO::SwOpen$ <$Local::FileIO::GetHandle$ > 'r' e.$Index::FileName$ > ;
+c 	$Ident::False$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file \'' e.$Index::FileName$ '\' for reading' > ;
+c }
+
+b Local::FileIO::SwOpen
+c $Local::FileIO::SwOpen$ {
+c 	$Ident::Success$ s.$Index::Handle$ s.$Index::Mode$ e.$Index::FileName$ =
+c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Open$ s.$Index::Mode$ s.$Index::Handle$ e.$Index::FileName$ > ;
+c 	$Ident::Fails$ s.$Index::Mode$ e.$Index::FileName$ =
+c 		<$Entry::MSelfDiag::Error$ 'Can\'t open file ' e.$Index::FileName$ ': no free handles' > ;
+c }
+
+b Entry::FileIO::Close
+c $Entry::FileIO::Close$ {
+c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		<$Entry::MRefalRTS::Open$ 'r' s.$Index::Handle$ e.$Index::FileName$ > <$Local::FileIO::ReleaseHandle$ s.$Index::Handle$ > ;
+c }
+
+b Entry::FileIO::NulClose
+c $Entry::FileIO::NulClose$ {
+c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		<$Entry::MRefalRTS::Open$ 'r' s.$Index::Handle$ 'nul' > <$Local::FileIO::ReleaseHandle$ s.$Index::Handle$ > ;
+c }
+
+b Entry::FileIO::ReadLine
+c $Entry::FileIO::ReadLine$ {
+c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) =
+c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Get$ s.$Index::Handle$ > ;
+c }
+
+b Entry::FileIO::WriteLine
+c $Entry::FileIO::WriteLine$ {
+c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
+c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > ;
+c }
+
+b Entry::FileIO::WriteLine-T
+c $Entry::FileIO::WriteLine-T$ {
+c 	( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) e.$Index::Line$ =
+c 		( $ADT::FileIO::File$ s.$Index::Handle$ e.$Index::FileName$ ) <$Entry::MRefalRTS::Putout$ s.$Index::Handle$ e.$Index::Line$ > e.$Index::Line$ ;
+c }
+
+b Entry::FileIO::Load
+c $Entry::FileIO::Load$ {
+c 	e.$Index::FileName$ =
+c 		<$Local::FileIO::DoLoad$ <$Entry::FileIO::ReadLine$ <$Entry::FileIO::Open$ 'r' e.$Index::FileName$ > > > ;
+c }
+
+b Local::FileIO::DoLoad
+c $Local::FileIO::DoLoad$ {
+c 	t.$Index::File$ 0 =
+c 		<$Entry::FileIO::NulClose$ t.$Index::File$ > ;
+c 	t.$Index::File$ e.$Index::Line$ 0 =
+c 		( $ADT::__StructureBrackets$ e.$Index::Line$ ) <$Entry::FileIO::NulClose$ t.$Index::File$ > ;
+c 	t.$Index::File$ e.$Index::Line$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Line$ ) <$Local::FileIO::DoLoad$ <$Entry::FileIO::ReadLine$ t.$Index::File$ > > ;
+c }
+
+b Entry::FileIO::Save
+c $Entry::FileIO::Save$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::FileName$ ) e.$Index::Content$ =
+c 		<$Local::FileIO::DoSave$ <$Entry::FileIO::Open$ 'w' e.$Index::FileName$ > e.$Index::Content$ > ;
+c }
+
+b Local::FileIO::DoSave
+c $Local::FileIO::DoSave$ {
+c 	t.$Index::File$ ( $ADT::__StructureBrackets$ e.$Index::NextLine$ ) e.$Index::Tail$ =
+c 		<$Local::FileIO::DoSave$ <$Entry::FileIO::WriteLine$ t.$Index::File$ e.$Index::NextLine$ > e.$Index::Tail$ > ;
+c 	t.$Index::File$ =
+c 		<$Entry::FileIO::NulClose$ t.$Index::File$ > ;
+c }
+

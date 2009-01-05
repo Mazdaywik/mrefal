@@ -1,0 +1,159 @@
+v ROUT3 Module Refal 0.1
+r file ~ROut\MSwapSupport.rout
+
+b Entry::MSwapSupport::Read
+c $Entry::MSwapSupport::Read$ {
+c 	s.$Index::FnSwap$ =
+c 		<$Local::MSwapSupport::ReadAndReturn$ s.$Index::FnSwap$ <Mu s.$Index::FnSwap$ > > ;
+c }
+
+b Local::MSwapSupport::ReadAndReturn
+c $Local::MSwapSupport::ReadAndReturn$ {
+c 	s.$Index::FnSwap$ e.$Index::Content$ =
+c 		<Mu s.$Index::FnSwap$ e.$Index::Content$ > e.$Index::Content$ ;
+c }
+
+b Entry::MSwapSupport::Write
+c $Entry::MSwapSupport::Write$ {
+c 	s.$Index::FnSwap$ e.$Index::NewContent$ =
+c 		<$Local::MSwapSupport::Nil$ <Mu s.$Index::FnSwap$ e.$Index::NewContent$ > > ;
+c }
+
+b Local::MSwapSupport::Nil
+c $Local::MSwapSupport::Nil$ {
+c 	e.$Index::AnyValue$ =
+c 		;
+c }
+
+b Entry::MSwapSupport::PushFront
+c $Entry::MSwapSupport::PushFront$ {
+c 	s.$Index::FnSwap$ t.$Index::Info$ =
+c 		<Mu s.$Index::FnSwap$ t.$Index::Info$ <Mu s.$Index::FnSwap$ > > ;
+c }
+
+b Entry::MSwapSupport::PushBack
+c $Entry::MSwapSupport::PushBack$ {
+c 	s.$Index::FnSwap$ t.$Index::Info$ =
+c 		<Mu s.$Index::FnSwap$ <Mu s.$Index::FnSwap$ > t.$Index::Info$ > ;
+c }
+
+b Entry::MSwapSupport::PopFront
+c $Entry::MSwapSupport::PopFront$ {
+c 	s.$Index::FnSwap$ =
+c 		<$Local::MSwapSupport::ReturnPopFront$ s.$Index::FnSwap$ <Mu s.$Index::FnSwap$ > > ;
+c }
+
+b Local::MSwapSupport::ReturnPopFront
+c $Local::MSwapSupport::ReturnPopFront$ {
+c 	s.$Index::FnSwap$ t.$Index::Value$ e.$Index::Tail$ =
+c 		<Mu s.$Index::FnSwap$ e.$Index::Tail$ > $Ident::Success$ t.$Index::Value$ ;
+c 	s.$Index::FnSwap$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Entry::MSwapSupport::PopBack
+c $Entry::MSwapSupport::PopBack$ {
+c 	s.$Index::FnSwap$ =
+c 		<$Local::MSwapSupport::ReturnPopBack$ s.$Index::FnSwap$ <Mu s.$Index::FnSwap$ > > ;
+c }
+
+b Local::MSwapSupport::ReturnPopBack
+c $Local::MSwapSupport::ReturnPopBack$ {
+c 	s.$Index::FnSwap$ e.$Index::Start$ t.$Index::Last$ =
+c 		<Mu s.$Index::FnSwap$ e.$Index::Start$ > $Ident::Success$ t.$Index::Last$ ;
+c 	s.$Index::FnSwap$ =
+c 		$Ident::Fails$ ;
+c }
+
+b Entry::MSwapSupport::Br
+c $Entry::MSwapSupport::Br$ {
+c 	s.$Index::FnSwap$ e.$Index::Key$ '=' e.$Index::Value$ =
+c 		<$Entry::MSwapSupport::Bury$ s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ > ;
+c }
+
+b Entry::MSwapSupport::Bury
+c $Entry::MSwapSupport::Bury$ {
+c 	s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ =
+c 		<$Entry::MSwapSupport::PushFront$ s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ ) > ;
+c }
+
+b Entry::MSwapSupport::Dg
+c $Entry::MSwapSupport::Dg$ {
+c 	s.$Index::FnSwap$ e.$Index::Key$ =
+c 		<$Local::MSwapSupport::Dg-Aux$ s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) <Mu s.$Index::FnSwap$ > > ;
+c }
+
+b Local::MSwapSupport::Dg-Aux
+c $Local::MSwapSupport::Dg-Aux$ {
+c 	s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Heap-B$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ ) e.$Index::Heap-E$ =
+c 		e.$Index::Value$ <Mu s.$Index::FnSwap$ e.$Index::Heap-B$ e.$Index::Heap-E$ > ;
+c 	s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Heap$ =
+c 		<Mu s.$Index::FnSwap$ e.$Index::Heap$ > ;
+c }
+
+b Entry::MSwapSupport::Cp
+c $Entry::MSwapSupport::Cp$ {
+c 	s.$Index::FnSwap$ e.$Index::Key$ =
+c 		<$Local::MSwapSupport::Cp-Aux$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) <$Entry::MSwapSupport::Read$ s.$Index::FnSwap$ > > ;
+c }
+
+b Local::MSwapSupport::Cp-Aux
+c $Local::MSwapSupport::Cp-Aux$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Heap-B$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ ) e.$Index::Heap-E$ =
+c 		e.$Index::Value$ ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Heap$ =
+c 		;
+c }
+
+b Entry::MSwapSupport::Rp
+c $Entry::MSwapSupport::Rp$ {
+c 	s.$Index::FnSwap$ e.$Index::Key$ '=' e.$Index::Value$ =
+c 		<$Entry::MSwapSupport::Replace$ s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ > ;
+c }
+
+b Entry::MSwapSupport::Replace
+c $Entry::MSwapSupport::Replace$ {
+c 	s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ =
+c 		<$Local::MSwapSupport::Rp-Aux$ s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) ( $ADT::__StructureBrackets$ e.$Index::Value$ ) <Mu s.$Index::FnSwap$ > > ;
+c }
+
+b Local::MSwapSupport::Rp-Aux
+c $Local::MSwapSupport::Rp-Aux$ {
+c 	s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) ( $ADT::__StructureBrackets$ e.$Index::NewValue$ ) e.$Index::Heap-B$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::OldValue$ ) e.$Index::Heap-E$ =
+c 		<Mu s.$Index::FnSwap$ e.$Index::Heap-B$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::NewValue$ ) e.$Index::Heap-E$ > ;
+c 	s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) ( $ADT::__StructureBrackets$ e.$Index::NewValue$ ) e.$Index::Heap$ =
+c 		<Mu s.$Index::FnSwap$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::NewValue$ ) e.$Index::Heap$ > ;
+c }
+
+b Entry::MSwapSupport::Dgall
+c $Entry::MSwapSupport::Dgall$ {
+c 	s.$Index::FnSwap$ =
+c 		<$Local::MSwapSupport::Heap-Convert$ <$Entry::MSwapSupport::DigAll$ s.$Index::FnSwap$ > > ;
+c }
+
+b Entry::MSwapSupport::DigAll
+c $Entry::MSwapSupport::DigAll$ {
+c 	s.$Index::FnSwap$ =
+c 		<Mu s.$Index::FnSwap$ > ;
+c }
+
+b Entry::MSwapSupport::Cpall
+c $Entry::MSwapSupport::Cpall$ {
+c 	s.$Index::FnSwap$ =
+c 		<$Local::MSwapSupport::Heap-Convert$ <$Entry::MSwapSupport::CopyAll$ s.$Index::FnSwap$ > > ;
+c }
+
+b Entry::MSwapSupport::CopyAll
+c $Entry::MSwapSupport::CopyAll$ {
+c 	s.$Index::FnSwap$ =
+c 		<$Entry::MSwapSupport::Read$ s.$Index::FnSwap$ > ;
+c }
+
+b Local::MSwapSupport::Heap-Convert
+c $Local::MSwapSupport::Heap-Convert$ {
+c 	( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ e.$Index::Key$ ) e.$Index::Value$ ) e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ e.$Index::Key$ '=' e.$Index::Value$ ) <$Local::MSwapSupport::Heap-Convert$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+

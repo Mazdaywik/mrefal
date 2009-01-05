@@ -1,0 +1,173 @@
+v ROUT3 Module Refal 0.1
+r file ~ROut\MOrder.rout
+
+b Entry::MOrder::Compare-T
+c $Entry::MOrder::Compare-T$ {
+c 	t.$Index::Left$ t.$Index::Right$ =
+c 		<$Entry::MOrder::Compare$ t.$Index::Left$ t.$Index::Right$ > t.$Index::Left$ t.$Index::Right$ ;
+c }
+
+b Entry::MOrder::Compare
+c $Entry::MOrder::Compare$ {
+c 	t.$Index::Val$ t.$Index::Val$ =
+c 		'=' ;
+c 	s.$Index::Left$ s.$Index::Right$ =
+c 		<$Local::MOrder::SymbCompare$ s.$Index::Left$ s.$Index::Right$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Left$ ) s.$Index::Right$ =
+c 		'>' ;
+c 	s.$Index::Left$ ( $ADT::__StructureBrackets$ e.$Index::Right$ ) =
+c 		'<' ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Left$ ) ( $ADT::__StructureBrackets$ e.$Index::Right$ ) =
+c 		<$Local::MOrder::Lexicon$ ( $ADT::__StructureBrackets$ e.$Index::Left$ ) ( $ADT::__StructureBrackets$ e.$Index::Right$ ) > ;
+c }
+
+b Local::MOrder::SymbCompare
+c $Local::MOrder::SymbCompare$ {
+c 	s.$Index::Left$ s.$Index::Right$ =
+c 		<$Local::MOrder::SwSymbCompare$ <$Local::MOrder::Type-T$ s.$Index::Left$ > <$Local::MOrder::Type-T$ s.$Index::Right$ > > ;
+c }
+
+b Local::MOrder::Type-T
+c $Local::MOrder::Type-T$ {
+c 	s.$Index::Symb$ =
+c 		<$Local::MOrder::CheckChar$ s.$Index::Symb$ <$Entry::MRefalRTS::Ord$ s.$Index::Symb$ > > ;
+c }
+
+b Local::MOrder::CheckChar
+c $Local::MOrder::CheckChar$ {
+c 	s.$Index::Symb$ s.$Index::Symb$ =
+c 		<$Local::MOrder::CheckMacro$ s.$Index::Symb$ <$Entry::MRefalRTS::Chr$ s.$Index::Symb$ > > ;
+c 	s.$Index::Symb$ s.$Index::Numb$ =
+c 		( $ADT::__StructureBrackets$ $Ident::Char$ s.$Index::Symb$ s.$Index::Numb$ ) ;
+c }
+
+b Local::MOrder::CheckMacro
+c $Local::MOrder::CheckMacro$ {
+c 	s.$Index::Symb$ s.$Index::Symb$ =
+c 		( $ADT::__StructureBrackets$ $Ident::Other$ s.$Index::Symb$ ) ;
+c 	s.$Index::Symb$ s.$Index::Value$ =
+c 		( $ADT::__StructureBrackets$ $Ident::Macro$ s.$Index::Symb$ ) ;
+c }
+
+b Local::MOrder::SwSymbCompare
+c $Local::MOrder::SwSymbCompare$ {
+c 	( $ADT::__StructureBrackets$ $Ident::Char$ s.$Index::Chr1$ s.$Index::Ord1$ ) ( $ADT::__StructureBrackets$ $Ident::Char$ s.$Index::Chr2$ s.$Index::Ord2$ ) =
+c 		<$Entry::Math::Compare$ s.$Index::Ord1$ s.$Index::Ord2$ > ;
+c 	( $ADT::__StructureBrackets$ $Ident::Macro$ s.$Index::Num1$ ) ( $ADT::__StructureBrackets$ $Ident::Macro$ s.$Index::Num2$ ) =
+c 		<$Entry::Math::Compare$ s.$Index::Num1$ s.$Index::Num2$ > ;
+c 	( $ADT::__StructureBrackets$ $Ident::Other$ s.$Index::Symb1$ ) ( $ADT::__StructureBrackets$ $Ident::Other$ s.$Index::Symb2$ ) =
+c 		'=' ;
+c 	( $ADT::__StructureBrackets$ $Ident::Macro$ s.$Index::Val$ ) t.$Index::Other$ =
+c 		'>' ;
+c 	t.$Index::Other$ ( $ADT::__StructureBrackets$ $Ident::Macro$ s.$Index::Val$ ) =
+c 		'<' ;
+c 	( $ADT::__StructureBrackets$ $Ident::Char$ s.$Index::Chr$ s.$Index::Ord$ ) t.$Index::Other$ =
+c 		'>' ;
+c 	t.$Index::Other$ ( $ADT::__StructureBrackets$ $Ident::Char$ s.$Index::Chr$ s.$Index::Ord$ ) =
+c 		'<' ;
+c }
+
+b Local::MOrder::Lexicon
+c $Local::MOrder::Lexicon$ {
+c 	( $ADT::__StructureBrackets$ t.$Index::First$ e.$Index::Expr1$ ) ( $ADT::__StructureBrackets$ t.$Index::First$ e.$Index::Expr2$ ) =
+c 		<$Local::MOrder::Lexicon$ ( $ADT::__StructureBrackets$ e.$Index::Expr1$ ) ( $ADT::__StructureBrackets$ e.$Index::Expr2$ ) > ;
+c 	( $ADT::__StructureBrackets$ t.$Index::First1$ e.$Index::Expr1$ ) ( $ADT::__StructureBrackets$ t.$Index::First2$ e.$Index::Expr2$ ) =
+c 		<$Entry::MOrder::Compare$ t.$Index::First1$ t.$Index::First2$ > ;
+c 	( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ t.$Index::First2$ e.$Index::Expr2$ ) =
+c 		'<' ;
+c 	( $ADT::__StructureBrackets$ t.$Index::First1$ e.$Index::Expr1$ ) ( $ADT::__StructureBrackets$ ) =
+c 		'>' ;
+c 	( $ADT::__StructureBrackets$ ) ( $ADT::__StructureBrackets$ ) =
+c 		'=' ;
+c }
+
+b Entry::MOrder::Sort
+c $Entry::MOrder::Sort$ {
+c 	=
+c 		;
+c 	e.$Index::Sequence$ =
+c 		<$Local::MOrder::MergePairs$ <$Local::MOrder::CreateSeries$ e.$Index::Sequence$ > > ;
+c }
+
+b Local::MOrder::CreateSeries
+c $Local::MOrder::CreateSeries$ {
+c 	t.$Index::Elem$ e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ t.$Index::Elem$ ) <$Local::MOrder::CreateSeries$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
+b Local::MOrder::MergePairs
+c $Local::MOrder::MergePairs$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Series$ ) =
+c 		e.$Index::Series$ ;
+c 	e.$Index::Series$ =
+c 		<$Local::MOrder::MergePairs$ <$Local::MOrder::MergeAdjacentPairs$ e.$Index::Series$ > > ;
+c }
+
+b Local::MOrder::MergeAdjacentPairs
+c $Local::MOrder::MergeAdjacentPairs$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ <$Local::MOrder::Merge$ ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) > ) <$Local::MOrder::MergeAdjacentPairs$ e.$Index::Tail$ > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Series$ ) =
+c 		( $ADT::__StructureBrackets$ e.$Index::Series$ ) ;
+c 	=
+c 		;
+c }
+
+b Local::MOrder::Merge
+c $Local::MOrder::Merge$ {
+c 	( $ADT::__StructureBrackets$ t.$Index::First1$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ t.$Index::First2$ e.$Index::Series2$ ) =
+c 		<$Local::MOrder::SwMerge$ <$Entry::MOrder::Compare$ t.$Index::First1$ t.$Index::First2$ > ( $ADT::__StructureBrackets$ t.$Index::First1$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ t.$Index::First2$ e.$Index::Series2$ ) > ;
+c 	( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) =
+c 		e.$Index::Series1$ e.$Index::Series2$ ;
+c }
+
+b Local::MOrder::SwMerge
+c $Local::MOrder::SwMerge$ {
+c 	'>' ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ t.$Index::First2$ e.$Index::Series2$ ) =
+c 		t.$Index::First2$ <$Local::MOrder::Merge$ ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) > ;
+c 	s.$Index::Other$ ( $ADT::__StructureBrackets$ t.$Index::First1$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) =
+c 		t.$Index::First1$ <$Local::MOrder::Merge$ ( $ADT::__StructureBrackets$ e.$Index::Series1$ ) ( $ADT::__StructureBrackets$ e.$Index::Series2$ ) > ;
+c }
+
+b Local::MOrder::Max2
+c $Local::MOrder::Max2$ {
+c 	t.$Index::X$ t.$Index::Y$ =
+c 		<$Local::MOrder::SwMax2$ <$Entry::MOrder::Compare-T$ t.$Index::X$ t.$Index::Y$ > > ;
+c }
+
+b Local::MOrder::SwMax2
+c $Local::MOrder::SwMax2$ {
+c 	'<' t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::Y$ ;
+c 	s.$Index::Order$ t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::X$ ;
+c }
+
+b Entry::MOrder::Max
+c $Entry::MOrder::Max$ {
+c 	t.$Index::First$ e.$Index::Terms$ =
+c 		<$Entry::MLambda::Reduce$ $Local::MOrder::Max2$ t.$Index::First$ e.$Index::Terms$ > ;
+c }
+
+b Local::MOrder::Min2
+c $Local::MOrder::Min2$ {
+c 	t.$Index::X$ t.$Index::Y$ =
+c 		<$Local::MOrder::SwMin2$ <$Entry::MOrder::Compare-T$ t.$Index::X$ t.$Index::Y$ > > ;
+c }
+
+b Local::MOrder::SwMin2
+c $Local::MOrder::SwMin2$ {
+c 	'<' t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::X$ ;
+c 	s.$Index::Order$ t.$Index::X$ t.$Index::Y$ =
+c 		t.$Index::Y$ ;
+c }
+
+b Entry::MOrder::Min
+c $Entry::MOrder::Min$ {
+c 	t.$Index::First$ e.$Index::Terms$ =
+c 		<$Entry::MLambda::Reduce$ $Local::MOrder::Min2$ t.$Index::First$ e.$Index::Terms$ > ;
+c }
+

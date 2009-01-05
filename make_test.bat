@@ -1,3 +1,4 @@
 erase test.rsl
-call compile_mr Test.mref
+rem call compile_mr Test.mref
+refgo -c100 -t mrefal +make+ "=MP:.;MR-Home" Test.mref
 refgo test.rsl

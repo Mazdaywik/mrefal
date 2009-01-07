@@ -489,6 +489,7 @@ $ENTRY TokenToString {
   (DoubleColon) = <Q '::'>;
   (EndSent) = <Q ';'>;
   (Replaces) = <Q '='>;
+  (Asterisk) = <Q '*'>;
 
   (Directive s.Direc) = '$' <DirectiveToString s.Direc>;
 

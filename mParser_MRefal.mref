@@ -430,7 +430,7 @@ NPatternExpr {
       t.VarTable
       <AnyExpr-AnalyzeStartOfQualifiedName
         ( e.PatternExpr t.ParentStack )
-        (e.Identifier)
+        (t.SrcPos e.Identifier)
         t.ErrorList <MLexer::NextToken t.Lexer>
       >
     >;
@@ -607,8 +607,8 @@ NPatternExpr {
 //------------------------------------------------------------------------------
 
 AnyExpr-AnalyzeStartOfQualifiedName {
-  (e.Expression t.ParentStack) (e.Name)
-  t.ErrorList t.Lexer (Dot t.SrcPos) =
+  (e.Expression t.ParentStack) (t.SrcPos e.Name)
+  t.ErrorList t.Lexer (Dot t.DotSrcPos) =
     <ConcatQualified
       (e.Name)
       t.SrcPos (e.Expression t.ParentStack)
@@ -617,9 +617,9 @@ AnyExpr-AnalyzeStartOfQualifiedName {
       >
     >;
 
-  (e.Expression t.ParentStack) (e.Name)
+  (e.Expression t.ParentStack) (t.SrcPos e.Name)
   t.ErrorList t.Lexer t.NextToken =
-    (e.Expression (Identifier e.Name) t.ParentStack)
+    (e.Expression (Identifier t.SrcPos e.Name) t.ParentStack)
     t.ErrorList t.Lexer t.NextToken;
 }
 
@@ -724,7 +724,7 @@ NResultExpr {
       t.VarTable
       <AnyExpr-AnalyzeStartOfQualifiedName
         ( e.ResultExpr t.ParentStack )
-        (e.Ident)
+        (t.SrcPos e.Ident)
         t.ErrorList <MLexer::NextToken t.Lexer>
       >
     >;

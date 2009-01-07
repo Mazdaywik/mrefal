@@ -396,7 +396,7 @@ $ENTRY GetImportAttribute-AliasName
 $ENTRY GetADTAttribute
   t.IModule s.Attrib t.Name =
     <GetEntityAttribute-Relative
-      t.IModule ADT s.Attrib t.Name
+      t.IModule ADT s.Attrib <MQualifiedName::Parse t.Name>
     >;
 
 //------------------------------------------------------------------------------

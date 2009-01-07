@@ -1,16 +1,11 @@
 $module MFileSystem;
 
 $import MRefalRTS;
-$import MDosWinRecoder;
 $import MLambda;
 $import MOS;
-$import FileIO;
 $import MR-Extent;
 $import MSelfDiag;
 $import MStrings;
-$import MSwapSupport;
-$import MXXIO;
-$import Types;
 
 $entry BackSlash;
 $entry CanonicalPath;
@@ -18,9 +13,6 @@ $entry DirList;
 $entry ExistFile;
 $entry ExistFile-T;
 $entry FileAttribute;
-$entry FilesInfo;
-$entry Final;
-$entry Init;
 $entry MakeDir;
 $entry ParseFileName;
 

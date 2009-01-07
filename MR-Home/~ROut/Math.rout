@@ -1,34 +1,10 @@
 v ROUT3 Module Refal 0.1
-r file ~ROut\Math.rout
+r file .\~ROut\Math.rout
 
-b Entry::Math::Add
-c $Entry::Math::Add$ {
-c 	e.$Index::Arg$ =
-c 		<$Entry::MRefalRTS::Add$ e.$Index::Arg$ > ;
-c }
-
-b Entry::Math::Sub
-c $Entry::Math::Sub$ {
-c 	e.$Index::Arg$ =
-c 		<$Entry::MRefalRTS::Sub$ e.$Index::Arg$ > ;
-c }
-
-b Entry::Math::Inc
-c $Entry::Math::Inc$ {
-c 	s.$Index::Num$ =
-c 		<$Entry::Math::Add$ s.$Index::Num$ 1 > ;
-c }
-
-b Entry::Math::Dec
-c $Entry::Math::Dec$ {
-c 	s.$Index::Num$ =
-c 		<$Entry::Math::Sub$ s.$Index::Num$ 1 > ;
-c }
-
-b Entry::Math::Compare
-c $Entry::Math::Compare$ {
+b Entry::Math::Compare-T
+c $Entry::Math::Compare-T$ {
 c 	s.$Index::Left$ s.$Index::Rigth$ =
-c 		<$Local::Math::R5-to-MRef$ <$Entry::MRefalRTS::Compare$ s.$Index::Left$ s.$Index::Rigth$ > > ;
+c 		<$Entry::Math::Compare$ s.$Index::Left$ s.$Index::Rigth$ > s.$Index::Left$ s.$Index::Rigth$ ;
 c }
 
 b Local::Math::R5-to-MRef
@@ -41,9 +17,33 @@ c 	'+' =
 c 		'>' ;
 c }
 
-b Entry::Math::Compare-T
-c $Entry::Math::Compare-T$ {
+b Entry::Math::Compare
+c $Entry::Math::Compare$ {
 c 	s.$Index::Left$ s.$Index::Rigth$ =
-c 		<$Entry::Math::Compare$ s.$Index::Left$ s.$Index::Rigth$ > s.$Index::Left$ s.$Index::Rigth$ ;
+c 		<$Local::Math::R5-to-MRef$ <$Entry::MRefalRTS::Compare$ s.$Index::Left$ s.$Index::Rigth$ > > ;
+c }
+
+b Entry::Math::Dec
+c $Entry::Math::Dec$ {
+c 	s.$Index::Num$ =
+c 		<$Entry::Math::Sub$ s.$Index::Num$ 1 > ;
+c }
+
+b Entry::Math::Inc
+c $Entry::Math::Inc$ {
+c 	s.$Index::Num$ =
+c 		<$Entry::Math::Add$ s.$Index::Num$ 1 > ;
+c }
+
+b Entry::Math::Sub
+c $Entry::Math::Sub$ {
+c 	e.$Index::Arg$ =
+c 		<$Entry::MRefalRTS::Sub$ e.$Index::Arg$ > ;
+c }
+
+b Entry::Math::Add
+c $Entry::Math::Add$ {
+c 	e.$Index::Arg$ =
+c 		<$Entry::MRefalRTS::Add$ e.$Index::Arg$ > ;
 c }
 

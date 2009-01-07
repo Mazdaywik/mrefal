@@ -503,7 +503,7 @@ SwResolvingQualified {
   e.Argument (e.NotScannedResult) =
     t.ErrorList t.ResolveTable
     (e.ResolvedSentences)
-    ( e.ScannedChain (s.ScopeClass t.QualifiedName) )
+    ( e.ScannedChain (s.ScopeClass t.SrcPos t.QualifiedName) )
     e.Argument (e.NotScannedResult);
 
   t.ErrorList t.ResolveTable

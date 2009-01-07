@@ -1,0 +1,13 @@
+((!(Module)(Types)('./Types.mref',\d0321)))((!(Entry)(Types::On
+eOf)('./Types.mref',\d0323)))((!(Entry)(Types::UpAlph)('./Types
+.mref',\d0328)))((!(Entry)(Types::LoAlph)('./Types.mref',\d0321
+0)))((!(Entry)(Types::Digits)('./Types.mref',\d03212)))((!(Entr
+y)(Types::CharType)('./Types.mref',\d03214))(?(Local)(Types::Sw
+CharType)('./Types.mref',\d03215))(?(Entry)(Types::OneOf)('./Ty
+pes.mref',\d03215))(?(Entry)(Types::UpAlph)('./Types.mref',\d03
+215)))((!(Local)(Types::SwCharType)('./Types.mref',\d03219))(?(
+Local)(Types::SwCharType)('./Types.mref',\d03223))(?(Entry)(Typ
+es::OneOf)('./Types.mref',\d03223))(?(Entry)(Types::LoAlph)('./
+Types.mref',\d03223))(?(Local)(Types::SwCharType)('./Types.mref
+',\d03226))(?(Entry)(Types::OneOf)('./Types.mref',\d03226))(?(E
+ntry)(Types::Digits)('./Types.mref',\d03226)))

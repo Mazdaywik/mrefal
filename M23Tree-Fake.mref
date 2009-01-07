@@ -1,0 +1,39 @@
+$MODULE M23Tree-Fake;
+
+$DATA List;
+
+$ENTRY Create = [List];
+
+$ENTRY Insert {
+  [List e.Info-B (t.Key e.OldValue) e.Info-E] t.Key e.Value =
+    [List e.Info-B (t.Key e.Value) e.Info-E];
+
+  [List e.Info] t.Key e.Value =
+    [List (t.Key e.Value) e.Info];
+}
+
+$ENTRY Lookup {
+  [List e.Info-B (t.Key e.Value) e.Info-E] t.Key =
+    [List e.Info-B (t.Key e.Value) e.Info-E] Success e.Value;
+
+  [List e.Info] t.Key = [List e.Info] Fails;
+}
+
+$IMPORT InOut, MLambda;
+
+$ENTRY Print
+  [List e.Info] =
+    <MLambda::Map & PrintElem e.Info>;
+
+PrintElem
+  ((e.Key) e.Value) =
+    <InOut::WriteLine '  (' e.Key '): ' e.Value>;
+
+$ENTRY Extract {
+  [List e.Info-B (t.Key e.Value) e.Info-E] t.Key =
+    [List e.Info-B e.Info-E] Success e.Value;
+
+  [List e.Info] t.Key = [List e.Info] Fails;
+}
+
+$END M23Tree-Fake.

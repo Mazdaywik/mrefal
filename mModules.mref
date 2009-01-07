@@ -105,7 +105,8 @@ DoCrossName {
     >;
 
   // Начало e.[C-]ModuleFolder совпадает с e.C-MPDirectory
-  ( e.C-ModuleFolder-Tail ) () (e.BaseFolder) e.ModuleFolder-Tail =
+  ( '/' e.C-ModuleFolder-Tail ) ()
+  (e.BaseFolder) s.Slash e.ModuleFolder-Tail =
     ( e.BaseFolder <QNameFromRelativePath e.ModuleFolder-Tail> );
 
   // Не совпадает
@@ -113,21 +114,6 @@ DoCrossName {
   ( e.Scanned ) e.ModuleFolder =
     /* Пусто */;
 }
-
-/*
-  <AppendName (e.L-Folder) (e.MPDirectory)>
-    == ( e.BaseFolder t.QualifiedName )
-    == empty
-*/
-AppendName
-  (e.L-Folder) (e.MPDirectory) =
-    ( e.MPDirectory <QNameFromRelativePath e.L-Folder> );
-
-QNameFromRelativePath
-  e.Path =
-    <MQualifiedName::Create
-      <SlashParse e.Path>
-    >;
 
 SlashParse
   e.Path =
@@ -153,6 +139,21 @@ SlashParse-A {
 
 DeleteAccum
   t.Accum e.Scanned = e.Scanned;
+
+/*
+  <AppendName (e.L-Folder) (e.MPDirectory)>
+    == ( e.BaseFolder t.QualifiedName )
+    == empty
+*/
+AppendName
+  (e.L-Folder) (e.MPDirectory) =
+    ( e.MPDirectory <QNameFromRelativePath e.L-Folder> );
+
+QNameFromRelativePath
+  e.Path =
+    <MQualifiedName::Create
+      <SlashParse e.Path>
+    >;
 
 AvailFrontEnds {
   // Расширение не указано -- все доступные front-end'ы

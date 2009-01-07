@@ -5,7 +5,7 @@ $IMPORT InOut;
 $ENTRY ROut = 'ROUT3 Module Refal 0.1';
 
 $ENTRY Show =
-	<InOut::WriteLine 'Module Refal ' <VerNumber> ' (c) Mazdaywik 2007-2008'>;
+  <InOut::WriteLine 'Module Refal ' <VerNumber> ' (c) Mazdaywik 2007-2009'>;
 
 //{{GEN:VERSION
 

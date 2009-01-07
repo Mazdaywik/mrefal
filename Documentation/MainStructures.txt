@@ -15,7 +15,7 @@ t.ResultExpr ::=
   ( Result t.ResultTerm* )
 
 t.CommonTerm ::=
-  (Identifier e.Name)
+  (Identifier t.SrcPos e.Name)
   (EVar e.Index)
   (SVar e.Index)
   (TVar e.Index)
@@ -43,12 +43,13 @@ t.Callable ::=
 После проверки t.Callable меняется:
 
 t.Callable ::=
-  (s.CallType t.QualifiedName)
+  (s.CallType t.SrcPos t.QualifiedName)
 
 s.CallType ::=
   Entry
   Local
   Swap
+  ADT
 
 Здесь t.QualifiedName -- АТД типа t.QualifiedName из модуля MQualifiedName
 

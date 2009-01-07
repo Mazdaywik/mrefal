@@ -27,6 +27,7 @@ Compiled-Aux {
     <MSwapSupport::PushBack & G_Recompiled (Recompiled t.ModuleName)>;
 
   ( e.Compiling ) t.ModuleName =
+    <FlushCompilingRecompiled>
     <Out-Q Compiled t.ModuleName>;
 }
 

@@ -1,4 +1,20 @@
 ################################################################################
+Module M23Tree;
+
+<Create> == t.Tree
+
+<Insert t.Tree t.Key e.Value>
+  == t.Tree
+
+<Lookup t.Tree t.Key>
+  == t.Tree Success e.Value
+  == t.Tree Fails
+
+<Delete t.Tree t.Key>
+  == t.Tree Success e.Value
+  == t.Tree Fails
+
+################################################################################
 Module MBackEnd_Refal5;
 
 <Generate-T t.IModule e.OutName>
@@ -138,6 +154,44 @@ t.ImportRes ::=
   (t.Success t.hISubModule s.ModuleType t.Alias)
   | (Fails t.ImportName t.Alias)
   | (IsNotLibrary t.ImportName t.Alias)
+
+################################################################################
+Module MConfig;
+
+<Create e.ModulePath>
+  == t.Config
+e.ModulePath = (e.PathToFolder)*
+
+<GetModulePath t.Config> == e.ModulePath
+
+<RegisterBackEnd
+  t.Config s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext)
+>
+  == t.Config
+
+<GetBackEndList t.Config> == e.BackEndName
+
+<GetOption t.Config s.BEName s.Option>
+  == Success e.Option
+  == Fails InvalidMgr
+  == Fails InvalidOption
+
+<GetPath-T s.BEName t.ModuleName e.BaseFolder>
+  == Success e.OutPath
+  == Fails
+
+<RegisterFrontEnd
+  t.Config s.Name t.FnParser (e.Ext)
+>
+  == t.Config
+
+<GetPath-T t.Config t.ModuleName e.BaseFolder>
+  == Success e.FilePath
+  == Fails
+
+<GetFrontEndList t.Config> == e.FrontEndNames
+
+<GetFrontEndExt t.Config s.FrontEnd> == e.Ext
 
 ################################################################################
 Module MContext;
@@ -349,6 +403,22 @@ Module MExeTyper;
 
 ################################################################################
 Module MFE-Mgr;
+=============================================================================
+Опции front-end-диспетчера:
+
+s.FEName ::= IDENTIFIER -- Имя
+s.FnParser ::= {
+  t.ErrorList t.QualifiedName e.FileName =
+    t.ErrorList Success s.Result t.IModule;
+
+  t.ErrorList t.QualifiedName e.FileName =
+    t.ErrorList Fails;
+}
+s.Result ::= Success | Warnings | Errors
+e.Ext -- Расширение файлов исходного текста
+  Функция s.FnParser может предполагать, что файл с заданным именем
+существует.
+==============================================================================
 
 <Register s.FEName s.FnParser (e.Ext)>
   == empty

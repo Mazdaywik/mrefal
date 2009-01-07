@@ -7,7 +7,6 @@ $IMPORT MError;
 $IMPORT MFE-Mgr;
 $IMPORT MIModule;
 $IMPORT MLambda;
-$IMPORT MModules;
 $IMPORT MResolveTable;
 $IMPORT MResolver;
 $IMPORT MSymModule;

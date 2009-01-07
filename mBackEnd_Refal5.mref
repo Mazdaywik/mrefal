@@ -156,7 +156,7 @@ GenerateExpression {
 }
 
 GenerateTerm {
-  (Identifier e.Name) =
+  (Identifier t.SrcPos e.Name) =
     '$Ident::' e.Name '$';
 
   (EVar e.Name) =
@@ -217,7 +217,7 @@ EscapeChar {
 }
 
 GenerateCallable
-  s.CallType t.QualifiedFnName =
+  s.CallType t.SrcPos t.QualifiedFnName =
     '$' <XQualifiedToLine s.CallType t.QualifiedFnName> '$';
 
 $END MBackEnd_Refal5.

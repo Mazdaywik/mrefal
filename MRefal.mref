@@ -15,6 +15,7 @@ $IMPORT MVersion;
 // Эти модули должны быть инициализированы
 $IMPORT MBackEnd_Refal5_init;
 $IMPORT MFrontEnd_MRefal;
+$IMPORT MXLinx;
 
 $ENTRY Go =
   <MVersion::Show>

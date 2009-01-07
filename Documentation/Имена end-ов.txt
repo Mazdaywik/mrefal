@@ -4,4 +4,5 @@ FrontEnds:
   MRefal_FrontEnd
 BackEnds:
   Refal5BE
+  XLinxBE
   SymInfo

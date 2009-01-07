@@ -20,14 +20,23 @@ $IMPORT Math;
 
   s.Result ::= '<' | '=' | '>'
 */
-$ENTRY Compare-T
+$ENTRY Compare-T {
+  s.Left s.Right = <SymbCompare s.Left s.Right> s.Left s.Right;
+
+  (e.Left) s.Right = '>' (e.Left) s.Right;
+
+  s.Left (e.Right) = '<' s.Left (e.Right);
+
+  (e.Left) (e.Right) = <Lexicon-T (e.Left) (e.Right)>;
+
   t.Left t.Right = <Compare t.Left t.Right> t.Left t.Right;
+}
 
 /**
   <Compare t.Left t.Right> == '<' | '=' | '>'
 */
 $ENTRY Compare {
-  t.Val t.Val = '=';
+  //t.Val t.Val = '=';
 
   s.Left s.Right = <SymbCompare s.Left s.Right>;
 
@@ -43,25 +52,19 @@ SymbCompare
     <SwSymbCompare <Type-T s.Left> <Type-T s.Right>>;
 
 Type-T
-  s.Symb = <CheckChar s.Symb <MRefalRTS::Ord s.Symb>>;
+  s.Symb =
+    <CheckAtom
+      s.Symb
+      <MRefalRTS::Ord s.Symb>
+      <MRefalRTS::Chr s.Symb>
+    >;
 
-CheckChar {
-  s.Symb s.Symb =
-    // Не char, т.к. функция <MRefalRTS::Ord> заменяет
-    // characters на соотвествующие макроцифры
-    <CheckMacro s.Symb <MRefalRTS::Chr s.Symb>>;
+CheckAtom {
+  s.Atom s.Atom s.Atom = (Other s.Atom);
 
-  s.Symb s.Numb =
-    (Char s.Symb s.Numb);
-}
+  s.Symb s.Numb s.Symb = (Char s.Symb s.Numb);
 
-CheckMacro {
-  s.Symb s.Symb =
-    // Не макроцифра (см. выше)
-    (Other s.Symb);
-
-  s.Symb s.Value =
-    (Macro s.Symb);
+  s.Numb s.Numb s.Symb = (Macro s.Numb); 
 }
 
 SwSymbCompare {
@@ -81,7 +84,7 @@ SwSymbCompare {
   t.Other (Char s.Chr s.Ord) = '<';
 }
 
-/* $ENTRY */ Lexicon {
+Lexicon {
   ( t.First e.Expr1 ) ( t.First e.Expr2 ) =
     <Lexicon ( e.Expr1 ) ( e.Expr2 )>;
 
@@ -93,6 +96,46 @@ SwSymbCompare {
   (t.First1 e.Expr1) () = '>';
 
   () () = '=';
+}
+
+Lexicon-T
+  (e.Left) (e.Right) =
+    <DoLexicon-T () (e.Left) () (e.Right)>;
+
+DoLexicon-T {
+  (e.Scanned1) ( t.Next1 e.Expr1 )
+  (e.Scanned2) ( t.Next2 e.Expr2 ) =
+    <SwDoLexicon-T
+      (e.Scanned1) (e.Scanned2)
+      <Compare-T t.Next1 t.Next2>
+      (e.Expr1) (e.Expr2)
+    >;
+
+  (e.Scanned1) () (e.Scanned2) () = '=' (e.Scanned1) (e.Scanned2);
+
+  (e.Scanned1) () (e.Scanned2) (e.Expr) =
+    '<' (e.Scanned1) (e.Scanned2 e.Expr);
+
+  (e.Scanned1) (e.Expr) (e.Scanned2) () =
+    '>' (e.Scanned1 e.Expr) (e.Scanned2);
+}
+
+SwDoLexicon-T {
+  (e.Scanned1) (e.Scanned2)
+  '<' t.Next1 t.Next2 (e.Expr1) (e.Expr2) =
+    '<' (e.Scanned1 t.Next1 e.Expr1) (e.Scanned2 t.Next2 e.Expr2);
+
+  (e.Scanned1) (e.Scanned2)
+  '=' t.Next1 t.Next2 (e.Expr1) (e.Expr2) =
+    <DoLexicon-T
+      (e.Scanned1 t.Next1) (e.Expr1)
+      (e.Scanned2 t.Next2) (e.Expr2)
+    >;
+
+  (e.Scanned1) (e.Scanned2)
+  '>' t.Next1 t.Next2 (e.Expr1) (e.Expr2) =
+    '>' (e.Scanned1 t.Next1 e.Expr1) (e.Scanned2 t.Next2 e.Expr2);
+
 }
 
 /**

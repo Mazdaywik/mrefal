@@ -9,4 +9,4 @@ if exist _compilation.log del _compilation.log
 call compile_mr %PROGRAMS% >> _compilation.log
 
 del *.ref
-rd /s /q Defs Info ROut
+rd /s /q ~Defs Info ~ROut ~XLinx

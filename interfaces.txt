@@ -10,9 +10,16 @@ Module M23Tree;
   == t.Tree Success e.Value
   == t.Tree Fails
 
-<Delete t.Tree t.Key>
+<Extract t.Tree t.Key>
   == t.Tree Success e.Value
   == t.Tree Fails
+Функция Extract удаляет пару (t.Key t.Value) из дерева,
+при этом возвращая e.Value
+
+<Delete t.Tree t.Key>
+  == t.Tree
+Постусловие: в дереве t.Tree отсутствует значение,
+ассоциированное с ключом t.Key
 
 ################################################################################
 Module MBackEnd_Refal5;

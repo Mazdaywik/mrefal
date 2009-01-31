@@ -178,10 +178,13 @@ AnalyzeLine-SwType {
 
 SwitchTag {
   'TODO' = ToDo;
+  '+TODO' = ToDo-Plus;
   'DONE' = Done;
   'TOTHINK' = ToThink;
+  '+TOTHINK' = ToThink-Plus;
   'THINKED' = Thinked;
   'ERROR' = Error;
+  '+ERROR' = Error-Plus;
   'FIXED' = Fixed;
   'CHANGED' = Changed;
 
@@ -303,8 +306,22 @@ AnalyzeTag {
     )
     ( e.Closed );
 
+  ( e.Opened-B (ToThink (e.Description) e.Info) e.Opened-E ) ( e.Closed )
+  (ToThink-Plus (e.Description) (e.Time) e.AddInfo) =
+    (
+      e.Opened-B
+      (ToThink (e.Description) e.Info (ToThink (e.Time) e.AddInfo))
+      e.Opened-E
+    )
+    ( e.Closed );
+
   ( e.Opened ) ( e.Closed )
   (ToThink (e.Description) (e.Time) e.AddInfo) =
+    ( e.Opened (ToThink (e.Description) (ToThink (e.Time) e.AddInfo)) )
+    ( e.Closed );
+
+  ( e.Opened ) ( e.Closed )
+  (ToThink-Plus (e.Description) (e.Time) e.AddInfo) =
     ( e.Opened (ToThink (e.Description) (ToThink (e.Time) e.AddInfo)) )
     ( e.Closed );
 
@@ -332,6 +349,15 @@ AnalyzeTag {
     )
     ( e.Closed );
 
+  ( e.Opened-B (ToDo (e.Description) e.Info) e.Opened-E ) ( e.Closed )
+  (ToDo-Plus (e.Description) (e.Time) e.AddInfo) =
+    (
+      e.Opened-B
+      (ToDo (e.Description) e.Info (ToDo (e.Time) e.AddInfo))
+      e.Opened-E
+    )
+    ( e.Closed );
+
   ( e.Opened-B (ToThink (e.Description) e.Info) e.Opened-E ) ( e.Closed )
   (ToDo (e.Description) (e.Time) e.AddInfo) =
     (
@@ -340,8 +366,22 @@ AnalyzeTag {
     )
     ( e.Closed );
 
+  ( e.Opened-B (ToThink (e.Description) e.Info) e.Opened-E ) ( e.Closed )
+  (ToDo-Plus (e.Description) (e.Time) e.AddInfo) =
+    (
+      e.Opened-B
+      (ToDo (e.Description) e.Info (ToDo (e.Time) e.AddInfo))
+      e.Opened-E
+    )
+    ( e.Closed );
+
   ( e.Opened ) ( e.Closed )
   (ToDo (e.Description) (e.Time) e.AddInfo) =
+    ( e.Opened (ToDo (e.Description) (ToDo (e.Time) e.AddInfo)) )
+    ( e.Closed );
+
+  ( e.Opened ) ( e.Closed )
+  (ToDo-Plus (e.Description) (e.Time) e.AddInfo) =
     ( e.Opened (ToDo (e.Description) (ToDo (e.Time) e.AddInfo)) )
     ( e.Closed );
 
@@ -369,8 +409,22 @@ AnalyzeTag {
     )
     ( e.Closed );
 
+  ( e.Opened-B (Error (e.Description) e.Info) e.Opened-E ) ( e.Closed )
+  (Error-Plus (e.Description) (e.Time) e.AddInfo) =
+    (
+      e.Opened-B
+      (Error (e.Description) e.Info (Error (e.Time) e.AddInfo))
+      e.Opened-E
+    )
+    ( e.Closed );
+
   ( e.Opened ) ( e.Closed )
   (Error (e.Description) (e.Time) e.AddInfo) =
+    ( e.Opened (Error (e.Description) (Error (e.Time) e.AddInfo)) )
+    ( e.Closed );
+
+  ( e.Opened ) ( e.Closed )
+  (Error-Plus (e.Description) (e.Time) e.AddInfo) =
     ( e.Opened (Error (e.Description) (Error (e.Time) e.AddInfo)) )
     ( e.Closed );
 

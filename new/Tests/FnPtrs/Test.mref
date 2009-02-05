@@ -1,0 +1,14 @@
+$MODULE Test;
+
+$IMPORT MPtrs, Std::InOut;
+
+$ENTRY Go =
+  <IndirectCall
+    <MPtrs::GetPtr <InOut::ReadLine>>
+  >;
+
+IndirectCall
+  s.Function =
+    < s.Function 'Argument = ' <InOut::ReadLine> >;
+
+$END Test.

@@ -1,0 +1,71 @@
+v ROUT3 Module Refal 0.1
+r file .\~ROut\TestDirListing.rout
+
+b Entry::TestDirListing::Go
+c $Entry::TestDirListing::Go$ {
+c 	=
+c 		<$Local::TestDirListing::TypeListRec$ <$Entry::FileIO::Open$ 'w' 'listing' > <$Entry::MDirList::GetList$ 'C:\\Documents and Settings\\Shurik' > > ;
+c }
+
+b Local::TestDirListing::TypeListRec
+c $Local::TestDirListing::TypeListRec$ {
+c 	t.$Index::hFile$ =
+c 		<$Entry::FileIO::Close$ t.$Index::hFile$ > ;
+c 	t.$Index::hFile$ t.$Index::Next$ e.$Index::Tail$ =
+c 		<$Local::TestDirListing::TypeListRec$ <$Local::TestDirListing::SwTypeListRec$ t.$Index::hFile$ ( $ADT::__StructureBrackets$ <$Entry::MDirList::GetSize$ t.$Index::Next$ > <$Entry::MDirList::GetName$ t.$Index::Next$ > ) > e.$Index::Tail$ > ;
+c }
+
+b Local::TestDirListing::SwTypeListRec
+c $Local::TestDirListing::SwTypeListRec$ {
+c 	t.$Index::hFile$ ( $ADT::__StructureBrackets$ $Ident::Directory$ e.$Index::Name$ ) =
+c 		<$Entry::FileIO::WriteLine$ t.$Index::hFile$ <$Local::TestDirListing::Width$ 6 'Dir' > ' ' e.$Index::Name$ > <$Entry::MDirList::GetList$ e.$Index::Name$ > ;
+c 	t.$Index::hFile$ ( $ADT::__StructureBrackets$ s.$Index::Size$ e.$Index::Name$ ) =
+c 		<$Entry::FileIO::WriteLine$ t.$Index::hFile$ <$Local::TestDirListing::Width$ 6 <$Entry::MStrings::Symb$ s.$Index::Size$ > > ' ' e.$Index::Name$ > ;
+c }
+
+b Local::TestDirListing::MakeList
+c $Local::TestDirListing::MakeList$ {
+c 	t.$Index::Next$ e.$Index::Tail$ =
+c 		( $ADT::__StructureBrackets$ <$Local::TestDirListing::Width$ 6 <$Local::TestDirListing::Symb$ <$Entry::MDirList::GetSize$ t.$Index::Next$ > > > ' ' <$Entry::MDirList::GetName$ t.$Index::Next$ > ) <$Local::TestDirListing::MakeList$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
+b Local::TestDirListing::Symb
+c $Local::TestDirListing::Symb$ {
+c 	$Ident::Directory$ =
+c 		'Dir' ;
+c 	s.$Index::Num$ =
+c 		<$Entry::MStrings::Symb$ s.$Index::Num$ > ;
+c }
+
+b Local::TestDirListing::PrintList
+c $Local::TestDirListing::PrintList$ {
+c 	t.$Index::Next$ e.$Index::Tail$ =
+c 		<$Entry::InOut::WriteLine$ <$Entry::MDirList::GetName$ t.$Index::Next$ > ' ' <$Entry::MDirList::GetSize$ t.$Index::Next$ > > <$Local::TestDirListing::PrintList$ e.$Index::Tail$ > ;
+c 	=
+c 		;
+c }
+
+b Local::TestDirListing::Repeat
+c $Local::TestDirListing::Repeat$ {
+c 	0 t.$Index::X$ =
+c 		;
+c 	1 t.$Index::X$ =
+c 		t.$Index::X$ ;
+c 	s.$Index::Num$ t.$Index::X$ =
+c 		t.$Index::X$ <$Local::TestDirListing::Repeat$ <$Entry::Math::Dec$ s.$Index::Num$ > t.$Index::X$ > ;
+c }
+
+b Local::TestDirListing::Width
+c $Local::TestDirListing::Width$ {
+c 	s.$Index::Num$ e.$Index::Str$ =
+c 		<$Local::TestDirListing::FirstOnly$ <$Entry::MStrings::First-Parse$ s.$Index::Num$ e.$Index::Str$ <$Local::TestDirListing::Repeat$ s.$Index::Num$ ' ' > > > ;
+c }
+
+b Local::TestDirListing::FirstOnly
+c $Local::TestDirListing::FirstOnly$ {
+c 	( $ADT::__StructureBrackets$ e.$Index::First$ ) e.$Index::Rest$ =
+c 		e.$Index::First$ ;
+c }
+

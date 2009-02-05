@@ -1,0 +1,37 @@
+$MODULE Brackets;
+
+*-------------------------------------------------------------------------------
+* Выводит на экран скобочную структуру в более-менее читабельном формате
+*-------------------------------------------------------------------------------
+
+$IMPORT InOut;
+
+$ENTRY Print {
+	e.Structure = <DoPrintBrackets () e.Structure>;
+}
+
+DoPrintBrackets {
+	(e.Tabs) (e.InBrackets) e.Rest =
+		<Prout e.Tabs '('>
+		<DoPrintBrackets (e.Tabs ' ') e.InBrackets>
+		<Prout e.Tabs ')'>
+		<DoPrintBrackets (e.Tabs) e.Rest>;
+
+	(e.Tabs) e.Plain (e.InBrackets) e.Rest =
+		<Prout e.Tabs e.Plain>
+		<DoPrintBrackets (e.Tabs) (e.InBrackets) e.Rest>;
+
+	(e.Tabs) = ;
+	(e.Tabs) e.Plain = <Prout e.Tabs e.Plain>;
+}
+
+$ENTRY PrintTitled {
+	(e.Title) e.Expr =
+		<Prout e.Title>
+		<Print e.Expr>
+		<Prout>;
+}
+
+Prout e.Expr = <InOut::WriteLine e.Expr>;
+
+$END Brackets.

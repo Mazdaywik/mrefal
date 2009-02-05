@@ -1,0 +1,57 @@
+$PROGRAM Text-To-HTML;
+
+$IMPORT FileIO, MOS, InOut, MUtilitiesBanner;
+
+$ENTRY Go =
+  <MUtilitiesBanner::Type 'Text-To-HTML'>
+  <CheckArgs (<MOS::Arg 1>) (<MOS::Arg 2>)>;
+
+CheckArgs {
+  () () = <InOut::WriteLine 'command line error'>;
+
+  (e.TextName) () =
+    <Convert (e.TextName) (e.TextName '.html')>;
+
+  (e.TextName) (e.HTMLName) =
+    <Convert (e.TextName) (e.HTMLName)>;
+}
+
+Convert
+  (e.TextName) (e.HTMLName) =
+    <FileIO::Save
+      (e.HTMLName)
+      ('<HTML> <BODY>')
+      <ConvertLines
+        <FileIO::Load e.TextName>
+      >
+      ('</BODY></HTML>')
+    >;
+
+ConvertLines {
+  (e.Line) e.Tail =
+    (<ConvertLine e.Line>)
+    <ConvertLines e.Tail>;
+
+  = ;
+}
+
+ConvertLine {
+  '\t' e.Line =
+    '&nbsp&nbsp&nbsp&nbsp'
+    <LtGt e.Line>
+    '<br>';
+  e.Line =
+    <LtGt e.Line> '<br>';
+}
+
+LtGt {
+  e.Begin '<' e.End =
+    e.Begin '&lt' <LtGt e.End>;
+
+  e.Begin '>' e.End =
+    e.Begin '&gt' <LtGt e.End>;
+
+  e.Line = e.Line;
+}
+
+$END Text-To-HTML.

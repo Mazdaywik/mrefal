@@ -1,0 +1,13 @@
+$MODULE Test;
+
+$IMPORT InOut;
+
+$SWAP Holder;
+
+$ENTRY Go =
+	<InOut::WriteLine '#1 ' <Holder 'OneValue'>>
+	<InOut::WriteLine '#2 ' <Holder 'TwoValue'>>
+	<InOut::WriteLine '#3 ' <Holder 'ThreeValue'>>
+	<InOut::WriteLine '#4 ' <Holder>>;
+
+$END Test.

@@ -1,0 +1,13 @@
+$PROGRAM Main;
+
+$IMPORT InOut, MFileSystem, MDosWinRecoder;
+
+$ENTRY Go
+	= <InOut::WriteText
+		<MFileSystem::FilesInfo
+			<InOut::WriteLine 'Enter mask'>
+			<InOut::ReadLine>
+		>
+	>;
+
+$END Main.

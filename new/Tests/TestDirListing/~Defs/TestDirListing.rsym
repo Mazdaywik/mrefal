@@ -1,0 +1,14 @@
+$program TestDirListing;
+
+$import MDirList;
+$import InOut;
+$import FileIO;
+$import MSelfDiag;
+$import MOS;
+$import DWR = MDosWinRecoder;
+$import MStrings;
+$import Math;
+
+$entry Go;
+
+$end TestDirListing.

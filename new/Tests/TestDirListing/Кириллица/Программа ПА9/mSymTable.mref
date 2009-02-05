@@ -1,0 +1,300 @@
+$MODULE MSymTable;
+
+$IMPORT MSelfDiag;
+$IMPORT MStrings;
+
+//------------------------------------------------------------------------------
+// Функции для работы с таблицей символов
+//------------------------------------------------------------------------------
+
+/* Внутренний формат: 
+	t.SymTable ::= [SymTable e.Names]
+	e.Names ::= (e.Name e.Attribs)*
+	e.Attribs ::= (s.Attrib e.Value)*
+
+	Каждое имя всегда имеет атрибут Kind. По умолчанию его значение Unknown
+*/
+
+//==============================================================================
+// Базовые операции
+//==============================================================================
+
+$DATA SymTable;
+
+/**
+	<Create> == t.SymTable
+*/
+$ENTRY Create
+	= [SymTable];
+
+/**
+	<AddName t.SymTable e.Name>
+		== t.SymTable
+*/
+$ENTRY AddName {
+	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E] e.Name =
+		[SymTable
+			e.Names-B ((e.Name) e.Attribs) e.Names-E
+		];
+
+	[SymTable e.Names] e.NewName =
+		[SymTable e.Names ((e.NewName) (Kind Unknown))];
+}
+
+/**
+	<UpdateAttrib t.SymTable (e.Name) s.Attrib e.Value>
+		== t.SymTable
+*/
+$ENTRY UpdateAttrib {
+	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
+	(e.Name) s.Attrib e.Value =
+		[SymTable
+			e.Names-B
+			((e.Name) <UpdateAttrib-Aux (s.Attrib e.Value) e.Attribs>)
+			e.Names-E
+		];
+
+	t.SymTable (e.Name) s.Attrib e.Value =
+		<UpdateAttrib
+			<AddName t.SymTable e.Name>
+			(e.Name) s.Attrib e.Value
+		>;
+}
+
+UpdateAttrib-Aux {
+	(s.NewAttrib e.NewValue)
+	(s.NewAttrib e.?OldValue) e.Tail =
+		(s.NewAttrib e.NewValue) e.Tail;
+
+	(s.NewAttrib e.NewValue)
+	(s.OtherAttrib e.OtherValue) e.Tail =
+		(s.OtherAttrib e.OtherValue)
+		<UpdateAttrib-Aux
+			(s.NewAttrib e.NewValue) e.Tail
+		>;
+
+	(s.NewAttrib e.NewValue) =
+		(s.NewAttrib e.NewValue);
+}
+
+/**
+	<RemoveAttrib t.SymTable e.Name s.Attrib>
+		== t.SymTable Found e.Value
+		== t.SymTable NoAttrib
+		== t.SymTable NoName
+*/
+$ENTRY RemoveAttrib {
+	// Частный случай -- атрибут Kind не удаляем
+	[SymTable
+		e.Names-B
+		((e.Name) e.Attribs-B (Kind s.Value) e.Attribs-E)
+		e.Names-E
+	] e.Name Kind =
+		[SymTable
+			((e.Name) (Kind s.Value) e.Attribs-B e.Attribs-E)
+			e.Names-B e.Names-E
+		] Found s.Value;
+
+	[SymTable
+		e.Names-B
+		((e.Name) e.Attribs-B (s.Attrib e.Value) e.Attribs-E)
+		e.Names-E
+	] e.Name s.Attrib =
+		[SymTable
+			((e.Name) e.Attribs-B e.Attribs-E)
+			e.Names-B e.Names-E
+		] Found e.Value;
+
+	[SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
+	e.Name s.?Attrib =
+		[SymTable ((e.Name) e.Attribs) e.Names-B e.Names-E]
+		NoAttrib;
+
+	[SymTable e.Names] e.?Name s.?Attrib =
+		[SymTable e.Names] NoName;
+}
+
+/**
+	<GetAttrib t.SymTable e.Name s.Attrib>
+		== t.SymTable Found e.Value
+		== t.SymTable NoAttrib
+		== t.SymTable NoName
+*/
+$ENTRY GetAttrib
+	t.SymTable e.Name s.Attrib =
+		<SwGetAttrib
+			(e.Name) s.Attrib
+			<RemoveAttrib t.SymTable e.Name s.Attrib>
+		>;
+
+SwGetAttrib {
+	(e.Name) s.Attrib t.SymTable Found e.Value =
+		<UpdateAttrib
+			t.SymTable (e.Name) s.Attrib e.Value
+		> Found e.Value;
+
+	(e.Name) s.Attrib t.SymTable NoAttrib =
+		t.SymTable NoAttrib;
+
+	(e.Name) s.Attrib t.SymTable NoName =
+		t.SymTable NoName;
+}
+
+/**
+	<RemoveName t.SymTable e.Name>
+		== t.SymTable
+*/
+$ENTRY RemoveName {
+	[SymTable e.Names-B ((e.Name) e.?Attribs) e.Names-E]
+	e.Name =
+		[SymTable e.Names-B e.Names-E];
+
+	[SymTable e.Names] e.Name =
+		<MSelfDiag::Error
+			'MSymTable::RemoveName: name ' e.Name ' not found'
+		>;
+}
+
+/**
+	<ExtractNames t.SymTable>
+		== t.SymTable (e.Name)*
+*/
+$ENTRY ExtractNames
+	[SymTable e.Names] =
+		<DoExtractNames
+			[SymTable] () e.Names
+		>;
+
+/*
+	Инвариант:
+	<DoExtractNames [SymTable e.Scanned] ( (e.Name)* ) e.NotScanned>
+*/
+DoExtractNames {
+	[SymTable e.Scanned]
+	(e.Names) ((e.NextName) e.Attribs) e.NotScanned =
+		<DoExtractNames
+			[SymTable e.Scanned ((e.NextName) e.Attribs)]
+			(e.Names (e.NextName)) e.NotScanned
+		>;
+
+	t.SymTable (e.Names) =
+		t.SymTable e.Names;
+}
+
+/**
+	<Rename t.SymTable (e.OldName) e.NewName>
+		== t.SymTable Success
+		== t.SymTable Fails
+*/
+$ENTRY Rename {
+	[SymTable e.Names-B ((e.NewName) e.Attribs) e.Names-E]
+	(e.OldName) e.NewName =
+		[SymTable e.Names-B ((e.NewName) e.Attribs) e.Names-E]
+		Fails;
+
+	[SymTable e.Names-B ((e.OldName) e.Attribs) e.Names-E]
+	(e.OldName) e.NewName =
+		[SymTable e.Names-B ((e.NewName) e.Attribs) e.Names-E]
+		Success;
+
+	[SymTable e.Names] (e.OldName) e.NewName =
+		[SymTable e.Names] Fails;
+}
+
+$ENTRY Destroy 
+	[SymTable e.Names] = ;
+
+
+//==============================================================================
+// Производные операции
+//==============================================================================
+
+/**
+	<UpdateAttribSet
+		t.SymTable (e.Name)
+		(s.Attrib e.Value)*
+	> == t.SymTable
+*/
+$ENTRY UpdateAttribSet {
+	t.SymTable (e.Name) (s.Attrib e.Value) =
+		<UpdateAttrib
+			t.SymTable (e.Name) s.Attrib e.Value
+		>;
+
+	t.SymTable (e.Name) (s.Attrib e.Value) e.Tail =
+		<UpdateAttribSet
+			<UpdateAttrib
+				t.SymTable (e.Name) s.Attrib e.Value
+			> (e.Name) e.Tail
+		>;
+}
+
+/**
+	<FindByKind t.SymTable s.Kind>
+		== t.SymTable (e.Name)*
+*/
+$ENTRY FindByKind
+	t.SymTable s.Kind =
+		<DoFindByKind
+			<ExtractNames t.SymTable>
+			s.Kind
+		>;
+
+/*
+	Инвариант <DoFindByKind t.SymTable e.Names s.Kind>
+*/
+DoFindByKind {
+	t.SymTable e.Names (e.NextName) s.Kind =
+		<DoFindByKind-Aux
+			<GetAttrib t.SymTable e.NextName Kind>
+			e.Names (e.NextName) s.Kind
+		>;
+
+	t.SymTable s.Kind =
+		t.SymTable;
+}
+
+DoFindByKind-Aux {
+	t.SymTable Found s.Kind e.Names (e.NextName) s.Kind =
+		<DoFindByKind
+			t.SymTable e.Names s.Kind
+		> (e.NextName);
+
+	t.SymTable Found s.Kind1 e.Names (e.?NextName) s.Kind2 =
+		<DoFindByKind
+			t.SymTable e.Names s.Kind2
+		>;
+
+	// Предполагается, что имя e.NextName есть в таблице -- ведь из таблицы
+	// мы его и извлекали. Предполагаем также, что Kind всегда в таблице
+	// присутствует.
+}
+
+/**
+	<AddNewName t.SymTable (e.Name) (s.Attrib e.Value)*>
+		== t.SymTable Success
+		== t.SymTable Fails
+
+	Если имя (e.Name) отсутствует в таблице, то оно добавляется с указанными
+	атрибутами, в противном случае таблица не изменяется.
+	Фукция возвращает Success при успешном добавлении имени, Fails в случае,
+	если имя уже в таблице было.
+*/
+$ENTRY AddNewName
+	t.SymTable (e.Name) e.Attribs =
+		<SwAddNewName
+			<GetAttrib t.SymTable e.Name Kind>
+			(e.Name) e.Attribs
+		>;
+
+SwAddNewName {
+	t.SymTable NoName (e.Name) e.Attribs =
+		<UpdateAttribSet
+			t.SymTable (e.Name) e.Attribs
+		> Success;
+
+	t.SymTable Found s.?Kind (e.?Name) e.?Attribs =
+		t.SymTable Fails;
+}
+
+$END MSymTable.

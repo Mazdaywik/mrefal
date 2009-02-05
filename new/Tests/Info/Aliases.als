@@ -1,0 +1,10 @@
+E --> Lower::Go
+E0 --> InOut::WriteLine
+E1 --> MStrings::Lower
+E2 --> MRefalRTS::Prout
+E3 --> MDosWinRecoder::WinToDos
+E4 --> MRefalRTS::Lower
+L --> MDosWinRecoder::DoWinToDos
+L0 --> MDosWinRecoder::Table
+S --> InOut::G_Buffer
+T --> __StructureBrackets

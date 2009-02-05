@@ -1,0 +1,83 @@
+$PROGRAM TestDirListing;
+
+$IMPORT MDirList;
+$IMPORT InOut;
+$IMPORT FileIO;
+$IMPORT MSelfDiag;
+$IMPORT MOS;
+$IMPORT DWR = MDosWinRecoder;
+$IMPORT MStrings;
+$IMPORT Math;
+
+$ENTRY Go =
+  <TypeListRec
+    <FileIO::Open 'w' 'listing'>
+    <MDirList::GetList 'C:\\Documents and Settings\\Shurik'>
+  >;
+
+TypeListRec {
+  t.hFile = <FileIO::Close t.hFile>;
+  t.hFile t.Next e.Tail =
+    <TypeListRec
+      <SwTypeListRec
+        t.hFile (<MDirList::GetSize t.Next> <MDirList::GetName t.Next>)
+      >
+      e.Tail
+    >;
+}
+
+SwTypeListRec {
+  t.hFile (Directory e.Name) =
+    <FileIO::WriteLine t.hFile <Width 6 'Dir'> ' ' e.Name>
+    <MDirList::GetList e.Name>;
+
+  t.hFile (s.Size e.Name) =
+    <FileIO::WriteLine
+      t.hFile
+      <Width 6 <MStrings::Symb s.Size>> ' ' e.Name
+    >;
+}
+
+MakeList {
+  t.Next e.Tail =
+    (
+      <Width 6 <Symb <MDirList::GetSize t.Next>>>
+      ' ' <MDirList::GetName t.Next>
+    )
+    <MakeList e.Tail>;
+
+  = ;
+}
+
+Symb {
+  Directory = 'Dir';
+  s.Num = <MStrings::Symb s.Num>;
+}
+
+PrintList {
+  t.Next e.Tail =
+    <InOut::WriteLine
+      <MDirList::GetName t.Next> ' '
+      <MDirList::GetSize t.Next>
+    >
+    <PrintList e.Tail>;
+
+  = ;
+}
+
+Repeat {
+  0 t.X = ;
+  1 t.X = t.X;
+  s.Num t.X = t.X <Repeat <Math::Dec s.Num> t.X>;
+}
+
+Width
+  s.Num e.Str =
+    <FirstOnly
+      <MStrings::First-Parse s.Num e.Str <Repeat s.Num ' '>>
+    >;
+
+FirstOnly
+  (e.First) e.Rest = e.First;
+
+$END TestDirListing.

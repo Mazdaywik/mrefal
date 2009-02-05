@@ -1,0 +1,96 @@
+$MODULE MDirList;
+
+$IMPORT FS = MFileSystem;
+$IMPORT DWR = MDosWinRecoder;
+
+/*==============================================================================
+  Внутренний формат
+  [DirEntry (e<num>.Time) (e.Size) e<char>.FileName]
+    e.Size ::= s.Num | Directory
+    e.Time ::= s.Year s.Month s.Day s.Hour s.Minute s.Second
+==============================================================================*/
+$DATA DirEntry;
+
+/**
+  <GetList e<char>.DirName>
+    == e<DirEntry>.List
+*/
+$ENTRY GetList
+  e.DirName =
+    <MakeList
+      (e.DirName) <FS::DirList e.DirName>
+    >;
+
+MakeList {
+  (e.DirName) Success e.Tail = <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) Fails e.Tail = <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) ('.') e.Tail = <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) ('..') e.Tail = <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) (e.Name) e.Tail =
+    <MakeDirEntry e.DirName '/' e.Name>
+    <MakeList (e.DirName) e.Tail>;
+
+  (e.DirName) = ;
+}
+
+MakeDirEntry
+  e.Name =
+    [DirEntry
+      <FS::FileAttribute DateTime e.Name>
+      <FS::FileAttribute Size e.Name>
+      (e.Name)
+    ];
+
+/**
+  <GetName t.DirEntry>
+    == e.FileName
+*/
+$ENTRY GetName
+  [DirEntry t.DateTime t.Size (e.FileName)] = e.FileName;
+
+/**
+  <GetSize t.DirEntry>
+    == s.Size
+    == Directory
+*/
+$ENTRY GetSize
+  [DirEntry t.DateTime (s.Size) t.FileName] = s.Size;
+
+/**
+  <GetTime t.DirEntry>
+    == e.Time
+*/
+$ENTRY GetTime
+  [DirEntry (e.Time) t.Size t.FileName] = e.Time;
+
+/**
+  <GetListRec e.DirName>
+    == e<DirEntry>.List
+*/
+$ENTRY GetListRec
+  e.DirName =
+    <ScanForRecursive <GetList e.DirName>>;
+
+ScanForRecursive {
+  e.IsNotDirs
+  [DirEntry t.Time (Directory) (e.FileName)]
+  e.Tail =
+    e.IsNotDirs
+    [DirEntry t.Time (Directory) (e.FileName)]
+    <ScanForRecursive
+      <GetList
+        <MSelfDiag::Log-T e.FileName>
+      >
+      e.Tail
+    >;
+
+  e.IsNotDirs = e.IsNotDirs;
+}
+
+$import MSelfDiag;
+
+$END MDirList.

@@ -1,0 +1,363 @@
+$MODULE MSymModule;
+
+/**
+	Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
+на диск, кеширование внутри контекста. Поиск стартовых функций должен осуществлять
+линковщик.
+*/
+
+$IMPORT Context;
+$IMPORT FileIO;
+$IMPORT MBE-Mgr;
+$IMPORT MError;
+$IMPORT MIModule;
+$IMPORT MLocation;
+$IMPORT Modules;
+$IMPORT MOrder;
+$IMPORT MParser;
+$IMPORT MSelfDiag;
+
+*-------------------------------------------------------------------------------
+* Загрузка символической информации
+*-------------------------------------------------------------------------------
+
+/**
+	<LoadInfo t.Context e.ModuleName>
+		== t.UpdatedContext
+			( Module e.ModuleName )
+			( Functions ((e.Qualifier)(e.FnName))* )
+			( Imports (e.ModName)* )
+		== t.Context SymInfoNotFound
+*/
+$ENTRY LoadInfo
+	t.Context e.ModuleName =
+		<CheckActual-Old
+			<LookupSym t.Context e.ModuleName>
+		>;
+
+/* В тех случаях, когда информация в sym-файле отсутствует
+или не актуальна, возвращаем SymInfoNotFound */
+
+CheckActual-Old {
+	(e.ModuleName) t.Context Known s.Status e.SymFName =
+		t.Context
+		<SymInfo-ToOld
+			<ExtractSymInfo
+				<MParser::SymModule e.SymFName>
+			>
+		>;
+
+	(e.ModuleName) t.Context NotKnown s.Status e.SymFName =
+		t.Context
+		<SwCheckActual-Old
+			<ActualState-Old s.Status> e.SymFName
+		>;
+}
+
+SwCheckActual-Old {
+	Actual e.SymFName =
+		<SymInfo-ToOld
+			<ExtractSymInfo
+				<MParser::SymModule e.SymFName>
+			>
+		>;
+
+	NotActual e.SymName = SymInfoNotFound;
+}
+
+ActualState-Old {
+	ModuleNotFound = NotActual;
+	NeedRecompile = NotActual;
+	Library = Actual;
+	SrcNotUpdated = Actual;
+	SystemLibrary = Actual;
+}
+
+ExtractSymInfo {
+	t.IModule Success t.ErrorList =
+		<ExtractSymInfo--CreateResult
+			<SymTableToSymInfo-T t.IModule>
+		>
+		<MError::DestroyErrList t.ErrorList>;
+
+	t.IModule s.ErrorResult t.ErrorList =
+		<MIModule::Destroy t.IModule>
+		<MError::PrintErrors t.ErrorList>
+		SymInfoNotFound;
+}
+
+ExtractSymInfo--CreateResult
+	t.IModule (CurModule e.CurModule)
+	(Functions e.FnList) (Imports e.Imports) =
+		<MIModule::Destroy t.IModule>
+		( Module () e.CurModule )
+		( Functions e.FnList )
+		( Imports <AddEmptyDirectory e.Imports> );
+
+AddEmptyDirectory {
+	(e.ImportName) e.Tail =
+		(() e.ImportName)
+		<AddEmptyDirectory e.Tail>;
+
+	= ;
+}
+
+SymInfo-ToOld {
+	( Module () e.CurModule )
+	( Functions e.FnList )
+	( Imports e.Imports ) =
+		( Module e.CurModule )
+		( Functions <ToQualified (e.CurModule) e.FnList> )
+		( Imports <RemoveEmptyDirectory e.Imports> );
+
+	SymInfoNotFound = SymInfoNotFound;
+}
+
+RemoveEmptyDirectory {
+	(() e.ImportName) e.Tail =
+		(e.ImportName) <RemoveEmptyDirectory e.Tail>;
+
+	= ;
+}
+
+
+ToQualified (e.Prefix) e.Functions =
+	<DoToQualified () (e.Prefix) e.Functions>;
+
+DoToQualified {
+	(e.Qualified) (e.Prefix) (e.NextName) e.Tail =
+		<DoToQualified
+			( e.Qualified ((e.Prefix) (e.NextName)) )
+			(e.Prefix)
+			e.Tail
+		>;
+
+	(e.Qualified) (e.Prefix) = e.Qualified;
+}
+
+*-------------------------------------------------------------------------------
+* Сохранение символической информации
+*-------------------------------------------------------------------------------
+
+Generate
+	t.IModule e.FileName =
+		<SaveToFile
+			(e.FileName)
+			<GenerateLines t.IModule>
+		>;
+
+SaveToFile
+	(e.FileName) t.IModule e.Lines =
+		t.IModule
+		<FileIO::Save (e.FileName) e.Lines>;
+
+GenerateLines
+	t.IModule =
+		<GenerateBorders
+			<MIModule::GetModuleName t.IModule>
+		>;
+
+GenerateBorders {
+	t.IModule Unknown =
+		//Эта строчка не должна выполняться!!!
+		<MSelfDiag::Error 'MSymModule::GenerateBorders: Module name is unknown'>;
+
+	t.IModule e.ModuleName =
+		<MoveFirstLineToFront
+			<GenerateFunctions
+				//<MIModule::GetFunctionList t.IModule>
+				<GetEntryList t.IModule>
+			>
+			('$module ' e.ModuleName ';')
+			('$end ' e.ModuleName '.')
+		>;
+}
+
+GetEntryList
+	t.IModule =
+		<DoEntryList
+			() <MIModule::GetFunctionList t.IModule>
+		>;
+
+DoEntryList {
+	(e.Entries) t.IModule (e.NextFn) e.Tail =
+		<DoEntryList
+			<CheckEntry
+				(e.Entries) (e.NextFn)
+				<MIModule::GetFunctionAttribute
+					t.IModule ScopeClass e.NextFn
+				>
+			>
+			e.Tail
+		>;
+
+		(e.Entries) t.IModule = t.IModule e.Entries;
+}
+
+CheckEntry {
+	(e.Entries) (e.NextFn) t.IModule Found Entry =
+		(e.Entries (e.NextFn)) t.IModule;
+
+	(e.Entries) (e.NextFn) t.IModule Found s.OtherScope =
+		(e.Entries) t.IModule;
+}
+
+MoveFirstLineToFront
+	t.IModule e.Lines t.FirstLine t.LastLine =
+		t.IModule t.FirstLine () e.Lines t.LastLine;
+
+GenerateFunctions
+	t.IModule e.Functions =
+		<GenerateImports
+			<MIModule::GetImportList t.IModule>
+		>
+		<TypeFunctions
+			<MOrder::Sort e.Functions>
+		>;
+
+TypeFunctions {
+	t.OneName e.Names =
+		<DoTypeFunctions t.OneName e.Names> ();
+
+	= ;
+}
+
+DoTypeFunctions {
+	(e.FnName) e.Tail =
+		('$entry ' e.FnName ';')
+		<DoTypeFunctions e.Tail>;
+
+	= ;
+}
+
+GenerateImports {
+	t.IModule = t.IModule;
+
+	t.IModule e.Imports =
+		t.IModule
+		<DoTypeImports <MOrder::Sort e.Imports> > ();
+}
+
+DoTypeImports {
+	(e.ImportName) e.Tail =
+		('$import ' e.ImportName ';')
+		<DoTypeImports e.Tail>;
+
+	= ;
+}
+
+/*------------------------------------------------------------------------------
+	Регистрация при загрузке модуля.
+------------------------------------------------------------------------------*/
+
+$ENTRY Init =
+	<MBE-Mgr::Register
+		SymInfo <FnPtr Generate> <FnPtr Link> ('Defs') ('rsym')
+	>;
+
+Link (e.OutName) e.Modules = Success; // Не линкуем.
+
+*-------------------------------------------------------------------------------
+* Извлечение информации из таблицы символов
+*-------------------------------------------------------------------------------
+
+/**
+	<SymTableToSymInfo-T t.IModule>
+		== t.IModule
+			( CurModule e.ModName )
+			( Functions (e.FnName)* )
+			( Imports (e.ModName)* )
+*/
+SymTableToSymInfo-T
+	t.IModule =
+		<SymTableToSymInfo--Imports
+			<MIModule::GetImportList t.IModule>
+		>;
+
+SymTableToSymInfo--Imports
+	t.IModule e.Imports =
+		<SymTableToSymInfo--Functions
+			<FilterEntry <MIModule::GetFunctionList t.IModule>>
+		> ( Imports e.Imports );
+
+FilterEntry
+	t.IModule e.FnList =
+		<DoFilterEntry
+			t.IModule () e.FnList
+		>;
+
+DoFilterEntry {
+	t.IModule (e.Entries) (e.NextFn) e.FnList =
+		<DoFilterEntry
+			<SwFilterEntry
+				<MIModule::GetFunctionAttribute
+					t.IModule ScopeClass e.NextFn
+				> (e.Entries) e.NextFn
+			> e.FnList
+		>;
+
+	t.IModule (e.Entries) = t.IModule e.Entries;
+}
+
+SwFilterEntry {
+	t.IModule Found Entry (e.Entries) e.FnName =
+		t.IModule (e.Entries (e.FnName));
+
+	t.IModule Found s.OtherClass (e.Entries) e.FnName =
+		t.IModule (e.Entries);
+}
+
+SymTableToSymInfo--Functions
+	t.IModule e.Functions =
+		<SymTableToSymInfo--CurModule
+			<MIModule::GetModuleName t.IModule>
+		> ( Functions e.Functions );
+
+SymTableToSymInfo--CurModule
+	t.IModule e.CurModule =
+		t.IModule (CurModule e.CurModule);
+
+*-------------------------------------------------------------------------------
+* Ищет имя sym-файла, а также возвращает его статус
+*-------------------------------------------------------------------------------
+
+/**
+	<LookupSym t.Context e.ModuleName>
+		== (e.ModuleName) t.Context Known s.Status e.SymName
+		== (e.ModuleName) t.Context NotKnown s.Status e.SymName
+*/
+LookupSym
+	t.Context e.ModuleName =
+		<SwKnownModule
+			(e.ModuleName)
+			<Context::ExtractOption
+				t.Context Sym e.ModuleName
+			>
+		>;
+
+SwKnownModule {
+	(e.ModuleName) t.Context Found e.SymFile =
+		<OnKnown--CreateResult
+			(e.ModuleName)
+			<Context::ExtractOption
+				t.Context Status e.ModuleName
+			>
+			e.SymFile
+		>;
+
+	(e.ModuleName) t.Context ModuleInfoNotFound =
+		<OnUnknown--CreateResult
+			t.Context
+			<Modules::LookupModule-T e.ModuleName>
+		>;
+}
+
+OnKnown--CreateResult
+	(e.ModuleName) t.Context Found s.Status e.SymName =
+		(e.ModuleName) t.Context Known s.Status e.SymName;
+
+OnUnknown--CreateResult
+	t.Context s.State (Sym e.SymName) t.Out t.Src e.ModuleName =
+		(e.ModuleName) t.Context NotKnown s.State e.SymName;
+
+$END MSymModule.

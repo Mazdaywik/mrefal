@@ -1,0 +1,8 @@
+$module Lower;
+
+$import MStrings;
+$import InOut;
+
+$entry Go;
+
+$end Lower.

@@ -1,0 +1,68 @@
+--------------------------------------------------------------------------------
+  Структура "Тело функции"
+--------------------------------------------------------------------------------
+
+t.FunctionBody ::=
+  ( t.Sentence* )
+
+t.Sentence ::=
+  ( t.PatternExpr t.ResultExpr )
+
+t.PatternExpr ::=
+  ( Pattern t.PatternTerm* )
+
+t.ResultExpr ::=
+  ( Result t.ResultTerm* )
+
+t.CommonTerm ::=
+  (Identifier t.SrcPos e.Name)
+  (EVar e.Index)
+  (SVar e.Index)
+  (TVar e.Index)
+  (Literal e.Content)
+  (DQWord e.Content)
+  (Macro s.Value)
+  (FnPtr t.Callable)
+
+
+t.PatternTerm ::=
+  t.CommonTerm
+  (Structure t.PatternTerm*)
+  (Abstract t.Callable t.PatternTerm*)
+
+t.ResultTerm ::=
+  t.CommonTerm
+  (Structure t.ResultTerm)
+  (Abstract t.Callable t.ResultTerm*)
+  (Function t.Callable e.Argument)
+  (IndirectCall (SVar e.Index) e.Argument)
+
+t.Callable ::=
+  (Qualified t.SrcPos t.QualifiedName)
+
+После проверки t.Callable меняется:
+
+t.Callable ::=
+  (s.CallType t.SrcPos t.QualifiedName)
+
+s.CallType ::=
+  Entry
+  Local
+  Swap
+  ADT
+
+Здесь t.QualifiedName -- АТД типа t.QualifiedName из модуля MQualifiedName
+
+--------------------------------------------------------------------------------
+  Структура даннных "Переменная MODULEPATH"
+--------------------------------------------------------------------------------
+
+e.ModulePath ::= ( e.FolderName )*
+e.FolderName ::= s.Char*
+
+--------------------------------------------------------------------------------
+  Дата-время
+--------------------------------------------------------------------------------
+
+e.DateTime ::= s.Year s.Month s.Day s.Hour s.Minute s.Second
+s.Element ::= s.Number

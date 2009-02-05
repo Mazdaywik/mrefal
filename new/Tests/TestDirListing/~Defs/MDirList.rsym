@@ -1,0 +1,13 @@
+$module MDirList;
+
+$import FS = MFileSystem;
+$import DWR = MDosWinRecoder;
+$import MSelfDiag;
+
+$entry GetList;
+$entry GetListRec;
+$entry GetName;
+$entry GetSize;
+$entry GetTime;
+
+$end MDirList.

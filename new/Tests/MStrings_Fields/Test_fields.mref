@@ -1,0 +1,11 @@
+$PROGRAM Test_fields;
+
+$IMPORT IO = InOut;
+$IMPORT St = MStrings;
+
+$ENTRY Go =
+  <IO::WriteText
+    <St::Fields (4 6 7 20 10 10 10) 'az_buki_vedi_glagol_dobro_est_zhivete_zelo'>
+  >;
+
+$END Test_fields.

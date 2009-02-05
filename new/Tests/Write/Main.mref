@@ -1,0 +1,12 @@
+$PROGRAM Main;
+
+$IMPORT InOut;
+
+$ENTRY Go =
+	<InOut::Write 'abc'>
+	<InOut::Write 'def'>
+	<InOut::WriteLine 'hji'>
+	<InOut::Write 'TypeText'>
+	<InOut::ReadLine>;
+
+$END Main.

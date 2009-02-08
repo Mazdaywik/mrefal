@@ -1,0 +1,216 @@
+$MODULE MBE-Mgr;
+
+$IMPORT MBEFE-Holder;
+$IMPORT MContext;
+$IMPORT MCreateDirIfNeed;
+$IMPORT MLambda;
+$IMPORT MQualifiedName;
+
+/**=============================================================================
+  Параметры конкретного диспетчера:
+    s.Name ::= IDENTIFIER -- имя диспетчера
+    s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
+    <s.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
+      == t.hContext Success
+      == t.hContext Fails
+    e.Folder -- имя папки
+    e.Ext -- расширение файла
+==============================================================================*/
+
+$SWAP G_BackEnds;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Register s.Name s.Generator s.Linker (e.Folder) (e.Ext)>
+    == empty
+*/
+$ENTRY Register
+  s.Name s.Generator s.Linker (e.Folder) (e.Ext) =
+    <MBEFE-Holder::UpdateEntry
+      & G_BackEnds s.Name
+      (Generator s.Generator) (Linker s.Linker)
+      (Folder e.Folder) (Ext e.Ext)
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Generate t.Context t.IModule t.QualifiedName>
+    == t.Context t.IModule Success
+    == t.Context t.IModule Fails
+*/
+$ENTRY Generate
+  t.Context t.IModule t.QualifiedName =
+    <DoGenerate
+      Success t.Context t.IModule t.QualifiedName <GetList>
+    >;
+
+DoGenerate {
+  Fails t.Context t.IModule t.QualifiedName e.Tail =
+    <MQualifiedName::Destroy t.QualifiedName>
+    t.Context t.IModule Fails;
+
+  Success t.Context t.IModule t.QualifiedName s.NextBackEnd e.Tail =
+    <DoGenerate
+      <GenerateBy
+        t.Context t.IModule t.QualifiedName s.NextBackEnd
+      > e.Tail
+    >;
+
+  Success t.Context t.IModule t.QualifiedName =
+    <MQualifiedName::Destroy t.QualifiedName>
+    t.Context t.IModule Success;
+}
+
+GenerateBy
+  t.hContext t.IModule t.ModuleName s.BackEndName =
+    <GenerateBy-Aux
+      ( <MContext::GetBackEnd t.hContext t.ModuleName s.BackEndName> )
+      t.IModule t.ModuleName
+      s.BackEndName <GetInfo s.BackEndName Generator>
+    >;
+
+GenerateBy-Aux {
+  ( t.Context e.Info )
+  t.IModule t.ModuleName s.BackEndName
+  Fails s.Error =
+    Fails t.Context t.IModule t.ModuleName;
+
+  ( t.hContext Fails ModuleNotFound )
+  t.hIModule t.ModuleName s.BackEndName
+  Success s.FnGenerator =
+    Fails t.hContext t.hIModule t.ModuleName;
+
+  ( t.hContext Fails MismatchCase )
+  t.hIModule t.ModuleName s.BackEndName
+  Success s.FnGenerator =
+    Fails t.hContext t.hIModule t.ModuleName;
+
+  ( t.hContext Success e.FileName )
+  t.hIModule t.ModuleName s.BackEndName
+  Success s.FnGenerator =
+    Success t.hContext
+    <s.FnGenerator
+      t.hIModule
+      <MCreateDirIfNeed::CreatePathToFile e.FileName>
+    >
+    t.ModuleName;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Link t.Context (e.OutName) e.OrderedFiles>
+    == t.Context Success
+    == t.Context Fails
+  e.OrderedFiles ::= t.QualifiedName*
+*/
+$ENTRY Link
+  t.Context (e.OutName) e.OrderedFiles =
+    <DoLink
+      t.Context Success (e.OutName) (e.OrderedFiles)
+      <ExtractLinkers <GetList>>
+    >;
+
+ExtractLinkers {
+  = ;
+  s.BEName e.Tail =
+    (s.BEName <GetLinker s.BEName>)
+    <ExtractLinkers e.Tail>;
+}
+
+GetLinker s.BEName = <DelSuccess <GetInfo s.BEName Linker>>;
+
+DelSuccess Success s.FnLinker = s.FnLinker;
+
+DoLink {
+  t.Context Fails (e.OutName) (e.OrderedFiles) e.Tail =
+    t.Context Fails;
+
+  t.Context Success (e.OutName) (e.OrderedFiles) =
+    t.Context Success;
+
+  t.Context Success (e.OutName) (e.OrderedFiles) (s.BEName s.FnLinker) e.Tail =
+    <DoLink
+      <s.FnLinker
+        <SwapFirsts
+          (e.OutName)
+          <MLambda::MapReduce
+            <MLambda::BindLeft & MakeObjNames s.BEName>
+            t.Context e.OrderedFiles
+          >
+        >
+      >
+      (e.OutName) (e.OrderedFiles) e.Tail
+    >;
+}
+
+SwapFirsts
+  t.First t.Second e.Tail = t.Second t.First e.Tail;
+
+MakeObjNames
+  s.L-BEName t.hContext t.ModuleName =
+    <MakeObjNames-Guard
+      t.ModuleName
+      <MContext::GetBackEnd t.hContext t.ModuleName s.L-BEName>
+    >;
+
+MakeObjNames-Guard
+  t.ModuleName t.hContext Success e.Path =
+    t.hContext (t.ModuleName e.Path);
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetList> == s.BackEndName*
+*/
+
+$ENTRY GetList = <MBEFE-Holder::GetMgrList & G_BackEnds>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetInfo s.FEName s.Option>
+    == Success e.Option
+    == Fails s.Error
+  s.Error ::= InvalidMgr | InvalidOption
+*/
+$ENTRY GetInfo
+  s.Name s.Option =
+    <MBEFE-Holder::GetInfo & G_BackEnds s.Name s.Option>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetPath-T s.BEName t.QualifiedName e.BaseFolder>
+    == Success t.QualifiedName e.OutPath
+    == Fails t.QualifiedName
+*/
+$ENTRY GetPath-T
+  s.BEName t.QualifiedName e.BaseFolder =
+    <GetPath-Aux
+      ( <GetInfo s.BEName Folder> ) ( <GetInfo s.BEName Ext> )
+      ( <MQualifiedName::ToRelativeFSPath-T t.QualifiedName> )
+      e.BaseFolder
+    >;
+
+GetPath-Aux {
+  ( Fails s.Error ) ( e.Result )
+  ( t.QualifiedName e.RelativePath ) e.BaseFolder =
+    Fails t.QualifiedName;
+
+  ( Success e.Folder ) ( Fails s.Error )
+  ( t.QualifiedName e.RelativePath ) e.BaseFolder =
+    Fails t.QualifiedName;
+
+  ( Success e.Folder ) (Success e.Ext )
+  ( t.QualifiedName e.RelativePath ) Current =
+    Success t.QualifiedName e.Folder '/' e.RelativePath '.' e.Ext;
+
+  ( Success e.Folder ) (Success e.Ext )
+  ( t.QualifiedName e.RelativePath ) e.Base =
+    Success t.QualifiedName e.Base '/' e.Folder '/' e.RelativePath '.' e.Ext;
+}
+
+$END MBE-Mgr.

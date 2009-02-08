@@ -1,0 +1,692 @@
+$MODULE MContext;
+
+$IMPORT MQualifiedName;
+$IMPORT MStrings;
+
+/*------------------------------------------------------------------------------
+  Внутренняя структура:
+    t.Context ::= 
+      [Context t.ModuleInfo*]
+    t.ModuleInfo ::= 
+      ( t.ModuleName (s.Attrib e.Value)* )
+    t.ModuleName ::=
+      ( (e.Segment)* )
+------------------------------------------------------------------------------*/
+$DATA Context;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Create> == t.Context
+*/
+$ENTRY Create = [Context];
+
+//------------------------------------------------------------------------------
+
+/**
+  <Destroy t.Context> == empty
+*/
+$ENTRY Destroy
+  [Context e.Info] = ;
+
+/**---------------------------------------------------------------------------*/
+//STARTCUT
+DefaultOptions
+  =
+    // Информация о входных и выходных частях
+    (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
+    (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
+
+    // Информация о настоящем имени модуля (контекст индексируется без учёта
+    // регистра, но регистр надо проверять)
+    (RealName Unknown) // Unknown | t.QualifiedName
+
+    // Информация о статусе компилирования
+
+    (Type Errors) // Errors | Changed | Updated | Library
+    (Status Found) // Found | Raw | Ready
+
+    /*
+      Время последней модификации. Нужно для того, чтобы определить,
+      необходима ли перекомпиляция: импортирующие модули должны быть
+      откомпилированы позже импортируемых.
+      Unknown -- информация не доступна
+      (e.MinTime) (e.MaxTime) -- см. MainStructures.txt
+    */
+    (MinMaxTime Unknown)
+
+    (ModuleType Main) // Main | Regular
+    (CachedSym None) // None | t.IModule
+    ;
+//ENDCUT
+/**---------------------------------------------------------------------------*/
+
+/*
+  Внутренние функции реализации контекста
+*/
+
+//------------------------------------------------------------------------------
+
+/*
+  <IsKnown t.hContext t.ModuleName>
+    == t.hContext Known
+    == t.hContext MismatchCase
+    == t.hContext NotKnown
+*/
+IsKnown
+  [Context e.Info] t.ModuleName =
+    <IsKnown-CheckName
+      (e.Info)
+      ( <MStrings::Lower <MQualifiedName::Parse t.ModuleName>> )
+      t.ModuleName
+    >;
+
+IsKnown-CheckName {
+  (
+    e.Info-B
+    ((e.Name) e.Options-B (RealName Unknown) e.Options-E)
+    e.Info-E
+  ) (e.Name) t.RealName =
+    [Context
+      e.Info-B
+      ((e.Name) e.Options-B (RealName Unknown) e.Options-E)
+      e.Info-E
+    ] Known;
+
+  (
+    e.Info-B
+    ((e.Name) e.Options-B (RealName t.RealName) e.Options-E)
+    e.Info-E
+  ) (e.Name) t.RealName =
+    [Context
+      e.Info-B
+      ((e.Name) e.Options-B (RealName t.RealName) e.Options-E)
+      e.Info-E
+    ] Known;
+
+  ( e.Info-B ((e.Name) e.Options) e.Info-E )
+  (e.Name) t.RealName =
+    [Context e.Info-B ((e.Name) e.Options) e.Info-E] MismatchCase;
+
+  (e.Info) (e.Name) t.RealName =
+    [Context e.Info] NotKnown;
+}
+
+/*
+  <UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
+    == t.hUpdatedContext Success
+    == t.hContext Fails s.Error
+  s.Error ::= UnknownOption | MismatchCase
+*/
+UpdateInfo
+  [Context e.Info] t.QualifiedName e.NewOptions =
+    <UpdateInfo-FindName
+      [Context e.Info]
+      t.QualifiedName
+      (
+        <MStrings::Lower
+          <MQualifiedName::Parse t.QualifiedName>
+        >
+      )
+      e.NewOptions
+    >;
+
+UpdateInfo-FindName {
+  [Context
+    e.Info-B
+    ( (e.Name)
+      e.OldOptions-B (RealName Unknown) e.OldOptions-E
+    )
+    e.Info-E
+  ]
+  t.QualifiedName (e.Name) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      (e.Info-B) (e.Info-E) (e.Name)
+      <UpdateOptions
+        (e.OldOptions-B (RealName Unknown) e.OldOptions-E)
+        e.NewOptions
+      >
+    >;
+
+  [Context
+    e.Info-B
+    ( (e.Name)
+      e.OldOptions-B
+      (RealName t.RealQualifiedName)
+      e.OldOptions-E
+    )
+    e.Info-E
+  ]
+  t.QualifiedName (e.Name) e.NewOptions =
+    <UpdateInfo-FindName-CheckName
+      (e.Info-B) (e.Info-E)
+      (e.OldOptions-B) (e.OldOptions-E)
+      (RealName t.RealQualifiedName)
+      ( <MQualifiedName::Parse t.RealQualifiedName> )
+      ( <MQualifiedName::Parse t.QualifiedName> )
+      ( e.Name ) e.NewOptions
+    >;
+
+  [Context e.Info] t.QualifiedName (e.Name) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      (e.Info) () (e.Name)
+      <UpdateOptions
+        (<DefaultOptions>) e.NewOptions
+      >
+    >;
+}
+
+UpdateInfo-FindName-CheckName {
+  (e.Info-B) (e.Info-E) (e.OldOptions-B) (e.OldOptions-E)
+  (RealName t.RealQualifiedName)
+  ( e.RealName ) ( e.RealName ) ( e.Name ) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      (e.Info-B) (e.Info-E) (e.Name)
+      <UpdateOptions
+        ( e.OldOptions-B (RealName t.RealQualifiedName) e.OldOptions-E )
+        e.NewOptions
+      >
+    >;
+
+  (e.Info-B) (e.Info-E) (e.OldOptions-B) (e.OldOptions-E)
+  (RealName t.RealQualifiedName)
+  ( e.RealName ) ( e.ExternalName ) (e.Name) e.NewOptions =
+    [Context
+      e.Info-B
+      ((e.Name) e.OldOptions-B (RealName t.RealQualifiedName) e.OldOptions-E)
+      e.Info-E
+    ]
+    Fails MismatchCase;
+}
+
+UpdateInfo-UpdateOptions {
+  (e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Success e.Options =
+    [Context e.Info-B ( (e.Name) e.Options ) e.Info-E]
+    Success;
+
+  (e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Fails =
+    [Context e.Info-B ( (e.Name) e.OldOptions ) e.Info-E]
+    Fails UnknonwOption;
+}
+
+UpdateOptions
+  (e.OldOptions) e.NewOptions =
+    (e.OldOptions)
+    <DoUpdateOptions
+      () (e.OldOptions) e.NewOptions
+    >;
+
+DoUpdateOptions {
+  (e.NewOptions) () = Success e.NewOptions;
+
+  (e.Updated)
+  ( (s.Option e.OldValue) e.OldOptions )
+  e.NewOptions-B (s.Option e.NewValue) e.NewOptions-E =
+    <DoUpdateOptions
+      (e.Updated
+        (s.Option e.NewValue)
+      )
+      (e.OldOptions) e.NewOptions-B e.NewOptions-E
+    >;
+
+  (e.Updated) (t.NextOption e.OldOptions) e.NewOptions =
+    <DoUpdateOptions
+      (e.Updated t.NextOption) (e.OldOptions) e.NewOptions
+    >;
+
+  (e.Updated) () e.NewOptions =
+    Fails;
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  <ExtractOption t.hContext t.QualifiedName s.Option>
+    == t.hContext Found e.Option
+    == t.hContext OptionNotFound
+    == t.hContext ModuleNotFound
+    == t.hContext MismatchCase
+*/
+ExtractOption
+  [Context e.Info] t.QualifiedName s.Option =
+    <ExtractOption-CheckName
+      [Context e.Info]
+      <MQualifiedName::Parse-T t.QualifiedName>
+      s.Option
+    >;
+
+ExtractOption-CheckName
+  t.hContext t.QualifiedName e.ExternalName s.Option =
+    <ExtractOption-CheckName-Aux
+      ( e.ExternalName )
+      <ExtractOption-FindName
+        t.hContext
+        <MStrings::Lower e.ExternalName>
+        s.Option
+      >
+    >;
+
+ExtractOption-CheckName-Aux {
+  ( e.ExternalName )
+  t.hContext Found e.Info =
+    <ExtractOption-CheckName-SwMatch
+      (e.Info) (e.ExternalName)
+      <ExtractOption-FindName
+        t.hContext
+        <MStrings::Lower e.ExternalName>
+        RealName
+      >
+    >;
+
+  ( e.ExternalName )
+  t.hContext OptionNotFound = t.hContext OptionNotFound;
+
+  ( e.ExternalName )
+  t.hContext ModuleNotFound = t.hContext ModuleNotFound;
+}
+
+ExtractOption-CheckName-SwMatch {
+  (e.Info) (e.ExternalName)
+  t.hContext Found Unknown =
+    t.hContext Found e.Info;
+
+  (e.Info) (e.ExternalName)
+  t.hContext Found t.RealName =
+    <ExtractOption-CheckName-SwMatch-Aux
+      (e.Info) (e.ExternalName)
+      <MQualifiedName::Parse t.RealName>
+      t.hContext
+    >;
+
+  // Остальные варианты не рассматриваем -- нарушение инварианта
+}
+
+ExtractOption-CheckName-SwMatch-Aux {
+  (e.Info) (e.RealName) e.RealName t.hContext =
+    t.hContext Found e.Info;
+
+  (e.Info) (e.ExternalName) e.RealName t.hContext =
+    t.hContext MismatchCase;
+}
+
+ExtractOption-FindName {
+  [Context
+    e.Info-B
+    ( (e.Name) e.Options-B (s.Option e.Info) e.Options-E )
+    e.Info-E
+  ] e.Name s.Option =
+    [Context
+      e.Info-B
+      ( (e.Name) e.Options-B (s.Option e.Info) e.Options-E )
+      e.Info-E
+    ] Found e.Info;
+
+  [Context e.Info-B ((e.Name) e.Options) e.Info-E]
+  e.Name s.Option =
+    [Context e.Info-B ((e.Name) e.Options) e.Info-E]
+    OptionNotFound;
+
+  [Context e.Info] e.Name s.Option =
+    [Context e.Info] ModuleNotFound;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetRealName t.hContext t.ModuleName>
+    == t.hContext Success t.RealName
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails UnknownRealName
+*/
+$ENTRY GetRealName
+  t.hContext t.ModuleName =
+    <GetRealName-Aux
+      t.hContext
+      <MStrings::Lower <MQualifiedName::Parse t.ModuleName>>
+    >;
+
+GetRealName-Aux {
+  [Context
+    e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
+  ] e.Name =
+    [Context
+      e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
+    ] Fails UnknownRealName;
+
+  [Context
+    e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
+  ] e.Name =
+    [Context
+      e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
+    ] Success t.RealName;
+
+  [Context e.Info] e.Name =
+    [Context e.Info] Fails ModuleNotFound;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetStatusType t.hContext t.ModuleName>
+    == t.hContext Success s.Status s.Type
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetStatusType
+  t.hContext t.ModuleName =
+    <GetStatusType-SwKnown
+      <IsKnown t.hContext t.ModuleName> t.ModuleName
+    >;
+
+GetStatusType-SwKnown {
+  t.hContext Known t.ModuleName =
+    <GetStatusType-ReadStatus
+      <ExtractOption t.hContext t.ModuleName Status>
+      t.ModuleName
+    >;
+
+  t.hContext MismatchCase t.ModuleName =
+    t.hContext Fails MismatchCase;
+
+  t.hContext NotKnown t.ModuleName =
+    t.hContext Fails ModuleNotFound;
+}
+
+GetStatusType-ReadStatus
+  t.hContext Found s.Status t.ModuleName =
+    <GetStatusType-ReadType
+      s.Status
+      <ExtractOption t.hContext t.ModuleName Type>
+    >;
+
+GetStatusType-ReadType
+  s.Status t.hContext Found s.Type =
+    t.hContext Success s.Status s.Type;
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции уровня поиска модулей.
+*/
+
+/**
+  <CreateModule
+    t.hContext t.ModuleName
+    (Type s.Type)
+    t.FrontEndInfo
+    t.BackEndInfo
+    (BaseDirectory e.BaseDirectory)
+  >
+    == t.hContext Success
+    == t.hContext Fails Redefinition
+
+  t.FrontEndInfo ::=
+    (FrontEnd s.FrontEnd e.PathToFrontEnd) | (FrontEnd None)
+  t.BackEndInfo ::=
+    (BackEnds (s.BackEnd e.PathToBackEnd)*) | (BackEnds Unknowns)
+*/
+$ENTRY CreateModule
+  t.hContext t.ModuleName
+  (Type s.Type)
+  (FrontEnd s.FrontEnd e.PathToFrontEnd)
+  (BackEnds e.BackEnds) =
+    <CreateModule-SwDefined
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName
+      (Type s.Type)
+      (FrontEnd s.FrontEnd e.PathToFrontEnd)
+      (BackEnds e.BackEnds)
+      (Status Found)
+    >;
+
+CreateModule-SwDefined {
+  t.hContext NotKnown
+  t.ModuleName e.NewOptions =
+    <CreateModule-SwCreated
+      <UpdateInfo t.hContext t.ModuleName e.NewOptions>
+    >;
+
+  t.hContext Known
+  t.ModuleName e.NewOptions =
+    t.hContext Fails Redefinition;
+
+  t.hContext MismatchCase
+  t.ModuleName e.NewOptions =
+    t.hContext Fails Redefinition;
+
+  // Вариант UnknownOption не рассматриваем -- нарушение инварианта
+}
+
+CreateModule-SwCreated {
+  t.hContext Success = t.hContext Success;
+
+  // Вариант UnknownOption не рассматриваем -- нарушение инварианта
+
+  /*
+    Вариант MismatchCase не рассматриваем -- в контексте не должна была
+    присутствовать иноформация о модуле до добавления
+  */
+}
+
+/**
+  <GetFrontEnd t.hContext t.ModuleName>
+    == t.hContext Success None
+    == t.hContext Success s.FrontEnd e.Path
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetFrontEnd
+  t.hContext t.ModuleName =
+    <GetFrontEnd-Aux
+      <ExtractOption t.hContext t.ModuleName FrontEnd>
+    >;
+
+GetFrontEnd-Aux {
+  t.hContext Found None = t.hContext Success None;
+
+  t.hContext Found s.FrontEnd e.Path =
+    t.hContext Success s.FrontEnd e.Path;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**
+  <GetBackEndList t.hContext t.ModuleName>
+    == t.hContext Success (s.BackEnd e.Path)*
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetBackEndList
+   t.hContext t.ModuleName =
+     <GetBackEndList-Aux
+       <ExtractOption t.hContext t.ModuleName BackEnds>
+     >;
+
+GetBackEndList-Aux {
+  t.hContext Found e.BackEndList = t.hContext Success e.BackEndList;
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**
+  <GetBackEnd t.hContext t.ModuleName s.BackEnd>
+    == t.hContext Success e.Path
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+    == t.hContext Fails BackEndNotFound
+*/
+$ENTRY GetBackEnd
+  t.hContext t.ModuleName s.BackEnd =
+    <GetBackEnd-Aux
+      <GetBackEndList t.hContext t.ModuleName> s.BackEnd
+    >;
+
+GetBackEnd-Aux {
+  t.hContext Success e.BackEnds-B (s.BackEnd e.Path) e.BackEnds-E
+  s.BackEnd =
+    t.hContext Success e.Path;
+
+  t.hContext Success e.BackEnds s.BackEnd =
+    t.hContext Fails BackEndNotFound;
+
+  t.hContext Fails ModuleNotFound s.BackEnd =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext Fails MismatchCase =
+    t.hContext Fails MismatchCase;
+}
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции "сырого" уровня.
+*/
+
+/**
+  <SetRawType t.hContext t.ModuleName s.Type>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+    == t.hContext Fails CantUpdate
+*/
+$ENTRY SetRawType
+  t.hContext t.ModuleName s.Type =
+    <SetRawType-SwKnown
+      <GetStatusType t.hContext t.ModuleName>
+      t.ModuleName s.Type
+    >;
+
+SetRawType-SwKnown {
+  t.hContext Success Found s.OldType t.ModuleName s.NewType =
+    <GuardUpdateInfo
+      <UpdateInfo
+        t.hContext t.ModuleName (Status Raw) (Type s.NewType)
+      >
+    >;
+
+  t.hContext Success s.OtherStatus s.OldType t.ModuleName s.NewType =
+    t.hContext Fails CantUpdate;
+
+  t.hContext Fails ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext Fails MismatchCase = t.hContext Fails MismatchCase;
+}
+
+GuardUpdateInfo {
+  t.hContext Success = t.hContext Success;
+
+  // Остальные варианты невозможны
+}
+
+/**
+  <SetMinMaxTime t.hContext t.ModuleName (e.MinTime) (e.MaxTime)>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY SetMinMaxTime
+  t.hContext t.ModuleName (e.MinTime) (e.MaxTime) =
+    <SetMinMaxTime-SwKnown
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName (e.MinTime) (e.MaxTime)
+    >;
+
+SetMinMaxTime-SwKnown {
+  t.hContext Known t.ModuleName (e.MinTime) (e.MaxTime) =
+    <GuardUpdateInfo
+      <UpdateInfo
+        t.hContext t.ModuleName (MinMaxTime (e.MinTime) (e.MaxTime))
+      >
+    >;
+
+  t.hContext NotKnown t.ModuleName (e.MinTime) (e.MaxTime) =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase t.ModuleName (e.MinTime) (e.MaxTime) =
+    t.hContext Fails MismatchCase;
+}
+
+/**
+  <GetMinMaxTime t.hContext t.ModuleName>
+    == t.hContext Success Unknown
+    == t.hContext Success (e.MinTime) (e.MaxTime)
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+*/
+$ENTRY GetMinMaxTime
+  t.hContext t.ModuleName =
+    <GetMinMaxTime-Aux
+      <ExtractOption t.hContext t.ModuleName MinMaxTime>
+    >;
+
+GetMinMaxTime-Aux {
+  t.hContext Found Unknown = t.hContext Success Unknown;
+
+  t.hContext Found (e.MinTime) (e.MaxTime) =
+    t.hContext Success (e.MinTime) (e.MaxTime);
+
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+}
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Функции уровня компиляции.
+*/
+
+/**
+  <FinishModule t.hContext t.RealModuleName s.ModuleType s.Type>
+    == t.hContext Success
+    == t.hContext Fails ModuleNotFound
+    == t.hContext Fails MismatchCase
+    == t.hContext Fails CantUpdate
+*/
+$ENTRY FinishModule {
+  t.hContext t.RealModuleName s.ModuleType Errors =
+    <FinishModule-SwKnown
+      <GetStatusType t.hContext t.RealModuleName>
+      t.RealModuleName
+      (Type Errors)
+      (Status Ready)
+    >;
+
+  t.hContext t.RealModuleName s.ModuleType s.Type =
+    <FinishModule-SwKnown
+      <GetStatusType t.hContext t.RealModuleName>
+      t.RealModuleName
+      (Type s.Type)
+      (Status Ready)
+      (RealName t.RealModuleName)
+      (ModuleType s.ModuleType)
+    >;
+}
+
+FinishModule-SwKnown {
+  t.hContext Success Raw s.Type t.ModuleName e.NewOptions =
+    <FinishModule-Aux
+      <UpdateInfo t.hContext t.ModuleName e.NewOptions>
+    >;
+
+  t.hContext Success s.Status s.Type t.ModuleName e.NewOptions =
+    t.hContext Fails CantUpdate;
+
+  t.hContext Fails ModuleNotFound t.ModuleName e.NewOptions =
+    t.hContext Fails ModuleNotFound;
+
+  t.hContext Fails MismatchCase t.ModuleName e.NewOptions =
+    t.hContext Fails MismatchCase;
+}
+
+FinishModule-Aux {
+  t.hContext Success = t.hContext Success;
+
+  // Другие варианты недопустимы
+}
+
+$END MContext.

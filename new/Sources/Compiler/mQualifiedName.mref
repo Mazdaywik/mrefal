@@ -1,0 +1,161 @@
+$MODULE MQualifiedName;
+
+/*==============================================================================
+  Абстрактный тип данных -- квалифицированное имя.
+==============================================================================*/
+
+/*------------------------------------------------------------------------------
+  Внутренний формат
+    t.QualifiedName = [QName t.Segment*]
+    t.Segment = (e.Name)
+    e.Name != empty
+------------------------------------------------------------------------------*/
+
+$IMPORT MSelfDiag;
+$IMPORT MStrings;
+
+$DATA QName;
+
+/**
+  <Create (e.Segment)+>
+    == t.QualifiedName
+  обратна Parse
+*/
+$ENTRY Create {
+  e.Segments =
+    [QName <CheckSegments e.Segments>];
+}
+
+CheckSegments {
+  = ;
+
+  (e.Segment) e.Tail =
+    (<CheckSegment e.Segment>)
+    <CheckSegments e.Tail>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Destroy t.QualifiedName> == empty
+*/
+$ENTRY Destroy
+  [QName e.Segments] = ;
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  <AddSubName t.QualifiedName e.SubName>
+    == t.UpdatedQualifiedName
+*/
+$ENTRY AddSubName
+  [QName e.Qualifiers] e.SubName =
+    <MSelfDiag::Assert-NE (e.SubName) () 'SubName must be not empty'>
+    [QName
+      e.Qualifiers (<CheckSegment e.SubName>)
+    ];
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddSuperName t.QualifiedName e.SuperName>
+    == t.UpdatedQualifiedName
+*/
+$ENTRY AddSuperName
+  [QName e.Qualifiers] e.SuperName =
+    <MSelfDiag::Assert-NE (e.SuperName) () 'SuperName must be not empty'>
+    [QName
+      (<CheckSegment e.SuperName>) e.Qualifiers
+    ];
+
+CheckSegment {
+  =
+    <MSelfDiag::FailDown 'Segment can\'t be empty'>;
+
+  e.Segment = e.Segment;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Append t.QualifiedAcceptor t.QualifiedForAppend>
+    == t.UpdatedQualifierAcceptor
+*/
+$ENTRY Append
+  [QName e.AcceptorSegments] [QName e.ForAppendSegments] =
+    [QName e.AcceptorSegments e.ForAppendSegments];
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  <Parse t.QualifiedName>
+    == (e.SegmentName)*
+  обратна Create
+*/
+$ENTRY Parse
+  [QName e.Qualifiers] =
+    e.Qualifiers;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Parse-T t.QualifiedName>
+    == t.QualifiedName (e.SegmentName)*
+*/
+$ENTRY Parse-T
+  [QName e.Qualifiers] =
+    [QName e.Qualifiers] e.Qualifiers;
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  <ToRelativeFSPath-T t.QualifiedName>
+    == t.QualifiedName
+      e.Segment '/' e.Segment '/' ... '/' e.Segment
+*/
+$ENTRY ToRelativeFSPath-T
+  [QName e.Segments] =
+    [QName e.Segments]
+    <CreateTextual ('/') e.Segments>;
+
+/**
+  <ToPrintable-Dot t.QualifiedName>
+    == e.DotName
+*/
+$ENTRY ToPrintable-Dot
+  [QName e.Segments] =
+    <CreateTextual ('.') e.Segments>;
+
+/**
+  <ToPrintable-Quad t.QualifiedName>
+    == e.QuadName
+*/
+$ENTRY ToPrintable-Quad
+  [QName e.Segments] =
+    <CreateTextual ('::') e.Segments>;
+
+CreateTextual {
+  (e.Parser) (e.OneSegment) = e.OneSegment;
+
+  (e.Parser) (e.NextSegment) e.Tail =
+    e.NextSegment e.Parser
+    <CreateTextual (e.Parser) e.Tail>;
+}
+
+    
+
+//------------------------------------------------------------------------------
+
+/**
+  <Equals-T t.QName1 t.QName2>
+    == s.Result t.QName1 t.QName2
+  s.Result ::= True | False
+*/
+$ENTRY Equals-T {
+  [QName e.Segments] [QName e.Segments] =
+    True [QName e.Segments] [QName e.Segments];
+
+  t.QName1 t.QName2 = False t.QName1 t.QName2;
+}
+
+$END MQualifiedName.

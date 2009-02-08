@@ -1,0 +1,207 @@
+$MODULE MStartupSeqGenerator;
+
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MSymModule;
+$IMPORT MQualifiedName;
+
+/**
+  <GetFnList t.hContext e.ModuleList>
+    == t.hContext e.FnList
+    == t.hContext GoNotFound
+    == t.hContext MultipleGo e.FnList--GoFunctions
+  e.FnList = (e.Function)*
+  e.ModuleList = t.ModuleName*
+*/
+$ENTRY GetFnList
+  t.hContext e.ModuleList =
+    <CollectStartFunctions
+      <NewStartInfo>
+      t.hContext e.ModuleList
+    >;
+
+CollectStartFunctions {
+  t.StartInfo t.Context t.NextModuleName e.Modules =
+    <CollectStartFunctions
+      <UpdateStartInfo
+        t.StartInfo
+        t.Context
+        t.NextModuleName
+      >
+      e.Modules
+    >;
+
+  t.StartInfo t.Context =
+    t.Context
+    <ExtractFunctionsAndDestroy t.StartInfo>;
+}
+
+NewStartInfo {
+  = ( (/* InitList */) (/* Go */) (/* FinalList */) );
+}
+
+/**
+  <UpdateStartInfo t.StartInfo t.Context e.ModuleName>
+    == t.StartInfo t.Context
+*/
+UpdateStartInfo {
+  t.StartInfo t.Context t.ModuleName =
+    <UpdateInitList
+      t.StartInfo
+      <LoadInfo t.Context t.ModuleName>
+    >;
+}
+
+/*
+  <LoadInfo t.hContext t.ModuleName>
+    == t.hContext (e.ParsedQualifiedName)*
+*/
+LoadInfo
+  t.hContext t.ModuleName =
+    <LoadInfo-Aux
+      <MSymModule::LoadInfo t.hContext t.ModuleName>
+    >;
+
+LoadInfo-Aux {
+  t.hContext Success t.hIModule =
+    <LoadInfo-DeleteIModule
+      t.hContext
+      <MLambda::MapReduce
+        & MIModule.AbsolutName
+        <MIModule::GetFunctionList t.hIModule>
+      >
+    >;
+
+  /*
+    Вариант с Fails не проверяем, т.к. до этапа компоновки доходим только
+    если все модули успешно откомпилированы, а значит для них всех имеется
+    символическая информация.
+  */
+}
+
+LoadInfo-DeleteIModule
+  t.hContext t.hIModule e.FunctionNames =
+    t.hContext
+    <MIModule::Destroy t.hIModule>
+    <MLambda::Map
+      <MLambda::Composite
+        & MQualifiedName.Parse
+        & MLambda.Bracket
+      >
+      e.FunctionNames
+    >;
+
+/*
+  Список модулей на входе рассортирован в порядке от импортирующих
+  к импортируемым, а нам здесь требуется располагать функции инициализации
+  в обратном порядке (от импортируемых к импортирующим),
+  а функции финализации -- в прямом.
+*/
+
+UpdateInitList {
+  ( (e.InitList) t.GoInfo t.FinalList )
+  t.Context
+  e.Fn-B (e.Qualifiers ('Init')) e.Fn-E =
+    <UpdateGoInfo
+      (
+        (
+          ('Entry' <PrintQualifiers e.Qualifiers> '::Init')
+          e.InitList
+        )
+        t.GoInfo
+        t.FinalList
+      )
+      e.Fn-B e.Fn-E
+    >
+    t.Context;
+
+  t.StartInfo t.Context e.FnList =
+    <UpdateGoInfo
+      t.StartInfo e.FnList
+    >
+    t.Context;
+}
+
+PrintQualifiers
+  e.Qualifiers =
+    <MLambda::Map
+      <MLambda::Composite
+        & MLambda.UnBracket
+        <MLambda::BindLeft & MLambda.Identity '::'>
+      >
+      e.Qualifiers
+    >;
+
+UpdateGoInfo {
+  ( t.Inits () t.Finals )
+  e.Fn-B (e.Qualifiers ('Go')) e.Fn-E =
+    <UpdateFinalList
+      (
+        t.Inits
+        (SingleGo 'Entry' <PrintQualifiers e.Qualifiers> '::Go')
+        t.Finals
+      )
+      e.Fn-B e.Fn-E
+    >;
+
+  ( t.Inits (MultipleGo e.GoFuncs) t.Finals )
+  e.Fn-B (e.Qualifiers ('Go')) e.Fn-E =
+    <UpdateFinalList
+      (
+        t.Inits
+        (MultipleGo
+          e.GoFuncs ('Entry' <PrintQualifiers e.Qualifiers> '::Go')
+        )
+        t.Finals
+      )
+      e.Fn-B e.Fn-E
+    >;
+
+  ( t.Inits (SingleGo e.OtherGo) t.Finals )
+  e.Fn-B (e.Qualifiers ('Go')) e.Fn-E =
+    <UpdateFinalList
+      (
+        t.Inits
+        (MultipleGo
+          e.OtherGo ('Entry' <PrintQualifiers e.Qualifiers> '::Go')
+        )
+        t.Finals
+      )
+      e.Fn-B e.Fn-E
+    >;
+
+  ( t.Inits (e.GoInfo) t.Finals ) e.FnList =
+    <UpdateFinalList
+      ( t.Inits (e.GoInfo) t.Finals ) e.FnList
+    >;
+}
+
+UpdateFinalList {
+  ( t.Inits t.GoInfo (e.Finals) )
+  e.Fn-B (e.Qualifiers ('Final')) e.Fn-E =
+    // Финализаторы выполняются в порядке, обратном инициализаторам
+    (
+      t.Inits
+      t.GoInfo
+      (
+        e.Finals
+        ('Entry' <PrintQualifiers e.Qualifiers> '::Final')
+      )
+    );
+
+  ( t.Inits t.GoInfo t.Finals ) e.FnList =
+    ( t.Inits t.GoInfo t.Finals );
+}
+
+ExtractFunctionsAndDestroy {
+  ( t.InitFuncs () t.FinalFuncs ) =
+    GoNotFound;
+
+  ( t.InitFuncs (MultipleGo e.GoFunctions) t.FinalFuncs ) =
+    MultipleGo e.GoFunctions;
+
+  ( (e.InitFuncs) (SingleGo e.GoName) (e.FinalFuncs) ) =
+    e.InitFuncs (e.GoName) e.FinalFuncs;
+}
+
+$END MStartupSeqGenerator.

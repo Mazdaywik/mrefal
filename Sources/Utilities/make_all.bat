@@ -10,3 +10,5 @@ call compile_mr %PROGRAMS% >> _compilation.log
 
 del *.ref
 rd /s /q ~Defs Info ~ROut ~XLinx
+
+copy *.rsl ..\..\Bin

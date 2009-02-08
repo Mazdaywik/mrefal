@@ -1,2 +1,0 @@
-@call make
-@call make

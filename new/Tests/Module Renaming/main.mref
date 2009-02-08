@@ -1,7 +1,0 @@
-$MODULE Main;
-
-$IMPORT IO = InOut, Math;
-
-$ENTRY Go = <InOut::WriteLine 'Hello, World!'>;
-
-$END Main.

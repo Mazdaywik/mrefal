@@ -1,7 +1,0 @@
-$module MDosWinRecoder;
-
-
-$entry DosToWin;
-$entry WinToDos;
-
-$end MDosWinRecoder.

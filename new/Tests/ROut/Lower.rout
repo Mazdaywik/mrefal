@@ -1,9 +1,0 @@
-v ROUT3 Module Refal 0.1
-r file ROut/Lower.rout
-
-b Entry::Lower::Go
-c $Entry::Lower::Go$ {
-c 	=
-c 		<$Entry::InOut::WriteLine$ <$Entry::MStrings::Lower$ ( $ADT::__StructureBrackets$ ( $ADT::__StructureBrackets$ 'AB' ) 'C' ) 'DEF' > > ;
-c }
-

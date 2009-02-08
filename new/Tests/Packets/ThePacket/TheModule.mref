@@ -1,7 +1,0 @@
-$MODULE ThePacket::TheModule;
-
-$IMPORT InOut;
-
-$ENTRY Echo = <InOut::WriteLine 'ThePacket::TheModule called'>;
-
-$END ThePacket::TheModule.

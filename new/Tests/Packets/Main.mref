@@ -1,7 +1,0 @@
-$PROGRAM Main;
-
-$IMPORT ThePacket::TheModule;
-
-$ENTRY Go = <ThePacket::TheModule::Echo>;
-
-$END Main.

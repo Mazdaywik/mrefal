@@ -94,17 +94,17 @@ $ENTRY DependencesFromIModule
 
 /**
   <CheckNeedCompile-LinkOnly
-    t.hContext (e.ModulePath) t.ModuleName
+    t.hContext t.Config t.ModuleName
   >
     == t.hContext t.ModuleName Success s.Status s.Type
     == t.hContext t.ModuleName Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-LinkOnly
-   t.hContext (e.ModulePath) t.ModuleName =
+   t.hContext t.Config t.ModuleName =
      <SwCheckNeedCompile-LinkOnly
        t.ModuleName
        <MModules::LookupImportModule
-         t.hContext (e.ModulePath) t.ModuleName
+         t.hContext t.Config t.ModuleName
        >
      >;
 
@@ -158,17 +158,17 @@ CheckNeedCompile-UpdateStatusType-Aux {
 
 /**
   <CheckNeedCompile-Build
-    t.hContext (e.ModulePath) t.ModuleName
+    t.hContext t.Config t.ModuleName
   >
     == t.hContext t.ModuleName Success s.Status s.Type
     == t.hContext t.ModuleName Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-Build
-   t.hContext (e.ModulePath) t.ModuleName =
+   t.hContext t.Config t.ModuleName =
      <SwCheckNeedCompile-Build
        t.ModuleName
        <MModules::LookupImportModule
-         t.hContext (e.ModulePath) t.ModuleName
+         t.hContext t.Config t.ModuleName
        >
      >;
 
@@ -207,15 +207,15 @@ SwCheckNeedCompile-Build {
 
 /**
   <CheckNeedCompile-Make
-    t.hContext (e.ModulePath) t.ModuleName
+    t.hContext t.Config t.ModuleName
   >
     == t.hContext t.ModuleName Success s.Status s.Type
     == t.hContext t.ModuleName Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-Make
-  t.hContext (e.ModulePath) t.ModuleName =
+  t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-R
-      (/* стек */) t.hContext (e.ModulePath) t.ModuleName
+      (/* стек */) t.hContext t.Config t.ModuleName
     >;
 
 /*
@@ -224,80 +224,80 @@ $ENTRY CheckNeedCompile-Make
 */
 CheckNeedCompile-R
   (e.Stack)
-  t.hContext (e.ModulePath) t.ModuleName =
+  t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-SwRoot
-      (e.Stack) (e.ModulePath) t.ModuleName
+      (e.Stack) t.Config t.ModuleName
       <MModules::LookupImportModule
-        t.hContext (e.ModulePath) t.ModuleName
+        t.hContext t.Config t.ModuleName
       >
     >;
 
 CheckNeedCompile-SwRoot {
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Success Ready s.Status =
     t.hContext t.ModuleName Success Ready s.Status;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Success Raw s.Status =
     t.hContext t.ModuleName Success Raw s.Status;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Success Found Errors =
     <CheckNeedCompile-UpdateStatusType
       t.hContext t.ModuleName Errors
     >;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
       t.hContext t.ModuleName Changed
     >;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Success Found Updated =
     <CheckNeedCompile-SwOne
-      (e.Stack) (e.ModulePath)
+      (e.Stack) t.Config
       <CheckNeedCompileOne
-        t.hContext (e.ModulePath) t.ModuleName
+        t.hContext t.Config t.ModuleName
       >
     >;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Success Found Library =
     <CheckNeedCompile-UpdateStatusType
       t.hContext t.ModuleName Library
     >;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Fails MismatchCase =
     t.hContext t.ModuleName Fails MismatchCase;
 }
 
 CheckNeedCompile-SwOne {
-  (e.Stack) (e.ModulePath)
+  (e.Stack) t.Config
   t.hContext t.ModuleName Success Found Updated =
     <CheckNeedCompile-UpdateContext
       <CheckNeedCompile-ScanImports
-        (e.Stack) (e.ModulePath) t.ModuleName
+        (e.Stack) t.Config t.ModuleName
         <DependencesList t.hContext t.ModuleName>
       >
     >;
 
-  (e.Stack) (e.ModulePath)
+  (e.Stack) t.Config
   t.hContext t.ModuleName Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
       t.hContext t.ModuleName Changed
     >;
 
-  (e.Stack) (e.ModulePath)
+  (e.Stack) t.Config
   t.hContext t.ModuleName Success Raw s.Type =
     t.hContext t.ModuleName Success Raw s.Type;
 
-  (e.Stack) (e.ModulePath)
+  (e.Stack) t.Config
   t.hContext t.ModuleName Success Ready s.Type =
     t.hContext t.ModuleName Success Ready s.Type;
 
-  (e.Stack) (e.ModulePath)
+  (e.Stack) t.Config
   t.hContext t.ModuleName Fails MismatchCase =
     t.hContext t.ModuleName Fails MismatchCase;
 }
@@ -318,12 +318,12 @@ CheckNeedCompile-ScanImports {
     будет выдано сообщение об ошибке.
   */
   (e.Stack-B t.RecursiveModule e.Stack-E )
-  (e.ModulePath) t.ModuleName
+  t.Config t.ModuleName
   t.hContext Avail
   e.Imports-B t.RecursiveModule e.Imports-E =
     t.hContext t.ModuleName Changed;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Avail e.Imports =
     <CheckNeedCompile-ScanResults
       t.ModuleName
@@ -331,7 +331,7 @@ CheckNeedCompile-ScanImports {
         <MLambda::Composite
           <MLambda::BindLeft-H
             <MLambda::BindLeft & CheckNeedCompile-R ( e.Stack t.ModuleName )>
-            (e.ModulePath)
+            t.Config
           >
           & MLambda.Bracket-H
         >
@@ -342,11 +342,11 @@ CheckNeedCompile-ScanImports {
   /*
     Реакция на ошибки, возможно, неразумная.
   */
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext NotAvail =
     t.hContext t.ModuleName Success Changed;
 
-  (e.Stack) (e.ModulePath) t.ModuleName
+  (e.Stack) t.Config t.ModuleName
   t.hContext Fails =
     t.hContext t.ModuleName Success Changed;
 }
@@ -428,13 +428,13 @@ CheckNeedCompile-SwCompareTimes {
 
 /*
   <CheckNeedCompileOne
-    t.hContext (e.ModulePath) t.ModuleName
+    t.hContext t.Config t.ModuleName
   >
     == t.hContext t.ModuleName Success s.Status s.Type
     == t.hContext t.ModuleName Fails MismatchCase
 */
 CheckNeedCompileOne
-  t.hContext (e.ModulePath) t.ModuleName =
+  t.hContext t.Config t.ModuleName =
     <CheckNeedCompileOne-SwGetLastTime
       t.ModuleName
       <GetTime t.hContext t.ModuleName>

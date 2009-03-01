@@ -40,7 +40,7 @@ $ENTRY Register
     == t.Context t.IModule Success
     == t.Context t.IModule Fails
 */
-$ENTRY Generate
+$ENTRY Generate_
   t.Context t.IModule t.QualifiedName =
     <DoGenerate
       Success t.Context t.IModule t.QualifiedName <GetList>
@@ -106,7 +106,7 @@ GenerateBy-Aux {
     == t.Context Fails
   e.OrderedFiles ::= t.QualifiedName*
 */
-$ENTRY Link
+$ENTRY Link_
   t.Context (e.OutName) e.OrderedFiles =
     <DoLink
       t.Context Success (e.OutName) (e.OrderedFiles)
@@ -166,17 +166,19 @@ MakeObjNames-Guard
   <GetList> == s.BackEndName*
 */
 
-$ENTRY GetList = <MBEFE-Holder::GetMgrList & G_BackEnds>;
+$ENTRY GetList_ = <MBEFE-Holder::GetMgrList & G_BackEnds>;
+
+GetList = <GetList_>;
 
 //------------------------------------------------------------------------------
 
-/**
+/*
   <GetInfo s.FEName s.Option>
     == Success e.Option
     == Fails s.Error
   s.Error ::= InvalidMgr | InvalidOption
 */
-$ENTRY GetInfo
+GetInfo
   s.Name s.Option =
     <MBEFE-Holder::GetInfo & G_BackEnds s.Name s.Option>;
 

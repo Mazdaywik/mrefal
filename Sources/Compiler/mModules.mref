@@ -1,6 +1,7 @@
 $MODULE MModules;
 
 $IMPORT MBE-Mgr;
+$IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MFE-Mgr;
 $IMPORT MFileSystem;
@@ -11,16 +12,16 @@ $IMPORT MQualifiedName;
 
 /**
   <LookupCmdLineModule
-    t.hContext (e.ModulePath) e.CmdLinePath
+    t.hContext t.Config e.CmdLinePath
   >
     == t.hContext Found
       t.QualifiedName s.FrontEndName e.BaseDirectory
     == t.hContext NotFound
 */
 $ENTRY LookupCmdLineModule
-  t.hContext (e.ModulePath) e.CmdLinePath =
+  t.hContext t.Config e.CmdLinePath =
     <GenVariants-CmdLine
-        t.hContext (e.ModulePath)
+        t.hContext t.Config
         <ParseFileNameEx e.CmdLinePath>
     >;
 
@@ -54,14 +55,14 @@ SwParseFileName {
 }
 
 GenVariants-CmdLine
-  t.hContext (e.ModulePath) s.PathType (e.Folder) e.FileName (e.Ext) =
+  t.hContext t.Config s.PathType (e.Folder) e.FileName (e.Ext) =
     <GenVariants-CmdLine-Aux
-      t.hContext
+      t.hContext t.Config
       <MLambda::Map
         <MLambda::BindLeft & CrossName (e.Folder)>
-        e.ModulePath
+        <MConfig::GetModulePath>
       >
-      <MakeAppendNames s.PathType (e.Folder) e.ModulePath>
+      <MakeAppendNames s.PathType (e.Folder) <MConfig::GetModulePath t.Config>>
       (e.FileName)
       (
         <AvailFrontEnds
@@ -185,13 +186,13 @@ GenVariants-CmdLine-Aux {
     Выдавать осмысленную ошибку пока не будем, достаточно сообщения
     об отсутствии модуля.
   */
-  t.hContext e.RawVariants (e.ModuleName) () =
+  t.hContext t.Config e.RawVariants (e.ModuleName) () =
     t.hContext NotFound;
 
-  t.hContext e.RawVariants (e.ModuleName) (e.AvailFrontEnds) =
+  t.hContext t.Config e.RawVariants (e.ModuleName) (e.AvailFrontEnds) =
     <CorrectFormat-CmdLine
       <CheckVariants
-        t.hContext
+        t.hContext t.Config
         <MLambda::Map
           <MLambda::BindLeft & FinishVariant e.ModuleName>
           <MStrings::Decart (e.RawVariants ) (e.AvailFrontEnds Library)>
@@ -218,47 +219,47 @@ CorrectFormat-CmdLine {
 
 /**
   <LookupImportModule
-    t.hContext (e.ModulePath) t.QualifiedName
+    t.hContext t.Config t.QualifiedName
   >
     == t.hContext Success s.Status s.Type
     == t.hContext Fails MismatchCase
 */
 $ENTRY LookupImportModule
-  t.hContext (e.ModulePath) t.ModuleName =
+  t.hContext t.Config t.ModuleName =
     <LookupImportModule-SwKnown
-      (e.ModulePath)
-      t.ModuleName
+      t.Config t.ModuleName
       <MContext::GetStatusType t.hContext t.ModuleName>
    >;
 
 LookupImportModule-SwKnown {
-  (e.ModulePath) t.ModuleName
+  t.Config t.ModuleName
   t.hContext Success s.Status s.Type =
     t.hContext Success s.Status s.Type;
 
-  (e.ModulePath) t.ModuleName
+  t.Config t.ModuleName
   t.hContext Fails ModuleNotFound =
     <LookupImportModule-Unknown
-      t.hContext t.ModuleName e.ModulePath
+      t.hContext t.ModuleName t.Config
     >;
 
-  (e.ModulePath) t.ModuleName
+  t.Config t.ModuleName
   t.hContext Fails MismatchCase =
     t.hContext Fails MismatchCase;
 }
 
 LookupImportModule-Unknown
-  t.hContext t.QualifiedName e.ModulePath =
+  t.hContext t.QualifiedName t.Config =
     <CheckVariants-Import-CorrectFormat
       t.QualifiedName
       <CheckVariants
-        t.hContext
+        t.hContext t.Config
         <MLambda::Map
           <MLambda::BindLeft
             & MakeImportVariant t.QualifiedName
           >
           <MStrings::Decart
-            (e.ModulePath) ( <MFE-Mgr::GetList> Library )
+            ( <MConfig::GetModulePath t.Config> )
+            ( <MFE-Mgr::GetList> Library )
           >
         >
       >
@@ -289,27 +290,27 @@ CheckVariants-Import-CorrectFormat {
 //------------------------------------------------------------------------------
 
 /*
-  <CheckVariants t.hContext e.Variants>
+  <CheckVariants t.hContext t.Config e.Variants>
     == t.hContext Found s.Type t.QualifiedName s.FrontEnd e.BaseDirectory
     == t.hContext NonFound;
 */
 CheckVariants
-  t.hContext e.Variants =
+  t.hContext t.Config e.Variants =
     <DoCheckVariants
-      t.hContext e.Variants
+      t.hContext t.Config e.Variants
     >;
 
 DoCheckVariants {
-  t.hContext (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =
+  t.hContext t.Config (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =
     <SwDoCheckVariant
       <CheckVariant-T
-        t.hContext
+        t.hContext t.Config
         s.FrontEnd t.QualifiedName e.BaseDirectory
       >
       e.Tail
     >;
 
-  t.hContext = t.hContext NotFound;
+  t.hContext t.Config = t.hContext NotFound;
 }
 
 SwDoCheckVariant {
@@ -325,9 +326,9 @@ SwDoCheckVariant {
 }
 
 CheckVariant-T {
-  t.hContext Library t.QualifiedName e.BaseDirectory =
+  t.hContext t.Config Library t.QualifiedName e.BaseDirectory =
     <CheckVariant-T-LibAux
-      t.hContext t.QualifiedName
+      t.hContext t.Config t.QualifiedName
       <MLambda::Map
         <MLambda::Composite
           <MLambda::Parallel
@@ -339,51 +340,51 @@ CheckVariant-T {
           >
           & MLambda.Bracket
         >
-        <MBE-Mgr::GetList>
+        <MConfig::GetBackEndList t.Config>
       >
       (e.BaseDirectory)
     >;
 
-  t.hContext s.FrontEnd t.QualifiedName e.BaseDirectory =
+  t.hContext t.Config s.FrontEnd t.QualifiedName e.BaseDirectory =
     <CheckVariant-T-SrcAux
-      t.hContext
+      t.hContext t.Config
       <MFE-Mgr::GetPath-T s.FrontEnd t.QualifiedName e.BaseDirectory>
       (s.FrontEnd e.BaseDirectory)
     >;
 }
 
 CheckVariant-T-SrcAux {
-  t.hContext
+  t.hContext t.Config
   Success t.QualifiedName e.FilePath (s.FrontEnd e.BaseDirectory) =
     <CheckVariant-T-SrcAux-SwExist
-      t.hContext
+      t.hContext t.Config
       (s.FrontEnd t.QualifiedName e.BaseDirectory)
       <MFileSystem::ExistFile-T e.FilePath>
     >;
 
-  t.hContext
+  t.hContext t.Config
   Fails t.QualifiedName (s.FrontEnd e.BaseDirectory) =
-    t.hContext (NotFound);
+    t.hContext t.Config (NotFound);
 }
 
 CheckVariant-T-SrcAux-SwExist {
-  t.hContext
+  t.hContext t.Config
   (s.FrontEnd t.ModuleName e.BaseDirectory)
   True e.FrontEndName =
     <CheckVariant-T-SrcAux-SwExist-Finish
-      t.hContext t.ModuleName
+      t.hContext t.Config t.ModuleName
       (s.FrontEnd e.FrontEndName)
       (<SelectBaseDirectory e.BaseDirectory>)
       <MLambda::Map
         <MLambda::BindLeft & GetBEPath-CheckExist t.ModuleName e.BaseDirectory>
-        <MBE-Mgr::GetList>
+        <MConfig::GetBackEndList t.Config>
       >
     >;
 
-  t.hContext
+  t.hContext t.Config
   (s.FrontEnd t.ModuleName e.BaseDirectory)
   False e.FrontEndName =
-    t.hContext NotFound;
+    t.hContext t.Config NotFound;
 }
 
 SelectBaseDirectory {
@@ -404,7 +405,7 @@ GetBEPath-CheckExist-Aux
     (s.BackEndName <MFileSystem::ExistFile-T e.Path>);
 
 CheckVariant-T-SrcAux-SwExist-Finish {
-  t.hContext t.ModuleName
+  t.hContext t.Config t.ModuleName
   (s.FrontEnd e.FrontEndName)
   (e.BaseDirectory)
   e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E =
@@ -421,9 +422,10 @@ CheckVariant-T-SrcAux-SwExist-Finish {
         )
       >
     >
+    t.Config
     (Found Changed t.ModuleName s.FrontEnd e.BaseDirectory);
 
-  t.hContext t.ModuleName
+  t.hContext t.Config t.ModuleName
   (s.FrontEnd e.FrontEndName)
   (e.BaseDirectory)
   e.BackEnds =
@@ -435,6 +437,7 @@ CheckVariant-T-SrcAux-SwExist-Finish {
         (BackEnds <MLambda::Map & BackEnds-DelTF e.BackEnds>)
       >
     >
+    t.Config
     (Found Updated t.ModuleName s.FrontEnd e.BaseDirectory);
 }
 
@@ -445,14 +448,14 @@ GuardInvariant
   t.hContext Success = t.hContext;
 
 CheckVariant-T-LibAux {
-  t.hContext t.QualifiedName
+  t.hContext t.Config t.QualifiedName
   e.BE-Files-B (s.BackEnd Fails t.QualifiedName-Internal) e.BE-Files-E
   (e.BaseDirectory) =
-    t.hContext (NotFound);
+    t.hContext t.Config (NotFound);
 
-  t.hContext t.QualifiedName e.BE-Files (e.BaseDirectory) =
+  t.hContext t.Config t.QualifiedName e.BE-Files (e.BaseDirectory) =
     <CheckVariant-T-LibAux-SwExist
-      t.hContext t.QualifiedName (e.BaseDirectory)
+      t.hContext t.Config t.QualifiedName (e.BaseDirectory)
       <MLambda::Map
         &Lib-CheckExist e.BE-Files
       >
@@ -475,11 +478,11 @@ SwLib-CheckExist {
 }
 
 CheckVariant-T-LibAux-SwExist {
-  t.hContext t.QualifiedName (e.BaseDirectory)
+  t.hContext t.Config t.QualifiedName (e.BaseDirectory)
   e.BE-Files-B NotExist e.BE-Files-E =
-    t.hContext NotFound;
+    t.hContext t.Config NotFound;
 
-  t.hContext t.QualifiedName (e.BaseDirectory) e.BE-Files =
+  t.hContext t.Config t.QualifiedName (e.BaseDirectory) e.BE-Files =
     <GuardInvariant
       <MContext::CreateModule
         t.hContext t.QualifiedName
@@ -488,6 +491,7 @@ CheckVariant-T-LibAux-SwExist {
         (BackEnds e.BE-Files)
       >
     >
+    t.Config
     (Found Library t.QualifiedName Library e.BaseDirectory);
 }
 

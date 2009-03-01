@@ -3,6 +3,7 @@ $PROGRAM MRefal;
 // Эти модули используются
 
 $IMPORT MCompiler;
+$IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT InOut;
@@ -61,7 +62,7 @@ CompileList {
             & MLambda.Bracket-H
             <MLambda::BindLeft-H
               & MModules.LookupCmdLineModule
-              (<PrepareMP e.ModulePath>)
+              <MConfig::Create <PrepareMP e.ModulePath>>
             >
           >
           & MLambda.Bracket-H
@@ -113,7 +114,10 @@ Make {
     (
       <MLambda::Apply
         <SelectMaker e.Action>
-        t.hContext t.hErrorList e.ModulePath t.QualifiedName
+        t.hContext
+        t.hErrorList
+        <MConfig::Create e.ModulePath>
+        t.QualifiedName
       >
     );
 

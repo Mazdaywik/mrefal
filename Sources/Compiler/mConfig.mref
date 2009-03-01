@@ -1,5 +1,7 @@
 $MODULE MConfig;
 
+$IMPORT MBE-Mgr;
+
 $DATA Config;
 
 /**
@@ -7,10 +9,16 @@ $DATA Config;
     == t.Config
   e.ModulePath = (e.PathToFolder)*
 */
+$ENTRY Create
+  e.ModulePath =
+    [Config (ModulePath e.ModulePath)];
 
 /**
   <GetModulePath t.Config> == e.ModulePath
 */
+$ENTRY GetModulePath
+  [Config e.Opt-B (ModulePath e.ModulePath) e.Opt-E] =
+    e.ModulePath;
 
 
 /*
@@ -25,16 +33,27 @@ Module MBE-Mgr;
   e.Folder -- имя папки
   e.Ext -- расширение файла
 ==============================================================================
-
-<Generate t.Context t.IModule t.QualifiedName>
-  == t.Context t.IModule Success
-  == t.Context t.IModule Fails
-
-<Link t.Context (e.OutName) e.OrderedFiles>
-  == t.Context Success
-  == t.Context Fails
-e.OrderedFiles ::= t.QualifiedName*
 */
+
+/**
+  <Generate t.Config t.hContext t.hIModule t.ModuleName>
+    == t.hContext t.hIModule Success
+    == t.hContext t.hIModule Fails
+*/
+$ENTRY Generate
+  [Config e.Options] t.hContext t.hIModule t.ModuleName =
+    <MBE-Mgr::Generate_ t.hContext t.hIModule t.ModuleName>;
+
+/**
+  <Link t.Config t.hContext (e.OutName) e.OrderedFiles>
+    == t.hContext Success
+    == t.hContext Fails
+  e.OrderedFiles ::= t.ModuleName*
+*/
+$ENTRY Link
+  [Config e.Options] t.hContext (e.OutName) e.OrderedFiles =
+    <MBE-Mgr::Link_ t.hContext (e.OutName) e.OrderedFiles>;
+
 
 /**
   <RegisterBackEnd
@@ -46,6 +65,8 @@ e.OrderedFiles ::= t.QualifiedName*
 /**
   <GetBackEndList t.Config> == e.BackEndName
 */
+$ENTRY GetBackEndList
+  [Config e.Options] = <MBE-Mgr::GetList_>;
 
 /**
   <GetOption t.Config s.BEName s.Option>

@@ -6,7 +6,7 @@ $MODULE MSymModule;
 */
 
 $IMPORT FileIO;
-$IMPORT MBE-Mgr;
+$IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MIModule;
@@ -378,10 +378,15 @@ SwGenerateImport-Aux {
   Регистрация при загрузке модуля.
 ------------------------------------------------------------------------------*/
 
-$ENTRY Init =
-  <MBE-Mgr::Register
-    SymInfo &Generate &Link ('~Defs') ('rsym')
-  >;
+$ENTRY Register
+  t.Config =
+    <MConfig::RegisterBackEnd
+      t.Config
+      SymInfo
+      & Generate
+      & Link
+      ('~Defs') ('rsym')
+    >;
 
 Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.
 

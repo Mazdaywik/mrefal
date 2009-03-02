@@ -1,8 +1,44 @@
 $MODULE MConfig;
 
-$IMPORT MBE-Mgr;
+//------------------------------------------------------------------------------
+
+$IMPORT MContext;
+$IMPORT MCreateDirIfNeed;
+$IMPORT MLambda;
+$IMPORT MQualifiedName;
+
+$IMPORT MFE-Mgr;
+
+//------------------------------------------------------------------------------
 
 $DATA Config;
+
+/*
+  Внутреннее представление
+  [Config t.Option*]
+
+  t.Option := t.MP-Option | t.BackEndOption | t.FrontEndOption
+
+  t.MP-Option := (ModulePath (e.Folder)*)
+
+  t.BackEndOption :=
+    (BackEnd
+      s.Name
+      (Generator t.FnGenerator)
+      (Linker t.FnLinker)
+      (Folder e.Folder) (Ext e.Ext)
+    )
+
+  s.Name ::= IDENTIFIER -- имя диспетчера
+  t.FnGenerator ::= { t.IModule e.FileName = t.IModule }
+  <t.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
+    == t.hContext Success
+    == t.hContext Fails
+  e.Folder -- имя папки
+  e.Ext -- расширение файла
+*/
+
+//------------------------------------------------------------------------------
 
 /**
   <Create e.ModulePath>
@@ -13,6 +49,8 @@ $ENTRY Create
   e.ModulePath =
     [Config (ModulePath e.ModulePath)];
 
+//------------------------------------------------------------------------------
+
 /**
   <GetModulePath t.Config> == e.ModulePath
 */
@@ -20,20 +58,35 @@ $ENTRY GetModulePath
   [Config e.Opt-B (ModulePath e.ModulePath) e.Opt-E] =
     e.ModulePath;
 
+//------------------------------------------------------------------------------
 
-/*
-Module MBE-Mgr;
-=============================================================================
-Параметры конкретного диспетчера:
+/**
+  <RegisterBackEnd
+    t.Config s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext)
+  >
+    == t.Config
   s.Name ::= IDENTIFIER -- имя диспетчера
-  s.FnGenerator ::= { t.IModule e.FileName = t.IModule }
-  <s.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
+  t.FnGenerator ::= { t.IModule e.FileName = t.IModule }
+  <t.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
     == t.hContext Success
     == t.hContext Fails
   e.Folder -- имя папки
   e.Ext -- расширение файла
-==============================================================================
 */
+$ENTRY RegisterBackEnd
+  [Config e.Options] s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext) =
+    [Config
+      e.Options
+      (BackEnd
+        s.Name
+        (Generator t.FnGenerator)
+        (Linker t.FnLinker)
+        (Folder e.Folder) (Ext e.Ext)
+      )
+    ];;
+
+
+//------------------------------------------------------------------------------
 
 /**
   <Generate t.Config t.hContext t.hIModule t.ModuleName>
@@ -42,7 +95,64 @@ Module MBE-Mgr;
 */
 $ENTRY Generate
   [Config e.Options] t.hContext t.hIModule t.ModuleName =
-    <MBE-Mgr::Generate_ t.hContext t.hIModule t.ModuleName>;
+    <DoGenerate
+      Success t.hContext t.hIModule t.ModuleName
+      <MLambda::Map & GetFnCompiler e.Options>
+    >;
+
+GetFnCompiler {
+  (BackEnd s.Name (Generator t.FnGenerator) e.OtherOptions) =
+    (s.Name t.FnGenerator);
+
+  t.OtherOption = ;
+}
+
+DoGenerate {
+  Fails t.hContext t.hIModule t.ModuleName e.Tail =
+    t.hContext t.hIModule Fails;
+
+  Success t.hContext t.hIModule t.ModuleName
+  (s.BackEnd t.FnGenerator) e.Tail =
+    <DoGenerate
+      <GenerateBy
+        t.hContext t.hIModule t.ModuleName s.BackEnd t.FnGenerator
+      >
+      e.Tail
+    >;
+
+  Success t.hContext t.hIModule t.ModuleName =
+    t.hContext t.hIModule Success;
+}
+
+GenerateBy
+  t.hContext t.hIModule t.ModuleName s.BackEndName t.FnGenerator =
+    <GenerateBy-Aux
+      <MContext::GetBackEnd t.hContext t.ModuleName s.BackEndName>
+      t.hIModule t.ModuleName s.BackEndName t.FnGenerator
+    >;
+
+GenerateBy-Aux {
+  t.hContext Success e.FileName
+  t.hIModule t.ModuleName s.BackEndName t.FnGenerator =
+    Success t.hContext
+    <MLambda::Apply
+      t.FnGenerator
+      t.hIModule
+      <MCreateDirIfNeed::CreatePathToFile e.FileName>
+    >
+    t.ModuleName;
+
+  t.hContext Fails ModuleNotFound
+  t.hIModule t.ModuleName s.BackEndName t.FnGenerator =
+    Fails t.hContext t.hIModule t.ModuleName;
+
+  t.hContext Fails MismatchCase
+  t.hIModule t.ModuleName s.BackEndName t.FnGenerator =
+    Fails t.hContext t.hIModule t.ModuleName;
+}
+
+
+//------------------------------------------------------------------------------
 
 /**
   <Link t.Config t.hContext (e.OutName) e.OrderedFiles>
@@ -52,34 +162,110 @@ $ENTRY Generate
 */
 $ENTRY Link
   [Config e.Options] t.hContext (e.OutName) e.OrderedFiles =
-    <MBE-Mgr::Link_ t.hContext (e.OutName) e.OrderedFiles>;
+    <DoLink
+      t.hContext Success (e.OutName) (e.OrderedFiles)
+      <MLambda::Map & GetLinker e.Options>
+    >;
 
+GetLinker {
+  (BackEnd s.BackEnd t.Generator (Linker t.FnLinker) e.OtherOptions) =
+    (s.BackEnd t.FnLinker);
 
-/**
-  <RegisterBackEnd
-    t.Config s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext)
-  >
-    == t.Config
-*/
+  t.OtherOption = ;
+}
+
+DoLink {
+  t.hContext Fails (e.OutName) (e.OrderedFiles) e.Tail =
+    t.hContext Fails;
+
+  t.hContext Success (e.OutName) (e.OrderedFiles) =
+    t.hContext Success;
+
+  t.hContext Success (e.OutName) (e.OrderedFiles)
+  (s.BackEnd t.FnLinker) e.Tail =
+    <DoLink
+      <MLambda::Apply
+        t.FnLinker
+        <SwapFirsts
+          (e.OutName)
+          <MLambda::MapReduce
+            <MLambda::BindLeft & MakeObjName s.BackEnd>
+            t.hContext e.OrderedFiles
+          >
+        >
+      >
+      (e.OutName) (e.OrderedFiles) e.Tail
+    >;
+}
+
+SwapFirsts
+  t.First t.Second e.Tail = t.Second t.First e.Tail;
+
+MakeObjName
+  s.L-BackEnd t.hContext t.ModuleName =
+    <MakeObjName-Aux
+      t.ModuleName
+      <MContext::GetBackEnd t.hContext t.ModuleName s.L-BackEnd>
+    >;
+
+MakeObjName-Aux
+  t.ModuleName t.hContext Success e.Path =
+    t.hContext (t.ModuleName e.Path);
+
+//------------------------------------------------------------------------------
 
 /**
   <GetBackEndList t.Config> == e.BackEndName
 */
 $ENTRY GetBackEndList
-  [Config e.Options] = <MBE-Mgr::GetList_>;
+  [Config e.Options] =
+    <MLambda::Map & BackEnds e.Options>;
+
+BackEnds {
+  (BackEnd s.Name e.Options) = s.Name;
+
+  t.OtherOption = ;
+}
+
+//------------------------------------------------------------------------------
 
 /**
-  <GetOption t.Config s.BEName s.Option>
-    == Success e.Option
-    == Fails InvalidMgr
-    == Fails InvalidOption
-*/
-
-/**
-  <GetPath-T s.BEName t.ModuleName e.BaseFolder>
+  <GetBEPath-T t.Config s.BEName t.ModuleName e.BaseFolder>
     == Success e.OutPath
     == Fails
 */
+$ENTRY GetBEPath-T
+  [Config e.Options] s.BEName t.ModuleName e.BaseFolder =
+    <GetBEPath-T-Aux
+      ( <MQualifiedName::ToRelativeFSPath t.ModuleName> )
+      ( e.BaseFolder )
+      s.BEName <MLambda::Map & GetFolderExt e.Options>
+    >;
+
+GetFolderExt {
+  (BackEnd s.BackEnd e.Options (Folder e.Folder) (Ext e.Ext)) =
+    (s.BackEnd (e.Folder) e.Ext);
+
+  t.OtherOption = ;
+}
+
+GetBEPath-T-Aux {
+  ( e.RelativePath ) ( Current )
+  s.BackEnd e.BackEnds-B (s.BackEnd (e.Folder) e.Ext) e.BackEnds-E =
+    Success e.Folder '/' e.RelativePath '.' e.Ext;
+
+  ( e.RelativePath ) ( e.BaseFolder )
+  s.BackEnd e.BackEnds-B (s.BackEnd (e.Folder) e.Ext) e.BackEnds-E =
+    Success e.BaseFolder '/' e.Folder '/' e.RelativePath '.' e.Ext;
+
+  ( e.RelativePath ) ( e.BaseFolder )
+  s.BackEnd e.BackEnds =
+    Fails;
+}
+
+
+//------------------------------------------------------------------------------
+
 
 /*
 Module MFE-Mgr;

@@ -16,6 +16,7 @@ $IMPORT MVersion;
 // Эти модули должны быть инициализированы
 $IMPORT MBackEnd_Refal5_init;
 $IMPORT MFrontEnd_MRefal;
+$IMPORT MSymModule;
 $IMPORT MXLinx;
 
 $ENTRY Go =
@@ -52,17 +53,31 @@ DeleteEmpty {
 
 CompileList {
   t.hContext (e.Action) ('=MP:' e.ModulePath) e.Modules =
+    <CompileList-Aux
+      <MLambda::Apply
+        <MLambda::Composite
+          & MBackEnd_Refal5_init.Register
+          & MSymModule.Register
+          & MXLinx.Register
+        >
+        <MConfig::Create <PrepareMP e.ModulePath>>
+      >
+      t.hContext (e.Action) e.Modules
+    >;
+}
+
+CompileList-Aux {
+  t.Config t.hContext (e.Action) e.Modules =
     <CheckFoundResult
       (e.Action)
-      ( <PrepareMP e.ModulePath> )
+      t.Config
       <MLambda::MapReduce
         <MLambda::Composite
           & MLambda.UnBracket-H
           <MLambda::Parallel-H
             & MLambda.Bracket-H
             <MLambda::BindLeft-H
-              & MModules.LookupCmdLineModule
-              <MConfig::Create <PrepareMP e.ModulePath>>
+              & MModules.LookupCmdLineModule t.Config
             >
           >
           & MLambda.Bracket-H
@@ -74,7 +89,7 @@ CompileList {
 }
 
 CheckFoundResult {
-  (e.Action) (e.ModulePath)
+  (e.Action) t.Config
   t.hContext e.Results-B ( (e.Module) NotFound ) e.Results-E =
     <MContext::Destroy t.hContext>
     <MLambda::Map
@@ -82,11 +97,11 @@ CheckFoundResult {
       e.Results-B ( (e.Module) NotFound ) e.Results-E
     >;
 
-  (e.Action) (e.ModulePath) t.hContext e.ResultsFound =
+  (e.Action) t.Config t.hContext e.ResultsFound =
     <MLambda::TerminateAccumulator
       & FinishMake
       <MLambda::Reduce
-        <MLambda::BindLeft & Make (e.Action) (e.ModulePath)>
+        <MLambda::BindLeft & Make (e.Action) t.Config>
         (t.hContext <MError::CreateErrList> Success)
         e.ResultsFound
       >
@@ -108,7 +123,7 @@ PrintNotFound {
 }
 
 Make {
-  (e.Action) (e.ModulePath)
+  (e.Action) t.Config
   (t.hContext t.hErrorList Success)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
     (
@@ -116,7 +131,7 @@ Make {
         <SelectMaker e.Action>
         t.hContext
         t.hErrorList
-        <MConfig::Create e.ModulePath>
+        t.Config
         t.QualifiedName
       >
     );

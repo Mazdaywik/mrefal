@@ -119,6 +119,14 @@ $ENTRY ToRelativeFSPath-T
     <CreateTextual ('/') e.Segments>;
 
 /**
+  <ToRelativeFSPath t.QualifiedName>
+    == e.Segment '/' e.Segment '/' ... '/' e.Segment
+*/
+$ENTRY ToRelativeFSPath
+  [QName e.Segments] =
+    <CreateTextual ('/') e.Segments>;
+
+/**
   <ToPrintable-Dot t.QualifiedName>
     == e.DotName
 */

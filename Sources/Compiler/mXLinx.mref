@@ -1,7 +1,7 @@
 $MODULE MXLinx;
 
 $IMPORT FileIO;
-$IMPORT MBE-Mgr;
+$IMPORT MConfig;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MIModule;
 $IMPORT MLambda;
@@ -11,13 +11,15 @@ $IMPORT MSymStream;
 $IMPORT MQualifiedName;
 $IMPORT MXXIO;
 
-$ENTRY Init =
-  <MBE-Mgr::Register
-    XLinxBE
-    & Generate
-    & Link
-    ('~XLinx') ('xlinx')
-  >;
+$ENTRY Register
+  t.Config =
+    <MConfig::RegisterBackEnd
+      t.Config
+      XLinxBE
+      & Generate
+      & Link
+      ('~XLinx') ('xlinx')
+    >;
 
 //------------------------------------------------------------------------------
 

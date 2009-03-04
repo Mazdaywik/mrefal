@@ -92,7 +92,7 @@ StatusStr {
   Recompiled = 'Recompiled ';
   Library =    'Load library ';
   Linking =    'Linking ';
-  Fails =      'FAILS ';
+  Fails =      '  FAILS ';
 }
 
 MaxLength = 80;

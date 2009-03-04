@@ -4,7 +4,6 @@ $IMPORT MClusters;
 $IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MError;
-$IMPORT MFE-Mgr;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MResolveTable;
@@ -200,7 +199,7 @@ Compile-Recompile
     <Compile-Recompile-UpdateContext
       <Compile-Recompile-SwParse
         s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-        <Parse t.hContext t.hErrorList t.ModuleName>
+        <Parse t.Config t.hContext t.hErrorList t.ModuleName>
       >
     >;
 
@@ -618,29 +617,29 @@ MakeSuccessResult
 //------------------------------------------------------------------------------
 
 /*
-  <Parse t.hContext t.hErrorList t.ModuleName>
+  <Parse t.Config t.hContext t.hErrorList t.ModuleName>
     == t.hContext t.hErrorList Success s.Result t.hRawIModule
     == t.hContext t.hErrorList Fails
 
   s.Result ::= Success | Warnings | Errors
 */
 Parse
-  t.hContext t.hErrorList t.ModuleName =
+  t.Config t.hContext t.hErrorList t.ModuleName =
     <Parse-SelectFE
-      t.hErrorList t.ModuleName
+      t.Config t.hErrorList t.ModuleName
       <MContext::GetFrontEnd t.hContext t.ModuleName>
     >;
 
 Parse-SelectFE {
-  t.hErrorList t.ModuleName t.hContext Success None =
+  t.Config t.hErrorList t.ModuleName t.hContext Success None =
     // Неожиданно. Вообще-то тут не может быть библиотека.
     t.hContext t.hErrorList Fails;
 
-  t.hErrorList t.ModuleName t.hContext Success s.FEName e.Path =
+  t.Config t.hErrorList t.ModuleName t.hContext Success s.FEName e.Path =
     t.hContext
-    <MFE-Mgr::Load s.FEName t.hErrorList t.ModuleName e.Path>;
+    <MConfig::Load t.Config s.FEName t.hErrorList t.ModuleName e.Path>;
 
-  t.hErrorList t.ModuleName t.hContext Fails s.Reason =
+  t.Config t.hErrorList t.ModuleName t.hContext Fails s.Reason =
     t.hContext t.hErrorList Fails;
 }
 

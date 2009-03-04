@@ -1,25 +1,15 @@
 $MODULE MFrontEnd_MRefal;
 
-$IMPORT MFE-Mgr;
+$IMPORT MConfig;
 $IMPORT MParser_MRefal;
 
-$ENTRY Init =
-/*
-  <MFE-Mgr::Register
-    MRefal1_FrontEnd
-    & MParser_MRefal.SrcModule
-    ('mref++')
-  >
-  <MFE-Mgr::Register
-    MRefal2_FrontEnd
-    & MParser_MRefal.SrcModule
-    ('xmref')
-  >
-*/
-  <MFE-Mgr::Register
-    MRefal_FrontEnd
-    & MParser_MRefal.SrcModule
-    ('mref')
-  >;
+$ENTRY Register
+  t.Config =
+    <MConfig::RegisterFrontEnd
+      t.Config
+      MRefal_FrontEnd
+      & MParser_MRefal.SrcModule
+      ('mref')
+    >;
 
 $END MFrontEnd_MRefal.

@@ -7,8 +7,6 @@ $IMPORT MCreateDirIfNeed;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
 
-$IMPORT MFE-Mgr;
-
 //------------------------------------------------------------------------------
 
 $DATA Config;
@@ -36,6 +34,26 @@ $DATA Config;
     == t.hContext Fails
   e.Folder -- имя папки
   e.Ext -- расширение файла
+
+  t.FrontEndOption :=
+    (FrontEnd
+      s.FEName
+      (FnParser t.FnParser)
+      (Ext e.Ext)
+    )
+
+  s.FEName ::= IDENTIFIER -- Имя
+  t.FnParser ::= {
+    t.ErrorList t.QualifiedName e.FileName =
+      t.ErrorList Success s.Result t.IModule;
+  
+    t.ErrorList t.QualifiedName e.FileName =
+      t.ErrorList Fails;
+  }
+  s.Result ::= Success | Warnings | Errors
+  e.Ext -- Расширение файлов исходного текста
+    Функция s.FnParser может предполагать, что файл с заданным именем
+  существует.
 */
 
 //------------------------------------------------------------------------------
@@ -58,7 +76,7 @@ $ENTRY GetModulePath
   [Config e.Opt-B (ModulePath e.ModulePath) e.Opt-E] =
     e.ModulePath;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 /**
   <RegisterBackEnd
@@ -73,8 +91,22 @@ $ENTRY GetModulePath
   e.Folder -- имя папки
   e.Ext -- расширение файла
 */
-$ENTRY RegisterBackEnd
-  [Config e.Options] s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext) =
+$ENTRY RegisterBackEnd {
+  [Config e.Options-B (BackEnd s.Name e.Options) e.Options-E]
+  s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext) =
+    [Config
+      e.Options-B
+      (BackEnd
+        s.Name
+        (Generator t.FnGenerator)
+        (Linker t.FnLinker)
+        (Folder e.Folder) (Ext e.Ext)
+      )
+      e.Options-E
+    ];
+
+  [Config e.Options]
+  s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext) =
     [Config
       e.Options
       (BackEnd
@@ -83,7 +115,9 @@ $ENTRY RegisterBackEnd
         (Linker t.FnLinker)
         (Folder e.Folder) (Ext e.Ext)
       )
-    ];;
+    ];
+
+}
 
 
 //------------------------------------------------------------------------------
@@ -264,33 +298,7 @@ GetBEPath-T-Aux {
 }
 
 
-//------------------------------------------------------------------------------
-
-
-/*
-Module MFE-Mgr;
-=============================================================================
-Опции front-end-диспетчера:
-
-s.FEName ::= IDENTIFIER -- Имя
-s.FnParser ::= {
-  t.ErrorList t.QualifiedName e.FileName =
-    t.ErrorList Success s.Result t.IModule;
-
-  t.ErrorList t.QualifiedName e.FileName =
-    t.ErrorList Fails;
-}
-s.Result ::= Success | Warnings | Errors
-e.Ext -- Расширение файлов исходного текста
-  Функция s.FnParser может предполагать, что файл с заданным именем
-существует.
-==============================================================================
-
-<Load s.FEName t.hErrorList t.ModuleName e.PathToFile>
-  == t.ErrorList Success s.Result t.IModule
-  == t.ErrorList Fails
-s.Result ::= Success | Warnings | Errors
-*/
+//==============================================================================
 
 /**
   <RegisterFrontEnd
@@ -298,21 +306,104 @@ s.Result ::= Success | Warnings | Errors
   >
     == t.Config
 */
+$ENTRY RegisterFrontEnd {
+  [Config e.Options-B (FrontEnd s.Name e.Options) e.Options-E]
+  s.Name t.FnParser (e.Ext) =
+    [Config
+      e.Options-B
+      (FrontEnd s.Name (FnParser t.FnParser) (Ext e.Ext))
+      e.Options-E
+    ];
+
+  [Config e.Options]
+  s.Name t.FnParser (e.Ext) =
+    [Config
+      e.Options
+      (FrontEnd s.Name (FnParser t.FnParser) (Ext e.Ext))
+    ];
+}
+
+//------------------------------------------------------------------------------
+
 
 /**
   <GetPath-T t.Config t.ModuleName e.BaseFolder>
     == Success e.FilePath
     == Fails
 */
+$ENTRY GetFEPath-T {
+  [Config
+    e.Options-B
+    (FrontEnd s.Name (FnParser t.Parser) (Ext e.Ext))
+    e.Options-E
+  ]
+  s.Name t.ModuleName e.BaseFolder =
+    <GetFEPath-T-Aux
+      ( <MQualifiedName::ToRelativeFSPath t.ModuleName> )
+      ( e.Ext ) e.BaseFolder
+    >;
+
+  [Config e.Options] s.Name t.ModuleName e.BaseFolder =
+    Fails;
+}
+
+GetFEPath-T-Aux {
+  (e.Relative) (e.Ext) Current = Success e.Relative '.' e.Ext;
+
+  (e.Relative) (e.Ext) e.BaseFolder =
+    Success e.BaseFolder '/' e.Relative '.' e.Ext;
+}  
+
+//------------------------------------------------------------------------------
+
+/**
+  <Load t.Config s.FEName t.hErrorList t.ModuleName e.PathToFile>
+    == t.hErrorList Success s.Result t.hIModule
+    == t.hErrorList Fails
+  s.Result ::= Success | Warnings | Errors
+*/
+$ENTRY Load {
+  [Config
+    e.Options-B (FrontEnd s.Name (FnParser t.FnParser) t.Ext) e.Options-E
+  ]
+  s.Name t.hErrorList t.ModuleName e.FilePath =
+    <MLambda::Apply
+      t.FnParser t.hErrorList t.ModuleName e.FilePath
+    >;
+
+  [Config e.Options]
+  s.Name t.hErrorList t.ModuleName e.FilePath =
+    Fails t.hErrorList;
+}
+
+//------------------------------------------------------------------------------
 
 /**
   <GetFrontEndList t.Config> == e.FrontEndNames
 */
+$ENTRY GetFrontEndList
+  [Config e.Options] =
+    <MLambda::Map & FE-Name e.Options>;
+
+FE-Name {
+  (FrontEnd s.Name e.Options) = s.Name;
+
+  t.OtherOption = ;
+}
+
+//------------------------------------------------------------------------------
 
 /**
   <GetFrontEndExt t.Config s.FrontEnd> == e.Ext
 */
+$ENTRY GetFrontEndExt {
+  [Config
+    e.Options-B (FrontEnd s.Name t.FnParser (Ext e.Ext)) e.Options-E
+  ]
+  s.Name =
+    e.Ext;
 
-
+  // отсутствие не проверяем
+}
 
 $END MConfig.

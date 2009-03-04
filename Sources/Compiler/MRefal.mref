@@ -59,6 +59,7 @@ CompileList {
           & MBackEnd_Refal5_init.Register
           & MSymModule.Register
           & MXLinx.Register
+          & MFrontEnd_MRefal.Register
         >
         <MConfig::Create <PrepareMP e.ModulePath>>
       >

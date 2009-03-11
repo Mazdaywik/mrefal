@@ -6,6 +6,7 @@ $IMPORT MCompiler;
 $IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MError;
+$IMPORT MLoadConfig;
 $IMPORT InOut;
 $IMPORT MLambda;
 $IMPORT MModules;
@@ -13,65 +14,32 @@ $IMPORT MOS;
 $IMPORT MQualifiedName;
 $IMPORT MVersion;
 
-// Эти модули должны быть инициализированы
-$IMPORT MBackEnd_Refal5_init;
-$IMPORT MFrontEnd_MRefal;
-$IMPORT MSymModule;
-$IMPORT MXLinx;
-
 $ENTRY Go =
   <MVersion::Show>
-  <CompileList <MContext::Create> <LoadModuleList> >;
-
-LoadModuleList
-  = <SwLoadModuleList <MOS::ArgList>>;
-
-SwLoadModuleList {
-  (e.ProgName) =
-    <MError::Fatal 'Command line error: use MRefal module1 module2 ...'>;
-
-  (e.ProgName) e.Modules = e.Modules;
-}
-
-PrepareMP
-  e.ModulePath =
-    <DeleteEmpty
-      <DoPrepareMP e.ModulePath>
-    >;
-
-DoPrepareMP {
-  e.Part ';' e.Tail = (e.Part) <DoPrepareMP e.Tail>;
-
-  e.Part = (e.Part);
-}
-
-DeleteEmpty {
-  e.Begin () e.End = e.Begin <DeleteEmpty e.End>;
-
-  e.NotEmpty = e.NotEmpty;
-}
+  <CompileList
+    <MContext::Create>
+    <MLoadConfig::Load
+      <MError::CreateErrList>
+      <MOS::ArgList>
+    >
+  >;
 
 CompileList {
-  t.hContext (e.Action) ('=MP:' e.ModulePath) e.Modules =
+  t.hContext t.hErrorList Success t.Config e.Modules =
     <CompileList-Aux
-      <MLambda::Apply
-        <MLambda::Composite
-          & MBackEnd_Refal5_init.Register
-          & MSymModule.Register
-          & MXLinx.Register
-          & MFrontEnd_MRefal.Register
-        >
-        <MConfig::Create <PrepareMP e.ModulePath>>
-      >
-      t.hContext (e.Action) e.Modules
+      t.Config t.hContext t.hErrorList e.Modules
     >;
+
+  t.hContext t.hErrorList Fails =
+    <MContext::Destroy t.hContext>
+    <MError::PrintErrors t.hErrorList>;
 }
 
 CompileList-Aux {
-  t.Config t.hContext (e.Action) e.Modules =
+  t.Config t.hContext t.hErrorList e.Modules =
     <CheckFoundResult
-      (e.Action)
       t.Config
+      t.hErrorList
       <MLambda::MapReduce
         <MLambda::Composite
           & MLambda.UnBracket-H
@@ -90,20 +58,21 @@ CompileList-Aux {
 }
 
 CheckFoundResult {
-  (e.Action) t.Config
+  t.Config t.hErrorList
   t.hContext e.Results-B ( (e.Module) NotFound ) e.Results-E =
     <MContext::Destroy t.hContext>
+    <MError::DestroyErrList t.hErrorList>
     <MLambda::Map
       & PrintNotFound
       e.Results-B ( (e.Module) NotFound ) e.Results-E
     >;
 
-  (e.Action) t.Config t.hContext e.ResultsFound =
+  t.Config t.hErrorList t.hContext e.ResultsFound =
     <MLambda::TerminateAccumulator
       & FinishMake
       <MLambda::Reduce
-        <MLambda::BindLeft & Make (e.Action) t.Config>
-        (t.hContext <MError::CreateErrList> Success)
+        <MLambda::BindLeft & Make t.Config>
+        (t.hContext t.hErrorList Success)
         e.ResultsFound
       >
     >;
@@ -124,12 +93,11 @@ PrintNotFound {
 }
 
 Make {
-  (e.Action) t.Config
+  t.Config
   (t.hContext t.hErrorList Success)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
     (
-      <MLambda::Apply
-        <SelectMaker e.Action>
+      <MCompiler::Make
         t.hContext
         t.hErrorList
         t.Config
@@ -137,18 +105,10 @@ Make {
       >
     );
 
-  (e.Action) (e.ModulePath)
+  t.Config
   (t.hContext t.hErrorList Fails)
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
     (t.hContext t.hErrorList Fails);
-}
-
-SelectMaker {
-  '+make+' = & MCompiler.Make;
-
-  '+linkonly+' = & MCompiler.LinkOnly;
-
-  '+build+' = & MCompiler.Build;
 }
 
 FinishMake {

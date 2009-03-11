@@ -22,40 +22,25 @@ $ENTRY Make
     <Make-SwResult
       t.Config t.RootModuleName
       <Compile
-        & MClusters.CheckNeedCompile-Make
+        //& MClusters.CheckNeedCompile-Make
+        <SelectMaker t.Config>
         () t.Config (t.hContext t.hErrorList) t.RootModuleName
       >
     >;
 
-/**
-  <LinkOnly t.hContext t.hErrorList t.Config t.RootModuleName>
-    == t.hContext t.hErrorList Success
-    == t.hContext t.hErrorList Fails
-*/
-$ENTRY LinkOnly
-  t.hContext t.hErrorList t.Config t.RootModuleName =
-    <Make-SwResult
-      t.Config t.RootModuleName
-      <Compile
-        & MClusters.CheckNeedCompile-LinkOnly
-        () t.Config (t.hContext t.hErrorList) t.RootModuleName
-      >
+SelectMaker
+  t.Config =
+    <SwSelectMaker
+      <MConfig::GetMakeMode t.Config>
     >;
 
-/**
-  <Build t.hContext t.hErrorList t.Config t.RootModuleName>
-    == t.hContext t.hErrorList Success
-    == t.hContext t.hErrorList Fails
-*/
-$ENTRY Build
-  t.hContext t.hErrorList t.Config t.RootModuleName =
-    <Make-SwResult
-      t.Config t.RootModuleName
-      <Compile
-        & MClusters.CheckNeedCompile-Build
-        () t.Config (t.hContext t.hErrorList) t.RootModuleName
-      >
-    >;
+SwSelectMaker {
+  Make = & MClusters.CheckNeedCompile-Make;
+
+  Build = & MClusters.CheckNeedCompile-Build;
+
+  LinkOnly = & MClusters.CheckNeedCompile-LinkOnly;
+}
 
 Make-SwResult {
   t.Config t.RootModuleName

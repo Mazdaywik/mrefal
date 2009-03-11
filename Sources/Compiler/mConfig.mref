@@ -16,6 +16,7 @@ $DATA Config;
   [Config t.Option*]
 
   t.Option := t.MP-Option | t.BackEndOption | t.FrontEndOption
+    | t.MakeModeOption
 
   t.MP-Option := (ModulePath (e.Folder)*)
 
@@ -54,6 +55,9 @@ $DATA Config;
   e.Ext -- Расширение файлов исходного текста
     Функция s.FnParser может предполагать, что файл с заданным именем
   существует.
+
+  t.MakeModeOptions ::= (Mode s.Mode)
+  s.Mode ::= Make | Build | LinkOnly
 */
 
 //------------------------------------------------------------------------------
@@ -75,6 +79,36 @@ $ENTRY Create
 $ENTRY GetModulePath
   [Config e.Opt-B (ModulePath e.ModulePath) e.Opt-E] =
     e.ModulePath;
+
+//==============================================================================
+
+/**
+  <SetMakeMode t.Config s.Mode>
+    == t.Config
+
+  s.Mode ::= Make | Build | LinkOnly
+*/
+$ENTRY SetMakeMode {
+  [Config e.Options] Make =
+    [Config e.Options (Mode Make)];
+
+  [Config e.Options] Build =
+    [Config e.Options (Mode Build)];
+
+  [Config e.Options] LinkOnly =
+    [Config e.Options (Mode LinkOnly)];
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetMakeMode t.Config> == s.Mode
+
+  s.Mode == Make | Build | LinkOnly
+*/
+$ENTRY GetMakeMode
+  [Config e.Optinons-B (Mode s.Mode) e.Options-E] =
+    s.Mode;
 
 //==============================================================================
 

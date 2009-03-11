@@ -1,0 +1,79 @@
+$MODULE MLoadConfig;
+
+$IMPORT MCmdLineParser;
+$IMPORT MConfig;
+$IMPORT MLambda;
+
+// Эти модули должны быть инициализированы
+$IMPORT MBackEnd_Refal5_init;
+$IMPORT MFrontEnd_MRefal;
+$IMPORT MSymModule;
+$IMPORT MXLinx;
+
+
+/**
+  <Load t.hErrorList (e.Argument)*>
+    == t.hErrorList Success t.Config (e.FileName)*
+    == t.hErrorList Fails
+*/
+$ENTRY Load
+  t.hErrorList e.Arguments =
+    <Load-Aux
+      <MCmdLineParser::Parse t.hErrorList e.Arguments>
+    >;
+
+Load-Aux {
+  t.hErrorList Success t.CmdLineInfo e.Files =
+    t.hErrorList Success
+    <InitConfig-ModulePath t.CmdLineInfo>;
+
+  t.hErrorList Fails = t.hErrorList Fails;
+}
+
+InitConfig-ModulePath
+  (CmdLineInfo
+    e.Options-B (ModulePath e.ModulePath) e.Options-E
+  ) =
+    <InitConfig-MakeMode
+      <MLambda::Apply
+        <MLambda::Composite
+          // SymModule
+          & MSymModule.Register
+          // Front-end'ы
+          & MFrontEnd_MRefal.Register
+        >
+        <MConfig::Create e.ModulePath>
+      >
+      e.Options-B e.Options-E
+    >;
+
+InitConfig-MakeMode
+  t.Config e.Options-B (Mode s.MakeMode) e.Options-E =
+    <InitConfig-BackEnd
+      <MConfig::SetMakeMode t.Config s.MakeMode>
+      e.Options-B e.Options-E
+    >;
+
+InitConfig-BackEnd {
+  t.Config e.Options-B (BackEnd Refal5) e.Options-E =
+    <InitConfig-XLinx
+      <MBackEnd_Refal5_init::Register t.Config>
+      e.Options-B e.Options-E
+    >;
+}
+
+InitConfig-XLinx {
+  t.Config e.Options-B (CreateXLinx True) e.Options-E =
+    <InitConfig-Files
+      <MXLinx::Register t.Config>
+      e.Options-B e.Options-E
+    >;
+
+  t.Config e.Options-B (CreateXLinx False) e.Options-E =
+    <InitConfig-Files t.Config e.Options-B e.Options-E>;
+}
+
+InitConfig-Files
+  t.Config (Files e.Files) = t.Config e.Files;
+
+$END MLoadConfig.

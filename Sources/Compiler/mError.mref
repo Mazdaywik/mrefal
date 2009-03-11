@@ -11,16 +11,6 @@ $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 $IMPORT MSymStream;
 
-/**
-  <Fatal e.Message>
-    == fail down (errcode 1)
-*/
-$ENTRY Fatal
-  e.Message =
-    <MOutModuleStatus::Flush>
-    <InOut::WriteLine 'FATAL ERROR: ' e.Message>
-    <MOS::Exit 1>;
-
 //------------------------------------------------------------------------------
 
 /**
@@ -84,6 +74,8 @@ SwContentLevel {
   t.ErrorList NotEmpty = t.ErrorList Errors;
 }
 
+//------------------------------------------------------------------------------
+
 AddToList {
   [ErrorList e.Errors-B t.Error e.Errors-E]
   t.Error =
@@ -102,6 +94,16 @@ AddToList {
 $ENTRY MergeLists
   t.List1 [ErrorList e.Errors2] =
     <MLambda::Reduce & AddToList t.List1 e.Errors2>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddCmdLineError t.hErrorList e.Message>
+    == t.hErrorList
+*/
+$ENTRY AddCmdLineError
+  t.hErrorList e.Message =
+    <AddToList t.hErrorList (CmdLineError e.Message)>;
 
 //------------------------------------------------------------------------------
 
@@ -370,6 +372,9 @@ PrintError {
 
   Semantics t.SrcPos e.Message =
     <OutError t.SrcPos ('SEMANTICS') e.Message>;
+
+  CmdLineError e.Message =
+    ( 'CMDLINE ERROR: ' e.Message );
 }
 
 OutError {

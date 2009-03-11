@@ -1,0 +1,243 @@
+$MODULE MCmdLineParser;
+
+$IMPORT MError;
+
+/**
+  t.CmdLineInfo ::=
+    (CmdLineInfo
+      (ModulePath (e.Path)*)
+      (Mode Make | Build | LinkOnly)
+      (BackEnd s.BackEnd)
+      (CreateXLinx True | False)
+      (Files (e.FileName)*)
+    )
+
+  s.BackEnd ::= Refal5
+*/
+
+
+/**
+  <Parse t.hErrorList (e.Argument)*>
+    == t.hErrorList Success t.CmdLineInfo
+    == t.hErrorList Fails
+*/
+$ENTRY Parse {
+  t.hErrorList (e.ProgName) e.OtherOptions =
+    <Scan
+      Success t.hErrorList
+      (CmdLineInfo (CreateXLinx False))
+      e.OtherOptions
+    >;
+}
+
+Scan {
+  s.Result t.hErrorList t.CmdLineInfo ('+MP:' e.ModulePath) e.Tail =
+    <Scan
+      <AddModulePath s.Result t.hErrorList t.CmdLineInfo e.ModulePath>
+      e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo ('+make') e.Tail =
+    <Scan
+      <AddMakeMode s.Result t.hErrorList t.CmdLineInfo Make> e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo ('+build') e.Tail =
+    <Scan
+      <AddMakeMode s.Result t.hErrorList t.CmdLineInfo Build> e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo ('+linkonly') e.Tail =
+    <Scan
+      <AddMakeMode s.Result t.hErrorList t.CmdLineInfo LinkOnly> e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo ('+be:' e.BackEnd) e.Tail =
+    <Scan
+      <AddBackEnd s.Result t.hErrorList t.CmdLineInfo e.BackEnd> e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo ('+xlinx') e.Tail =
+    <Scan
+      <AddXLinx s.Result t.hErrorList t.CmdLineInfo> e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo (e.FileName) e.Tail =
+    <Scan
+      <AddFile s.Result t.hErrorList t.CmdLineInfo e.FileName> e.Tail
+    >;
+
+  s.Result t.hErrorList t.CmdLineInfo ('+' e.UnknownOption) e.Tail =
+    <Scan
+      Fails
+      <MError::AddCmdLineError
+        t.hErrorList 'Unknown option \'+' e.UnknownOption '\''
+      >
+      t.CmdLineInfo e.Tail
+    >;
+
+  Success t.hErrorList t.CmdLineInfo =
+    <CheckImportantOptions
+      t.hErrorList t.CmdLineInfo
+    >;
+
+  Fails t.hErrorList t.CmdLineInfo = t.hErrorList Fails;
+}
+
+AddModulePath {
+  s.Result t.hErrorList
+  (CmdLineInfo e.Options-B (ModulePath e.Paths) e.Options-E)
+  e.ModulePath =
+    s.Result t.hErrorList
+    (CmdLineInfo
+      e.Options-B
+      (ModulePath e.Paths (e.ModulePath))
+      e.Options-E
+    );
+
+  s.Result t.hErrorList (CmdLineInfo e.Options) e.ModulePath =
+    s.Result t.hErrorList
+    (CmdLineInfo e.Options (ModulePath (e.ModulePath)));
+}
+
+AddMakeMode {
+  s.Result t.hErrorList
+  (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E) s.NewMode =
+    Fails
+    <MError::AddCmdLineError
+      t.hErrorList 'Multiple declarations of make mode'
+    >
+    (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E);
+
+  s.Result t.hErrorList (CmdLineInfo e.Options) s.Mode =
+    s.Result t.hErrorList
+    (CmdLineInfo e.Options (Mode s.Mode));
+}
+
+AddBackEnd {
+  s.Result t.hErrorList
+  (CmdLineInfo e.Options-B (BackEnd s.OtherBackEnd) e.Options-E)
+  e.BackEnd =
+    Fails
+    <MError::AddCmdLineError
+      t.hErrorList 'Redefinition of back-end'
+    >
+    (CmdLineInfo e.Options-B (BackEnd s.OtherBackEnd) e.Options-E);
+
+  s.Result t.hErrorList (CmdLineInfo e.Options) 'R5' =
+    s.Result t.hErrorList
+    (CmdLineInfo e.Options (BackEnd Refal5));
+
+  s.Result t.hErrorList (CmdLineInfo e.Options) 'Refal5' =
+    s.Result t.hErrorList
+    (CmdLineInfo e.Options (BackEnd Refal5));
+
+  s.Result t.hErrorList (CmdLineInfo e.Options) e.OtherBackEnd =
+    Fails
+    <MError::AddCmdLineError
+      t.hErrorList
+      'Selected unknown back-end: ' e.OtherBackEnd
+    >
+    (CmdLine e.Options);
+}
+
+AddXLinx {
+  s.Result t.hErrorList
+  (CmdLineInfo e.Options-B (CreateXLinx False) e.Options-E) =
+    s.Result t.hErrorList
+    (CmdLineInfo e.Options-B (CreateXLinx True) e.Options-E);
+
+  s.Result t.hErrorList
+  (CmdLineInfo e.Options-B (CreateXLinx True) e.Options-E) =
+    False
+    <MError::AddCmdLineError
+      t.hErrorList 'Multiple using of \'+xlinx\''
+    >
+    (CmdLineInfo e.Options-B (CreateXLinx True) e.Options-E);
+}
+
+AddFile {
+  s.Result t.hErrorList
+  (CmdLineInfo e.Options-B (Files e.FileNames) e.Options-E)
+  e.FileName =
+    s.Result t.hErrorList
+    (CmdLineInfo
+      e.Options-B (Files e.FileNames (e.FileName)) e.Options-E
+    );
+
+  s.Result t.hErrorList (CmdLineInfo e.Options) e.FileName =
+    s.Result t.hErrorList
+    (CmdLineInfo e.Options (Files (e.FileName)));
+}
+
+CheckImportantOptions
+  t.hErrorList t.CmdLineInfo =
+    <CheckImportant-ModulePath
+      <CheckImportant-BackEnd
+        <CheckImportant-Mode
+          t.hErrorList t.CmdLineInfo
+        >
+      >
+    >;
+
+CheckImportant-Mode {
+  t.hErrorList
+  (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E) =
+    t.hErrorList Success
+    (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E);
+
+  t.hErrorList (CmdLineInfo e.Options) =
+    <MError::AddCmdLineError
+      t.hErrorList 'Option \'+mode\' not found'
+    >
+    Fails
+    (CmdLineInfo e.Options (Mode Make));
+}
+
+CheckImportant-BackEnd {
+  t.hErrorList s.Result
+  (CmdLineInfo e.Options-B (BackEnd s.BackEnd) e.Options-E) =
+    t.hErrorList s.Result
+    (CmdLineInfo e.Options-B (BackEnd s.BackEnd) e.Options-E);
+
+  t.hErrorList s.Result (CmdLineInfo e.Options) =
+    <MError::AddCmdLineError
+      t.hErrorList 'Option \'+be:back-end\' not found'
+    >
+    Fails
+    (CmdLineInfo e.Options (BackEnd Refal5));
+}
+
+CheckImportant-ModulePath {
+  t.hErrorList Success
+  (CmdLineInfo e.Options-B (ModulePath e.ModulePath) e.Options-E) =
+    t.hErrorList Success
+    (CmdLineInfo e.Options-B (ModulePath e.ModulePath) e.Options-E);
+
+  t.hErrorList Success (CmdLineInfo e.Options) =
+    t.hErrorList Success
+    (CmdLineInfo e.Options (ModulePath ('.')));
+
+  t.hErrorList Fails t.CmdLineInfo =
+    t.hErrorList Fails;
+}
+
+PrepareMP
+  e.ModulePath =
+    <DeleteEmpty
+      <DoPrepareMP e.ModulePath>
+    >;
+
+DoPrepareMP {
+  e.Part ';' e.Tail = (e.Part) <DoPrepareMP e.Tail>;
+
+  e.Part = (e.Part);
+}
+
+DeleteEmpty {
+  e.Begin () e.End = e.Begin <DeleteEmpty e.End>;
+
+  e.NotEmpty = e.NotEmpty;
+}
+
+$END MCmdLineParser.

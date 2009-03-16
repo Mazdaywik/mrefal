@@ -1,0 +1,31 @@
+$MODULE MSrcPos;
+
+$IMPORT MStrings;
+
+/**
+  <Create-FilePos s.LnNum e.FileName>
+    == t.SrcPos
+*/
+$ENTRY Create-FilePos
+  s.LnNum e.FileName =
+    (SrcPos 'F' s.LnNum e.FileName);
+
+/**
+  <Create-CmdLine s.ArgNo>
+    == t.SrcPos
+*/
+$ENTRY Create-CmdLine
+  s.ArgNo = (SrcPos 'C' s.ArgNo);
+
+/**
+  <ToString t.SrcPos> == s.Char*
+*/
+$ENTRY ToString {
+  (SrcPos 'F' s.LnNum e.FileName) =
+    '\'' e.FileName '\', ' <MStrings::Symb s.LnNum>;
+
+  (SrcPos 'C' s.ArgNo) =
+    'Command line, argument ' <MStrings::Symb s.ArgNo>;
+}
+
+$END MSrcPos.

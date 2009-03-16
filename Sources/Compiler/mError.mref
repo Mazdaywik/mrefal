@@ -7,9 +7,9 @@ $IMPORT MOS;
 $IMPORT MLambda;
 $IMPORT MLexer;
 $IMPORT MOrder;
+$IMPORT MSrcPos;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
-$IMPORT MSymStream;
 
 //------------------------------------------------------------------------------
 
@@ -101,9 +101,19 @@ $ENTRY MergeLists
   <AddCmdLineError t.hErrorList e.Message>
     == t.hErrorList
 */
-$ENTRY AddCmdLineError
+$ENTRY AddCmdLineError_
   t.hErrorList e.Message =
-    <AddToList t.hErrorList (CmdLineError e.Message)>;
+    <AddToList t.hErrorList (CmdLineError_ e.Message)>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddCmdLineError t.hErrorList e.Message>
+    == t.hErrorList
+*/
+$ENTRY AddCmdLineError
+  t.hErrorList t.SrcPos e.Message =
+    <AddToList t.hErrorList (CmdLineError t.SrcPos e.Message)>;
 
 //------------------------------------------------------------------------------
 
@@ -373,13 +383,16 @@ PrintError {
   Semantics t.SrcPos e.Message =
     <OutError t.SrcPos ('SEMANTICS') e.Message>;
 
-  CmdLineError e.Message =
+  CmdLineError t.SrcPos e.Message =
+    <OutError t.SrcPos ('COMMAND LINE') e.Message>;
+
+  CmdLineError_ e.Message =
     ( 'CMDLINE ERROR: ' e.Message );
 }
 
 OutError {
   t.SrcPos (e.Kind) e.Message =
-    ( e.Kind ' ERROR ('<MSymStream::SrcPosToString t.SrcPos> '): ' e.Message );
+    ( e.Kind ' ERROR ('<MSrcPos::ToString t.SrcPos> '): ' e.Message );
 }
 
 $END MError.

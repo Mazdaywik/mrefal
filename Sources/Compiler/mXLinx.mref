@@ -6,8 +6,8 @@ $IMPORT MCreateDirIfNeed;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
+$IMPORT MSrcPos;
 $IMPORT MStrings;
-$IMPORT MSymStream;
 $IMPORT MQualifiedName;
 $IMPORT MXXIO;
 
@@ -264,7 +264,7 @@ PrintEntity
     (s.Sign
       (<StringFromScopeClass s.ScopeClass>)
       (<MQualifiedName::ToPrintable-Quad t.Name>)
-      (<MSymStream::SrcPosToString t.SrcPos>)
+      (<MSrcPos::ToString t.SrcPos>)
     );
 
 

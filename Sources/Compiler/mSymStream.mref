@@ -45,6 +45,7 @@ $MODULE MSymStream;
 $IMPORT FileIO;
 $IMPORT Math;
 $IMPORT MSelfDiag;
+$IMPORT MSrcPos;
 $IMPORT MStrings;
 
 $DATA SymStream;
@@ -91,12 +92,7 @@ $ENTRY Destroy
 $ENTRY GetSrcPos
   [SymStream s.LineNumber t.FInput (e.FileName) e.Buffered] =
     [SymStream s.LineNumber t.FInput (e.FileName) e.Buffered]
-    (SrcPos e.FileName s.LineNumber);
-
-$ENTRY SrcPosToString
-  (SrcPos e.FileName s.LineNumber) =
-    '\'' e.FileName '\', '
-    <MStrings::Symb s.LineNumber>;
+    <MSrcPos::Create-FilePos s.LineNumber e.FileName>;
 
 $ENTRY ReturnChar {
   [SymStream s.LineNumber t.FInput (e.FileName) EOF] EOF =

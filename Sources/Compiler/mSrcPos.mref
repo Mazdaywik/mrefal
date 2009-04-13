@@ -8,7 +8,7 @@ $IMPORT MStrings;
 */
 $ENTRY Create-FilePos
   s.LnNum e.FileName =
-    (SrcPos 'F' s.LnNum e.FileName);
+    (SrcPos 'F' e.FileName s.LnNum);
 
 /**
   <Create-CmdLine s.ArgNo>
@@ -18,11 +18,19 @@ $ENTRY Create-CmdLine
   s.ArgNo = (SrcPos 'C' s.ArgNo);
 
 /**
+  <Create-CmdLine-Common> == t.SrcPos
+*/
+$ENTRY Create-CmdLine-Common
+  = (SrcPos 'CC');
+
+/**
   <ToString t.SrcPos> == s.Char*
 */
 $ENTRY ToString {
-  (SrcPos 'F' s.LnNum e.FileName) =
+  (SrcPos 'F' e.FileName s.LnNum) =
     '\'' e.FileName '\', ' <MStrings::Symb s.LnNum>;
+
+  (SrcPos 'CC') = 'Command line';
 
   (SrcPos 'C' s.ArgNo) =
     'Command line, argument ' <MStrings::Symb s.ArgNo>;

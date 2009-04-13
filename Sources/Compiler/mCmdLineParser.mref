@@ -58,7 +58,7 @@ RenumerateOption
 PreScan {
   t.FileStack (t.SrcPos '+' e.Option) e.Tail =
     <PreScan-Option
-      t.FileStack (<MStrings::Trim e.Option>) e.Tail
+      t.FileStack (t.SrcPos <MStrings::Trim e.Option>) e.Tail
     >;
 
   t.FileStack (t.SrcPos '-' e.Option) e.Tail =
@@ -105,9 +105,9 @@ PreScan-Option-Param {
 
     Это связано с тем, что когда мы попадём в циклическую связь
     (петля, например, начинается с файла file.cfg),
-    мы повторно прочитаем строчку загрузки в файле file.cfg и,
-    соответственно, увидим точно такое же имя файла -- циклическая
-    связь будет обнаружена.
+    мы повторно прочитаем строчку загрузки в файле file.cfg
+    и, соответственно, увидим точно такое же имя файла --
+    циклическая связь будет обнаружена.
   */
   (e.Stack-B (e.ConfigFile) e.Stack-E)
   t.SrcPos ('cfg') (e.ConfigFile) e.Tail =
@@ -124,8 +124,12 @@ PreScan-Option-Param {
       <MStrings::Skip 1
         <MLambda::MapReduce
           <MLambda::Composite
-            & MLambda.UnBracket
-            & MStrings.Trim
+            <MLambda::MakeHandled
+              <MLambda::Composite
+                & MLambda.UnBracket
+                & MStrings.Trim
+              >
+            >
             <MLambda::BindLeft
               & MakeConfigOption (e.ConfigFile)
             >
@@ -381,6 +385,16 @@ ParseAnalyze-Param {
       >
       Fails t.FnOptionsMap t.Collected e.Tail
     >;
+
+  t.hErrorList s.Result t.FnOptionsMap t.Collected
+  NotFound
+  (OptionParam t.SrcPos (e.Option) e.Value) e.Tail =
+    <ParseAnalyze
+      <MError::AddCmdLineError
+        t.hErrorList t.SrcPos 'Unknown ' e.Option
+      >
+      Fails t.FnOptionsMap t.Collected e.Tail
+    >;
 }
 
 ParseAnalyze-Param-Group {
@@ -446,8 +460,7 @@ ParseAnalyze-Param-Group-ErrorNaked {
         >
         t.G-SrcPos 'Can\'t create group for option ' e.Name
       >
-      Fails t.FnOptionsMap t.Collected
-      e.Tail
+      Fails t.FnOptionsMap t.Collected e.Tail
     >;
 }
 
@@ -456,28 +469,62 @@ ParseAnalyze-Naked {
   t.FnUpdateOption Param (Group t.SubFnOptionsMap)
   (OptionNaked t.SrcPos e.Option)
   (Group t.G-SrcPos e.Info) e.Tail =
-    & ???????;
+    <ParseAnalyze-Naked-Group-ErrorParam
+      <ParseAnalyze
+        t.hErrorList s.Result t.SubFnOptionsMap () e.Info
+      >
+      t.FnOptionsMap t.Collected
+      (OptionNaked t.SrcPos e.Option)
+      t.G-SrcPos e.Tail
+    >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
   t.FnUpdateOption Param (Group t.SubFnOptionsMap)
   (OptionNaked t.SrcPos e.Option) e.Tail =
-    & ????????????;
+    <ParseAnalyze
+      <MError::AddCmdLineError
+        <MError::AddCmdLineError
+          t.hErrorList t.SrcPos 'Option ' e.Option ' must have argument'
+        >
+        t.SrcPos 'After option ' e.Option ' expected group'
+      >
+      Fails t.FnOptionsMap t.Collected e.Tail
+    >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
   t.FnUpdateOption Param (Single)
   (OptionNaked t.SrcPos e.Option) e.Tail =
-    & ????????????;
+    <ParseAnalyze
+      <MError::AddCmdLineError
+        t.hErrorList t.SrcPos 'Option ' e.Option ' must have argument'
+      >
+      Fails t.FnOptionsMap t.Collected e.Tail
+    >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
   t.FnUpdateOption Naked (Group t.SubFnOptionsMap)
   (OptionNaked t.SrcPos e.Option)
   (Group t.G-SrcPos e.Info) e.Tail =
-    & ??????????????;
+    <ParseAnalyze-Naked-Group
+      <ParseAnalyze
+        t.hErrorList s.Result t.SubFnOptionsMap () e.Info
+      >
+      t.FnOptionsMap
+      t.Collected t.FnUpdateOption
+      (OptionNaked t.SrcPos e.Option)
+      t.G-SrcPos e.Tail
+    >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
   t.FnUpdateOption Naked (Group t.SubFnOptionsMap)
   (OptionNaked t.SrcPos e.Option) e.Tail =
-    & ????????????;
+    <ParseAnalyze
+      <MError::AddCmdLineError
+        t.hErrorList t.SrcPos 'After option ' e.Option ' expected group'
+      >
+      Fails t.FnOptionsMap t.Collected
+      e.Tail
+    >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
   t.FnUpdateOption Naked (Single)
@@ -486,87 +533,33 @@ ParseAnalyze-Naked {
       <ParseAnalyze-FnUpdateResult
         s.Result t.FnOptionsMap
         <MLambda::Apply
-          t.FnUpdateOption t.hErrorList t.SrcPos  t.Collected
+          t.FnUpdateOption t.hErrorList t.SrcPos t.Collected
         >
       >
       e.Tail
     >;
-}
-
-/*
-ParseAnalyze-Param {
-  t.hErrorList s.Result t.FnOptionsMap t.Collected
-  t.FnUpdateOption Param (Group t.SubFnOptionsMap)
-  (OptionParam t.SrcPos (e.Option) e.Value)
-  (Group t.G-SrcPos e.Info) e.Tail =
-    <ParseAnalyze-Param-Group
-      <ParseAnalyze
-        t.hErrorList s.Result t.SubFnOptionsMap () e.Info
-      >
-      t.FnOptionsMap
-      t.Collected t.FnUpdateOption
-      (OptionParam t.SrcPos (e.Option) e.Value)
-      t.G-SrcPos e.Tail
-    >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
-  t.FnUpdateOption Param (Group t.SubFnOptionsMap)
-  (OptionParam t.SrcPos (e.Option) e.Value) e.Tail =
+  NotFound
+  (OptionNaked t.SrcPos e.Option) e.Tail =
     <ParseAnalyze
       <MError::AddCmdLineError
-        t.hErrorList t.SrcPos 'After option ' e.Option ' expected group'
-      >
-      Fails t.FnOptionsMap t.Collected
-    >;
-
-  t.hErrorList s.Result t.FnOptionsMap t.Collected
-  t.FnUpdateOption Naked (Group t.SubFnOptionsMap)
-  (OptionParam t.SrcPos (e.Option) e.Value)
-  (Group t.G-SrcPos e.Info) e.Tail =
-    <ParseAnalyze-Param-Group-ErrorNaked
-      <ParseAnalyze
-        t.hErrorList s.Result t.SubFnOptionsMap () e.Info
-      >
-      t.FnOptionsMap t.Collected
-      (OptionParam t.SrcPos (e.Option) e.Value)
-      t.G-SrcPos e.Tail
-    >;
-
-  t.hErrorList s.Result t.FnOptionsMap t.Collected
-  t.FnUpdateOption Naked (Group t.SubFnOptionsMap)
-  (OptionParam t.SrcPos (e.Option) e.Value) e.Tail =
-    <ParseAnalyze
-      <MError::AddCmdLineError
-        <MError::AddCmdLineError
-          t.hErrorList t.SrcPos 'Option ' e.Option ' must haven\'t argument'
-        >
-        t.SrcPos 'After option ' e.Option ' expected group'
-      >
-      Fails t.FnOptionsMap t.Collected e.Tail
-    >;
-
-  t.hErrorList s.Result t.FnOptionsMap t.Collected
-  t.FnUpdateOption Naked (Single)
-  (OptionParam t.SrcPos (e.Option) e.Value) e.Tail =
-    <ParseAnalyze
-      <MError::AddCmdLineError
-        t.hErrorList t.SrcPos 'Option ' e.Option ' must haven\'t argument'
+        t.hErrorList t.SrcPos 'Unknown ' e.Option
       >
       Fails t.FnOptionsMap t.Collected e.Tail
     >;
 }
 
-ParseAnalyze-Param-Group {
+ParseAnalyze-Naked-Group {
   t.hErrorList Success t.SubInfo
   t.FnOptionsMap t.Collected t.FnUpdateOption
-  (OptionParam t.SrcPos (e.Name) e.Value)
-  t.G-SrcPos e.Tail =
+  (OptionNaked t.SrcPos e.Option) t.G-SrcPos e.Tail =
     <ParseAnalyze
       <ParseAnalyze-FnUpdateResult
         Success t.FnOptionsMap
         <MLambda::Apply
           t.FnUpdateOption
-          t.hErrorList t.SrcPos t.Collected e.Value t.SubInfo
+          t.hErrorList t.SrcPos t.Collected t.SubInfo
         >
       >
       e.Tail
@@ -574,248 +567,238 @@ ParseAnalyze-Param-Group {
 
   t.hErrorList Fails
   t.FnOptionsMap t.Collected t.FnUpdateOption
-  (OptionParam t.SrcPos (e.Name) e.Value)
-  t.G-SrcPos e.Tail =
+  (OptionNaked t.SrcPos e.Option) t.G-SrcPos e.Tail =
     <ParseAnalyze
       <MError::AddCmdLineError
-        t.hErrorList t.G-SrcPos 'Can\'t create group for option ' e.Name
+        t.hErrorList t.G-SrcPos 'Can\'t create group for option ' e.Option
       >
       Fails t.FnOptionsMap t.Collected
       e.Tail
     >;
 }
 
-ParseAnalyze-Param-Group-ErrorNaked {
+ParseAnalyze-Naked-Group-ErrorParam {
   t.hErrorList Success t.SubInfo
   t.FnOptionsMap t.Collected
-  (OptionParam t.SrcPos (e.Name) e.Value)
-  t.G-SrcPos e.Tail =
+  (OptionNaked t.SrcPos e.Option) t.G-SrcPos e.Tail =
     <ParseAnalyze
       <MError::AddCmdLineError
-        t.hErrorList t.SrcPos 'Option ' e.Name ' must haven\'t argument'
+        t.hErrorList t.SrcPos 'Option ' e.Option ' must have argument'
       >
       Fails t.FnOptionsMap t.Collected e.Tail
     >;
 
   t.hErrorList Fails
   t.FnOptionsMap t.Collected
-  (OptionParam t.SrcPos (e.Name) e.Value)
-  t.G-SrcPos e.Tail =
+  (OptionNaked t.SrcPos e.Option) t.G-SrcPos e.Tail =
     <ParseAnalyze
       <MError::AddCmdLineError
         <MError::AddCmdLineError
           t.hErrorList t.SrcPos
-          'Option ' e.Name ' must haven\'t argument'
+          'Option ' e.Option ' must have argument'
         >
-        t.G-SrcPos 'Can\'t create group for option ' e.Name
+        t.G-SrcPos 'Can\'t create group for option ' e.Option
       >
-      Fails t.FnOptionsMap t.Collected
-      e.Tail
+      Fails t.FnOptionsMap t.Collected e.Tail
     >;
 }
-*/
 
 //------------------------------------------------------------------------------
 
-LookupOption {
-  'MP' = Parameter & AddModulePath_;
+/**
+  t.FnOptionsMap ::= {
+    EnableFile = ( FileEnable t.FnAddFile ) | (FileDisable);
 
-  'make' = Single <MLambda::BindRight & AddMakeMode_ Make>;
-  'build' = Single <MLambda::BindRight & AddMakeMode_ Build>;
-  'linkonly' = Single <MLambda::BindRight & AddMakeMode_ LinkOnly>;
+    e.Option =
+      t.FnUpdateOption-Param-Group Param (Group t.SubFnOptionsMap) |
+      t.FnUpdateOption-Param-Single Param (Single) |
+      t.FnUpdateOption-Naked-Group Naked (Group t.SubFnOptionsMap) |
+      t.FnUptateOption-Naked-Single Naked (Signle) |
+      NotFound
 
-  'be' = Parameter & AddBackEnd_;
+    FinishCollected = t.FnFinishCollected;
+  }
 
-  'xlinx' = Single & AddXLinx_;
+  t.FnUpdateOption-Param-Group ::= {
+    t.hErrorList t.SrcPos t.Collected e.Value t.SubInfo =
+      t.hErrorList Success t.Collected |
+      t.hErrorList Fails t.Collected;
+  }
 
-  'file' = Parameter & AddFile_;
+  t.FnUpdateOption-Param-Singe ::= {
+    t.hErrorList t.SrcPos t.Collected e.Value =
+      t.hErrorList Success t.Collected |
+      t.hErrorList Fails t.Collected;
+  }
 
-  'cfg' = Parameter & LoadConfigFile_;
+  t.FnUpdateOption-Naked-Group ::= {
+    t.hErrorList t.SrcPos t.Collected t.SubInfo =
+      t.hErrorList Success t.Collected |
+      t.hErrorList Fails t.Collected;
+  }
+
+  t.FnUpdateOption-Naked-Singe ::= {
+    t.hErrorList t.SrcPos t.Collected
+      t.hErrorList Success t.Collected |
+      t.hErrorList Fails t.Collected;
+  }
+
+  t.FnAddFile ::= {
+    t.Collected e.FileName = t.Collected
+  }
+
+  t.Collected ::= (e.Collected)
+
+  t.FnFinishCollected ::= {
+    t.hErrorList e.Collection =
+      t.hErrorList Success t.CmdLineInfo |
+      t.hErrorList Fails 
+  }
+*/
+
+TopLevelOptions {
+  EnableFile = (FileEnable & AddFile);
+
+  FinishCollected = & FinishTopLevel;
+
+  'MP' = & AddModulePath Param (Single);
+
+  'make' = <MLambda::BindRight & AddMakeMode Make> Naked (Single);
+  'build' = <MLambda::BindRight & AddMakeMode Build> Naked (Single);
+  'linkonly' = <MLambda::BindRight & AddMakeMode LinkOnly> Naked (Single);
+
+  'be' = & AddBackEnd Param (Single);
+
+  'xlinx' = & AddXLinx Naked (Single);
+
+  e.Other = NotFound;
 }
 
-Scan-Exec-Valued {
-  Parameter t.Action s.Result t.hErrorList t.CmdLineInfo (e.Name) e.Value =
-    <MLambda::Apply t.Action s.Result t.hErrorList t.CmdLineInfo e.Value>;
+AddModulePath {
+  t.hErrorList t.SrcPos
+  (e.Options-B (ModulePath e.Paths) e.Options-E) e.Path =
+    t.hErrorList Success
+    (e.Options-B (ModulePath e.Paths (e.Path)) e.Options-E);
 
-  Single t.Action s.Result t.hErrorList t.CmdLineInfo (e.Name) e.Value =
-    Fails
-    <MError::AddCmdLineError_
-      t.hErrorList 'Option \'+' e.Name '\' don\'t expect parameter'
+  t.hErrorList t.SrcPos (e.Options) e.Path =
+    t.hErrorList Success (e.Options (ModulePath (e.Path)));
+}
+
+AddMakeMode {
+  t.hErrorList t.SrcPos
+  (e.Options-B (Mode s.Mode) e.Options-E) s.NewMode =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Multiple declarations of make mode'
     >
-    t.CmdLineInfo;
+    Fails (e.Options-B (Mode s.Mode) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) s.NewMode =
+    t.hErrorList Success (e.Options (Mode s.NewMode));
 }
 
-Scan-Exec {
-  Single t.Action s.Result t.hErrorList t.CmdLineInfo (e.Name) =
-    <MLambda::Apply t.Action s.Result t.hErrorList t.CmdLineInfo>;
-
-  Parameter t.Action s.Result t.hErrorList t.CmdLineInfo (e.Name) =
-    Fails
-    <MError::AddCmdLineError_
-      t.hErrorList 'Option \'+' e.Name '\' expect parameter'
+AddBackEnd {
+  t.hErrorList t.SrcPos
+  (e.Options-B (BackEnd s.BackEnd) e.Options-E) e.OtherBackEnd =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Redefinition of back-end'
     >
-    t.CmdLineInfo;
+    Fails (e.Options-B (BackEnd s.BackEnd) e.Options-E);
+
+  t.hErrorList t.SrcPos t.Collected e.BackEndName =
+    <SwAddBackEnd
+      t.hErrorList t.SrcPos t.Collected <SelectBackEnd e.BackEndName>
+    >;
 }
 
-AddModulePath_ {
-  s.Result t.hErrorList
-  (CmdLineInfo e.Options-B (ModulePath e.Paths) e.Options-E)
-  e.ModulePath =
-    s.Result t.hErrorList
-    (CmdLineInfo
-      e.Options-B
-      (ModulePath e.Paths (e.ModulePath))
-      e.Options-E
-    );
-
-  s.Result t.hErrorList (CmdLineInfo e.Options) e.ModulePath =
-    s.Result t.hErrorList
-    (CmdLineInfo e.Options (ModulePath (e.ModulePath)));
-}
-
-AddMakeMode_ {
-  s.Result t.hErrorList
-  (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E) s.NewMode =
-    Fails
-    <MError::AddCmdLineError_
-      t.hErrorList 'Multiple declarations of make mode'
+SwAddBackEnd {
+  t.hErrorList t.SrcPos (e.Collected) Other e.Other =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Unknown back-end selected: ' e.Other
     >
-    (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E);
+    Fails (e.Collected);
 
-  s.Result t.hErrorList (CmdLineInfo e.Options) s.Mode =
-    s.Result t.hErrorList
-    (CmdLineInfo e.Options (Mode s.Mode));
+  t.hErrorList t.SrcPos (e.Options) s.BackEnd =
+    t.hErrorList Success (e.Options (BackEnd s.BackEnd));
 }
 
-AddBackEnd_ {
-  s.Result t.hErrorList
-  (CmdLineInfo e.Options-B (BackEnd s.OtherBackEnd) e.Options-E)
-  e.BackEnd =
-    Fails
-    <MError::AddCmdLineError_
-      t.hErrorList 'Redefinition of back-end'
+SelectBackEnd {
+  'Refal5' = Refal5;
+  'R5' = Refal5;
+
+  e.Other = Other e.Other;
+}
+
+AddXLinx {
+  t.hErrorList t.SrcPos (e.Options-B (XLinx-On) e.Options-E) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Mutliple usings of \'-xlinx\''
     >
-    (CmdLineInfo e.Options-B (BackEnd s.OtherBackEnd) e.Options-E);
+    Fails (e.Options-B (XLinx-On) e.Options-E);
 
-  s.Result t.hErrorList (CmdLineInfo e.Options) 'R5' =
-    s.Result t.hErrorList
-    (CmdLineInfo e.Options (BackEnd Refal5));
+  t.hErrorList t.SrcPos (e.Options) =
+    t.hErrorList Success (e.Options (XLinx-On));
+}
 
-  s.Result t.hErrorList (CmdLineInfo e.Options) 'Refal5' =
-    s.Result t.hErrorList
-    (CmdLineInfo e.Options (BackEnd Refal5));
+AddFile {
+  (e.Options-B (Files e.FileNames) e.Options-E) e.NextFileName =
+    (e.Options-B (Files e.FileNames (e.NextFileName)) e.Options-E);
 
-  s.Result t.hErrorList (CmdLineInfo e.Options) e.OtherBackEnd =
-    Fails
-    <MError::AddCmdLineError_
+  (e.Options) e.NextFileName =
+     (e.Options (Files (e.NextFileName)));
+}
+
+FinishTopLevel {
+  t.hErrorList e.Options =
+    <FinishTopLevel-SwUndefined
       t.hErrorList
-      'Selected unknown back-end: ' e.OtherBackEnd
-    >
-    (CmdLine e.Options);
-}
-
-AddXLinx_ {
-  s.Result t.hErrorList
-  (CmdLineInfo e.Options-B (CreateXLinx False) e.Options-E) =
-    s.Result t.hErrorList
-    (CmdLineInfo e.Options-B (CreateXLinx True) e.Options-E);
-
-  s.Result t.hErrorList
-  (CmdLineInfo e.Options-B (CreateXLinx True) e.Options-E) =
-    False
-    <MError::AddCmdLineError_
-      t.hErrorList 'Multiple using of \'+xlinx\''
-    >
-    (CmdLineInfo e.Options-B (CreateXLinx True) e.Options-E);
-}
-
-AddFile_ {
-  s.Result t.hErrorList
-  (CmdLineInfo e.Options-B (Files e.FileNames) e.Options-E)
-  e.FileName =
-    s.Result t.hErrorList
-    (CmdLineInfo
-      e.Options-B (Files e.FileNames (e.FileName)) e.Options-E
-    );
-
-  s.Result t.hErrorList (CmdLineInfo e.Options) e.FileName =
-    s.Result t.hErrorList
-    (CmdLineInfo e.Options (Files (e.FileName)));
-}
-
-LoadConfigFile_ {
-  s.Result t.hErrorList t.CmdLineInfo e.ConfigFile =
-    s.Result t.hErrorList t.CmdLineInfo
-    <MLambda::Map
-      <MLambda::Composite
-        & MLambda.UnBracket
-        & MStrings.Trim
-        & FilterConfig
-      >
-      <FileIO::Load e.ConfigFile>
-    >;
-}
-
-FilterConfig {
-  // Комментарии игнорируем
-  '#' e.Option = ;
-
-  // Пустые строки игнорируем
-  /* пусто */ = /* нет опций */;
-
-  e.Option = (e.Option);
-}
-
-CheckImportantOptions
-  t.hErrorList t.CmdLineInfo =
-    <CheckImportant-ModulePath
-      <CheckImportant-BackEnd
-        <CheckImportant-Mode
-          t.hErrorList t.CmdLineInfo
-        >
+      <DeleteUndefineds
+        (ModulePath Mode BackEnd Files) e.Options
       >
     >;
-
-CheckImportant-Mode {
-  t.hErrorList
-  (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E) =
-    t.hErrorList Success
-    (CmdLineInfo e.Options-B (Mode s.Mode) e.Options-E);
-
-  t.hErrorList (CmdLineInfo e.Options) =
-    <MError::AddCmdLineError_
-      t.hErrorList 'Option \'+mode\' not found'
-    >
-    Fails
-    (CmdLineInfo e.Options (Mode Make));
 }
 
-CheckImportant-BackEnd {
-  t.hErrorList s.Result
-  (CmdLineInfo e.Options-B (BackEnd s.BackEnd) e.Options-E) =
-    t.hErrorList s.Result
-    (CmdLineInfo e.Options-B (BackEnd s.BackEnd) e.Options-E);
+DeleteUndefineds {
+  (e.Tags-B s.Tag e.Tags-E)
+  e.Options-B (s.Tag e.Info) e.Options-E =
+    <DeleteUndefineds
+      (e.Tags-B e.Tags-E)
+      e.Options-B (s.Tag e.Info) e.Options-E
+    >;
 
-  t.hErrorList s.Result (CmdLineInfo e.Options) =
-    <MError::AddCmdLineError_
-      t.hErrorList 'Option \'+be:back-end\' not found'
-    >
-    Fails
-    (CmdLineInfo e.Options (BackEnd Refal5));
+  (e.Tags) e.Options = (e.Tags) e.Options;
 }
 
-CheckImportant-ModulePath {
-  t.hErrorList Success
-  (CmdLineInfo e.Options-B (ModulePath e.ModulePath) e.Options-E) =
-    t.hErrorList Success
-    (CmdLineInfo e.Options-B (ModulePath e.ModulePath) e.Options-E);
+FinishTopLevel-SwUndefined {
+  t.hErrorList () e.Options =
+    t.hErrorList Success (CmdLineInfo e.Options);
 
-  t.hErrorList Success (CmdLineInfo e.Options) =
-    t.hErrorList Success
-    (CmdLineInfo e.Options (ModulePath ('.')));
+  t.hErrorList (e.Tags-B ModulePath e.Tags-E) e.Options =
+    <FinishTopLevel-SwUndefined
+      t.hErrorList (e.Tags-B e.Tags-E)
+      e.Options (ModulePath ('.'))
+    >;
 
-  t.hErrorList Fails t.CmdLineInfo =
-    t.hErrorList Fails;
+  t.hErrorList (e.Tags) e.Options =
+    <MLambda::Reduce
+      t.hErrorList & AddNotFoundOption e.Tags
+    >
+    Fails;
+}
+
+AddNotFoundOption
+  t.hErrorList s.Tag =
+    <MError::AddCmdLineError
+      t.hErrorList
+      <MSrcPos::Create-CmdLine-Common>
+      <StrFromTag s.Tag>
+    >;
+
+StrFromTag {
+  Mode = 'Not found one of options \'-make\', \'-build\' or \'-linkonly\'';
+
+  BackEnd = 'Option \'-be:back-end\' not found';
+
+  Files = 'Files for compiling not found';
 }
 
 $END MCmdLineParser.

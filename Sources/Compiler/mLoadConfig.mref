@@ -63,14 +63,13 @@ InitConfig-BackEnd {
 }
 
 InitConfig-XLinx {
-  t.Config e.Options-B (CreateXLinx True) e.Options-E =
+  t.Config e.Options-B (XLinx-On) e.Options-E =
     <InitConfig-Files
       <MXLinx::Register t.Config>
       e.Options-B e.Options-E
     >;
 
-  t.Config e.Options-B (CreateXLinx False) e.Options-E =
-    <InitConfig-Files t.Config e.Options-B e.Options-E>;
+  t.Config e.Options = <InitConfig-Files t.Config e.Options>;
 }
 
 InitConfig-Files

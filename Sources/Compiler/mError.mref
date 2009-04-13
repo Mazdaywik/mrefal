@@ -101,16 +101,6 @@ $ENTRY MergeLists
   <AddCmdLineError t.hErrorList e.Message>
     == t.hErrorList
 */
-$ENTRY AddCmdLineError_
-  t.hErrorList e.Message =
-    <AddToList t.hErrorList (CmdLineError_ e.Message)>;
-
-//------------------------------------------------------------------------------
-
-/**
-  <AddCmdLineError t.hErrorList e.Message>
-    == t.hErrorList
-*/
 $ENTRY AddCmdLineError
   t.hErrorList t.SrcPos e.Message =
     <AddToList t.hErrorList (CmdLineError t.SrcPos e.Message)>;
@@ -385,9 +375,6 @@ PrintError {
 
   CmdLineError t.SrcPos e.Message =
     <OutError t.SrcPos ('COMMAND LINE') e.Message>;
-
-  CmdLineError_ e.Message =
-    ( 'CMDLINE ERROR: ' e.Message );
 }
 
 OutError {

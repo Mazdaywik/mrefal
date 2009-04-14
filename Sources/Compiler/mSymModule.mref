@@ -379,13 +379,13 @@ SwGenerateImport-Aux {
 ------------------------------------------------------------------------------*/
 
 $ENTRY Register
-  t.Config =
+  t.Config (e.Directory) (e.Ext) =
     <MConfig::RegisterBackEnd
       t.Config
       SymInfo
       & Generate
       & Link
-      ('~Defs') ('rsym')
+      (e.Directory) (e.Ext)
     >;
 
 Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.

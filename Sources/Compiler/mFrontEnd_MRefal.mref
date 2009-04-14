@@ -4,12 +4,12 @@ $IMPORT MConfig;
 $IMPORT MParser_MRefal;
 
 $ENTRY Register
-  t.Config =
+  t.Config (e.Ext) =
     <MConfig::RegisterFrontEnd
       t.Config
       MRefal_FrontEnd
       & MParser_MRefal.SrcModule
-      ('mref')
+      (e.Ext)
     >;
 
 $END MFrontEnd_MRefal.

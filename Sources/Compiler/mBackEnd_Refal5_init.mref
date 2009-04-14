@@ -5,13 +5,13 @@ $IMPORT MBackEnd_Refal5;
 $IMPORT MLinker_Refal5;
 
 $ENTRY Register
-  t.Config =
+  t.Config (e.Directory) (e.Ext) =
     <MConfig::RegisterBackEnd
       t.Config
       Refal5BE
       & MBackEnd_Refal5.Generate-T
       & MLinker_Refal5.Link
-      ('~ROut') ('rout')
+      (e.Directory) (e.Ext)
     >;
 
 $END MBackEnd_Refal5_init.

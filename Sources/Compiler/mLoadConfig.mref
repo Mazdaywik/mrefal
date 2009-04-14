@@ -38,9 +38,9 @@ InitConfig-ModulePath
       <MLambda::Apply
         <MLambda::Composite
           // SymModule
-          & MSymModule.Register
+          <MLambda::BindRight & MSymModule.Register ('~Defs') ('rsym')>
           // Front-end'ы
-          & MFrontEnd_MRefal.Register
+          <MLambda::BindRight & MFrontEnd_MRefal.Register ('mref')>
         >
         <MConfig::Create e.ModulePath>
       >
@@ -57,7 +57,7 @@ InitConfig-MakeMode
 InitConfig-BackEnd {
   t.Config e.Options-B (BackEnd Refal5) e.Options-E =
     <InitConfig-XLinx
-      <MBackEnd_Refal5_init::Register t.Config>
+      <MBackEnd_Refal5_init::Register t.Config ('~ROut')('rout')>
       e.Options-B e.Options-E
     >;
 }

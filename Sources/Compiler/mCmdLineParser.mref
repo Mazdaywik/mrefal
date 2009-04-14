@@ -671,6 +671,8 @@ TopLevelOptions {
 
   'xlinx' = & AddXLinx Naked (Single);
 
+  'tune-be' = & TuneBackEnd Param (Group & BackEndGroup);
+
   e.Other = NotFound;
 }
 
@@ -799,6 +801,94 @@ StrFromTag {
   BackEnd = 'Option \'-be:back-end\' not found';
 
   Files = 'Files for compiling not found';
+}
+
+//------------------------------------------------------------------------------
+
+TuneBackEnd {
+  t.hErrorList t.SrcPos t.Collected e.BackEndName t.SubInfo =
+    <TuneBackEnd-SwBackEnd
+      t.hErrorList t.SrcPos t.Collected t.SubInfo
+      <SwSelectLowBackEnd e.BackEndName>
+    >;
+}
+
+SwSelectLowBackEnd {
+  'Refal5' = (Refal5BE ('~ROut') ('rout'));
+  'SymInfo' = (SymInfo ('~RSym') ('rsym'));
+  'XLinx' = (XLinxBE ('~XLinx') ('xlinx'));
+  e.Other = Unknown;
+}
+
+TuneBackEnd-SwBackEnd {
+  t.hErrorList t.SrcPos
+  (e.Options-B (TuneBE s.BackEnd (e.Dir) (e.Ext)) e.Options-E)
+  (e.SubInfo)
+  (s.BackEnd (e.DefDir) (e.DefExt)) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Options of this back-end alredy defined'
+    >
+    Fails
+    (e.Options-B (TuneBE s.BackEnd (e.Dir) (e.Ext)) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) (e.SubInfo)
+  (s.BackEnd (e.DefDir) (e.DefExt)) =
+    t.hErrorList Success
+    (e.Options
+      (TuneBE
+        s.BackEnd
+        (<MakeOpt Dir (e.DefDir) e.SubInfo>)
+        (<MakeOpt Ext (e.DefExt) e.SubInfo>)
+      )
+    );
+}
+
+MakeOpt {
+  s.Option (e.DefOption)
+  e.Options-B (s.Option e.Value) e.Options-E =
+    e.Value;
+
+  s.Option (e.DefOption) e.Options = e.DefOption;
+}
+
+BackEndGroup {
+  EnableFile = (FileDisable);
+
+  FinishCollected = & TuneBackEnd-Finish;
+
+  'ext' = & BackEnd-Ext Param (Single);
+
+  'dir' = & BackEnd-Dir Param (Single);
+
+  e.Other = NotFound;
+}
+
+BackEnd-Ext {
+  t.hErrorList t.SrcPos (e.Options-B (Ext e.Ext) e.Options-E) e.NewExt =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Redefinition of extension'
+    >
+    Fails (e.Options-B (Ext e.Ext) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) e.NewExt =
+    t.hErrorList Success
+    (e.Options (Ext <MStrings::Lower e.NewExt>));
+}
+
+BackEnd-Dir {
+  t.hErrorList t.SrcPos (e.Options-B (Dir e.Dir) e.Options-E) e.NewDir =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Redefinition of directory'
+    >
+    Fails (e.Options-B (Dir e.Dir) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) e.NewDir =
+    t.hErrorList Success (e.Options (Dir e.NewDir));
+}
+
+TuneBackEnd-Finish {
+  t.hErrorList e.Options =
+    t.hErrorList Success (e.Options);
 }
 
 $END MCmdLineParser.

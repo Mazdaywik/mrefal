@@ -12,13 +12,13 @@ $IMPORT MQualifiedName;
 $IMPORT MXXIO;
 
 $ENTRY Register
-  t.Config =
+  t.Config (e.Dir) (e.Ext) =
     <MConfig::RegisterBackEnd
       t.Config
       XLinxBE
       & Generate
       & Link
-      ('~XLinx') ('xlinx')
+      (e.Dir) (e.Ext)
     >;
 
 //------------------------------------------------------------------------------

@@ -2,7 +2,9 @@ $MODULE MLoadConfig;
 
 $IMPORT MCmdLineParser;
 $IMPORT MConfig;
+$IMPORT MError;
 $IMPORT MLambda;
+$IMPORT MSrcPos;
 
 // Эти модули должны быть инициализированы
 $IMPORT MBackEnd_Refal5_init;
@@ -23,53 +25,180 @@ $ENTRY Load
     >;
 
 Load-Aux {
-  t.hErrorList Success t.CmdLineInfo e.Files =
-    t.hErrorList Success
-    <InitConfig-ModulePath t.CmdLineInfo>;
+  t.hErrorList Success
+  (CmdLineInfo e.CmdLineInfo) =
+    <Load-Aux-Tuners
+      t.hErrorList Success
+      <SetDefaults-Tuners
+        (<DefTuners>) e.CmdLineInfo
+      >
+    >;
 
   t.hErrorList Fails = t.hErrorList Fails;
 }
 
+DefTuners =
+  (TuneBE Refal5BE ('~ROut') ('rout'))
+  (TuneBE SymInfo ('~Defs') ('rsym'))
+  (TuneBE XLinxBE ('~XLinx') ('xlinx'))
+  (TuneFE MRefal_FrontEnd ('mref'));
+
+SetDefaults-Tuners {
+  (e.Defs-B (s.TuneType s.Tuner e.DefSettins) e.Defs-E)
+  e.Options-B (s.TuneType s.Tuner e.Settings) e.Options-E =
+    <SetDefaults-Tuners
+      (e.Defs-B e.Defs-E)
+      e.Options-B (s.TuneType s.Tuner e.Settings) e.Options-E
+    >;
+
+  (e.Defs) e.Options = e.Options e.Defs;
+} 
+
+Load-Aux-Tuners {
+  t.hErrorList s.Result e.Options-B
+  (TuneBE s.Tuner1 (e.SameDir) (e.SameExt)) e.Options-M
+  (TuneBE s.Tuner2 (e.SameDir) (e.SameExt)) e.Options-E =
+    <Load-Aux-Tuners
+      <MError::AddCmdLineError
+        t.hErrorList <MSrcPos::Create-CmdLine-Common>
+        'Two back-ends ' <TunerName s.Tuner1> ' and ' <TunerName s.Tuner2>
+        ' has same output directory and same extension'
+      >
+      Fails
+      e.Options-B e.Options-M e.Options-E
+    >;
+
+  t.hErrorList s.Result e.Options-B (TuneFE s.Tuner1 (e.SameExt))
+  e.Options-M (TuneFE s.Tuner2 (e.SameExt)) e.Options-E =
+    <Load-Aux-Tuners
+      <MError::AddCmdLineError
+        t.hErrorList <MSrcPos::Create-CmdLine-Common>
+        'Two front-ends ' <TunerName s.Tuner1> ' and ' <TunerName s.Tuner2>
+        ' has same output directory and same extension'
+      >
+      Fails
+      e.Options-B e.Options-M e.Options-E
+    >;
+
+  t.hErrorList Success e.Options =
+    t.hErrorList Success
+    <InitConfig
+      <MLambda::MapReduce & EndMakers ( (/*front*/) /*back*/ ) e.Options>
+    >;
+
+  t.hErrorList Fails e.Options = t.hErrorList Fails;
+}
+
+TunerName {
+  Refal5BE = 'Refal5';
+  SymInfo = 'SymInfo';
+  XLinxBE = 'XLinx';
+  MRefal_FrontEnd = 'MRefal';
+}
+
+EndMakers {
+  ( (e.FrontEnds) e.BackEnds) (TuneFE s.FrontEnd (e.Ext)) =
+    (
+      (e.FrontEnds <MLambda::BindRight <EndMakerFunc s.FrontEnd> (e.Ext)>)
+      e.BackEnds
+    );
+
+  (t.FrontEnds e.BackEnds) (TuneBE s.BackEnd (e.Dir) (e.Ext)) =
+    (t.FrontEnds
+      e.BackEnds
+      (s.BackEnd
+        <MLambda::BindRight <EndMakerFunc s.BackEnd> (e.Dir) (e.Ext)>
+      )
+    );
+
+  (e.Ends) t.OtherOption = (e.Ends) t.OtherOption;
+}
+
+EndMakerFunc {
+  Refal5BE = & MBackEnd_Refal5_init.Register;
+  SymInfo = & MSymModule.Register;
+  XLinxBE = & MXLinx.Register;
+  MRefal_FrontEnd = & MFrontEnd_MRefal.Register;
+}
+
+InitConfig {
+  ((e.FrontEnds) e.BackEnds) e.Options =
+    <InitConfig-ModulePath
+      (<BE-Sets e.BackEnds>)
+      <MLambda::Composite e.FrontEnds>
+      e.Options
+    >;
+}
+
+BE-Sets-Table =
+  (Refal5 SymInfo Refal5BE)
+  (XLinx XLinxBE);
+
+BE-Sets
+  e.LowBackEnds =
+    <DoBE-Sets
+      (<BE-Sets-Table>) e.LowBackEnds
+    >;
+
+DoBE-Sets {
+  ((s.HiBackEnd e.LowBackEndNames) e.Sets)
+  e.LowBackEnds =
+    (s.HiBackEnd
+      <MLambda::Composite
+        <MLambda::Map
+          <MLambda::BindLeft
+            & FilterLowBackEndName e.LowBackEndNames
+          >
+          e.LowBackEnds
+        >
+      >
+    )
+    <DoBE-Sets (e.Sets) e.LowBackEnds>;
+
+  () e.LowBackEnds = ;
+}
+
+FilterLowBackEndName {
+  e.Names-B s.Name e.Names-E (s.Name t.Register) = t.Register;
+  e.Names (s.Name t.Register) = ;
+}
+
+
 InitConfig-ModulePath
-  (CmdLineInfo
-    e.Options-B (ModulePath e.ModulePath) e.Options-E
-  ) =
+  (e.BackEnds) t.FrontEnds
+  e.Options-B (ModulePath e.ModulePath) e.Options-E =
     <InitConfig-MakeMode
       <MLambda::Apply
-        <MLambda::Composite
-          // SymModule
-          <MLambda::BindRight & MSymModule.Register ('~Defs') ('rsym')>
-          // Front-end'ы
-          <MLambda::BindRight & MFrontEnd_MRefal.Register ('mref')>
-        >
-        <MConfig::Create e.ModulePath>
+        t.FrontEnds <MConfig::Create e.ModulePath>
       >
-      e.Options-B e.Options-E
+      (e.BackEnds) e.Options-B e.Options-E
     >;
 
 InitConfig-MakeMode
-  t.Config e.Options-B (Mode s.MakeMode) e.Options-E =
+  t.Config (e.BackEnds) e.Options-B (Mode s.MakeMode) e.Options-E =
     <InitConfig-BackEnd
       <MConfig::SetMakeMode t.Config s.MakeMode>
-      e.Options-B e.Options-E
+      (e.BackEnds) e.Options-B e.Options-E
     >;
 
 InitConfig-BackEnd {
-  t.Config e.Options-B (BackEnd Refal5) e.Options-E =
+  t.Config (e.BackEnds-B (s.BackEnd t.Initializer) e.BackEnds-E)
+  e.Options-B (BackEnd s.BackEnd) e.Options-E =
     <InitConfig-XLinx
-      <MBackEnd_Refal5_init::Register t.Config ('~ROut')('rout')>
-      e.Options-B e.Options-E
+      <MLambda::Apply t.Initializer t.Config>
+      (e.BackEnds-B e.BackEnds-E) e.Options-B e.Options-E
     >;
 }
 
 InitConfig-XLinx {
-  t.Config e.Options-B (XLinx-On) e.Options-E =
+  t.Config (e.BackEnds-B (XLinx t.Initializer) e.BackEnds-E)
+  e.Options-B (XLinx-On) e.Options-E =
     <InitConfig-Files
-      <MXLinx::Register t.Config>
+      <MLambda::Apply t.Initializer t.Config>
       e.Options-B e.Options-E
     >;
 
-  t.Config e.Options = <InitConfig-Files t.Config e.Options>;
+  t.Config (e.BackEnds) e.Options = <InitConfig-Files t.Config e.Options>;
 }
 
 InitConfig-Files

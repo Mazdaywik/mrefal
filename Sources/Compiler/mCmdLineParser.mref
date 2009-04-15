@@ -672,6 +672,7 @@ TopLevelOptions {
   'xlinx' = & AddXLinx Naked (Single);
 
   'tune-be' = & TuneBackEnd Param (Group & BackEndGroup);
+  'tune-fe' = & TuneFrontEnd Param (Group & FrontEndGroup);
 
   e.Other = NotFound;
 }
@@ -817,7 +818,7 @@ SwSelectLowBackEnd {
   'Refal5' = (Refal5BE ('~ROut') ('rout'));
   'SymInfo' = (SymInfo ('~RSym') ('rsym'));
   'XLinx' = (XLinxBE ('~XLinx') ('xlinx'));
-  e.Other = Unknown;
+  e.Other = Unknown (e.Other);
 }
 
 TuneBackEnd-SwBackEnd {
@@ -841,6 +842,12 @@ TuneBackEnd-SwBackEnd {
         (<MakeOpt Ext (e.DefExt) e.SubInfo>)
       )
     );
+
+  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) Other (e.BEName) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Unknown back-end ' e.BEName
+    >
+    Fails (e.Options);
 }
 
 MakeOpt {
@@ -887,6 +894,71 @@ BackEnd-Dir {
 }
 
 TuneBackEnd-Finish {
+  t.hErrorList e.Options =
+    t.hErrorList Success (e.Options);
+}
+
+//------------------------------------------------------------------------------
+
+TuneFrontEnd {
+  t.hErrorList t.SrcPos t.Collected e.BackEndName t.SubInfo =
+    <TuneFrontEnd-SwFrontEnd
+      t.hErrorList t.SrcPos t.Collected t.SubInfo
+      <SwSelectLowFrontEnd e.BackEndName>
+    >;
+}
+
+SwSelectLowFrontEnd {
+  'MRefal' = (MRefal_FrontEnd ('mref'));
+  e.Other = Unknown (e.Other);
+}
+
+TuneFrontEnd-SwFrontEnd {
+  t.hErrorList t.SrcPos
+  (e.Options-B (TuneFE s.FrontEnd (e.Ext)) e.Options-E)
+  (e.SubInfo)
+  (s.FrontEnd (e.DefExt)) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Options of this front-end alredy defined'
+    >
+    Fails (e.Options-B (TuneFE s.FrontEnd (e.Ext)) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) (s.FrontEnd (e.DefExt)) =
+    t.hErrorList Success
+    (e.Options
+      (TuneFE s.FrontEnd (<MakeOpt Ext (e.DefExt) e.SubInfo>) )
+    );
+
+  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) Other (e.FEName) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Unknown front-end ' e.FEName
+    >
+    Fails (e.Options);
+}
+
+FrontEndGroup {
+  EnableFile = (FileDisable);
+
+  FinishCollected = & TuneFrontEnd-Finish;
+
+  'ext' = & FrontEnd-Ext Param (Single);
+
+  e.Other = NotFound;
+}
+
+FrontEnd-Ext {
+  t.hErrorList t.SrcPos (e.Options-B (Ext e.Ext) e.Options-E) e.NewExt =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Redefinition of extension'
+    >
+    Fails (e.Options-B (Ext e.Ext) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) e.NewExt =
+    t.hErrorList Success
+    (e.Options (Ext <MStrings::Lower e.NewExt>));
+}
+
+TuneFrontEnd-Finish {
   t.hErrorList e.Options =
     t.hErrorList Success (e.Options);
 }

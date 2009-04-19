@@ -8,7 +8,7 @@ $IMPORT MResolveTable;
 
 /**
   <Resolve t.Module t.ErrorList t.ResolveTable>
-    == t.ResolvedModule s.ErrorStatus t.UpdatedErrorList
+    == t.ResolvedModule s.ErrorStatus t.ErrorList
   s.ErrorStatus ::= Success | Errors
 */
 $ENTRY Resolve

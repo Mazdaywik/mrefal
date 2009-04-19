@@ -35,6 +35,8 @@ SwFlushBuffer {
     >;
 }
 
+$ENTRY Final = <FlushBuffer>;
+
 $ENTRY Write
   e.Text = <G_Buffer <G_Buffer> e.Text>;
 

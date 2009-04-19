@@ -1,8 +1,8 @@
-$MODULE MParser_MRefal;
+$MODULE MRefal-FE::MParser_MRefal;
 
 $IMPORT MError;
-$IMPORT MLexer;
-$IMPORT MParser_Common;
+$IMPORT MLexer = MRefal-FE::MLexer;
+$IMPORT MParser_Common = MRefal-FE::MParser_Common;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
 $IMPORT MVarTable;
@@ -998,4 +998,4 @@ CheckCallableVariable {
 
 
 
-$END MParser_MRefal.
+$END MRefal-FE::MParser_MRefal.

@@ -12,7 +12,7 @@ $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
-$IMPORT MParser_Sym;
+$IMPORT MRefal-FE::MParser_Sym;
 $IMPORT MQualifiedName;
 
 /*------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ LoadInfo_New-SwGetName {
   t.ModuleName t.Context Success e.FilePath =
     t.Context
     <LoadInfo_New-SwParseFile
-      <MParser_Sym::SymModule
+      <MRefal-FE::MParser_Sym::SymModule
         <MError::CreateErrList>
         t.ModuleName e.FilePath
       >

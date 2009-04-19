@@ -1,4 +1,4 @@
-$MODULE MLexer;
+$MODULE MRefal-FE::MLexer;
 
 $IMPORT MOrder;
 $IMPORT MSymStream;
@@ -521,4 +521,4 @@ EscapeText {
   = ;
 }
 
-$END MLexer.
+$END MRefal-FE::MLexer.

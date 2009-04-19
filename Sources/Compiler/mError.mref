@@ -5,7 +5,7 @@ $IMPORT InOut;
 $IMPORT MFileSystem;
 $IMPORT MOS;
 $IMPORT MLambda;
-$IMPORT MLexer;
+$IMPORT MLexer = MRefal-FE::MLexer;
 $IMPORT MOrder;
 $IMPORT MSrcPos;
 $IMPORT MOutModuleStatus;
@@ -306,6 +306,20 @@ $ENTRY AddUnresolvedFunction {
         t.SrcPos
         'Unresolved calling <' <QualifiedNameToString t.EntityName> ' ... >'
       )
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddGoNotFound t.hErrorList t.SrcPos>
+    == t.hErrorList
+*/
+$ENTRY AddGoNotFound {
+  t.ErrorList t.SrcPos =
+    <AddToList
+      t.ErrorList
+      ( Semantics t.SrcPos 'Go function expected in main module' )
     >;
 }
 

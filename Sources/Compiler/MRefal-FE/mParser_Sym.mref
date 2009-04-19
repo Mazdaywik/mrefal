@@ -1,8 +1,8 @@
-$MODULE MParser_Sym;
+$MODULE MRefal-FE::MParser_Sym;
 
 $IMPORT MError;
-$IMPORT MLexer;
-$IMPORT MParser_Common;
+$IMPORT MLexer = MRefal-FE::MLexer;
+$IMPORT MParser_Common = MRefal-FE::MParser_Common;
 $IMPORT MQualifiedName;
 
 /**
@@ -117,4 +117,4 @@ NSymModuleBody {
     >;
 }
 
-$END MParser_Sym.
+$END MRefal-FE::MParser_Sym.

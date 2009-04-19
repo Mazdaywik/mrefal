@@ -36,7 +36,7 @@ CheckCreated {
   <InfoDir> == 'Info'
 */
 $ENTRY InfoDir =
-  <Create 'Info'>;
+  <Create '.Info'>;
 
 //------------------------------------------------------------------------------
 

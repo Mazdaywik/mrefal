@@ -8,8 +8,16 @@ $IMPORT MSymTable;
  Формат:
   [IModule
     (Name e.ParsedQName)
+    t.EntryPoint
     t.SymTable
   ]
+
+  t.EntryPoint ::=
+    (GoEntry t.Seq-Go)
+    (RegularEntry t.Seq-Init t.Seq-Final)
+  t.Seq-Go, t.Seq-Init, t.Seq-Final ::=
+    None
+    (Result e.ResultExpr)
 ------------------------------------------------------------------------------*/
 
 $DATA IModule;
@@ -28,10 +36,17 @@ $ENTRY Create
     <Create-Aux
       [IModule
         (Name <MQualifiedName::Parse t.QualifiedName>)
+        <InitEntryPoint e.Attribs>
         <MSymTable::Create>
       ]
       e.Attribs
     >;
+
+InitEntryPoint {
+  e.Attribs-B (ModuleType Main) e.Attribs-E = (GoEntry None);
+
+  e.Attribs-B (ModuleType Regular) e.Attribs-E = (RegularEntry None None);
+}
 
 Create-Aux
   t.IModule e.Attribs =
@@ -46,7 +61,7 @@ Create-Aux
   <Destroy t.IModule> == empty
 */
 $ENTRY Destroy
-  [IModule (Name e.Name) t.SymTable] =
+  [IModule (Name e.Name) t.EntryPoint t.SymTable] =
     <MSymTable::Destroy t.SymTable>;
 
 /**---------------------------------------------------------------------------*/
@@ -56,8 +71,8 @@ $ENTRY Destroy
     == t.IModule t.QualifiedName
 */
 $ENTRY GetModuleName
-  [IModule (Name e.ParsedName) t.SymTable] =
-    [IModule (Name e.ParsedName) t.SymTable]
+  [IModule (Name e.ParsedName) t.EntryPoint t.SymTable] =
+    [IModule (Name e.ParsedName) t.EntryPoint t.SymTable]
     <MQualifiedName::Create e.ParsedName>;
 
 //------------------------------------------------------------------------------
@@ -91,11 +106,84 @@ $ENTRY RelativeName
     >;
 
 SwRelativeName {
-  [IModule (Name e.ModName) t.hSymTable] e.ModName e.RelativeName =
-    [IModule (Name e.ModName) t.hSymTable]
+  [IModule (Name e.ModName) t.EntryPoint t.hSymTable]
+  e.ModName e.RelativeName =
+    [IModule (Name e.ModName) t.EntryPoint t.hSymTable]
     Success <MQualifiedName::Create e.RelativeName>;
 
   t.hIModule e.RelativeName = t.hIModule Fails;
+}
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  <GetEntryPoint t.hIModule>
+    == t.hIModule Go t.GoSeq
+    == t.hIModule Regular t.InitSeq t.FinalSeq
+
+  t.Seq ::= None | (Result e.ResultExpr)
+*/
+$ENTRY GetEntryPoint {
+  [IModule (Name e.ModName) (GoEntry t.GoSeq) t.SymTable] =
+    [IModule (Name e.ModName) (GoEntry t.GoSeq) t.SymTable]
+    Go t.GoSeq;
+
+  [IModule (Name e.ModName) (RegularEntry t.InitSeq t.FinalSeq) t.SymTable] =
+    [IModule (Name e.ModName) (RegularEntry t.InitSeq t.FinalSeq) t.SymTable]
+    Regular t.InitSeq t.FinalSeq;
+}
+
+/**
+  <SetGoEntryPoint t.hIModule e.ResultExpr>
+    == t.hIModule
+
+  Функция должна вызываться для головного модуля проекта.
+*/
+$ENTRY SetGoEntryPoint {
+  [IModule (Name e.ModName) (GoEntry t.OldGoSeq) t.SymTable] e.ResultExpr =
+    [IModule
+      (Name e.ModName)
+      (GoEntry (Result e.ResultExpr))
+      t.SymTable
+    ];
+
+  /* для обычного модуля программа рушится */
+}
+
+/**
+  <SetInitEntryPoint t.hIModule e.ResultExpr>
+    == t.hIModule
+
+  Функция должна вызываться для обычного (regular) модуля проекта.
+*/
+$ENTRY SetInitEntryPoint {
+  [IModule (Name e.ModName) (RegularEntry t.InitSeq t.FinalSeq) t.SymTable]
+  e.ResultExpr =
+    [IModule
+      (Name e.ModName)
+      (RegularEntry (Result e.ResultExpr) t.FinalSeq)
+      t.SymTable
+    ];
+
+  /* для головного модуля программа рушится */
+}
+
+/**
+  <SetFinalEntryPoint t.hIModule e.ResultExpr>
+    == t.hIModule
+
+  Функция должна вызываться для обычного (regular) модуля проекта.
+*/
+$ENTRY SetFinalEntryPoint {
+  [IModule (Name e.ModName) (RegularEntry t.InitSeq t.FinalSeq) t.SymTable]
+  e.ResultExpr =
+    [IModule
+      (Name e.ModName)
+      (RegularEntry t.InitSeq (Result e.ResultExpr))
+      t.SymTable
+    ];
+
+  /* для головного модуля программа рушится */
 }
 
 /**---------------------------------------------------------------------------*/
@@ -108,10 +196,10 @@ SwRelativeName {
     Success | InvalidAttrib | InvariantError
 */
 $ENTRY UpdateModule
-  [IModule (Name e.ParsedName) t.SymTable] e.Attribs =
+  [IModule (Name e.ParsedName) t.EntryPoint t.SymTable] e.Attribs =
     <CheckUpdateModule
       <UpdateEntity
-        [IModule (Name e.ParsedName) t.SymTable]
+        [IModule (Name e.ParsedName) t.EntryPoint t.SymTable]
         ModuleName (e.ParsedName) e.Attribs
       >
     >;
@@ -159,13 +247,13 @@ $ENTRY UpdateImport-X
     >;
 
 UpdateImport-X-Aux
-  [IModule (Name e.ModName) t.SymTable]
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable]
   (Position t.Position)
   (RealName t.RealName e.RealNameSegments)
   (AliasName e.AliasNameSegments) =
     <UpdateImport-X-Aux-UpdateRealName
       <UpdateEntity
-        [IModule (Name e.ModName) t.SymTable] ImportAlias
+        [IModule (Name e.ModName) t.EntryPoint t.SymTable] ImportAlias
         (e.ModName e.AliasNameSegments)
         (Position t.Position)
         (RealName t.RealName)
@@ -214,10 +302,10 @@ $ENTRY UpdateADT
   >
 */
 UpdateEntity-Relative
-  [IModule (Name e.ModName) t.SymTable]
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable]
   s.Kind (e.Name) e.Attribs =
     <UpdateEntity
-      [IModule (Name e.ModName) t.SymTable]
+      [IModule (Name e.ModName) t.EntryPoint t.SymTable]
       s.Kind (e.ModName e.Name) e.Attribs
     >;
 
@@ -231,10 +319,10 @@ UpdateEntity-Relative
     Success | InvalidKind | InvalidAttrib | InvariantError
 */
 UpdateEntity
-  [IModule (Name e.ModName) t.SymTable]
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable]
   s.Kind (e.Name) e.Attribs =
     <SwUpdateEntity
-      [IModule (Name e.ModName)] (e.Name)
+      [IModule (Name e.ModName) t.EntryPoint] (e.Name)
       (<MSymTable::GetAttrib t.SymTable e.Name Kind>)
       s.Kind
       (<ValidAttribs s.Kind>)
@@ -252,38 +340,39 @@ ValidAttribs {
 //ENDCUT
 
 SwUpdateEntity {
-  [IModule (Name e.ModName)] (e.Name)
+  [IModule (Name e.ModName) t.EntryPoint] (e.Name)
   (t.SymTable Found s.Kind) s.Kind
   (e.ValidAttribs) e.Attribs =
     <UpdateEntity-Aux
-      [IModule (Name e.ModName) t.SymTable] (e.Name) s.Kind
+      [IModule (Name e.ModName) t.EntryPoint t.SymTable] (e.Name) s.Kind
       <CheckAttribs (e.ValidAttribs) e.Attribs>
     >;
 
-  [IModule (Name e.ModName)] (e.Name)
+  [IModule (Name e.ModName) t.EntryPoint] (e.Name)
   (t.SymTable Found s.Kind1) s.Kind2
   (e.ValidAttribs) e.Attribs =
-    [IModule (Name e.ModName) t.SymTable] InvalidKind;
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable] InvalidKind;
 
-  [IModule (Name e.ModName)] (e.Name)
+  [IModule (Name e.ModName) t.EntryPoint] (e.Name)
   (t.SymTable NoName) s.Kind
   (e.ValidAttribs) e.Attribs =
     <UpdateEntity-Aux
-      [IModule (Name e.ModName) t.SymTable] (e.Name) s.Kind
+      [IModule (Name e.ModName) t.EntryPoint t.SymTable] (e.Name) s.Kind
       <CheckAttribs (e.ValidAttribs) e.Attribs>
     >;
 
-  [IModule (Name e.ModName)] (e.Name)
+  [IModule (Name e.ModName) t.EntryPoint] (e.Name)
   (t.SymTable NoAttrib) s.Kind
   (e.ValidAttribs) e.Attribs =
-    [IModule (Name e.ModName) t.SymTable] InvariantError;
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable] InvariantError;
 }
 
 UpdateEntity-Aux {
-  [IModule (Name e.ModName) t.SymTable] (e.Name) s.Kind
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable] (e.Name) s.Kind
   ValidAttribs e.Attribs =
     [IModule
       (Name e.ModName)
+      t.EntryPoint
       <MSymTable::UpdateAttribSet
         t.SymTable (e.Name)
         (Kind s.Kind)
@@ -291,9 +380,9 @@ UpdateEntity-Aux {
       >
     ] Success;
 
-  [IModule (Name e.ModName) t.SymTable] (e.Name) s.Kind
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable] (e.Name) s.Kind
   InvalidAttribs =
-    [IModule (Name e.ModName) t.SymTable] InvalidAttrib;
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable] InvalidAttrib;
 }
 
 CheckAttribs
@@ -333,10 +422,10 @@ DoCheckValid {
   s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvariantError
 */
 $ENTRY GetModuleAttribute
-  [IModule (Name e.Name) t.SymTable] s.Attrib=
+  [IModule (Name e.Name) t.EntryPoint t.SymTable] s.Attrib=
     <CheckGetAttribModule
       <GetEntityAttribute
-        [IModule (Name e.Name) t.SymTable]
+        [IModule (Name e.Name) t.EntryPoint t.SymTable]
         ModuleName s.Attrib e.Name
       >
     >;
@@ -402,10 +491,10 @@ $ENTRY GetADTAttribute
 //------------------------------------------------------------------------------
 
 GetEntityAttribute-Relative
-  [IModule (Name e.ModName) t.SymTable]
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable]
   s.Kind s.Attrib e.Name =
     <GetEntityAttribute
-      [IModule (Name e.ModName) t.SymTable]
+      [IModule (Name e.ModName) t.EntryPoint t.SymTable]
       s.Kind s.Attrib e.ModName e.Name
     >;
 
@@ -419,51 +508,51 @@ GetEntityAttribute-Relative
   s.ErrorStatus ::= NoName | NoAttrib | InvalidAttrib | InvalidKind
 */
 GetEntityAttribute
-  [IModule (Name e.ModName) t.SymTable]
+  [IModule (Name e.ModName) t.EntryPoint t.SymTable]
   s.Kind s.Attrib e.Name =
     <SwGetEntityAttribute
-      (Name e.ModName) (e.Name) s.Kind s.Attrib
+      (Name e.ModName) t.EntryPoint (e.Name) s.Kind s.Attrib
       (<ValidAttribs s.Kind>)
       <MSymTable::GetAttrib t.SymTable e.Name Kind>
     >;
 
 SwGetEntityAttribute {
-  (Name e.ModName) (e.Name) s.Kind
+  (Name e.ModName) t.EntryPoint (e.Name) s.Kind
   s.Attrib (e.Attribs-B s.Attrib e.Attribs-E)
   t.SymTable Found s.Kind =
     <GetEntityAttrib-Aux
-      (Name e.ModName) (e.Name)
+      (Name e.ModName) t.EntryPoint (e.Name)
       <MSymTable::GetAttrib t.SymTable e.Name s.Attrib>
     >;
 
-  (Name e.ModName) (e.Name) s.Kind
+  (Name e.ModName) t.EntryPoint (e.Name) s.Kind
   s.Attrib (e.Attribs)
   t.SymTable Found s.Kind =
-    [IModule (Name e.ModName) t.SymTable]
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable]
     InvalidAttrib;
 
-  (Name e.ModName) (e.Name) s.Kind1
+  (Name e.ModName) t.EntryPoint (e.Name) s.Kind1
   s.Attrib (e.Attribs)
   t.SymTable Found s.Kind2 =
-    [IModule (Name e.ModName) t.SymTable]
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable]
     InvalidKind;
 
-  (Name e.ModName) (e.Name) s.Kind1
+  (Name e.ModName) t.EntryPoint (e.Name) s.Kind1
   s.Attrib (e.Attribs)
   t.SymTable NoName =
-    [IModule (Name e.ModName) t.SymTable]
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable]
     NoName;
 }
 
 GetEntityAttrib-Aux {
-  (Name e.ModName) (e.Name)
+  (Name e.ModName) t.EntryPoint (e.Name)
   t.SymTable Found e.Value =
-    [IModule (Name e.ModName) t.SymTable]
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable]
     Found e.Value;
 
-  (Name e.ModName) (e.Name)
+  (Name e.ModName) t.EntryPoint (e.Name)
   t.SymTable NoAttrib =
-    [IModule (Name e.ModName) t.SymTable]
+    [IModule (Name e.ModName) t.EntryPoint t.SymTable]
     NoAttrib;
 
   /*
@@ -488,18 +577,18 @@ $ENTRY GetKind
     >;
 
 GetKind-Aux
-  [IModule (Name e.ModName) t.hSymTable ] e.EntityName =
+  [IModule (Name e.ModName) t.EntryPoint t.hSymTable ] e.EntityName =
     <GetKind-ReturnIModule
-      (Name e.ModName)
+      (Name e.ModName) t.EntryPoint
       <MSymTable::GetAttrib t.hSymTable e.EntityName Kind>
     >;
 
 GetKind-ReturnIModule {
-  (Name e.ModName) t.hSymTable Found s.Kind =
-    [IModule (Name e.ModName) t.hSymTable] Success s.Kind;
+  (Name e.ModName) t.EntryPoint t.hSymTable Found s.Kind =
+    [IModule (Name e.ModName) t.EntryPoint t.hSymTable] Success s.Kind;
 
-  (Name e.ModName) t.hSymTable NoName =
-    [IModule (Name e.ModName) t.hSymTable] NoName;
+  (Name e.ModName) t.EntryPoint t.hSymTable NoName =
+    [IModule (Name e.ModName) t.EntryPoint t.hSymTable] NoName;
 }
 
 /**---------------------------------------------------------------------------*/
@@ -560,7 +649,7 @@ MakeRelativeName-Aux
     t.hIModule t.RelativeName;
 
 FindEntityByKind {
-  [IModule (Name e.Name) t.SymTable] s.Kind =
+  [IModule (Name e.Name) t.EntryPoint t.SymTable] s.Kind =
     <MLambda::MapReduce
       <MLambda::MakeHandled
         <MLambda::Composite
@@ -569,15 +658,15 @@ FindEntityByKind {
         >
       >
       <ReturnIModule
-        (Name e.Name)
+        (Name e.Name) t.EntryPoint
         <MSymTable::FindByKind t.SymTable s.Kind>
       >
     >;
 }
 
 ReturnIModule {
-  (Name e.Name) t.SymTable e.Entities =
-    [IModule (Name e.Name) t.SymTable] e.Entities;
+  (Name e.Name) t.EntryPoint t.SymTable e.Entities =
+    [IModule (Name e.Name) t.EntryPoint t.SymTable] e.Entities;
 }
 
 $END MIModule.

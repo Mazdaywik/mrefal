@@ -1,4 +1,4 @@
-$MODULE MBackEnd_Refal5;
+$MODULE Refal5::MBackEnd;
 
 $IMPORT FileIO;
 $IMPORT MIModule;
@@ -30,6 +30,65 @@ SaveModule
     t.IModule;
 
 GenerateContent
+  t.hIModule =
+    <GenerateContent-EntryPoints
+      <MIModule::GetEntryPoint t.hIModule>
+    >;
+
+GenerateContent-EntryPoints {
+  t.hIModule Go (Result e.Expr) =
+    <GenerateElements t.hIModule>
+    ('e ' <GenerateExpression e.Expr>);
+
+  t.hIModule Regular None None =
+    <GenerateElements t.hIModule>;
+
+  t.hIModule Regular (Result e.InitCode) None =
+    <GenerateElements t.hIModule>
+    ('e ' <GenerateExpression e.InitCode>);
+
+  t.hIModule Regular t.InitCode (Result e.FinalCode) =
+    <GenFinalizer
+      <MIModule::GetModuleName t.hIModule>
+      t.InitCode (Result e.FinalCode)
+    >;
+}
+
+GenFinalizer {
+  t.hIModule t.ModuleName t.InitCode (Result e.FinalCode) =
+    <GenerateElements t.hIModule>
+    <GenFinalizer-Aux
+      ('Entry' <QualifiedToLine t.ModuleName> '::__Finalizer')
+      t.InitCode e.FinalCode
+    >;
+}
+
+GenFinalizer-Aux {
+  (e.FinalizerName) None e.FinalCode =
+    <GenFinalizer-Function
+      (e.FinalizerName) e.FinalCode
+    >
+    ('e <Br \'Finalizers=\'$' e.FinalizerName '$ >');
+
+  (e.FinalizerName) (Result e.InitCode) e.FinalCode =
+    <GenFinalizer-Function
+      (e.FinalizerName) e.FinalCode
+    >
+    ('e '
+      <GenerateExpression e.InitCode>
+      ' <Br \'Finalizers=\'$' e.FinalizerName '$ >'
+    );
+}
+
+GenFinalizer-Function {
+  (e.FinalizerName) e.FinalCode =
+    ('b ' e.FinalizerName)
+    ('c $' e.FinalizerName '$ {')
+    ('c \t= ' <GenerateExpression e.FinalCode> ' ;')
+    ('c }');
+}
+
+GenerateElements
   t.IModule =
     <MLambda::MapReduce
       & GenerateElement
@@ -220,4 +279,4 @@ GenerateCallable
   s.CallType t.SrcPos t.QualifiedFnName =
     '$' <XQualifiedToLine s.CallType t.QualifiedFnName> '$';
 
-$END MBackEnd_Refal5.
+$END Refal5::MBackEnd.

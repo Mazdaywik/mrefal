@@ -7,8 +7,8 @@ $IMPORT MLambda;
 $IMPORT MSrcPos;
 
 // Эти модули должны быть инициализированы
-$IMPORT MBackEnd_Refal5_init;
-$IMPORT MFrontEnd_MRefal;
+$IMPORT MBackEnd_Refal5_init = Refal5::MInit;
+$IMPORT MFrontEnd_MRefal = MRefal-FE::MInit;
 $IMPORT MSymModule;
 $IMPORT MXLinx;
 

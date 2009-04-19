@@ -1,14 +1,14 @@
-$MODULE MLinker_Refal5;
+$MODULE Refal5::MLinker;
 
 $IMPORT FileIO;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
-$IMPORT MExeTyper;
+$IMPORT MExeTyper = Refal5::MExeTyper;
 $IMPORT MLambda;
-$IMPORT MLinkerAliasTable;
+$IMPORT MLinkerAliasTable = Refal5::MLinkerAliasTable;
 $IMPORT MOrder;
 $IMPORT MOS;
-$IMPORT MStartupSeqGenerator;
+$IMPORT MStrings;
 $IMPORT MVersion;
 
 /**
@@ -32,53 +32,78 @@ $ENTRY Link {
 DefLim = 64;
 
 StartLinkLoop
-  t.ExeTyper t.UnitStorage t.hContext e.Modules =
+  t.hExeTyper t.UnitStorage t.hContext e.Modules =
     <StartLinkLoop-Aux
       t.UnitStorage
       <MLinkerAliasTable::Create>
-      t.ExeTyper
-      <CreateStartupUnitForLoop
-        t.hContext
-        <MLambda::Map & OnlyModuleNames e.Modules>
-      >
-      <MLambda::Map & OnlyObjects e.Modules>
-    >;
-
-OnlyObjects
-  (t.ModuleName e.ObjName) = (e.ObjName);
-
-OnlyModuleNames
-  (t.ModuleName e.ObjName) = t.ModuleName;
-
-/**
-  <CreateStartupUnit t.Context>
-    == t.Context (t.StartupUnit)
-*/
-CreateStartupUnitForLoop
-  t.Context e.Modules =
-    <CreateStartupUnitForLoop-Aux
-      <MStartupSeqGenerator::GetFnList
-        t.Context e.Modules
+      t.hExeTyper
+      t.hContext
+      <MLambda::Reduce
+        & SortUnits
+        ( (/* builtins */) (/* inits */) (/* functions */) )
+        <MLambda::Map
+          & LoadUnitsFromModule
+          <MStrings::Reverse e.Modules>
+        >
       >
     >;
 
-CreateStartupUnitForLoop-Aux
-  t.Context e.FnList =
-    t.Context
-    (<CreateStartUnit e.FnList>);
+SortUnits {
+  ( (e.Builtins) (e.Inits) (e.Functions) )
+  (EntryPoint e.Code) =
+    ( (e.Builtins) (e.Inits e.Code) (e.Functions) );
 
-StartLinkLoop-Aux
-  t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context t.StartUnit e.Modules =
+  ( (e.Builtins) (e.Inits) (e.Functions) )
+  (RealName (e.MR-Name) e.R5-Name) =
+    ( (e.Builtins (RealName (e.MR-Name) e.R5-Name))
+      (e.Inits) (e.Functions)
+    );
+
+  ( (e.Builtins) (e.Inits) (e.Functions) )
+  t.OtherUnit =
+    ( (e.Builtins) (e.Inits) (e.Functions t.OtherUnit) );
+}
+
+LoadUnitsFromModule
+  (t.ModuleName e.ObjName) = <LoadUnits e.ObjName>;
+
+StartLinkLoop-Aux {
+  t.UnitStorage t.AliasTable t.hExeTyper t.hContext
+  ( (e.BuiltIns) (e.InitCode) (e.Units) ) =
     <LinkLoop
       Continue
-      <AddUnit
-        <AddRequest t.UnitStorage 'Starter'>
-        t.StartUnit
+      <MLambda::Reduce
+        & AddUnit
+        <AddRequest
+          <MLambda::Reduce
+            & AddLinkedBuiltIn t.UnitStorage e.BuiltIns
+          >
+          'Starter'
+        >
+        (('Starter')
+          ('$$ENTRY Go { = ' e.InitCode '<$Entry::MRefalRTS::Exit$ 0 >; }')
+        )
+        e.Units
       >
-      t.AliasTable t.ExeTyper
-      t.Context e.Modules
+      <MLambda::Reduce
+        & AddBuiltIn t.AliasTable e.BuiltIns
+      >
+      t.hExeTyper
+      t.hContext
     >;
+}
+
+AddLinkedBuiltIn {
+  t.UnitStorage (RealName (e.MR-Name) e.R5-Name) =
+    <AddLinked t.UnitStorage e.MR-Name>;
+}
+
+AddBuiltIn {
+  t.AliasTable (RealName (e.MR-Name) e.R5-Name) =
+    <MLinkerAliasTable::AddBuiltIn
+      t.AliasTable (e.MR-Name) e.R5-Name
+    >;
+}
 
 LinkLoop {
   Continue t.UnitStorage t.AliasTable t.ExeTyper
@@ -118,7 +143,6 @@ LinkLoop {
     >;
 }
 
-
 LinkNextUnit
   t.UnitStorage t.AliasTable t.ExeTyper =
     <SwLinkNextUnit
@@ -150,6 +174,16 @@ AddNextModuleToUnitStorage
 
 DoAddUnits {
   t.UnitStorage t.AliasTable t.ExeTyper
+  t.hContext (RealName (e.Banner) e.RealName) e.Units =
+    <DoAddUnits
+      <AddLinked t.UnitStorage e.Banner>
+      <MLinkerAliasTable::AddBuiltIn
+        t.AliasTable (e.Banner) e.RealName
+      >
+      t.ExeTyper t.hContext e.Units
+    >;
+
+  t.UnitStorage t.AliasTable t.ExeTyper
   t.Context t.NextUnit e.Units =
     <DoAddUnits
       <AddUnit t.UnitStorage t.NextUnit>
@@ -160,40 +194,6 @@ DoAddUnits {
   t.Context =
     t.UnitStorage t.AliasTable t.ExeTyper
     t.Context;
-}
-
-CreateStartUnit {
-  GoNotFound =
-    <MError::LinkError 'Go function not found'>;
-
-  MultipleGo e.GoList =
-    <MError::LinkError
-      'Multiple go functions: '
-      <TypeMultiplyGoList e.GoList>
-    >;
-
-  e.FunList =
-    ('Starter')
-    ('$ENTRY Go { =')
-    <DoCreateCallSeq e.FunList>
-    (';}');
-}
-
-TypeMultiplyGoList {
-  (e.Go1) (e.Go2) =
-    e.Go1 ' and ' e.Go2;
-
-  (e.NextGo) e.GoFunctions =
-    e.NextGo ', '
-    <TypeMultiplyGoList e.GoFunctions>;
-}
-
-DoCreateCallSeq {
-  (e.NextFunc) e.Funcs =
-    ('\t<$' e.NextFunc '$>')
-    <DoCreateCallSeq e.Funcs>;
-
-  = ;
 }
 
 PrintUnresolvedUnits
@@ -418,6 +418,10 @@ DoGroupLinkUnits {
       ((e.Banner)) e.Lines
     >;
 
+  (EntryPoint e.Code) e.Lines =
+    (EntryPoint e.Code)
+    <DoGroupLinkUnits e.Lines>;
+
   = ;
 }
 
@@ -427,9 +431,13 @@ GroupOneLinkUnit {
       (e.Unit (e.CodeLine)) e.Lines
     >;
 
-  (e.Unit) (Banner e.Banner) e.Lines =
+  ((e.Banner)) (RealName e.RealName) e.Lines =
+    (RealName (e.Banner) e.RealName)
+    <DoGroupLinkUnits e.Lines>;
+
+  (e.Unit) t.OtherLine e.Lines =
     (e.Unit)
-    <DoGroupLinkUnits (Banner e.Banner) e.Lines>;
+    <DoGroupLinkUnits t.OtherLine e.Lines>;
 
   (e.Unit) = (e.Unit);
 }
@@ -442,6 +450,21 @@ DoLoadUnits {
     <DoLoadUnits e.Lines>;
 }
     
+AnalyseLine {
+  ('v ' e.Version) = (Version e.Version);
+
+  ('b ' e.BannerLine) = (Banner e.BannerLine);
+
+  ('r ' e.?RemarkLine) = ;
+
+  ('c ' e.CodeLine) = (Code <HideQuotes e.CodeLine>);
+
+  ('p ' e.RealName) = (RealName e.RealName);
+
+  ('e ' e.EntryPointCode) = (EntryPoint e.EntryPointCode);
+
+  () = ;
+}
 
 TypeUnit {
   t.UnitStorage t.Aliases t.ExeTyper (e.Banner) e.Lines =
@@ -464,18 +487,6 @@ DoTypeUnits {
       <TypeLine t.UnitStorage t.Aliases t.ExeTyper e.NextLine>
       e.Lines
     >;
-}
-
-AnalyseLine {
-  ('v ' e.Version) = (Version e.Version);
-
-  ('b ' e.BannerLine) = (Banner e.BannerLine);
-
-  ('r ' e.?RemarkLine) = ;
-
-  ('c ' e.CodeLine) = (Code <HideQuotes e.CodeLine>);
-
-  () = ;
 }
 
 HideQuotes {
@@ -540,6 +551,4 @@ TypeRenamed
   (t.Aliases e.FnAlias) t.ExeTyper e.Raw =
     t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> e.Raw;
 
-
-
-$END MLinker_Refal5.
+$END Refal5::MLinker.

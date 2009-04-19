@@ -288,7 +288,7 @@ GenerateSubEntity
 Link
   t.hContext (e.OutName) e.OutFileNames =
     <FileIO::Save
-      (<MCreateDirIfNeed::CreatePathToFile 'Info/' e.OutName '.xlinx.txt'>)
+      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.xlinx.txt')
       <Link-Aux
         <MLambda::Map
           <MLambda::Composite

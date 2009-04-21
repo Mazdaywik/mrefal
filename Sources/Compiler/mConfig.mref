@@ -30,9 +30,9 @@ $DATA Config;
 
   s.Name ::= IDENTIFIER -- имя диспетчера
   t.FnGenerator ::= { t.IModule e.FileName = t.IModule }
-  <t.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
-    == t.hContext Success
-    == t.hContext Fails
+  <t.FnLinker (e.OutName) (t.ModuleName e.ObjName)*>
+    == Success
+    == Fails
   e.Folder -- имя папки
   e.Ext -- расширение файла
 
@@ -251,23 +251,26 @@ DoLink {
 
   t.hContext Success (e.OutName) (e.OrderedFiles)
   (s.BackEnd t.FnLinker) e.Tail =
-    <DoLink
-      <MLambda::Apply
-        t.FnLinker
-        <SwapFirsts
-          (e.OutName)
-          <MLambda::MapReduce
-            <MLambda::BindLeft & MakeObjName s.BackEnd>
-            t.hContext e.OrderedFiles
-          >
-        >
+    <DoLink-Aux
+      t.FnLinker
+      (e.OutName)
+      <MLambda::MapReduce
+        <MLambda::BindLeft & MakeObjName s.BackEnd>
+        t.hContext e.OrderedFiles
       >
-      (e.OutName) (e.OrderedFiles) e.Tail
+      (e.OrderedFiles) (e.Tail)
     >;
 }
 
-SwapFirsts
-  t.First t.Second e.Tail = t.Second t.First e.Tail;
+DoLink-Aux {
+  t.FnLinker (e.OutName) t.hContext e.InputLinker
+  (e.OrderedFiles) (e.Tail) =
+    <DoLink
+      t.hContext
+      <MLambda::Apply t.FnLinker (e.OutName) e.InputLinker>
+      (e.OutName) (e.OrderedFiles) e.Tail
+    >;
+}
 
 MakeObjName
   s.L-BackEnd t.hContext t.ModuleName =

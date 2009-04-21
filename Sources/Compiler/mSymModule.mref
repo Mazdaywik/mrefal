@@ -388,6 +388,6 @@ $ENTRY Register
       (e.Directory) (e.Ext)
     >;
 
-Link t.Context (e.OutName) e.Modules = t.Context Success; // Не линкуем.
+Link (e.OutName) e.Modules = Success; // Не линкуем.
 
 $END MSymModule.

@@ -528,7 +528,7 @@ GetLastTime-CalcTime {
           <MLambda::Composite
             & MLambda.UnBracket
             <MLambda::BindLeft & MStrings.Skip 1>
-            <MLambda::BindLeft & MFileSystem.FileAttribute DateTime>
+            <MLambda::BindLeft & GetDateTime>
           >
           e.BackEnds
         >
@@ -544,18 +544,37 @@ GetLastTime-CalcTime {
     */
     <GetLastTime-OutTime
       t.ModuleName t.hContext
-      <MFileSystem::FileAttribute DateTime s.Init e.FrontEndName>
+      <GetDateTime s.Init e.FrontEndName>
       <MOrder::Sort
         <MLambda::Map
           <MLambda::Composite
             & MLambda.UnBracket
             <MLambda::BindLeft & MStrings.Skip 1>
-            <MLambda::BindLeft & MFileSystem.FileAttribute DateTime>
+            <MLambda::BindLeft & GetDateTime>
           >
           e.BackEnds
         >
       >
     >;
+}
+
+GetDateTime {
+  e.FileName =
+    /*
+      Оптимизация: файл e.FileName должен быть файлом, а не каталогом,
+      и он должен существовать. Поэтому целесообразно сначала убедиться
+      в его существовании, а потом вызвать медленную функцию
+      MFileSystem::FileAttribute
+    */
+    <GetDateTime-SwExist
+      <MFileSystem::ExistFile-T e.FileName>
+    >;
+}
+
+GetDateTime-SwExist {
+  True e.FileName = <MFileSystem::FileAttribute DateTime e.FileName>;
+
+  False e.FileName = FileNotFound;
 }
 
 GetLastTime-MakeResult-Library

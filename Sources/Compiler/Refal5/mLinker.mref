@@ -12,16 +12,15 @@ $IMPORT MStrings;
 $IMPORT MVersion;
 
 /**
-  <Link t.Context (e.ProgName) (t.ModuleName e.ROutName)*>
-    == t.Context Success
-    == t.Context Fails
+  <Link (e.ProgName) (t.ModuleName e.ROutName)*>
+    == Success
+    == Fails
 */
 $ENTRY Link {
-  t.Context (e.ProgName) e.ROutFiles =
+  (e.ProgName) e.ROutFiles =
     <StartLinkLoop
       <MExeTyper::Create <DefLim> e.ProgName '.ref'>
       <CreateUnitStorage>
-      t.Context
       e.ROutFiles
     >
 
@@ -32,12 +31,11 @@ $ENTRY Link {
 DefLim = 64;
 
 StartLinkLoop
-  t.hExeTyper t.UnitStorage t.hContext e.Modules =
+  t.hExeTyper t.UnitStorage e.Modules =
     <StartLinkLoop-Aux
       t.UnitStorage
       <MLinkerAliasTable::Create>
       t.hExeTyper
-      t.hContext
       <MLambda::Reduce
         & SortUnits
         ( (/* builtins */) (/* inits */) (/* functions */) )
@@ -68,7 +66,7 @@ LoadUnitsFromModule
   (t.ModuleName e.ObjName) = <LoadUnits e.ObjName>;
 
 StartLinkLoop-Aux {
-  t.UnitStorage t.AliasTable t.hExeTyper t.hContext
+  t.UnitStorage t.AliasTable t.hExeTyper
   ( (e.BuiltIns) (e.InitCode) (e.Units) ) =
     <LinkLoop
       Continue
@@ -89,7 +87,6 @@ StartLinkLoop-Aux {
         & AddBuiltIn t.AliasTable e.BuiltIns
       >
       t.hExeTyper
-      t.hContext
     >;
 }
 
@@ -106,49 +103,27 @@ AddBuiltIn {
 }
 
 LinkLoop {
-  Continue t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context e.Modules =
+  Continue t.UnitStorage t.AliasTable t.ExeTyper =
     <LinkLoop
-      <LinkNextUnit
-        t.UnitStorage t.AliasTable t.ExeTyper
+      <SwLinkNextUnit
+        <GetNextUnit t.UnitStorage>
+        t.AliasTable t.ExeTyper
       >
-      t.Context e.Modules
     >;
 
-  Finish t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context e.Modules =
-    <PrintUnresolvedUnits t.UnitStorage e.Modules>
+  Finish t.UnitStorage t.AliasTable t.ExeTyper =
+    <PrintUnresolvedUnits t.UnitStorage>
     <MLinkerAliasTable::Destroy
       <MLinkerAliasTable::OutAliases t.AliasTable>
     >
-    <MExeTyper::Destroy t.ExeTyper>
-    t.Context;
+    <MExeTyper::Destroy t.ExeTyper>;
 
-  LoadModule t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context (e.NextModule) e.Modules =
-    <LinkLoop
-      Continue
-      <AddNextModuleToUnitStorage
-        t.UnitStorage t.AliasTable t.ExeTyper
-        t.Context e.NextModule
-      >
-      e.Modules
-    >;
-
-  LoadModule t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context =
+  LoadModule t.UnitStorage t.AliasTable t.ExeTyper =
     <MError::LinkError
       'Unresolved name '
       <NextRequestedName-D t.UnitStorage>
     >;
 }
-
-LinkNextUnit
-  t.UnitStorage t.AliasTable t.ExeTyper =
-    <SwLinkNextUnit
-      <GetNextUnit t.UnitStorage>
-      t.AliasTable t.ExeTyper
-    >;
 
 SwLinkNextUnit {
   t.UnitStorage Finish t.AliasTable t.ExeTyper =
@@ -162,38 +137,6 @@ SwLinkNextUnit {
     <TypeUnit
       t.UnitStorage t.AliasTable t.ExeTyper e.Unit
     >;
-}
-
-AddNextModuleToUnitStorage
-  t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context e.NextModule =
-    <DoAddUnits
-      t.UnitStorage t.AliasTable t.ExeTyper t.Context
-      <LoadUnits e.NextModule>
-    >;
-
-DoAddUnits {
-  t.UnitStorage t.AliasTable t.ExeTyper
-  t.hContext (RealName (e.Banner) e.RealName) e.Units =
-    <DoAddUnits
-      <AddLinked t.UnitStorage e.Banner>
-      <MLinkerAliasTable::AddBuiltIn
-        t.AliasTable (e.Banner) e.RealName
-      >
-      t.ExeTyper t.hContext e.Units
-    >;
-
-  t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context t.NextUnit e.Units =
-    <DoAddUnits
-      <AddUnit t.UnitStorage t.NextUnit>
-      t.AliasTable t.ExeTyper t.Context e.Units
-    >;
-
-  t.UnitStorage t.AliasTable t.ExeTyper
-  t.Context =
-    t.UnitStorage t.AliasTable t.ExeTyper
-    t.Context;
 }
 
 PrintUnresolvedUnits

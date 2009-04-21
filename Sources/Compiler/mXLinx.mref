@@ -281,12 +281,12 @@ GenerateSubEntity
 //------------------------------------------------------------------------------
 
 /*
-  <Link t.hContext (e.OutName) (t.ModuleName e.FileName)*>
-    == t.hContext Success
-    == t.hContext Fails
+  <Link (e.OutName) (t.ModuleName e.FileName)*>
+    == Success
+    == Fails
 */
 Link
-  t.hContext (e.OutName) e.OutFileNames =
+  (e.OutName) e.OutFileNames =
     <FileIO::Save
       (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.xlinx.txt')
       <Link-Aux
@@ -302,7 +302,7 @@ Link
         >
       >
     >
-    t.hContext Success;
+    Success;
 
 Link-Aux
   e.Modules =

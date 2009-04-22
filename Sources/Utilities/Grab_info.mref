@@ -84,7 +84,7 @@ ModuleToInterface {
     // ('End of module ' e.ModuleName)
     <ModuleToInterface e.ModuleContent>;
 
-  (e.?BeforeComment '/**' e.InComment)
+  (e.?BeforeComment '/*' '*' e.InComment)
   e.ModuleContent =
     <TypeDocComment
       (e.InComment) e.ModuleContent

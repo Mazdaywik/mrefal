@@ -364,7 +364,7 @@ $ENTRY RegisterFrontEnd {
 
 
 /**
-  <GetPath-T t.Config t.ModuleName e.BaseFolder>
+  <GetFEPath-T t.Config t.ModuleName e.BaseFolder>
     == Success e.FilePath
     == Fails
 */

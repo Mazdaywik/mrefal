@@ -10,17 +10,18 @@ $IMPORT MQualifiedName;
 
 /**
   <LookupCmdLineModule
-    t.hContext t.Config e.CmdLinePath
+    t.hContext t.Config e.PtCmdLinePath
   >
     == t.hContext Found
       t.QualifiedName s.FrontEndName e.BaseDirectory
     == t.hContext NotFound
 */
 $ENTRY LookupCmdLineModule
-  t.hContext t.Config e.CmdLinePath =
+  t.hContext t.Config e.PtCmdLinePath =
     <GenVariants-CmdLine
         t.hContext t.Config
-        <ParseFileNameEx e.CmdLinePath>
+        <ParseFileNameEx e.PtCmdLinePath>
+        @@@@@@@@@@@
     >;
 
 /*

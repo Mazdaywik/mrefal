@@ -3,6 +3,7 @@ $MODULE MCmdLineParser;
 $IMPORT FileIO;
 $IMPORT Math;
 $IMPORT MError;
+$IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MSrcPos;
 $IMPORT MStrings;
@@ -11,10 +12,8 @@ $IMPORT MStrings;
   t.CmdLineInfo ::=
     (CmdLineInfo
       (ModulePath (e.Path)*)
-      (Mode Make | Build | LinkOnly)
-      (BackEnd s.BackEnd)
-      (CreateXLinx True | False)
-      (Files (e.FileName)*)
+      (Files (e.PtFileName)*)
+      t.OtherOptions // См. код и копайся в коде
     )
 
   s.BackEnd ::= Refal5
@@ -28,8 +27,36 @@ $IMPORT MStrings;
 */
 $ENTRY Parse
   t.hErrorList (e.ProgName) e.Options =
+    <Parse-PreScan-PtFromStr
+      t.ErrorList
+      <MLambda::Map
+        & File-PtFromStr
+        <PreScan (/* стек файлов */) <Renumerate e.Options>>
+      >
+    >;
+
+File-PtFromStr {
+  (File t.SrcPos e.StrFileName) =
+    <SwFile-PtFromStr
+      t.SrcPos (e.StrFileName)
+      <MFileSystem::PathFromStr e.StrFileName>
+    >;
+
+  t.OtherOption = t.OtherOption;
+}
+
+SwFile-PtFromStr {
+  t.SrcPos (e.StrFileName) Success e.PtFileName =
+    (File t.SrcPos e.PtFileName);
+
+  t.SrcPos (e.StrFileName) Fails =
+    (Error t.SrcPos 'Invalid file name \'' e.StrFileName '\'');
+}
+
+Parse-PreScan-PtFromStr
+  t.hErrorList e.Options =
     <Parse-SwPreparseErrors
-      t.hErrorList <PreScan (/* стек файлов */) <Renumerate e.Options>>
+      t.hErrorList 
     >;
 
 Renumerate
@@ -47,7 +74,7 @@ RenumerateOption
 
 /*
   t.Option ::=
-    (File t.SrcPos e.FileName)
+    (File t.SrcPos e.StrFileName)
     (OpenBracket t.SrcPos)
     (CloseBracket t.SrcPos)
     (Error t.SrcPos e.Message)
@@ -72,8 +99,8 @@ PreScan {
   t.FileStack (t.SrcPos ')') e.Tail =
     (CloseBracket t.SrcPos) <PreScan t.FileStack e.Tail>;
 
-  t.FileStack (t.SrcPos e.FileName) e.Tail =
-    (File t.SrcPos e.FileName)
+  t.FileStack (t.SrcPos e.StrFileName) e.Tail =
+    (File t.SrcPos e.StrFileName)
     <PreScan t.FileStack e.Tail>;
 
   (e.Stack (e.LastConfigFile)) PopStackFile e.Tail =
@@ -118,7 +145,7 @@ PreScan-Option-Param {
       (e.Stack-B (e.ConfigFile) e.Stack-E) e.Tail
     >;
 
-  (e.Stack) t.SrcPos ('cfg') (e.ConfigFile) e.Tail =
+  (e.Stack) t.SrcPos ('cfg') (e.StrConfigFile) e.Tail =
     <PreScan
       (e.Stack (e.ConfigFile))
       <MStrings::Skip 1
@@ -131,19 +158,19 @@ PreScan-Option-Param {
               >
             >
             <MLambda::BindLeft
-              & MakeConfigOption (e.ConfigFile)
+              & MakeConfigOption (e.StrConfigFile)
             >
           >
           1 /* номера строк */
-          <FileIO::Load e.ConfigFile>
+          <FileIO::Load e.StrConfigFile>
         >
       >
       PopStackFile
       e.Tail
     >;
 
-  t.FileStack t.SrcPos ('file') (e.FileName) e.Tail =
-    (File t.SrcPos e.FileName)
+  t.FileStack t.SrcPos ('file') (e.StrFileName) e.Tail =
+    (File t.SrcPos e.StrFileName)
     <PreScan t.FileStack e.Tail>;
 
   t.FileStack t.SrcPos (e.Name) (e.Value) e.Tail =
@@ -242,11 +269,11 @@ Parse-BalanceBrackets {
 
 ParseAnalyze {
   t.hErrorList s.Result t.FnOptionsMap t.Collected
-  (File t.SrcPos e.FileName) e.Tail =
+  (File t.SrcPos e.PtFileName) e.Tail =
     <ParseAnalyze-File
       t.hErrorList s.Result t.FnOptionsMap t.Collected
       <MLambda::Apply t.FnOptionsMap EnableFile>
-      (File t.SrcPos e.FileName) e.Tail
+      (File t.SrcPos e.PtFileName) e.Tail
     >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
@@ -294,15 +321,15 @@ ParseAnalyze-FinishCollected {
 
 ParseAnalyze-File {
   t.hErrorList s.Result t.FnOptionsMap t.Collected
-  (FileEnable t.FnAddFile) (File t.SrcPos e.FileName) e.Tail =
+  (FileEnable t.FnAddFile) (File t.SrcPos e.PtFileName) e.Tail =
     <ParseAnalyze
       t.hErrorList s.Result t.FnOptionsMap
-      <MLambda::Apply t.FnAddFile t.Collected e.FileName>
+      <MLambda::Apply t.FnAddFile t.Collected e.PtFileName>
       e.Tail
     >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected
-  (FileDisable) (File t.SrcPos e.FileName) e.Tail =
+  (FileDisable) (File t.SrcPos e.PtFileName) e.Tail =
     <ParseAnalyze
       <MError::AddCmdLineError
         t.hErrorList t.SrcPos 'Unexpected filename'
@@ -644,7 +671,7 @@ ParseAnalyze-Naked-Group-ErrorParam {
   }
 
   t.FnAddFile ::= {
-    t.Collected e.FileName = t.Collected
+    t.Collected e.PtFileName = t.Collected
   }
 
   t.Collected ::= (e.Collected)
@@ -678,13 +705,21 @@ TopLevelOptions {
 }
 
 AddModulePath {
-  t.hErrorList t.SrcPos
-  (e.Options-B (ModulePath e.Paths) e.Options-E) e.Path =
-    t.hErrorList Success
-    (e.Options-B (ModulePath e.Paths (e.Path)) e.Options-E);
+  t.hErrorList t.SrcPos (e.Options) e.StrPath =
+    <AddModulePath-Aux
+      t.hErrorList t.SrcPos (e.Options)
+      <MFileSystem::PathFromStr e.StrPath>
+    >;
+}
 
-  t.hErrorList t.SrcPos (e.Options) e.Path =
-    t.hErrorList Success (e.Options (ModulePath (e.Path)));
+AddModulePath-Aux {
+  t.hErrorList t.SrcPos
+  (e.Options-B (ModulePath e.PtPaths) e.Options-E) Success e.PtPath =
+    t.hErrorList Success
+    (e.Options-B (ModulePath e.PtPaths (e.PtPath)) e.Options-E);
+
+  t.hErrorList t.SrcPos (e.Options) Success e.PtPath =
+    t.hErrorList Success (e.Options (ModulePath (e.PtPath)));
 }
 
 AddMakeMode {
@@ -743,11 +778,11 @@ AddXLinx {
 }
 
 AddFile {
-  (e.Options-B (Files e.FileNames) e.Options-E) e.NextFileName =
-    (e.Options-B (Files e.FileNames (e.NextFileName)) e.Options-E);
+  (e.Options-B (Files e.PtFileNames) e.Options-E) e.PtNextFileName =
+    (e.Options-B (Files e.PtFileNames (e.PtNextFileName)) e.Options-E);
 
-  (e.Options) e.NextFileName =
-     (e.Options (Files (e.NextFileName)));
+  (e.Options) e.PtNextFileName =
+     (e.Options (Files (e.PtNextFileName)));
 }
 
 FinishTopLevel {
@@ -778,7 +813,7 @@ FinishTopLevel-SwUndefined {
   t.hErrorList (e.Tags-B ModulePath e.Tags-E) e.Options =
     <FinishTopLevel-SwUndefined
       t.hErrorList (e.Tags-B e.Tags-E)
-      e.Options (ModulePath ('.'))
+      e.Options (ModulePath ((Relative)))
     >;
 
   t.hErrorList (e.Tags) e.Options =
@@ -815,30 +850,30 @@ TuneBackEnd {
 }
 
 SwSelectLowBackEnd {
-  'Refal5' = (Refal5BE ('~ROut') ('rout'));
-  'SymInfo' = (SymInfo ('~RSym') ('rsym'));
-  'XLinx' = (XLinxBE ('~XLinx') ('xlinx'));
+  'Refal5' = (Refal5BE ((Relative) ('~ROut')) ('rout'));
+  'SymInfo' = (SymInfo ((Relative) ('~RSym')) ('rsym'));
+  'XLinx' = (XLinxBE ((Relative) ('~XLinx')) ('xlinx'));
   e.Other = Unknown (e.Other);
 }
 
 TuneBackEnd-SwBackEnd {
   t.hErrorList t.SrcPos
-  (e.Options-B (TuneBE s.BackEnd (e.Dir) (e.Ext)) e.Options-E)
+  (e.Options-B (TuneBE s.BackEnd (e.PtDir) (e.Ext)) e.Options-E)
   (e.SubInfo)
-  (s.BackEnd (e.DefDir) (e.DefExt)) =
+  (s.BackEnd (e.PtDefDir) (e.DefExt)) =
     <MError::AddCmdLineError
       t.hErrorList t.SrcPos 'Options of this back-end alredy defined'
     >
     Fails
-    (e.Options-B (TuneBE s.BackEnd (e.Dir) (e.Ext)) e.Options-E);
+    (e.Options-B (TuneBE s.BackEnd (e.PtDir) (e.Ext)) e.Options-E);
 
   t.hErrorList t.SrcPos (e.Options) (e.SubInfo)
-  (s.BackEnd (e.DefDir) (e.DefExt)) =
+  (s.BackEnd (e.PtDefDir) (e.DefExt)) =
     t.hErrorList Success
     (e.Options
       (TuneBE
         s.BackEnd
-        (<MakeOpt Dir (e.DefDir) e.SubInfo>)
+        (<MakeOpt Dir (e.PtDefDir) e.SubInfo>)
         (<MakeOpt Ext (e.DefExt) e.SubInfo>)
       )
     );
@@ -883,14 +918,14 @@ BackEnd-Ext {
 }
 
 BackEnd-Dir {
-  t.hErrorList t.SrcPos (e.Options-B (Dir e.Dir) e.Options-E) e.NewDir =
+  t.hErrorList t.SrcPos (e.Options-B (Dir e.PtDir) e.Options-E) e.PtNewDir =
     <MError::AddCmdLineError
       t.hErrorList t.SrcPos 'Redefinition of directory'
     >
-    Fails (e.Options-B (Dir e.Dir) e.Options-E);
+    Fails (e.Options-B (Dir e.PtDir) e.Options-E);
 
-  t.hErrorList t.SrcPos (e.Options) e.NewDir =
-    t.hErrorList Success (e.Options (Dir e.NewDir));
+  t.hErrorList t.SrcPos (e.Options) e.PtNewDir =
+    t.hErrorList Success (e.Options (Dir e.PtNewDir));
 }
 
 TuneBackEnd-Finish {

@@ -6,6 +6,7 @@ $IMPORT MCompiler;
 $IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MError;
+$IMPORT MFileSystem;
 $IMPORT MLoadConfig;
 $IMPORT InOut;
 $IMPORT MLambda;
@@ -25,9 +26,9 @@ $ENTRY Go =
   >;
 
 CompileList {
-  t.hContext t.hErrorList Success t.Config e.Modules =
+  t.hContext t.hErrorList Success t.Config e.PtModules =
     <CompileList-Aux
-      t.Config t.hContext t.hErrorList e.Modules
+      t.Config t.hContext t.hErrorList e.PtModules
     >;
 
   t.hContext t.hErrorList Fails =
@@ -36,7 +37,7 @@ CompileList {
 }
 
 CompileList-Aux {
-  t.Config t.hContext t.hErrorList e.Modules =
+  t.Config t.hContext t.hErrorList e.PtModules =
     <CheckFoundResult
       t.Config
       t.hErrorList
@@ -52,7 +53,7 @@ CompileList-Aux {
           & MLambda.Bracket-H
         >
         t.hContext
-        e.Modules
+        e.PtModules
       >
     >;
 }
@@ -79,23 +80,21 @@ CheckFoundResult {
 }
 
 PrintNotFound {
-  ( (e.Module) NotFound ) =
+  ( (e.PtModule) NotFound ) =
     <InOut::WriteLine
-      'CMDLINE ERROR: module ' e.Module ' not found'
+      'CMDLINE ERROR: module '
+      <MFileSystem::StrFromPath e.PtModule>
+      ' not found'
     >;
 
   ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
-    <InOut::WriteLine
-      'FOUND: ' e.Module ' '
-      <MQualifiedName::Parse t.QualifiedName>
-      ' ' s.FrontEnd ' ' e.BaseDirectory
-    >;
+    /* пусто */;
 }
 
 Make {
   t.Config
   (t.hContext t.hErrorList Success)
-  ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
     (
       <MCompiler::Make
         t.hContext
@@ -107,7 +106,7 @@ Make {
 
   t.Config
   (t.hContext t.hErrorList Fails)
-  ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
     (t.hContext t.hErrorList Fails);
 }
 

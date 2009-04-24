@@ -15,7 +15,7 @@ $IMPORT MXLinx;
 
 /**
   <Load t.hErrorList (e.Argument)*>
-    == t.hErrorList Success t.Config (e.FileName)*
+    == t.hErrorList Success t.Config (e.PtFileName)*
     == t.hErrorList Fails
 */
 $ENTRY Load
@@ -38,9 +38,9 @@ Load-Aux {
 }
 
 DefTuners =
-  (TuneBE Refal5BE ('~ROut') ('rout'))
-  (TuneBE SymInfo ('~Defs') ('rsym'))
-  (TuneBE XLinxBE ('~XLinx') ('xlinx'))
+  (TuneBE Refal5BE ((Relative) ('~ROut')) ('rout'))
+  (TuneBE SymInfo ((Relative) ('~Defs')) ('rsym'))
+  (TuneBE XLinxBE ((Relative) ('~XLinx')) ('xlinx'))
   (TuneFE MRefal_FrontEnd ('mref'));
 
 SetDefaults-Tuners {
@@ -56,8 +56,8 @@ SetDefaults-Tuners {
 
 Load-Aux-Tuners {
   t.hErrorList s.Result e.Options-B
-  (TuneBE s.Tuner1 (e.SameDir) (e.SameExt)) e.Options-M
-  (TuneBE s.Tuner2 (e.SameDir) (e.SameExt)) e.Options-E =
+  (TuneBE s.Tuner1 (e.PtSameDir) (e.SameExt)) e.Options-M
+  (TuneBE s.Tuner2 (e.PtSameDir) (e.SameExt)) e.Options-E =
     <Load-Aux-Tuners
       <MError::AddCmdLineError
         t.hErrorList <MSrcPos::Create-CmdLine-Common>
@@ -103,11 +103,11 @@ EndMakers {
       e.BackEnds
     );
 
-  (t.FrontEnds e.BackEnds) (TuneBE s.BackEnd (e.Dir) (e.Ext)) =
+  (t.FrontEnds e.BackEnds) (TuneBE s.BackEnd (e.PtDir) (e.Ext)) =
     (t.FrontEnds
       e.BackEnds
       (s.BackEnd
-        <MLambda::BindRight <EndMakerFunc s.BackEnd> (e.Dir) (e.Ext)>
+        <MLambda::BindRight <EndMakerFunc s.BackEnd> (e.PtDir) (e.Ext)>
       )
     );
 
@@ -202,6 +202,6 @@ InitConfig-XLinx {
 }
 
 InitConfig-Files
-  t.Config (Files e.Files) = t.Config e.Files;
+  t.Config (Files e.PtFiles) = t.Config e.PtFiles;
 
 $END MLoadConfig.

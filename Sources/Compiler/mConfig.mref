@@ -18,7 +18,7 @@ $DATA Config;
   t.Option := t.MP-Option | t.BackEndOption | t.FrontEndOption
     | t.MakeModeOption
 
-  t.MP-Option := (ModulePath (e.Folder)*)
+  t.MP-Option := (ModulePath (e.PtFolder)*)
 
   t.BackEndOption :=
     (BackEnd

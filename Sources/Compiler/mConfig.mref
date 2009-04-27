@@ -4,6 +4,7 @@ $MODULE MConfig;
 
 $IMPORT MContext;
 $IMPORT MCreateDirIfNeed;
+$IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
 
@@ -25,7 +26,7 @@ $DATA Config;
       s.Name
       (Generator t.FnGenerator)
       (Linker t.FnLinker)
-      (Folder e.Folder) (Ext e.Ext)
+      (Folder e.PtFolder) (Ext e.Ext)
     )
 
   s.Name ::= IDENTIFIER -- имя диспетчера
@@ -65,20 +66,20 @@ $DATA Config;
 /**
   <Create e.ModulePath>
     == t.Config
-  e.ModulePath = (e.PathToFolder)*
+  e.PtModulePath = (e.PtPathToFolder)*
 */
 $ENTRY Create
-  e.ModulePath =
-    [Config (ModulePath e.ModulePath)];
+  e.PtModulePath =
+    [Config (ModulePath e.PtModulePath)];
 
 //------------------------------------------------------------------------------
 
 /**
-  <GetModulePath t.Config> == e.ModulePath
+  <GetModulePath t.Config> == e.PtModulePath
 */
 $ENTRY GetModulePath
-  [Config e.Opt-B (ModulePath e.ModulePath) e.Opt-E] =
-    e.ModulePath;
+  [Config e.Opt-B (ModulePath e.PtModulePath) e.Opt-E] =
+    e.PtModulePath;
 
 //==============================================================================
 
@@ -114,7 +115,7 @@ $ENTRY GetMakeMode
 
 /**
   <RegisterBackEnd
-    t.Config s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext)
+    t.Config s.Name t.FnGenerator t.FnLinker (e.PtFolder) (e.Ext)
   >
     == t.Config
   s.Name ::= IDENTIFIER -- имя диспетчера
@@ -127,27 +128,27 @@ $ENTRY GetMakeMode
 */
 $ENTRY RegisterBackEnd {
   [Config e.Options-B (BackEnd s.Name e.Options) e.Options-E]
-  s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext) =
+  s.Name t.FnGenerator t.FnLinker (e.PtFolder) (e.Ext) =
     [Config
       e.Options-B
       (BackEnd
         s.Name
         (Generator t.FnGenerator)
         (Linker t.FnLinker)
-        (Folder e.Folder) (Ext e.Ext)
+        (Folder e.PtFolder) (Ext e.Ext)
       )
       e.Options-E
     ];
 
   [Config e.Options]
-  s.Name t.FnGenerator t.FnLinker (e.Folder) (e.Ext) =
+  s.Name t.FnGenerator t.FnLinker (e.PtFolder) (e.Ext) =
     [Config
       e.Options
       (BackEnd
         s.Name
         (Generator t.FnGenerator)
         (Linker t.FnLinker)
-        (Folder e.Folder) (Ext e.Ext)
+        (Folder e.PtFolder) (Ext e.Ext)
       )
     ];
 
@@ -301,37 +302,58 @@ BackEnds {
 //------------------------------------------------------------------------------
 
 /**
-  <GetBEPath-T t.Config s.BEName t.ModuleName e.BaseFolder>
-    == Success e.OutPath
+  <GetBEPath-T t.Config s.BEName t.ModuleName e.PtBaseFolder>
+    == Success e.StrOutPath
     == Fails
 */
 $ENTRY GetBEPath-T
-  [Config e.Options] s.BEName t.ModuleName e.BaseFolder =
+  [Config e.Options] s.BEName t.ModuleName e.PtBaseFolder =
     <GetBEPath-T-Aux
-      ( <MQualifiedName::ToRelativeFSPath t.ModuleName> )
-      ( e.BaseFolder )
+      ( <MQualifiedName::ToRelativeFSPath-Pt t.ModuleName> )
+      ( e.PtBaseFolder )
       s.BEName <MLambda::Map & GetFolderExt e.Options>
     >;
 
 GetFolderExt {
-  (BackEnd s.BackEnd e.Options (Folder e.Folder) (Ext e.Ext)) =
-    (s.BackEnd (e.Folder) e.Ext);
+  (BackEnd s.BackEnd e.Options (Folder e.PtFolder) (Ext e.Ext)) =
+    (s.BackEnd (e.PtFolder) e.Ext);
 
   t.OtherOption = ;
 }
 
 GetBEPath-T-Aux {
-  ( e.RelativePath ) ( Current )
-  s.BackEnd e.BackEnds-B (s.BackEnd (e.Folder) e.Ext) e.BackEnds-E =
-    Success e.Folder '/' e.RelativePath '.' e.Ext;
-
-  ( e.RelativePath ) ( e.BaseFolder )
-  s.BackEnd e.BackEnds-B (s.BackEnd (e.Folder) e.Ext) e.BackEnds-E =
-    Success e.BaseFolder '/' e.Folder '/' e.RelativePath '.' e.Ext;
+  ( e.PtRelativePath ) ( e.PtBaseFolder )
+  s.BackEnd e.BackEnds-B (s.BackEnd (e.PtFolder) e.Ext) e.BackEnds-E =
+    <Concat3 (e.PtBaseFolder) (e.PtFolder) (e.PtRelativePath) e.Ext>;
 
   ( e.RelativePath ) ( e.BaseFolder )
   s.BackEnd e.BackEnds =
     Fails;
+}
+
+Concat3 {
+  (e.PtBaseFolder) (e.PtFolder) (e.PtRelativePath) e.Ext =
+    <Concat3-Aux1
+      ( <MFileSystem::ConcatPath (e.PtBaseFolder) e.PtFolder> )
+      (e.PtRelativePath) e.Ext
+    >;
+}
+
+Concat3-Aux1 {
+  (Success e.PtFolder) (e.PtRelativePath) e.Ext =
+    <Concat3-Aux2
+      ( <MFileSystem::ConcatPath (e.PtFolder) e.PtRelativePath> )
+      e.Ext
+    >;
+
+  (Fails) (e.PtRelativePath) e.Ext = Fails;
+}
+
+Concat3-Aux2 {
+  (Success e.PtFullPath) e.Ext =
+    Success <MFileSystem::StrFromPath e.PtFullPath> '.' e.Ext;
+
+  (Fails) e.Ext = Fails;
 }
 
 
@@ -364,8 +386,8 @@ $ENTRY RegisterFrontEnd {
 
 
 /**
-  <GetFEPath-T t.Config t.ModuleName e.BaseFolder>
-    == Success e.FilePath
+  <GetFEPath-T t.Config t.ModuleName e.PtBaseFolder>
+    == Success e.StrFilePath
     == Fails
 */
 $ENTRY GetFEPath-T {
@@ -374,27 +396,35 @@ $ENTRY GetFEPath-T {
     (FrontEnd s.Name (FnParser t.Parser) (Ext e.Ext))
     e.Options-E
   ]
-  s.Name t.ModuleName e.BaseFolder =
-    <GetFEPath-T-Aux
-      ( <MQualifiedName::ToRelativeFSPath t.ModuleName> )
-      ( e.Ext ) e.BaseFolder
+  s.Name t.ModuleName e.PtBaseFolder =
+    <GetFEPath-T-Aux1
+      ( <MQualifiedName::ToRelativeFSPath-Pt t.ModuleName> )
+      ( e.Ext ) e.PtBaseFolder
     >;
 
   [Config e.Options] s.Name t.ModuleName e.BaseFolder =
     Fails;
 }
 
-GetFEPath-T-Aux {
-  (e.Relative) (e.Ext) Current = Success e.Relative '.' e.Ext;
-
-  (e.Relative) (e.Ext) e.BaseFolder =
-    Success e.BaseFolder '/' e.Relative '.' e.Ext;
+GetFEPath-T-Aux1 {
+  (e.PtRelative) (e.Ext) e.PtBaseFolder =
+    <GetFEPath-T-Aux2
+      (e.Ext)
+      <MFileSystem::ConcatPath (e.PtBaseFolder) e.PtRelative>
+    >;
 }  
+
+GetFEPath-T-Aux2 {
+  (e.Ext) Success e.PtFullPath =
+    Success <MFileSystem::StrFromPath e.PtFullPath> '.' e.Ext;
+
+  (e.Ext) Fails = Fails;
+}
 
 //------------------------------------------------------------------------------
 
 /**
-  <Load t.Config s.FEName t.hErrorList t.ModuleName e.PathToFile>
+  <Load t.Config s.FEName t.hErrorList t.ModuleName e.StrPathToFile>
     == t.hErrorList Success s.Result t.hIModule
     == t.hErrorList Fails
   s.Result ::= Success | Warnings | Errors
@@ -403,13 +433,13 @@ $ENTRY Load {
   [Config
     e.Options-B (FrontEnd s.Name (FnParser t.FnParser) t.Ext) e.Options-E
   ]
-  s.Name t.hErrorList t.ModuleName e.FilePath =
+  s.Name t.hErrorList t.ModuleName e.StrFilePath =
     <MLambda::Apply
-      t.FnParser t.hErrorList t.ModuleName e.FilePath
+      t.FnParser t.hErrorList t.ModuleName e.StrFilePath
     >;
 
   [Config e.Options]
-  s.Name t.hErrorList t.ModuleName e.FilePath =
+  s.Name t.hErrorList t.ModuleName e.StrFilePath =
     Fails t.hErrorList;
 }
 

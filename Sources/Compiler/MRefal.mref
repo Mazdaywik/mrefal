@@ -87,14 +87,14 @@ PrintNotFound {
       ' not found'
     >;
 
-  ( (e.Module) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+  ( (e.Module) Found t.QualifiedName s.FrontEnd e.PtBaseDirectory ) =
     /* пусто */;
 }
 
 Make {
   t.Config
   (t.hContext t.hErrorList Success)
-  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.PtBaseDirectory ) =
     (
       <MCompiler::Make
         t.hContext
@@ -106,7 +106,7 @@ Make {
 
   t.Config
   (t.hContext t.hErrorList Fails)
-  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.BaseDirectory ) =
+  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.PtBaseDirectory ) =
     (t.hContext t.hErrorList Fails);
 }
 

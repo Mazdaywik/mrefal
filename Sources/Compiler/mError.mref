@@ -189,6 +189,22 @@ $ENTRY AddBrokenImport
 //------------------------------------------------------------------------------
 
 /**
+  <AddInvalidImportName t.hErrorList t.SrcPos t.ImportName>
+    == t.hErrorList
+*/
+$ENTRY AddInvalidImportName
+  t.hErrorList t.SrcPos t.ImportName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Invalid import module name '
+        <QualifiedNameToString t.ImportName>
+      )
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
   <DependedFromSource t.hErrorList t.SrcPos t.ImportName>
     == t.hErrorList
 */

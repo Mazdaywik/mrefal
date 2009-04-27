@@ -140,21 +140,17 @@ SwLinkNextUnit {
 }
 
 PrintUnresolvedUnits
-  t.UnitStorage e.Modules =
+  t.UnitStorage =
     //<DestroyUnitStorage t.UnitStorage>;
     <CreateNotLinkedFile
-      (e.Modules)
       <NotLinkedList t.UnitStorage>
     >;
 
 CreateNotLinkedFile
-  (e.Modules) t.UnitStorage e.UnitNames =
+  t.UnitStorage e.UnitNames =
     <DestroyUnitStorage t.UnitStorage>
     <FileIO::Save
       (<MCreateDirIfNeed::InfoDir> '/Not linked.txt')
-      ('Not linked modules')
-      <ListNames e.Modules>
-      ()
       ('Not linked units')
       <ListNames e.UnitNames>
     >;

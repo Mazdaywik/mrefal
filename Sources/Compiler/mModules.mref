@@ -13,101 +13,71 @@ $IMPORT MQualifiedName;
     t.hContext t.Config e.PtCmdLinePath
   >
     == t.hContext Found
-      t.QualifiedName s.FrontEndName e.BaseDirectory
+      t.QualifiedName s.FrontEndName e.PtBaseDirectory
     == t.hContext NotFound
 */
 $ENTRY LookupCmdLineModule
-  t.hContext t.Config e.PtCmdLinePath =
+  t.hContext t.Config e.PtCmdLinePath (e.FileName) =
     <GenVariants-CmdLine
-        t.hContext t.Config
-        <ParseFileNameEx e.PtCmdLinePath>
-        @@@@@@@@@@@
+        t.hContext t.Config e.PtCmdLinePath
+        <FindExt e.FileName>
     >;
 
-/*
-  <ParseFileNameEx e.FileName>
-    == s.PathType (e.Directory) e.FileNameNoExt (e.Ext)
-  s.PathType ::= Relative | Absolut
+FindExt
+  e.FileName = <DoFindExt e.FileName ()>;
 
-  Не смотря на то, что путь типа D:Directory\File фактически
-  является относительным, здесь буду считать абсолютным, т.к.
-  из него нельзя построить напрямую квалифицированное имя.
-*/
-ParseFileNameEx
-  e.FileName =
-    <SwParseFileName
-      <MFileSystem::ParseFileName e.FileName>
-    >;
+DoFindExt {
+  e.FileName '.' (e.Ext) = (e.FileName) (e.Ext);
 
-SwParseFileName {
-  (s.Disk ':' e.Tail) e.FileName (e.Ext) =
-    Absolut (s.Disk ':' e.Tail) e.FileName (e.Ext);
+  (e.FileName) = (e.FileName) ();
 
-  ('/' e.Tail) e.FileName (e.Ext) =
-    Absolut ('/' e.Tail) e.FileName (e.Ext);
-
-  ('\\' e.Tail) e.FileName (e.Ext) =
-    Absolut ('\\' e.Tail) e.FileName (e.Ext);
-
-  (e.Directory) e.FileName (e.Ext) =
-    Relative (e.Directory) e.FileName (e.Ext);
+  e.FileName s.Last (e.Ext) = <DoFindExt e.FileName (s.Last e.Ext)>;
 }
 
 GenVariants-CmdLine
-  t.hContext t.Config s.PathType (e.Folder) e.FileName (e.Ext) =
+  t.hContext t.Config e.PtPath (e.FileName) (e.Ext) =
     <GenVariants-CmdLine-Aux
       t.hContext t.Config
       <MLambda::Map
-        <MLambda::BindLeft & CrossName (e.Folder)>
+        <MLambda::BindLeft & CrossName (e.PtPath)>
         <MConfig::GetModulePath t.Config>
       >
-      <MakeAppendNames s.PathType (e.Folder) <MConfig::GetModulePath t.Config>>
+      <MLambda::Map
+        <MLambda::BindLeft & AppendName (e.PtPath)>
+        <MConfig::GetModulePath t.Config>
+      >
       (e.FileName)
-      (
-        <AvailFrontEnds
-          t.Config <MStrings::Lower e.Ext>
-        >
-      )
+      (<AvailFrontEnds t.Config <MStrings::Lower e.Ext>>)
     >;
-
-MakeAppendNames {
-  Relative (e.Folder) e.ModulePath =
-    <MLambda::Map
-      <MLambda::BindLeft & AppendName (e.Folder)>
-      e.ModulePath
-    >;
-
-  Absolut (e.Folder) e.ModulePath =
-    /* Ничего */;
-}
 
 /*
-  <CrossName (e.L-Folder) (e.MPDirectory)>
-    == ( e.BaseFolder t.QualifiedName )
+  <CrossName (e.L-PtFolder) (e.PtMPDirectory)>
+    == ( e.PtBaseFolder t.QualifiedName )
     == empty
 */
 CrossName
-  (e.L-Folder) (e.MPDirectory) =
+  (e.L-PtFolder) (e.PtMPDirectory) =
     <DoCrossName
-      ( <MFileSystem::CanonicalPath e.L-Folder> )
-      ( <MFileSystem::CanonicalPath e.MPDirectory> )
-      () e.L-Folder
+      ( <MFileSystem::CanonicalPath-Pt e.L-PtFolder> )
+      ( <MFileSystem::CanonicalPath-Pt e.PtMPDirectory> )
+      () e.L-PtFolder
     >;
 
 DoCrossName {
   // C- -- canonical
+  // t.[C-]Next ::= t.RootType | (e.SubDir)
 
-  ( s.C-Next e.C-ModuleFolder ) ( s.C-Next e.C-MPDirectory )
-  ( e.Scanned ) s.Next e.ModuleFolder =
+  ( t.C-Next e.C-ModuleFolder ) ( t.C-Next e.C-MPDirectory )
+  ( e.Scanned ) t.Next e.ModuleFolder =
     <DoCrossName
       ( e.C-ModuleFolder ) ( e.C-MPDirectory )
-      ( e.Scanned s.Next ) e.ModuleFolder
+      ( e.Scanned t.Next ) e.ModuleFolder
     >;
 
   // Начало e.[C-]ModuleFolder совпадает с e.C-MPDirectory
-  ( '/' e.C-ModuleFolder-Tail ) ()
-  (e.BaseFolder) s.Slash e.ModuleFolder-Tail =
-    ( e.BaseFolder <QNameFromRelativePath e.ModuleFolder-Tail> );
+  ( e.C-PtModuleFolder-Tail ) ()
+  (e.PtBaseFolder) e.PtModuleFolder-Tail =
+    ( e.PtBaseFolder <MQualifiedName::Create e.PtModuleFolder-Tail> );
 
   // Не совпадает
   ( e.C-ModuleFolder ) ( e.C-MPDirectory )
@@ -115,45 +85,27 @@ DoCrossName {
     /* Пусто */;
 }
 
-SlashParse
-  e.Path =
-    <DeleteAccum
-      <MLambda::MapReduce
-        & SlashParse-A () e.Path
-      >
-    >;
-
-// автомат
-SlashParse-A {
-  // Пустые сегменты игнорируем
-  () '\\' = ();
-  () '/' = ();
-
-  // Непустой сегмент выбрасываем
-  (e.Segment) '\\' = () (e.Segment);
-  (e.Segment) '/' = () (e.Segment);
-
-  // Любой другой символ сохраняем
-  (e.Segment) s.Next = (e.Segment s.Next);
-}
-
-DeleteAccum
-  t.Accum e.Scanned = e.Scanned;
-
 /*
-  <AppendName (e.L-Folder) (e.MPDirectory)>
-    == ( e.BaseFolder t.QualifiedName )
+  <AppendName (e.L-PtFolder) (e.PtMPDirectory)>
+    == ( e.PtBaseFolder t.QualifiedName )
     == empty
 */
-AppendName
-  (e.L-Folder) (e.MPDirectory) =
-    ( e.MPDirectory <QNameFromRelativePath e.L-Folder> );
-
-QNameFromRelativePath
-  e.Path =
-    <MQualifiedName::Create
-      <SlashParse e.Path>
+AppendName {
+  (e.L-PtFolder) (e.PtMPDirectory) =
+    <AppendName-CanConcat
+      (e.L-PtFolder) (e.PtMPDirectory)
+      <MFileSystem::ConcatPath (e.PtMPDirectory) e.L-PtFolder>
     >;
+    //( e.PtMPDirectory <QNameFromRelativePath e.L-Folder> );
+}
+
+AppendName-CanConcat {
+  (t.Root e.Folder) (e.PtMPDirectory) Success e.Path =
+    (e.PtMPDirectory <MQualifiedName::Create e.Folder>);
+
+  (t.Root e.Folder) (e.PtMPDirectory) Fails =
+    /* пусто */;
+}
 
 AvailFrontEnds {
   // Расширение не указано -- все доступные front-end'ы
@@ -204,15 +156,15 @@ GenVariants-CmdLine-Aux {
 }
 
 FinishVariant
-  e.L-ModuleName ( (e.BaseDirectory t.QualifiedPacketName) s.FrontEnd ) =
+  e.L-ModuleName ( (e.PtBaseDirectory t.QualifiedPacketName) s.FrontEnd ) =
     ( s.FrontEnd
       <MQualifiedName::AddSubName t.QualifiedPacketName e.L-ModuleName>
-      e.BaseDirectory
+      e.PtBaseDirectory
     );
 
 CorrectFormat-CmdLine {
-  t.hContext Found s.Type t.ModuleName s.FrontEnd e.BaseDirectory =
-    t.hContext Found t.ModuleName s.FrontEnd e.BaseDirectory;
+  t.hContext Found s.Type t.ModuleName s.FrontEnd e.PtBaseDirectory =
+    t.hContext Found t.ModuleName s.FrontEnd e.PtBaseDirectory;
 
   t.hContext NotFound = t.hContext NotFound;
 }
@@ -268,8 +220,8 @@ LookupImportModule-Unknown
     >;
 
 MakeImportVariant
-  t.L-ModuleName ((e.MP-Catalog) s.FrontEnd) =
-    ( s.FrontEnd t.L-ModuleName e.MP-Catalog );
+  t.L-ModuleName ((e.MP-PtCatalog) s.FrontEnd) =
+    ( s.FrontEnd t.L-ModuleName e.MP-PtCatalog );
 
 CheckVariants-Import-CorrectFormat {
   t.ModuleName
@@ -299,15 +251,33 @@ CheckVariants-Import-CorrectFormat {
 CheckVariants
   t.hContext t.Config e.Variants =
     <DoCheckVariants
-      t.hContext t.Config e.Variants
+      t.hContext t.Config
+      <MLambda::Map & FilterInvalidNames e.Variants>
     >;
 
+FilterInvalidNames {
+  (s.FrontEnd t.ModuleName e.PtBaseDirectory) =
+    <FilterInvalidNames-Aux
+      (s.FrontEnd t.ModuleName e.PtBaseDirectory)
+      <MQualifiedName::Parse t.ModuleName>
+    >;
+}
+
+FilterInvalidNames-Aux {
+  (s.FrontEnd t.ModuleName e.PtBaseDirectory)
+  e.Segments-B (e.Name-B '?' e.Name-E) e.Segments-E =
+    /* Пусто */;
+
+  (e.FrontEnd t.ModuleName e.PtBaseDirectory) e.Segments =
+    (e.FrontEnd t.ModuleName e.PtBaseDirectory);
+}
+
 DoCheckVariants {
-  t.hContext t.Config (s.FrontEnd t.QualifiedName e.BaseDirectory) e.Tail =
+  t.hContext t.Config (s.FrontEnd t.QualifiedName e.PtBaseDirectory) e.Tail =
     <SwDoCheckVariant
       <CheckVariant-T
         t.hContext t.Config
-        s.FrontEnd t.QualifiedName e.BaseDirectory
+        s.FrontEnd t.QualifiedName e.PtBaseDirectory
       >
       e.Tail
     >;
@@ -317,9 +287,9 @@ DoCheckVariants {
 
 SwDoCheckVariant {
   t.hContext t.Config
-  (Found s.Type t.QualifiedName s.FrontEndName e.BaseDirectory)
+  (Found s.Type t.QualifiedName s.FrontEndName e.PtBaseDirectory)
   e.Tail =
-    t.hContext Found s.Type t.QualifiedName s.FrontEndName e.BaseDirectory;
+    t.hContext Found s.Type t.QualifiedName s.FrontEndName e.PtBaseDirectory;
 
   t.hContext t.Config NotFound e.Tail =
     <DoCheckVariants
@@ -328,7 +298,7 @@ SwDoCheckVariant {
 }
 
 CheckVariant-T {
-  t.hContext t.Config Library t.ModuleName e.BaseDirectory =
+  t.hContext t.Config Library t.ModuleName e.PtBaseDirectory =
     <CheckVariant-T-LibAux
       t.hContext t.Config t.ModuleName
       <MLambda::Map
@@ -338,7 +308,7 @@ CheckVariant-T {
             <MLambda::BindLeft
               <MLambda::BindRight
                 & MConfig.GetBEPath-T
-                t.ModuleName e.BaseDirectory
+                t.ModuleName e.PtBaseDirectory
               >
               t.Config
             >
@@ -347,41 +317,43 @@ CheckVariant-T {
         >
         <MConfig::GetBackEndList t.Config>
       >
-      (e.BaseDirectory)
+      (e.PtBaseDirectory)
     >;
 
-  t.hContext t.Config s.FrontEnd t.ModuleName e.BaseDirectory =
+  t.hContext t.Config s.FrontEnd t.ModuleName e.PtBaseDirectory =
     <CheckVariant-T-SrcAux
       t.hContext t.Config t.ModuleName
-      <MConfig::GetFEPath-T t.Config s.FrontEnd t.ModuleName e.BaseDirectory>
-      (s.FrontEnd e.BaseDirectory)
+      <MConfig::GetFEPath-T t.Config s.FrontEnd t.ModuleName e.PtBaseDirectory>
+      (s.FrontEnd e.PtBaseDirectory)
     >;
 }
 
 CheckVariant-T-SrcAux {
   t.hContext t.Config t.ModuleName
-  Success e.FilePath (s.FrontEnd e.BaseDirectory) =
+  Success e.FilePath (s.FrontEnd e.PtBaseDirectory) =
     <CheckVariant-T-SrcAux-SwExist
       t.hContext t.Config
-      (s.FrontEnd t.ModuleName e.BaseDirectory)
+      (s.FrontEnd t.ModuleName e.PtBaseDirectory)
       <MFileSystem::ExistFile-T e.FilePath>
     >;
 
   t.hContext t.Config t.ModuleName
-  Fails (s.FrontEnd e.BaseDirectory) =
+  Fails (s.FrontEnd e.PtBaseDirectory) =
     t.hContext t.Config (NotFound);
 }
 
 CheckVariant-T-SrcAux-SwExist {
   t.hContext t.Config
-  (s.FrontEnd t.ModuleName e.BaseDirectory)
+  (s.FrontEnd t.ModuleName e.PtBaseDirectory)
   True e.FrontEndName =
     <CheckVariant-T-SrcAux-SwExist-Finish
       t.hContext t.Config t.ModuleName
       (s.FrontEnd e.FrontEndName)
-      (<SelectBaseDirectory e.BaseDirectory>)
+      (e.PtBaseDirectory)
       <MLambda::Map
-        <MLambda::BindLeft & GetBEPath-CheckExist t.Config t.ModuleName e.BaseDirectory>
+        <MLambda::BindLeft
+          & GetBEPath-CheckExist t.Config t.ModuleName e.PtBaseDirectory
+        >
         <MConfig::GetBackEndList t.Config>
       >
     >;
@@ -392,17 +364,11 @@ CheckVariant-T-SrcAux-SwExist {
     t.hContext t.Config NotFound;
 }
 
-SelectBaseDirectory {
-  '.' = Current;
-
-  e.BaseDirectory = e.BaseDirectory;
-}
-
 GetBEPath-CheckExist
-  t.Config t.ModuleName e.BaseDirectory s.BackEndName =
+  t.Config t.ModuleName e.PtBaseDirectory s.BackEndName =
     <GetBEPath-CheckExist-Aux
       s.BackEndName
-      <MConfig::GetBEPath-T t.Config s.BackEndName t.ModuleName e.BaseDirectory>
+      <MConfig::GetBEPath-T t.Config s.BackEndName t.ModuleName e.PtBaseDirectory>
     >;
 
 GetBEPath-CheckExist-Aux
@@ -412,7 +378,7 @@ GetBEPath-CheckExist-Aux
 CheckVariant-T-SrcAux-SwExist-Finish {
   t.hContext t.Config t.ModuleName
   (s.FrontEnd e.FrontEndName)
-  (e.BaseDirectory)
+  (e.PtBaseDirectory)
   e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E =
     <GuardInvariant
       <MContext::CreateModule
@@ -428,11 +394,11 @@ CheckVariant-T-SrcAux-SwExist-Finish {
       >
     >
     t.Config
-    (Found Changed t.ModuleName s.FrontEnd e.BaseDirectory);
+    (Found Changed t.ModuleName s.FrontEnd e.PtBaseDirectory);
 
   t.hContext t.Config t.ModuleName
   (s.FrontEnd e.FrontEndName)
-  (e.BaseDirectory)
+  (e.PtBaseDirectory)
   e.BackEnds =
     <GuardInvariant
       <MContext::CreateModule
@@ -443,7 +409,7 @@ CheckVariant-T-SrcAux-SwExist-Finish {
       >
     >
     t.Config
-    (Found Updated t.ModuleName s.FrontEnd e.BaseDirectory);
+    (Found Updated t.ModuleName s.FrontEnd e.PtBaseDirectory);
 }
 
 BackEnds-DelTF
@@ -455,12 +421,12 @@ GuardInvariant
 CheckVariant-T-LibAux {
   t.hContext t.Config t.QualifiedName
   e.BE-Files-B (s.BackEnd Fails) e.BE-Files-E
-  (e.BaseDirectory) =
+  (e.PtBaseDirectory) =
     t.hContext t.Config (NotFound);
 
-  t.hContext t.Config t.QualifiedName e.BE-Files (e.BaseDirectory) =
+  t.hContext t.Config t.QualifiedName e.BE-Files (e.PtBaseDirectory) =
     <CheckVariant-T-LibAux-SwExist
-      t.hContext t.Config t.QualifiedName (e.BaseDirectory)
+      t.hContext t.Config t.QualifiedName (e.PtBaseDirectory)
       <MLambda::Map
         &Lib-CheckExist e.BE-Files
       >
@@ -483,11 +449,11 @@ SwLib-CheckExist {
 }
 
 CheckVariant-T-LibAux-SwExist {
-  t.hContext t.Config t.QualifiedName (e.BaseDirectory)
+  t.hContext t.Config t.QualifiedName (e.PtBaseDirectory)
   e.BE-Files-B NotExist e.BE-Files-E =
     t.hContext t.Config NotFound;
 
-  t.hContext t.Config t.QualifiedName (e.BaseDirectory) e.BE-Files =
+  t.hContext t.Config t.QualifiedName (e.PtBaseDirectory) e.BE-Files =
     <GuardInvariant
       <MContext::CreateModule
         t.hContext t.QualifiedName
@@ -497,7 +463,7 @@ CheckVariant-T-LibAux-SwExist {
       >
     >
     t.Config
-    (Found Library t.QualifiedName Library e.BaseDirectory);
+    (Found Library t.QualifiedName Library e.PtBaseDirectory);
 }
 
 $END MModules.

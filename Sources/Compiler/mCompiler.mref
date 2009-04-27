@@ -357,10 +357,78 @@ GetImportList-TypeRecursiveImports
 Compile-Recompile-ProcessImportList
   s.FnAnalyzer s.Result s.RecResult (e.Stack) t.Config t.ModuleName
   t.hContext t.hErrorList t.hRawIModule e.Imports =
+    <Compile-Recompile-ProcessImportList-Aux
+      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+      t.hContext <SelectResult s.Result s.RecResult>
+      <CheckImportNames
+        t.hErrorList t.hRawIModule
+        <MLambda::Map & CheckName e.Imports>
+      >
+    >;
+
+CheckName {
+  (t.Alias t.RealName) =
+    <CheckName-Parsed
+      t.Alias t.RealName
+      <MQualifiedName::Parse t.RealName>
+    >;
+}
+
+CheckName-Parsed {
+  t.Alias t.RealName
+  e.Segments-B (e.Name-B '?' e.Name-E) e.Segments-E =
+    (Invalid t.Alias t.RealName);
+
+  t.Alias t.RealName e.Segments =
+    (Valid t.Alias t.RealName);
+}
+
+CheckImportNames {
+  t.hErrorList t.hRawIModule e.Imports =
+    <DoCheckImportNames
+      t.hErrorList t.hRawIModule () e.Imports
+    >;
+}
+
+DoCheckImportNames {
+  t.hErrorList t.hRawIModule (e.Scanned)
+  (Valid t.Alias t.RealName) e.Tail =
+    <DoCheckImportNames
+      t.hErrorList t.hRawIModule
+      (e.Scanned (t.Alias t.RealName)) e.Tail
+    >;
+
+  t.hErrorList t.hRawIModule (e.Scanned)
+  (Invalid t.Alias t.RealName) e.Tail =
+    <DoCheckImportNames
+      <CheckImportName-AddError
+        t.hErrorList t.RealName
+        <MIModule::GetImportAttribute-AliasName
+          t.hRawIModule Position t.Alias
+        >
+      >
+      (e.Scanned) e.Tail
+    >;
+
+  t.hErrorList t.hRawIModule (e.Scanned) =
+    t.hErrorList t.hRawIModule e.Scanned;
+}
+
+CheckImportName-AddError {
+  t.hErrorList t.ImportName t.hRawIModule Found t.SrcPos =
+    <MError::AddInvalidImportName
+      t.hErrorList t.SrcPos t.ImportName
+    >
+    t.hRawIModule;
+}
+
+Compile-Recompile-ProcessImportList-Aux
+  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+  t.hContext s.Result
+  t.hErrorList t.hRawIModule e.Imports =
     <Compile-Recompile-CompileSubModules
       s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-      t.hContext t.hErrorList
-      <SelectResult s.Result s.RecResult>
+      t.hContext t.hErrorList s.Result
       t.hRawIModule e.Imports
     >;
 

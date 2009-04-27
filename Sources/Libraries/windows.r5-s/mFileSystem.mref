@@ -152,29 +152,34 @@ PathFromStr-Tail {
     >;
 }
 
-InvalidChars = '\\/:*?\"<>|' <NotPrintable>;
+InvalidChars = ':*?\"<>|' <NotPrintable>;
 
 DoPathFromStr-Tail {
   (e.Invalid-B s.Invalid e.Invalid-E)
-  t.Root (e.Segments) (e.Scanned) s.Invalid e.Tail = Fails;
+  t.Root (e.Segments) (e.Scanned) s.Invalid e.Tail =
+    Fails;
 
   (e.Invalid)
   t.Root (e.Segments) ('..') '\\' e.Tail =
     <DoPathFromStr-Tail
-      (e.Invalid) t.Root (e.Segments ('..')) e.Tail
+      (e.Invalid) t.Root (e.Segments ('..')) () e.Tail
     >;
 
   (e.Invalid)
-  t.Root (e.Segments) (e.Scanned '.') '\\' e.Tail = Fails;
+  t.Root (e.Segments) (e.Scanned '.') '\\' e.Tail =
+    Fails;
 
   (e.Invalid)
-  t.Root (e.Segments) (e.Scanned ' ') '\\' e.Tail = Fails;
+  t.Root (e.Segments) (e.Scanned ' ') '\\' e.Tail =
+    Fails;
 
   (e.Invalid)
-  t.Root (e.Segments) (e.Scanned) '\\' = Fails;
+  t.Root (e.Segments) (e.Scanned) '\\' =
+    Fails;
 
   (e.Invalid)
-  t.Root (e.Segments) () '\\' e.Tail = Fails;
+  t.Root (e.Segments) () '\\' e.Tail =
+    Fails;
 
   (e.Invalid)
   t.Root (e.Segments) (e.Scanned) '\\' e.Tail =
@@ -193,6 +198,25 @@ DoPathFromStr-Tail {
   (e.Invalid)
   t.Root (e.Segments) (e.Scanned) =
     Success t.Root e.Segments (e.Scanned);
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <ConcatPath (e.PtDirectory) e.PtFileName>
+    == Success e.PtFileName
+    == Fails
+*/
+$ENTRY ConcatPath {
+  (e.Path) (Relative) e.SubPath = Success e.Path e.SubPath;
+
+  ((Relative-Disk s.Disk) e.Path) (Relative-Disk s.Disk) e.SubPath =
+    Success (Relative-Disk s.Disk) e.Path e.SubPath;
+
+  ((Absolut-Disk s.Disk) e.Path) (Relative-Disk s.Disk) e.SubPath =
+    Success (Absolut-Disk s.Disk) e.Path e.SubPath;
+
+  (e.Path1) e.Path2 = Fails;
 }
 
 //------------------------------------------------------------------------------
@@ -360,7 +384,7 @@ DoParseDirectory {
 //------------------------------------------------------------------------------
 
 /**
-  <CanonicalPath e.StrPath>
+  <CanonicalPath-Str e.StrPath>
     == e.StrCanonical
 */
 $ENTRY CanonicalPath
@@ -370,5 +394,21 @@ CanonicalChar {
   '\\' = '/';
   s.Other = <MStrings::Lower s.Other>;
 }
+
+/**
+  <CanonicalPath-Pt e.PtPath>
+    == e.PtCanonical
+*/
+$ENTRY CanonicalPath-Pt
+  t.PathType e.Path =
+    t.PathType
+    <MLambda::Map
+      <MLambda::Composite
+        & MLambda.UnBracket
+        <MLambda::BindLeft & MLambda.Map & MStrings.Lower>
+        & MLambda.Bracket
+      >
+      e.Path
+    >;
 
 $END MFileSystem.

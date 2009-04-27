@@ -28,7 +28,7 @@ $IMPORT MStrings;
 $ENTRY Parse
   t.hErrorList (e.ProgName) e.Options =
     <Parse-PreScan-PtFromStr
-      t.ErrorList
+      t.hErrorList
       <MLambda::Map
         & File-PtFromStr
         <PreScan (/* стек файлов */) <Renumerate e.Options>>
@@ -55,9 +55,7 @@ SwFile-PtFromStr {
 
 Parse-PreScan-PtFromStr
   t.hErrorList e.Options =
-    <Parse-SwPreparseErrors
-      t.hErrorList 
-    >;
+    <Parse-SwPreparseErrors t.hErrorList e.Options>;
 
 Renumerate
   e.Options =
@@ -145,7 +143,7 @@ PreScan-Option-Param {
       (e.Stack-B (e.ConfigFile) e.Stack-E) e.Tail
     >;
 
-  (e.Stack) t.SrcPos ('cfg') (e.StrConfigFile) e.Tail =
+  (e.Stack) t.SrcPos ('cfg') (e.ConfigFile) e.Tail =
     <PreScan
       (e.Stack (e.ConfigFile))
       <MStrings::Skip 1
@@ -158,11 +156,11 @@ PreScan-Option-Param {
               >
             >
             <MLambda::BindLeft
-              & MakeConfigOption (e.StrConfigFile)
+              & MakeConfigOption (e.ConfigFile)
             >
           >
           1 /* номера строк */
-          <FileIO::Load e.StrConfigFile>
+          <FileIO::Load e.ConfigFile>
         >
       >
       PopStackFile
@@ -707,19 +705,28 @@ TopLevelOptions {
 AddModulePath {
   t.hErrorList t.SrcPos (e.Options) e.StrPath =
     <AddModulePath-Aux
-      t.hErrorList t.SrcPos (e.Options)
+      t.hErrorList t.SrcPos (e.Options) (e.StrPath)
       <MFileSystem::PathFromStr e.StrPath>
     >;
 }
 
 AddModulePath-Aux {
   t.hErrorList t.SrcPos
-  (e.Options-B (ModulePath e.PtPaths) e.Options-E) Success e.PtPath =
+  (e.Options-B (ModulePath e.PtPaths) e.Options-E) (e.StrPath)
+  Success e.PtPath =
     t.hErrorList Success
     (e.Options-B (ModulePath e.PtPaths (e.PtPath)) e.Options-E);
 
-  t.hErrorList t.SrcPos (e.Options) Success e.PtPath =
+  t.hErrorList t.SrcPos (e.Options) (e.StrPath)
+  Success e.PtPath =
     t.hErrorList Success (e.Options (ModulePath (e.PtPath)));
+
+  t.hErrorList t.SrcPos (e.Options) (e.StrPath)
+  Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Incorrect path \'' e.StrPath '\''
+    >
+    Fails (e.Options);
 }
 
 AddMakeMode {
@@ -818,7 +825,7 @@ FinishTopLevel-SwUndefined {
 
   t.hErrorList (e.Tags) e.Options =
     <MLambda::Reduce
-      t.hErrorList & AddNotFoundOption e.Tags
+      & AddNotFoundOption t.hErrorList e.Tags
     >
     Fails;
 }

@@ -2,6 +2,7 @@ $MODULE MCmdLineParser;
 
 $IMPORT FileIO;
 $IMPORT Math;
+$IMPORT MEndsTable;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
@@ -15,8 +16,6 @@ $IMPORT MStrings;
       (Files (e.PtFileName)*)
       t.OtherOptions // См. код и копайся в коде
     )
-
-  s.BackEnd ::= Refal5
 */
 
 
@@ -769,6 +768,10 @@ SwAddBackEnd {
 SelectBackEnd {
   'Refal5' = Refal5;
   'R5' = Refal5;
+  'SRefal' = SimpleRefal;
+  'Simple' = SimpleRefal;
+  'SimpleRefal' = SimpleRefal;
+  'SR' = SimpleRefal;
 
   e.Other = Other e.Other;
 }
@@ -852,7 +855,7 @@ TuneBackEnd {
   t.hErrorList t.SrcPos t.Collected e.BackEndName t.SubInfo =
     <TuneBackEnd-SwBackEnd
       t.hErrorList t.SrcPos t.Collected t.SubInfo
-      <SwSelectLowBackEnd e.BackEndName>
+      <MEndsTable::SelectLowBackEnd e.BackEndName>
     >;
 }
 
@@ -946,13 +949,8 @@ TuneFrontEnd {
   t.hErrorList t.SrcPos t.Collected e.BackEndName t.SubInfo =
     <TuneFrontEnd-SwFrontEnd
       t.hErrorList t.SrcPos t.Collected t.SubInfo
-      <SwSelectLowFrontEnd e.BackEndName>
+      <MEndsTable::SelectLowFrontEnd e.BackEndName>
     >;
-}
-
-SwSelectLowFrontEnd {
-  'MRefal' = (MRefal_FrontEnd ('mref'));
-  e.Other = Unknown (e.Other);
 }
 
 TuneFrontEnd-SwFrontEnd {

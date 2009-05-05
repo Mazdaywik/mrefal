@@ -6,3 +6,4 @@ BackEnds:
   Refal5BE
   XLinxBE
   SymInfo
+  SRefal-BE

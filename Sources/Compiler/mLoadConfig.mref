@@ -2,15 +2,10 @@ $MODULE MLoadConfig;
 
 $IMPORT MCmdLineParser;
 $IMPORT MConfig;
+$IMPORT MEndsTable;
 $IMPORT MError;
 $IMPORT MLambda;
 $IMPORT MSrcPos;
-
-// Эти модули должны быть инициализированы
-$IMPORT MBackEnd_Refal5_init = Refal5::MInit;
-$IMPORT MFrontEnd_MRefal = MRefal-FE::MInit;
-$IMPORT MSymModule;
-$IMPORT MXLinx;
 
 
 /**
@@ -30,18 +25,12 @@ Load-Aux {
     <Load-Aux-Tuners
       t.hErrorList Success
       <SetDefaults-Tuners
-        (<DefTuners>) e.CmdLineInfo
+        (<MEndsTable::DefTuners>) e.CmdLineInfo
       >
     >;
 
   t.hErrorList Fails = t.hErrorList Fails;
 }
-
-DefTuners =
-  (TuneBE Refal5BE ((Relative) ('~ROut')) ('rout'))
-  (TuneBE SymInfo ((Relative) ('~Defs')) ('rsym'))
-  (TuneBE XLinxBE ((Relative) ('~XLinx')) ('xlinx'))
-  (TuneFE MRefal_FrontEnd ('mref'));
 
 SetDefaults-Tuners {
   (e.Defs-B (s.TuneType s.Tuner e.DefSettins) e.Defs-E)
@@ -61,7 +50,8 @@ Load-Aux-Tuners {
     <Load-Aux-Tuners
       <MError::AddCmdLineError
         t.hErrorList <MSrcPos::Create-CmdLine-Common>
-        'Two back-ends ' <TunerName s.Tuner1> ' and ' <TunerName s.Tuner2>
+        'Two back-ends ' <MEndsTable::TunerName s.Tuner1>
+        ' and ' <MEndsTable::TunerName s.Tuner2>
         ' has same output directory and same extension'
       >
       Fails
@@ -73,7 +63,8 @@ Load-Aux-Tuners {
     <Load-Aux-Tuners
       <MError::AddCmdLineError
         t.hErrorList <MSrcPos::Create-CmdLine-Common>
-        'Two front-ends ' <TunerName s.Tuner1> ' and ' <TunerName s.Tuner2>
+        'Two front-ends ' <MEndsTable::TunerName s.Tuner1>
+        ' and ' <MEndsTable::TunerName s.Tuner2>
         ' has same output directory and same extension'
       >
       Fails
@@ -89,17 +80,13 @@ Load-Aux-Tuners {
   t.hErrorList Fails e.Options = t.hErrorList Fails;
 }
 
-TunerName {
-  Refal5BE = 'Refal5';
-  SymInfo = 'SymInfo';
-  XLinxBE = 'XLinx';
-  MRefal_FrontEnd = 'MRefal';
-}
-
 EndMakers {
   ( (e.FrontEnds) e.BackEnds) (TuneFE s.FrontEnd (e.Ext)) =
     (
-      (e.FrontEnds <MLambda::BindRight <EndMakerFunc s.FrontEnd> (e.Ext)>)
+      (
+        e.FrontEnds
+        <MLambda::BindRight <MEndsTable::EndMakerFunc s.FrontEnd> (e.Ext)>
+      )
       e.BackEnds
     );
 
@@ -107,18 +94,13 @@ EndMakers {
     (t.FrontEnds
       e.BackEnds
       (s.BackEnd
-        <MLambda::BindRight <EndMakerFunc s.BackEnd> (e.PtDir) (e.Ext)>
+        <MLambda::BindRight
+          <MEndsTable::EndMakerFunc s.BackEnd> (e.PtDir) (e.Ext)
+        >
       )
     );
 
   (e.Ends) t.OtherOption = (e.Ends) t.OtherOption;
-}
-
-EndMakerFunc {
-  Refal5BE = & MBackEnd_Refal5_init.Register;
-  SymInfo = & MSymModule.Register;
-  XLinxBE = & MXLinx.Register;
-  MRefal_FrontEnd = & MFrontEnd_MRefal.Register;
 }
 
 InitConfig {
@@ -132,6 +114,7 @@ InitConfig {
 
 BE-Sets-Table =
   (Refal5 SymInfo Refal5BE)
+  (SimpleRefal SymInfo SRefal-BE)
   (XLinx XLinxBE);
 
 BE-Sets

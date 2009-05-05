@@ -1,0 +1,62 @@
+$MODULE InOut;
+
+$IMPORT MDosWinRecoder;
+$IMPORT MRefalRTS;
+
+$SWAP G_Buffer;
+
+$ENTRY WriteLine {
+  e.Line =
+    <MRefalRTS::Prout
+      <MDosWinRecoder::WinToDos <G_Buffer> e.Line>
+    >;
+}
+
+$ENTRY WriteLine-T {
+  e.Line =
+    <WriteLine e.Line>
+    e.Line;
+}
+
+$ENTRY ReadLine {
+  = <FlushBuffer>
+    <MDosWinRecoder::DosToWin <MRefalRTS::Card>>;
+}
+
+FlushBuffer = <SwFlushBuffer <G_Buffer>>;
+
+SwFlushBuffer {
+  = ;
+  e.Line =
+    <MRefalRTS::Prout
+      <MDosWinRecoder::WinToDos
+        e.Line
+      >
+    >;
+}
+
+$ENTRY Final = <FlushBuffer>;
+
+$ENTRY Write
+  e.Text = <G_Buffer <G_Buffer> e.Text>;
+
+$ENTRY Write-T
+  e.Text = <Write e.Text> e.Text;
+
+$ENTRY WriteText {
+  (e.Line) e.Tail =
+    <WriteLine e.Line>
+    <WriteText e.Tail>;
+
+  = ;
+}
+
+$ENTRY WriteText-T {
+  (e.Line) e.Tail =
+    ( <WriteLine-T e.Line> )
+    <WriteText-T e.Tail>;
+
+  = ;
+}
+
+$END InOut.

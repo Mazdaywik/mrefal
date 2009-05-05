@@ -1,0 +1,88 @@
+$MODULE MSelfDiag;
+
+$IMPORT MRefalRTS;
+
+$ENTRY Error
+  e.Message =
+    <MRefalRTS::Prout 'INTERNAL ERROR: ' e.Message>
+    <Log 'INTERNAL ERROR: ' e.Message>
+    <MRefalRTS::Exit 1>;
+
+$ENTRY FailDown { }
+
+$ENTRY Log
+  e.Message =
+    <OpenLog>
+    <MRefalRTS::Putout 19 e.Message>;
+
+$ENTRY Log-T
+  e.Message =
+    <OpenLog>
+    <MRefalRTS::Put 19 e.Message>;
+
+OpenLog = <SwOpenLog (<G_LogOpened Y>)>;
+
+$SWAP G_LogOpened;
+
+SwOpenLog {
+  (Y) = ;
+  () = <MRefalRTS::Open 'w' 19 '__log'>;
+}
+
+AssertAux {
+  t.ResultAndExpected t.ResultAndExpected =
+    ('=') t.ResultAndExpected t.ResultAndExpected;
+
+  t.Result t.Expected = ('!=') t.Result t.Expected;
+}
+
+/**
+  <Assert-??-T (e.Result) (e.Expected) [e.Message]>
+    == e.Result
+    fail down
+
+  <Assert-?? (e.Result) (e.Expected) [e.Message]>
+    == empty
+    fail down
+*/
+$ENTRY Assert-Eq-T
+  t.Result t.Expected e.Message =
+    <SwAssert ('=') <AssertAux t.Result t.Expected> e.Message>;
+
+$ENTRY Assert-NE-T
+  t.Result t.Expected e.Message =
+    <SwAssert ('!=') <AssertAux t.Result t.Expected> e.Message>;
+
+$ENTRY Assert-Eq
+  t.Result t.Expected e.Message =
+    <Nil <Assert-Eq-T t.Result t.Expected e.Message>>;
+
+$ENTRY Assert-NE
+  t.Result t.Expected e.Message =
+    <Nil <Assert-NE-T t.Result t.Expected e.Message>>;
+
+SwAssert {
+  t.Sign t.Sign (e.Result) t.Expected e.Message =
+    e.Result;
+
+  t.SignExpected t.SignFact t.Result t.Expected e.Message =
+    <PrintAssert
+      t.SignFact t.Result t.Expected e.Message
+    >;
+}
+
+PrintAssert {
+  (e.SignFact) t.Result t.Expected =
+    <Error 'ASSERT VIOLATION: ' t.Result ' ' e.SignFact ' ' t.Expected>;
+
+  (e.SignFact) t.Result t.Expected e.Message =
+    <Error
+      'ASSERT VIOLATION: '
+      t.Result ' ' e.SignFact ' ' t.Expected
+      '(' e.Message ')'
+    >;
+}
+
+Nil e.X = ;
+
+$END MSelfDiag.

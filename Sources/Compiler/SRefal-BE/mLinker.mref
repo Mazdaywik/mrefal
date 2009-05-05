@@ -1,0 +1,33 @@
+$MODULE SRefal-BE::MLinker;
+
+$IMPORT FileIO;
+$IMPORT MLambda;
+$IMPORT MOS;
+
+/**
+  <Link (e.ProgName) (t.ModuleName e.PathToModule)*>
+    == Success
+    == Fails
+*/
+$ENTRY Link
+  (e.ProgName) e.Modules =
+    Success
+    <FileIO::Save
+      ('call_srefc.tmp.bat')
+      (
+        'srefc '
+        '-c compile_cl\" \"/I\\"../../Simple Refal/SRLib\\" '
+        '-d ..\\..\\Simple\" \"Refal\\SRLib '
+        <MLambda::Map & FilePath e.Modules>
+        'refalrts Library LibraryEx '
+        '>___out 2>___err'
+      )
+      ('rem @del %0')
+    >
+    <MOS::System 'call_srefc.tmp.bat'>;
+
+FilePath {
+  (t.ModuleName e.Path) = '"' e.Path '" ';
+}
+
+$END SRefal-BE::MLinker.

@@ -1,0 +1,26 @@
+$module MRefalRTS;
+
+$entry Prout;
+$entry Card;
+
+$entry Open;
+$entry Get;
+$entry Put;
+$entry Putout;
+
+$entry Arg;
+$entry Exit;
+$entry ExistFile;
+$entry System;
+$entry Env;
+
+$entry Numb;
+$entry Symb;
+$entry Ord;
+$entry Chr;
+
+$entry Add;
+$entry Sub;
+$entry Compare;
+
+$end MRefalRTS.

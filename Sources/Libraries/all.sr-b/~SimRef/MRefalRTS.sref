@@ -1,2 +1,59 @@
+$ENTRY MRefalRTSP_InitE_ {
+}
+
 $ENTRY RegisterE_ {
+}
+
+$ENTRY MRefalRTSP_Prout {
+}
+
+$ENTRY MRefalRTSP_Card {
+}
+
+$ENTRY MRefalRTSP_Open {
+}
+
+$ENTRY MRefalRTSP_Get {
+}
+
+$ENTRY MRefalRTSP_Put {
+}
+
+$ENTRY MRefalRTSP_Putout {
+}
+
+$ENTRY MRefalRTSP_Arg {
+}
+
+$ENTRY MRefalRTSP_Exit {
+}
+
+$ENTRY MRefalRTSP_ExistFile {
+}
+
+$ENTRY MRefalRTSP_System {
+}
+
+$ENTRY MRefalRTSP_Env {
+}
+
+$ENTRY MRefalRTSP_Numb {
+}
+
+$ENTRY MRefalRTSP_Symb {
+}
+
+$ENTRY MRefalRTSP_Ord {
+}
+
+$ENTRY MRefalRTSP_Chr {
+}
+
+$ENTRY MRefalRTSP_Add {
+}
+
+$ENTRY MRefalRTSP_Sub {
+}
+
+$ENTRY MRefalRTSP_Compare {
 }

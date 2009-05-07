@@ -16,7 +16,7 @@ $ENTRY Link
       ('call_srefc.tmp.bat')
       (
         'srefc '
-        '-c compile_cl\" \"/I\\"../../Simple Refal/SRLib\\" '
+        '-c \"compile_cl /I\\\"../../Simple Refal/SRLib\\\"\" '
         '-d ..\\..\\Simple\" \"Refal\\SRLib '
         <MLambda::Map & FilePath e.Modules>
         'refalrts Library LibraryEx '

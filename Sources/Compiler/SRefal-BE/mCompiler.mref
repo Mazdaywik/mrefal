@@ -191,9 +191,9 @@ Gen-Common-Term {
   (SVar e.Index) = 's.' <NameCode e.Index> ' ';
   (TVar e.Index) = 't.' <NameCode e.Index> ' ';
 
-  (Literal e.Content) = '\'' <Escape e.Content> '\'';
+  (Literal e.Content) = '\'' <Escape e.Content> '\' ';
   // (DQWord e.Content) = ;
-  (Macro s.Value) = <MStrings::Symb s.Value>;
+  (Macro s.Value) = <MStrings::Symb s.Value> ' ';
 
   (FnPtr t.Callable) = <Gen-Callable t.Callable>;
 }
@@ -266,10 +266,12 @@ GenEntries {
         (
           ()
           <MLambda::Map & Decl-ExternInit e.Imports>
+          ('$EXTERN ExitE_;')
           ()
           ('$ENTRY Go { =')
           <MLambda::Map & Call-ExternInit e.Imports>
-          ('  ' <Gen-Result e.Result> ';')
+          ('  ' <Gen-Result e.Result>)
+          ('  <ExitE_ 0>;')
           ('}')
         )
       )

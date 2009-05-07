@@ -1,6 +1,9 @@
 $MODULE MSelfDiag;
 
 $IMPORT MRefalRTS;
+$IMPORT Core::MFileIO;
+
+//------------------------------------------------------------------------------
 
 $ENTRY Error
   e.Message =
@@ -10,24 +13,38 @@ $ENTRY Error
 
 $ENTRY FailDown { }
 
+//------------------------------------------------------------------------------
+
 $ENTRY Log
   e.Message =
-    <OpenLog>
-    <MRefalRTS::Putout 19 e.Message>;
+    <G_LogHandle
+      <Core::MFileIO::WriteLine <LogHandle> e.Message>
+    >;
 
 $ENTRY Log-T
-  e.Message =
-    <OpenLog>
-    <MRefalRTS::Put 19 e.Message>;
+  e.Message = <Log e.Message> e.Message;
 
-OpenLog = <SwOpenLog (<G_LogOpened Y>)>;
+LogHandle = <SwLogHandle <G_LogHandle>>;
 
-$SWAP G_LogOpened;
+$SWAP G_LogHandle;
 
-SwOpenLog {
-  (Y) = ;
-  () = <MRefalRTS::Open 'w' 19 '__log'>;
+SwLogHandle {
+  s.Handle = s.Handle;
+
+  = <Core::MFileIO::Open 'w' '__log'>;
 }
+
+//------------------------------------------------------------------------------
+
+$ENTRY Final = <SwFinal <G_LogHandle>>;
+
+SwFinal {
+  s.Handle = <Core::MFileIO::Close s.Handle>;
+
+  = ;
+}
+
+//------------------------------------------------------------------------------
 
 AssertAux {
   t.ResultAndExpected t.ResultAndExpected =

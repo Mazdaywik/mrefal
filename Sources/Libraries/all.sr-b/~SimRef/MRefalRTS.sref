@@ -1,59 +1,294 @@
-$ENTRY MRefalRTSP_InitE_ {
+// Глобальные переменные
+$SWAP G_FileHandles;
+$SWAP G_Finalizers;
+
+$FORWARD CloseFiles;
+
+MRefalRTS-Init {
+  /* пусто */ =
+    <G_FileHandles
+      (1)  (2)  (3)  (4)  (5)
+      (6)  (7)  (8)  (9)  (10)
+      (11) (12) (13) (14) (15)
+      (16) (17) (18) (19)
+    >;
 }
+
+MRefalRTS-Final {
+  = <CloseFiles <G_FileHandles>>;
+}
+
+//FROM Library
+$EXTERN FClose;
+
+CloseFiles {
+  (s.Num) e.Tail = <CloseFiles e.Tail>;
+
+  (s.Num s.Handle) e.Tail =
+    <FClose s.Handle> <CloseFiles e.Tail>;
+
+  = ;
+}
+
+$EXTERN RegisterE_;
+
+$ENTRY MRefalRTSP_InitE_ {
+  /* пусто */ =
+    <RegisterE_ MRefalRTS-Init MRefalRTS-Final>;
+}
+
+$FORWARD SwRegistered;
 
 $ENTRY RegisterE_ {
+  s.FnInit s.FnFinal =
+    <SwRegistered
+      s.FnInit s.FnFinal <G_Finalizers>
+    >;
 }
+
+SwRegistered {
+  s.FnInit s.FnFinal
+  e.Finalizers-B s.FnFinal e.Finalizers-E =
+    <G_Finalizers
+      e.Finalizers-B s.FnFinal e.Finalizers-E
+    >;
+
+  s.FnInit s.FnFinal e.Finalizers =
+    <s.FnInit>
+    <G_Finalizers s.FnFinal e.Finalizers>;
+}
+
+//FROM Library
+$EXTERN WriteLine;
 
 $ENTRY MRefalRTSP_Prout {
+  e.Text = <WriteLine e.Text>;
 }
+
+//FROM Library
+$EXTERN ReadLine;
 
 $ENTRY MRefalRTSP_Card {
+  = <ReadLine>;
 }
+
+$ENUM FailDown-BuiltInFunction;
+
+//FROM Library
+$EXTERN FOpen, FClose;
+
+$FORWARD SwOpen;
 
 $ENTRY MRefalRTSP_Open {
+  s.Mode s.Handle e.FileName =
+    <SwOpen
+      (s.Mode s.Handle e.FileName)
+      <G_FileHandles>
+    >;
 }
 
+SwOpen {
+  (s.Mode s.NumHandle e.FileName)
+  e.Handles-B (s.NumHandle) e.Handles-E =
+    <G_FileHandles
+      e.Handles-B
+      (s.NumHandle <FOpen s.Mode e.FileName>)
+      e.Handles-E
+    >;
+
+  (s.Mode s.NumHandle e.FileName)
+  e.Handles-B (s.NumHandle s.Handle) e.Handles-E =
+    <FClose s.Handle>
+    <G_FileHandles
+      e.Handles-B
+      (s.NumHandle <FOpen s.Mode e.FileName>)
+      e.Handles-E
+    >;
+}
+
+HandleFromNum-Aux {
+  s.Num e.Handles-B (s.Num s.Handle) e.Handles-E =
+    s.Handle
+    <G_FileHandles
+      e.Handles-B (s.Num s.Handle) e.Handles-E
+    >;
+
+  s.Num e.Handles =
+    <FailDown-BuiltInFunction
+      'Illegal file number ' s.Num
+    >;
+}
+
+HandleFromNum {
+  s.Num = <HandleFromNum-Aux s.Num <G_FileHandles>>;
+}
+
+//FROM Library
+$EXTERN FReadLine, FWriteLine;
+
+$FORWARD Get-Aux;
+
 $ENTRY MRefalRTSP_Get {
+  s.Num =
+    <Get-Aux
+      <FReadLine <HandleFromNum s.Num>>
+    >;
+}
+
+Get-Aux {
+  s.Handle e.Line = e.Line;
+}
+
+Nil { e.Any = ; }
+
+$ENTRY MRefalRTSP_Putout {
+  s.Num e.Text =
+    <Nil <FWriteLine <HandleFromNum s.Num> e.Text>>;
 }
 
 $ENTRY MRefalRTSP_Put {
+  s.Num e.Text =
+    <MRefalRTSP_Putout s.Num e.Text>
+    e.Text;
 }
 
-$ENTRY MRefalRTSP_Putout {
-}
+//FROM Library
+$EXTERN Arg;
 
 $ENTRY MRefalRTSP_Arg {
+  s.Num = <Arg s.Num>;
+}
+
+$FORWARD DoExit;
+
+$ENTRY ExitE_ {
+  s.RetCode =
+    <DoExit s.RetCode <G_Finalizers>>;
 }
 
 $ENTRY MRefalRTSP_Exit {
+  s.RetCode = <ExitE_ s.RetCode>;
 }
+
+//FROM Library
+$EXTERN Exit;
+
+DoExit {
+  s.RetCode = <Exit s.RetCode>;
+
+  s.RetCode s.FnFinal e.Finalizers =
+    <G_Finalizers e.Finalizers>
+    <s.FnFinal>
+    <ExitE_ s.RetCode>;
+}
+
+//FROM Library
+$EXTERN ExistFile, True, False;
+
+$FORWARD SwExist;
 
 $ENTRY MRefalRTSP_ExistFile {
+  e.FileName = <SwExist <ExistFile e.FileName>>;
 }
+
+$LABEL True, False;
+
+SwExist {
+  True = # True; False = # False;
+}
+
+//FROM Library
+$EXTERN System;
 
 $ENTRY MRefalRTSP_System {
+  e.Command = <System e.Command>;
 }
+
+//FROM Library
+$EXTERN GetEnv;
 
 $ENTRY MRefalRTSP_Env {
+  e.EnvName = <GetEnv e.EnvName>;
 }
+
+//FROM Library
+$EXTERN IntFromStr, Success, Fails;
+
+$FORWARD SwNumb;
 
 $ENTRY MRefalRTSP_Numb {
+  e.String = <SwNumb <IntFromStr e.String>>;
 }
+
+SwNumb {
+  Success s.Num e.Tail = s.Num e.Tail;
+
+  Fails e.Tail =
+    <FailDown-BuiltInFunction
+      'Can''t convert string ''' e.Tail ''' to number'
+    >;
+}
+
+//FROM Library
+$EXTERN StrFromInt;
 
 $ENTRY MRefalRTSP_Symb {
+  s.Number = <StrFromInt s.Number>;
 }
 
+//FROM Library
+$EXTERN Chr, Ord, Add, Sub,
+  SymbType, TypeNumber, TypeCharacter, TypeFunction, TypeIdentifier, TypeFile;
+
+$FORWARD Convert;
+
 $ENTRY MRefalRTSP_Ord {
+  e.String =
+    <Convert Ord TypeCharacter e.String>;
 }
 
 $ENTRY MRefalRTSP_Chr {
+  e.String =
+    <Convert Chr TypeNumber e.String>;
 }
 
+$FORWARD Convert-Symb;
+
+Convert {
+  s.FnConv s.Type (e.InBracket) e.String =
+    (<Convert s.FnConv s.Type e.InBracket>)
+    <Convert s.FnConv s.Type e.InBracket>;
+
+  s.FnConv s.Type s.Symbol e.Tail =
+    <Convert-Symb
+      s.FnConv s.Type <SymbType s.Symbol> s.Symbol
+    >
+    <Convert s.FnConv s.Type e.Tail>;
+
+  s.FnConv s.Type t.ADT e.Tail =
+    t.ADT
+    <Convert s.FnConv s.Type e.Tail>;
+
+  s.FnConv s.Type = ;
+}
+
+Convert-Symb {
+  s.FnConv s.Type s.Type s.Symbol = <s.FnConv s.Symbol>;
+
+  s.FnConv s.Type1 s.Type2 s.Symbol = s.Symbol;
+}
+
+//FROM Library
+$EXTERN Add, Sub, SymbCompare;
+
 $ENTRY MRefalRTSP_Add {
+  s.Left s.Right = <Add s.Left s.Right>;
 }
 
 $ENTRY MRefalRTSP_Sub {
+  s.Left s.Right = <Sub s.Left s.Right>;
 }
 
 $ENTRY MRefalRTSP_Compare {
+  s.Left s.Right = <SymbCompare s.Left s.Right>;
 }

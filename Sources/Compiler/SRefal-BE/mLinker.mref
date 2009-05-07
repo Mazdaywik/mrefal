@@ -15,13 +15,13 @@ $ENTRY Link
     <FileIO::Save
       ('call_srefc.tmp.bat')
       (
-        'srefc '
-        '-c \"compile_cl /I\\\"../../Simple Refal/SRLib\\\"\" '
+        '@srefc '
+        '-c \"compile_bcc -I\\\"../../Simple Refal/SRLib\\\"\" '
         '-d ..\\..\\Simple\" \"Refal\\SRLib '
         <MLambda::Map & FilePath e.Modules>
-        'refalrts Library LibraryEx '
-        '>___out 2>___err'
+        'refalrts Library LibraryEx>null'
       )
+      ('@del *.obj')
       ('rem @del %0')
     >
     <MOS::System 'call_srefc.tmp.bat'>;

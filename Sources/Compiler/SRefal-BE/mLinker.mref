@@ -19,10 +19,10 @@ $ENTRY Link
         '-c \"compile_cl /I\\\"../../Simple Refal/SRLib\\\"\" '
         '-d ..\\..\\Simple\" \"Refal\\SRLib '
         <MLambda::Map & FilePath e.Modules>
-        'refalrts Library LibraryEx>null'
+        'refalrts Library WinLib>nul'
       )
       ('@del *.obj')
-      ('rem @del %0')
+      ('@rem @del %0')
     >
     <MOS::System 'call_srefc.tmp.bat'>;
 

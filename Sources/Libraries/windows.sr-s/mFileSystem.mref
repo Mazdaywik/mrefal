@@ -2,6 +2,7 @@ $MODULE MFileSystem;
 
 $IMPORT MRefalRTS;
 
+$IMPORT Core::MFileSystem;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MR-Extent;
@@ -270,11 +271,28 @@ $ENTRY FileAttribute
   s.Attribute e.FileName =
     <SwFileAttribute
       s.Attribute
+      <Core::MFileSystem::GetFileAttributes e.FileName>
+    >;
+
+SwFileAttribute {
+  s.Attribute Fails = FileNotFound;
+
+  DateTime Success
+  e.Attribs-B (DateTime e.Value) e.Attribs-E =
+    (e.Value);
+}
+
+FailDown { }
+
+$ENTRY FileAttribute_
+  s.Attribute e.FileName =
+    <SwFileAttribute
+      s.Attribute
       <MR-Extent::Call 'INFO ' <Quoting e.FileName>>
       (e.FileName)
     >;
 
-SwFileAttribute {
+SwFileAttribute_ {
   s.Attribute Fails (e.FileName) =
     <MSelfDiag::Error
       'Files not found in MFileSystem::FileAttribute'
@@ -307,6 +325,14 @@ SwFileAttribute {
     == Fails
 */
 $ENTRY DirList
+  e.DirectoryName =
+    /*
+      Пути возвращаются относительно папки e.DirectoryName.
+      Надо переписать.
+    */
+    <Core::MFileSystem::DirList e.DirectoryName>;
+
+$ENTRY DirList_
   e.DirectoryName =
     <DirListing-SwLoad
       <MR-Extent::Call 'LIST ' <Quoting e.DirectoryName>>

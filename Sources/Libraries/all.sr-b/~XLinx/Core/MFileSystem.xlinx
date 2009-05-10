@@ -1,0 +1,10 @@
+((!(Module)(Core::MFileSystem)('..\\Libraries\\all.sr-b\\Core\\
+MFileSystem.mref',\d0321)))((!(Entry)(Core::MFileSystem::DirLis
+t)('..\\Libraries\\all.sr-b\\Core\\MFileSystem.mref',\d03210)))
+((!(Entry)(Core::MFileSystem::GetFileAttributes)('..\\Libraries
+\\all.sr-b\\Core\\MFileSystem.mref',\d0323))(?(Identifier)(Date
+Time)('..\\Libraries\\all.sr-b\\Core\\MFileSystem.mref',\d0325)
+)(?(Identifier)(Size)('..\\Libraries\\all.sr-b\\Core\\MFileSyst
+em.mref',\d0326))(?(Identifier)(Dir)('..\\Libraries\\all.sr-b\\
+Core\\MFileSystem.mref',\d0326))(?(Identifier)(LongName)('..\\L
+ibraries\\all.sr-b\\Core\\MFileSystem.mref',\d0327)))

@@ -3,10 +3,10 @@ $module MRefalRTS;
 $entry Prout;
 $entry Card;
 
-$entry Open;
-$entry Get;
-$entry Put;
-$entry Putout;
+//$entry Open;
+//$entry Get;
+//$entry Put;
+//$entry Putout;
 
 $entry Arg;
 $entry Exit;

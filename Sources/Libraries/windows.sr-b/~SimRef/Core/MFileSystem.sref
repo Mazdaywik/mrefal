@@ -1,0 +1,37 @@
+
+// Код находится в файле WinLib.cpp
+
+//$LABEL DateTime;
+//$LABEL Dir;
+//$LABEL LongName;
+//$LABEL Size;
+//
+//$ENTRY CoreP_MFileSystemP_GetFileAttributes {
+//  e.FileName =
+//    (#DateTime 1945 5 9 23 59 59 99 )(#Size 1000 #Dir )(#LongName 'Long name' );
+//}
+//
+//$ENTRY CoreP_MFileSystemP_DirList {
+//  e.Directory =
+//    ('File1' )('File2' );
+//}
+//
+//
+//$EXTERN RegisterE_;
+//$FORWARD CoreP_MFileSystemP_InitializeE_;
+//$FORWARD CoreP_MFileSystemP_FinalizeE_;
+//
+//
+//$ENTRY CoreP_MFileSystemP_InitE_ { =
+//  <RegisterE_
+//    CoreP_MFileSystemP_InitializeE_
+//    CoreP_MFileSystemP_FinalizeE_
+//  >;
+//}
+//
+//CoreP_MFileSystemP_InitializeE_ {
+//  = /* empty */;
+//}
+//CoreP_MFileSystemP_FinalizeE_ {
+//  = /* empty */;
+//}

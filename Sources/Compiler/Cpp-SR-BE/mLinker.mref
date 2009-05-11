@@ -1,0 +1,12 @@
+$MODULE Cpp-SR-BE::MLinker;
+
+/**
+  <Link (e.ProgName) (t.ModuleName e.OutName)>
+    == Success
+    == Fails
+*/
+$ENTRY Link
+  (e.ProgName) e.Modules =
+    Fails;
+
+$END Cpp-SR-BE::MLinker.

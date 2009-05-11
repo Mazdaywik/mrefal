@@ -859,13 +859,6 @@ TuneBackEnd {
     >;
 }
 
-SwSelectLowBackEnd {
-  'Refal5' = (Refal5BE ((Relative) ('~ROut')) ('rout'));
-  'SymInfo' = (SymInfo ((Relative) ('~RSym')) ('rsym'));
-  'XLinx' = (XLinxBE ((Relative) ('~XLinx')) ('xlinx'));
-  e.Other = Unknown (e.Other);
-}
-
 TuneBackEnd-SwBackEnd {
   t.hErrorList t.SrcPos
   (e.Options-B (TuneBE s.BackEnd (e.PtDir) (e.Ext)) e.Options-E)
@@ -888,7 +881,7 @@ TuneBackEnd-SwBackEnd {
       )
     );
 
-  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) Other (e.BEName) =
+  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) Unknown (e.BEName) =
     <MError::AddCmdLineError
       t.hErrorList t.SrcPos 'Unknown back-end ' e.BEName
     >
@@ -928,14 +921,28 @@ BackEnd-Ext {
 }
 
 BackEnd-Dir {
-  t.hErrorList t.SrcPos (e.Options-B (Dir e.PtDir) e.Options-E) e.PtNewDir =
+  t.hErrorList t.SrcPos (e.Options-B (Dir e.PtDir) e.Options-E) e.StrNewDir =
     <MError::AddCmdLineError
       t.hErrorList t.SrcPos 'Redefinition of directory'
     >
     Fails (e.Options-B (Dir e.PtDir) e.Options-E);
 
-  t.hErrorList t.SrcPos (e.Options) e.PtNewDir =
-    t.hErrorList Success (e.Options (Dir e.PtNewDir));
+  t.hErrorList t.SrcPos (e.Options) e.StrNewDir =
+    <BackEnd-Dir-Aux
+      t.hErrorList t.SrcPos (e.Options)
+      <MFileSystem::PathFromStr e.StrNewDir>
+    >;
+}
+
+BackEnd-Dir-Aux {
+  t.hErrorList t.SrcPos (e.Options) Success (Relative) e.PtNewDir =
+    t.hErrorList Success (e.Options (Dir (Relative) e.PtNewDir));
+
+  t.hErrorList t.SrcPos (e.Options) Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Invalid path'
+    >
+    Fails (e.Options);
 }
 
 TuneBackEnd-Finish {
@@ -969,7 +976,7 @@ TuneFrontEnd-SwFrontEnd {
       (TuneFE s.FrontEnd (<MakeOpt Ext (e.DefExt) e.SubInfo>) )
     );
 
-  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) Other (e.FEName) =
+  t.hErrorList t.SrcPos (e.Options) (e.SubInfo) Unknown (e.FEName) =
     <MError::AddCmdLineError
       t.hErrorList t.SrcPos 'Unknown front-end ' e.FEName
     >

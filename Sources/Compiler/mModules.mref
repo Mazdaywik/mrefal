@@ -4,7 +4,6 @@ $IMPORT MConfig;
 $IMPORT MContext;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
-$IMPORT MSelfDiag;
 $IMPORT MStrings;
 $IMPORT MQualifiedName;
 

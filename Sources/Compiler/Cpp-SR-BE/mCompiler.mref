@@ -1,0 +1,11 @@
+$MODULE Cpp-SR-BE::MCompiler;
+
+/**
+  <Generate t.hIModule e.OutName>
+    == t.hIModule
+*/
+$ENTRY Generate
+  t.hIModule e.OutName =
+    t.hIModule;
+
+$END Cpp-SR-BE::MCompiler.

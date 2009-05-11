@@ -1,0 +1,17 @@
+$MODULE Cpp-SR-BE::MInit;
+
+$IMPORT MConfig;
+$IMPORT Cpp-SR-BE::MCompiler;
+$IMPORT Cpp-SR-BE::MLinker;
+
+$ENTRY Register
+  t.Config (e.Directory) (e.Ext) =
+    <MConfig::RegisterBackEnd
+      t.Config
+      Cpp-SR-BE
+      & Cpp-SR-BE.MCompiler.Generate
+      & Cpp-SR-BE.MLinker.Link
+      (e.Directory) (e.Ext)
+    >;
+
+$END Cpp-SR-BE::MInit.

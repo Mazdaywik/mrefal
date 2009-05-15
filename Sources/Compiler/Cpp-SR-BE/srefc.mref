@@ -1,0 +1,235 @@
+$PROGRAM Srefc;$IMPORT Driver;
+ 
+
+$IMPORT LibraryEx;
+  
+
+$IMPORT Library;
+    
+
+//------------------------------------------------------------------------------
+
+ 
+
+$ENTRY Go {
+  = <& Main <& LibraryEx.ArgList>>;
+}
+
+  
+
+$IMPORT ParseCmdLine;
+    
+
+Main {
+  (e.ProgName) e.Arguments =
+    <& Compile_And_Link
+      <& FindFiles_Compilers
+        <& ParseCmdLine.ParseCommandLine e.Arguments>
+      >
+    >;
+}
+
+$IMPORT FindFile;
+ 
+
+FindFiles_Compilers {
+  t.Compilers (e.Folders) e.Files =
+    t.Compilers <& FindFile.FindFiles (e.Folders) e.Files>;
+}
+
+ 
+   
+
+   
+
+  
+
+Compile_And_Link {
+  (& ParseCmdLine.CmdLineError e.Message) =
+    <& Library.WriteLine 'COMMAND LINE ERROR: ' e.Message>;
+
+  t.Compiler e.Files_B (& FindFile.NotFound e.FileName) e.Files_E =
+    <& LibraryEx.Map & PrintNotFound (& FindFile.NotFound e.FileName) e.Files_E>;
+
+  t.Compiler e.Files =
+    <& ScanCollisions
+      t.Compiler <& LibraryEx.Map & GetFileName e.Files>
+    >;
+}
+
+PrintNotFound {
+  (& FindFile.NotFound e.FileName) =
+    <& Library.WriteLine 'COMMAND LINE ERROR: file ' e.FileName ' not found'>;
+
+  (& FindFile.Output e.FileName) = ;
+
+  (& FindFile.Source (e.Source) e.Output) = ;
+}
+
+
+  
+
+GetFileName {
+  (& FindFile.Output e.FileName) =
+    (
+      <& GetFileName_Aux e.FileName> 0 (& FindFile.Output e.FileName)
+    );
+
+  (& FindFile.Source (e.Source) e.Output) =
+    (
+      <& GetFileName_Aux e.Output> 0
+      (& FindFile.Source (e.Source) e.Output)
+    );
+}
+
+GetFileName_Aux {
+  e.FileName '.cpp' = <& DoGetFileName e.FileName>;
+}
+
+ 
+
+DoGetFileName {
+  e.FileName '/' = ;
+  e.FileName '\\' = ;
+  e.FileName s.Last =
+    <& DoGetFileName e.FileName>
+    <& Lower s.Last>;
+  = ;
+}
+
+ 
+
+Lower {
+  s.Char =
+    <& DoLower
+      s.Char 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz'
+    >;
+}
+
+DoLower {
+  s.Upper s.Upper s.Lower e.Tail = s.Lower;
+
+  s.Char s.Upper s.Lower e.Tail = <& DoLower s.Char e.Tail>;
+
+  s.Char = s.Char;
+}
+
+ 
+
+ 
+  
+
+ScanCollisions {
+  t.Compiler
+  e.Files_B (e.FileName 0 (& FindFile.Output e.Output1)) e.Files_M
+  (e.FileName 0 (& FindFile.Output e.Output2)) e.Files_E =
+    <& Library.WriteLine
+      'COMMAND LINE ERROR: output files ' e.Output1 ' and '
+      e.Output2 ' has some filename ' e.FileName
+    >;
+
+  t.Compiler
+  e.Files_B (e.FileName 0 t.Location) e.Files_M
+  (e.FileName 0 (& FindFile.Output e.Output)) e.Files_E =
+    <& ScanCollisions
+      t.Compiler
+      e.Files_B (e.FileName 1 t.Location) e.Files_M
+      (e.FileName 0 (& FindFile.Output e.Output))
+      <& LibraryEx.DelAccummulator
+        <& LibraryEx.MapReduce
+          (& Renumerate e.FileName) 2 e.Files_E
+        >
+      >
+    >;
+
+  t.Compiler
+  e.Files_B (e.FileName 0 (& FindFile.Output e.Output)) e.Files_M
+  (e.FileName 0 t.Location) e.Files_E =
+    <& ScanCollisions
+      t.Compiler
+      e.Files_B (e.FileName 0 (& FindFile.Output e.Output)) e.Files_M
+      (e.FileName 1 t.Location)
+      <& LibraryEx.DelAccummulator
+        <& LibraryEx.MapReduce
+          (& Renumerate e.FileName) 2 e.Files_E
+        >
+      >
+    >;
+
+  t.Compiler
+  e.Files_B (e.FileName 0 t.Location1) e.Files_M
+  (e.FileName 0 t.Location2) e.Files_E =
+    <& ScanCollisions
+      t.Compiler
+      e.Files_B (e.FileName 0 t.Location1)
+      e.Files_M (e.FileName 1 t.Location2)
+      <& LibraryEx.DelAccummulator
+        <& LibraryEx.MapReduce
+          (& Renumerate e.FileName) 2 e.Files_E
+        >
+      >
+    >;
+
+  t.Compiler e.Files =
+    <& Link t.Compiler <& LibraryEx.Map & CompileEachFile e.Files>>;
+}
+
+ 
+ 
+
+Renumerate {
+  e.FileName s.NextNumber
+  (e.FileName 0 (& FindFile.Source (e.Source) e.Output)) =
+    <& LibraryEx.Inc s.NextNumber>
+    (e.FileName s.NextNumber (& FindFile.Source (e.Source) e.Output));
+
+  e.FileName s.NextNumber t.NextFile =
+    s.NextNumber t.NextFile;
+}
+
+  
+
+CompileEachFile {
+  (e.FileName s.Num (& FindFile.Output e.OutputName)) =
+    <& Library.WriteLine '+Linking ' e.OutputName> (e.OutputName);
+
+  (e.FileName s.Num (& FindFile.Source (e.Source) e.Output)) =
+    <& SwCompiled
+      <& Library.WriteLine '*Compiling ' e.Source ':'>
+      <& Driver.CompileFile (e.Source) <& FileNum s.Num e.Output>>
+    >;
+}
+
+ 
+ 
+
+FileNum {
+  0 e.File = e.File;
+
+  s.Number e.File '.cpp' =
+    e.File '@' <& Library.StrFromInt s.Number> '.cpp';
+}
+
+SwCompiled {
+  & Library.Success e.OutputName = (e.OutputName);
+
+  & Library.Fails = & Library.Fails;
+}
+
+UnBracketSpace {
+  (e.FileName) = ' "' e.FileName '"';
+}
+
+ 
+
+Link {
+  (& ParseCmdLine.NoCompile) e.Files = ;
+
+  (& ParseCmdLine.CompileCommand e.Command) e.Outputs_B & Library.Fails e.Outputs_E = ;
+
+  (& ParseCmdLine.CompileCommand e.Command) e.Outputs =
+    <& Library.System e.Command <& LibraryEx.Map & UnBracketSpace e.Outputs>>
+    <& Library.WriteLine '** Compilation successed **'>;
+}
+
+$END Srefc.

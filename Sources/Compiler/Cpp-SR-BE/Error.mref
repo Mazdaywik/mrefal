@@ -1,0 +1,71 @@
+$MODULE Error; ErrorList { }
+
+$ENTRY EL_Create {
+  = (& ErrorList);
+}
+
+$ENTRY EL_AddError {
+  (& ErrorList e.Errors) e.Message =
+    (& ErrorList
+      e.Errors
+      ('  ERROR: ' e.Message)
+    );
+}
+
+$IMPORT Library;
+ 
+
+$ENTRY EL_AddErrorAt {
+  (& ErrorList e.Errors) s.LineNumber e.Message =
+    (& ErrorList
+      e.Errors
+      ('  ERROR at ' <& Library.StrFromInt s.LineNumber> ': ' e.Message)
+    );
+}
+
+$IMPORT Lexer;
+    
+
+$ENTRY EL_AddUnexpected {
+  t.ErrorList (& Lexer.TkError s.LineNumber e.Message) e.Expected =
+    <& EL_AddErrorAt
+      t.ErrorList s.LineNumber e.Message
+    >;
+
+  t.ErrorList (& Lexer.TkUnexpected s.LineNumber e.Unexpected) e.Expected =
+    <& EL_AddErrorAt
+      t.ErrorList s.LineNumber
+      'Unknown characters "' e.Unexpected '"'
+    >;
+
+  t.ErrorList (s.Unexpected s.LineNumber e.Info) e.Expected =
+    <& EL_AddErrorAt
+      t.ErrorList s.LineNumber
+      'Unexpected ' <& Lexer.StrFromToken s.Unexpected e.Info>
+      ', expected ' e.Expected
+    >;
+}
+
+$IMPORT LibraryEx;
+ 
+
+ 
+ 
+
+PrintError {
+  (e.Line) = <& Library.WriteLine e.Line>;
+}
+
+$ENTRY EL_Print {
+  (& ErrorList e.Errors) =
+    <& LibraryEx.Map & PrintError e.Errors> (& ErrorList e.Errors);
+}
+
+ $ENTRY EL_NoErrors { } $ENTRY EL_HasErrors { }
+
+$ENTRY EL_IsEmpty {
+  (& ErrorList) = & EL_NoErrors;
+
+  t.ErrorList = & EL_HasErrors;
+}
+$END Error.

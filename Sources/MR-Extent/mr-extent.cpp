@@ -78,13 +78,14 @@ int fileinfo( const char *filename ) {
       xxio_escape( full_name );
 
       printf(
-        "#%d #%d #%d #%d #%d #%d %s",
+        "#%d #%d #%d #%d #%d #%d #%d %s",
         file_system_time.wYear,
         file_system_time.wMonth,
         file_system_time.wDay,
         file_system_time.wHour,
         file_system_time.wMinute,
         file_system_time.wSecond,
+        file_system_time.wMilliseconds
         full_name.c_str()
       );
       FindClose( hFind );

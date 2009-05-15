@@ -553,11 +553,11 @@ NModuleTailer-ModuleName-Aux {
     Success
     t.IModule;
 
-  t.IModule t.HeadModuleName
+  t.hIModule t.HeadModuleName
   t.SrcPos Fails
   t.ErrorList t.Lexer t.OtherToken =
-    <NModuleTailer-ModuleName
-      t.IModule t.HeadModuleName
+    <NModuleTailer-ModuleName-Aux
+      t.hIModule t.HeadModuleName
       <SrcPosQualifiedName
         <MError::AddUnexpected
           t.ErrorList t.OtherToken 'repeat of module name'

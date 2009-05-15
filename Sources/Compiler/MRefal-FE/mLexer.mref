@@ -145,7 +145,7 @@ SwDoEatC-Comment {
 UnBlankNewLine
   t.SymStream =
     <DeleteStartSpaces
-      <MSymStream::ExtractsFromSet t.SymStream (' \t')>
+      <MSymStream::ExtractsFromSet t.SymStream (' \t\r')>
     >;
 
 DeleteStartSpaces
@@ -305,6 +305,12 @@ Escaped {
   s.Quote (e.Scanned) t.SymStream 'n' =
     <DoQuoted
       s.Quote (e.Scanned '\n')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'r' =
+    <DoQuoted
+      s.Quote (e.Scanned '\r')
       <MSymStream::NextChar t.SymStream>
     >;
 

@@ -1,4 +1,4 @@
-$PROGRAM Library;
+$MODULE Library;
 
 $IMPORT FileIO;
 $IMPORT InOut;
@@ -113,5 +113,9 @@ SwExistFile {
   True = & True;
   False = & False;
 }
+
+$ENTRY SymbCompare { }
+
+$ENTRY SymbType { }
 
 $END Library.

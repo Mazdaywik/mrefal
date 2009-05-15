@@ -19,7 +19,7 @@ $ENTRY ST_Create {
 
  Declared { } Defined { } Identifier { }
 
-//FROM  Generator;
+$IMPORT Generator;
   
 
 $IMPORT Error;
@@ -45,20 +45,20 @@ $ENTRY ST_AddDefined {
     t.ErrorList (& TSymTable e.Names_B (& Defined s.ScopeClass e.Name) e.Names_E);
 
   t.ErrorList
-  (& TSymTable e.Names_B (& Declared & GN_Entry e.Name) e.Names_E)
-  & GN_Local s.LnNum e.Name =
+  (& TSymTable e.Names_B (& Declared & Generator.GN_Entry e.Name) e.Names_E)
+  & Generator.GN_Local s.LnNum e.Name =
     <& Error.EL_AddErrorAt
       t.ErrorList s.LnNum 'Function ' e.Name ' alredy declared as Entry'
     >
-    (& TSymTable e.Names_B (& Defined & GN_Entry e.Name) e.Names_E);
+    (& TSymTable e.Names_B (& Defined & Generator.GN_Entry e.Name) e.Names_E);
 
   t.ErrorList
-  (& TSymTable e.Names_B (& Declared & GN_Local e.Name) e.Names_E)
-  & GN_Entry s.LnNum e.Name =
+  (& TSymTable e.Names_B (& Declared & Generator.GN_Local e.Name) e.Names_E)
+  & Generator.GN_Entry s.LnNum e.Name =
     <& Error.EL_AddErrorAt
       t.ErrorList s.LnNum 'Function ' e.Name ' alredy declared as Local'
     >
-    (& TSymTable e.Names_B (& Defined & GN_Local e.Name) e.Names_E);
+    (& TSymTable e.Names_B (& Defined & Generator.GN_Local e.Name) e.Names_E);
 
   t.ErrorList
   (& TSymTable e.Names) s.ScopeClass s.LnNum e.Name =
@@ -79,36 +79,36 @@ $ENTRY ST_AddDeclared {
     t.ErrorList (& TSymTable e.Names_B (& Defined s.ScopeClass e.Name) e.Names_E);
 
   t.ErrorList
-  (& TSymTable e.Names_B (& Declared & GN_Entry e.Name) e.Names_E)
-  & GN_Local s.LnNum e.Name =
+  (& TSymTable e.Names_B (& Declared & Generator.GN_Entry e.Name) e.Names_E)
+  & Generator.GN_Local s.LnNum e.Name =
     <& Error.EL_AddErrorAt
       t.ErrorList s.LnNum 'Function ' e.Name ' alredy declared as Entry'
     >
-    (& TSymTable e.Names_B (& Declared & GN_Entry e.Name) e.Names_E);
+    (& TSymTable e.Names_B (& Declared & Generator.GN_Entry e.Name) e.Names_E);
 
   t.ErrorList
-  (& TSymTable e.Names_B (& Declared & GN_Local e.Name) e.Names_E)
-  & GN_Entry s.LnNum e.Name =
+  (& TSymTable e.Names_B (& Declared & Generator.GN_Local e.Name) e.Names_E)
+  & Generator.GN_Entry s.LnNum e.Name =
     <& Error.EL_AddErrorAt
       t.ErrorList s.LnNum 'Function ' e.Name ' alredy declared as Local'
     >
-    (& TSymTable e.Names_B (& Declared & GN_Local e.Name) e.Names_E);
+    (& TSymTable e.Names_B (& Declared & Generator.GN_Local e.Name) e.Names_E);
 
   t.ErrorList
-  (& TSymTable e.Names_B (& Defined & GN_Entry e.Name) e.Names_E)
-  & GN_Local s.LnNum e.Name =
+  (& TSymTable e.Names_B (& Defined & Generator.GN_Entry e.Name) e.Names_E)
+  & Generator.GN_Local s.LnNum e.Name =
     <& Error.EL_AddErrorAt
       t.ErrorList s.LnNum 'Function ' e.Name ' alredy defined as Entry'
     >
-    (& TSymTable e.Names_B (& Defined & GN_Entry e.Name) e.Names_E);
+    (& TSymTable e.Names_B (& Defined & Generator.GN_Entry e.Name) e.Names_E);
 
   t.ErrorList
-  (& TSymTable e.Names_B (& Defined & GN_Local e.Name) e.Names_E)
-  & GN_Entry s.LnNum e.Name =
+  (& TSymTable e.Names_B (& Defined & Generator.GN_Local e.Name) e.Names_E)
+  & Generator.GN_Entry s.LnNum e.Name =
     <& Error.EL_AddErrorAt
       t.ErrorList s.LnNum 'Function ' e.Name ' alredy defined as Local'
     >
-    (& TSymTable e.Names_B (& Defined & GN_Local e.Name) e.Names_E);
+    (& TSymTable e.Names_B (& Defined & Generator.GN_Local e.Name) e.Names_E);
 
   t.ErrorList (& TSymTable e.Names) s.ScopeClass s.LnNum e.Name =
     t.ErrorList (& TSymTable e.Names (& Declared s.ScopeClass e.Name));

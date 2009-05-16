@@ -1,4 +1,32 @@
-$MODULE Generator; $ENTRY GN_Local { } $ENTRY GN_Entry { }
+$MODULE Cpp-SR-BE::Generator;
+
+$IMPORT Cpp-SR-BE::Algorithm;
+$IMPORT Cpp-SR-BE::LibraryEx;
+$IMPORT Cpp-SR-BE::Library;
+$IMPORT MLambda;
+$IMPORT MQualifiedName;
+
+QNameCode {
+  t.Name = <DoQNameCode <MQualifiedName::Parse t.Name>>;
+}
+
+DoQNameCode {
+  (e.First) = <NameCode e.First>;
+
+  (e.First) (e.Second) =
+    <NameCode e.First> 'P_' <NameCode e.Second>;
+
+  (e.First) (e.Second) e.Tail =
+    <NameCode e.First> 'P_' <DoQNameCode (e.Second) e.Tail>;
+}
+
+NameCode {
+  e.Name = <MLambda::Map & NameCodeChar e.Name>;
+}
+
+NameCodeChar {
+  '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; s.Other = s.Other;
+}
 
 FuncArguments {
   = 'refalrts::Iter arg_begin, refalrts::Iter arg_end';
@@ -9,21 +37,23 @@ NakedArguments {
 }
 
 TextFromMemoryClass {
-  & GN_Local = 'static '; & GN_Entry = ;
+  Local = 'static '; Entry = ;
 }
 
 SwGenFnStart {
-  s.MemoryClass s.FnArguments e.Name =
+  s.MemoryClass s.FnArguments t.Name =
     (
-      <& TextFromMemoryClass s.MemoryClass>
-      'refalrts::FnResult ' e.Name '(' <s.FnArguments> ') {'
+      <TextFromMemoryClass s.MemoryClass>
+      'refalrts::FnResult '
+      <QNameCode t.Name>
+      '(' <s.FnArguments> ') {'
     )
     ('  refalrts::this_is_generated_function();');
 }
 
 $ENTRY GenFnStart {
-  s.MemoryClass e.Name =
-    <& SwGenFnStart s.MemoryClass & FuncArguments e.Name>;
+  s.MemoryClass t.Name =
+    <SwGenFnStart s.MemoryClass & FuncArguments t.Name>;
 }
 
 $ENTRY GenFnEnd {
@@ -31,40 +61,44 @@ $ENTRY GenFnEnd {
 }
 
 $ENTRY GenEEnum {
-  e.Name = <& SwGenFnStart & GN_Entry & NakedArguments e.Name> <& GenFnEnd>;
+  t.Name = <SwGenFnStart Entry & NakedArguments t.Name> <GenFnEnd>;
 }
 
 $ENTRY GenEnum {
-  e.Name = <& SwGenFnStart & GN_Local & NakedArguments e.Name> <& GenFnEnd>;
+  t.Name = <SwGenFnStart Local & NakedArguments t.Name> <GenFnEnd>;
 }
 
 $ENTRY GenExtern {
-  e.Name =
-    ('extern refalrts::FnResult ' e.Name '(' <& FuncArguments> ');') ();
+  t.Name =
+    (
+      'extern refalrts::FnResult '
+      <QNameCode t.Name>
+      '(' <FuncArguments> ');'
+    )
+    ();
 }
 
 $ENTRY GenForward {
-  e.Name =
-    ('static refalrts::FnResult ' e.Name '(' <& FuncArguments> ');') ();
+  t.Name =
+    (
+      'static refalrts::FnResult '
+      <QNameCode t.Name>
+      '(' <FuncArguments> ');'
+    )
+    ();
 }
 
- 
-
 $ENTRY GenESwap {
-  e.Name =
-    ('//$ESWAP ' e.Name)
-    <& GenSwap_Aux & GN_Entry e.Name>;
+  t.Name = <GenSwap_Aux Entry t.Name>;
 }
 
 $ENTRY GenSwap {
-  e.Name =
-    ('//$SWAP ' e.Name)
-    <& GenSwap_Aux & GN_Local e.Name>;
+  t.Name = <GenSwap_Aux Local t.Name>;
 }
 
 GenSwap_Aux {
-  s.MemoryClass e.Name =
-    <& GenFnStart s.MemoryClass e.Name>
+  s.MemoryClass t.Name =
+    <GenFnStart s.MemoryClass t.Name>
     ('  refalrts::Iter func_name = arg_begin;')
     ()
     ('  refalrts::move_left( func_name, arg_end );')
@@ -107,42 +141,17 @@ $ENTRY GenCommonHeaders {
   ('#include "refalrts.h"') () ();
 }
 
-// Команды и их подтипы
-$IMPORT Algorithm;
-    
-    
-     
-    
-   
-     
-   
-   
-   
-   
-   
-   
-   
-   
-  
-
-    
-
-$IMPORT LibraryEx;
-  
-
-$IMPORT Library;
- 
 
 $ENTRY GenSentence {
   e.Algorithm =
     ('  do {')
-    ('    refalrts::Iter ' <& BracketsVar_B 0> ' = arg_begin;')
-    ('    refalrts::Iter ' <& BracketsVar_E 0> ' = arg_end;')
-    ('    refalrts::move_left( ' <& BracketsVar_B 0> ', ' <& BracketsVar_E 0> ' );')
-    ('    refalrts::move_left( ' <& BracketsVar_B 0> ', ' <& BracketsVar_E 0> ' );')
-    ('    refalrts::move_right( ' <& BracketsVar_B 0> ', ' <& BracketsVar_E 0> ' );')
-    <& GenSentence_Aux
-      <& LibraryEx.MapReduce
+    ('    refalrts::Iter ' <BracketsVar_B 0> ' = arg_begin;')
+    ('    refalrts::Iter ' <BracketsVar_E 0> ' = arg_end;')
+    ('    refalrts::move_left( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
+    ('    refalrts::move_left( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
+    ('    refalrts::move_right( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
+    <GenSentence_Aux
+      <Cpp-SR-BE.LibraryEx.MapReduce
         & GenCommand
         ('    ' /* indent */)
         e.Algorithm
@@ -150,19 +159,17 @@ $ENTRY GenSentence {
     >;
 }
 
- 
-
 GenSentence_Aux {
   (e.Indent) e.Generated =
-    e.Generated <& GenCloseBrackets e.Indent> ();
+    e.Generated <GenCloseBrackets e.Indent> ();
 }
 
 BracketsVar_B {
-  s.BracketNumber = 'bb_' <& Library.StrFromInt s.BracketNumber>;
+  s.BracketNumber = 'bb_' <Cpp-SR-BE.Library.StrFromInt s.BracketNumber>;
 }
 
 BracketsVar_E {
-  s.BracketNumber = 'be_' <& Library.StrFromInt s.BracketNumber>;
+  s.BracketNumber = 'be_' <Cpp-SR-BE.Library.StrFromInt s.BracketNumber>;
 }
 
 //BracketsVar-OE {
@@ -174,39 +181,25 @@ BracketsVar_E {
   вне цикла по открытой e-переменной, отступ больше -- внутри оного цикла.
 */
 
-    
-    
-  
-  
-  
-  
-   
-   
-
- 
-
- 
- 
-
 PrintStkBracket {
   e.Indent s.StkBracket =
     (e.Indent
-      'refalrts::Iter ' <& BracketsVar_B s.StkBracket> '_stk = '
-        <& BracketsVar_B s.StkBracket> ';'
+      'refalrts::Iter ' <BracketsVar_B s.StkBracket> '_stk = '
+        <BracketsVar_B s.StkBracket> ';'
     )
     (e.Indent
-      'refalrts::Iter ' <& BracketsVar_E s.StkBracket> '_stk = '
-        <& BracketsVar_E s.StkBracket> ';'
+      'refalrts::Iter ' <BracketsVar_E s.StkBracket> '_stk = '
+        <BracketsVar_E s.StkBracket> ';'
     );
 }
 
 PrintRecoverStackBracket {
   e.Indent s.StkBracket =
     (e.Indent
-      <& BracketsVar_B s.StkBracket> ' = ' <& BracketsVar_B s.StkBracket> '_stk,'
+      <BracketsVar_B s.StkBracket> ' = ' <BracketsVar_B s.StkBracket> '_stk,'
     )
     (e.Indent
-      <& BracketsVar_E s.StkBracket> ' = ' <& BracketsVar_E s.StkBracket> '_stk,'
+      <BracketsVar_E s.StkBracket> ' = ' <BracketsVar_E s.StkBracket> '_stk,'
     );
 }
 
@@ -215,180 +208,180 @@ BracketExcept {
 }
 
 GenCommand {
-  (e.Indent) (& Algorithm.CmdComment e.Text) = (e.Indent) (e.Indent '//' e.Text);
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdComment e.Text) = (e.Indent) (e.Indent '//' e.Text);
 
-  (e.Indent) (& Algorithm.CmdDeclareEVar e.VarInfo) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdDeclareEVar e.VarInfo) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <& PrintEVar_B e.VarInfo> ';')
-    (e.Indent 'refalrts::Iter ' <& PrintEVar_E e.VarInfo> ';');
+    (e.Indent 'refalrts::Iter ' <PrintEVar_B e.VarInfo> ';')
+    (e.Indent 'refalrts::Iter ' <PrintEVar_E e.VarInfo> ';');
 
-  (e.Indent) (& Algorithm.CmdDeclareVar e.VarInfo) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdDeclareVar e.VarInfo) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <& PrintVar e.VarInfo> ';');
+    (e.Indent 'refalrts::Iter ' <PrintVar e.VarInfo> ';');
 
-  (e.Indent) (& Algorithm.CmdChar s.Direction s.BracketNumber s.Char) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdChar s.Direction s.BracketNumber s.Char) =
     (e.Indent)
-    <& PrintMatchChar (e.Indent) s.Direction s.BracketNumber s.Char>;
+    <PrintMatchChar (e.Indent) s.Direction s.BracketNumber s.Char>;
 
-  (e.Indent) (& Algorithm.CmdNumber s.Direction s.BracketNumber s.Number) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdNumber s.Direction s.BracketNumber s.Number) =
     (e.Indent)
-    <& PrintMatchNumber (e.Indent) s.Direction s.BracketNumber s.Number>;
+    <PrintMatchNumber (e.Indent) s.Direction s.BracketNumber s.Number>;
 
-  (e.Indent) (& Algorithm.CmdName s.Direction s.BracketNumber e.Name) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdName s.Direction s.BracketNumber t.Name) =
     (e.Indent)
-    <& PrintMatchName (e.Indent) s.Direction s.BracketNumber e.Name>;
+    <PrintMatchName (e.Indent) s.Direction s.BracketNumber t.Name>;
 
-  (e.Indent) (& Algorithm.CmdIdent s.Direction s.BracketNumber e.Name) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdIdent s.Direction s.BracketNumber e.Name) =
     (e.Indent)
-    <& PrintMatchIdent (e.Indent) s.Direction s.BracketNumber e.Name>;
+    <PrintMatchIdent (e.Indent) s.Direction s.BracketNumber e.Name>;
 
-  (e.Indent) (& Algorithm.CmdBrackets s.Direction s.BracketNumber s.InnerBrackets) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdBrackets s.Direction s.BracketNumber s.InnerBrackets) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <& BracketsVar_B s.InnerBrackets> ' = 0;')
-    (e.Indent 'refalrts::Iter ' <& BracketsVar_E s.InnerBrackets> ' = 0;')
-    <& PrintMatchBrackets (e.Indent) s.Direction s.BracketNumber s.InnerBrackets>;
+    (e.Indent 'refalrts::Iter ' <BracketsVar_B s.InnerBrackets> ' = 0;')
+    (e.Indent 'refalrts::Iter ' <BracketsVar_E s.InnerBrackets> ' = 0;')
+    <PrintMatchBrackets (e.Indent) s.Direction s.BracketNumber s.InnerBrackets>;
 
-  (e.Indent) (& Algorithm.CmdADT s.Direction s.BracketNumber s.InnerBrackets e.Name) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdADT s.Direction s.BracketNumber s.InnerBrackets e.Name) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <& BracketsVar_B s.InnerBrackets> ' = 0;')
-    (e.Indent 'refalrts::Iter ' <& BracketsVar_E s.InnerBrackets> ' = 0;')
-    <& PrintMatchADT
+    (e.Indent 'refalrts::Iter ' <BracketsVar_B s.InnerBrackets> ' = 0;')
+    (e.Indent 'refalrts::Iter ' <BracketsVar_E s.InnerBrackets> ' = 0;')
+    <PrintMatchADT
       (e.Indent) s.Direction s.BracketNumber s.InnerBrackets e.Name
     >;
 
-  (e.Indent) (& Algorithm.CmdEmpty s.BracketNumber) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdEmpty s.BracketNumber) =
     (e.Indent)
-    <& PrintMatchEmpty (e.Indent) s.BracketNumber>;
+    <PrintMatchEmpty (e.Indent) s.BracketNumber>;
 
-  (e.Indent) (& Algorithm.CmdVar s.Direction s.BracketNumber s.Mode e.Info) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdVar s.Direction s.BracketNumber s.Mode e.Info) =
     (e.Indent)
-    <& PrintMatchSTVar (e.Indent) s.Direction s.BracketNumber s.Mode e.Info>;
+    <PrintMatchSTVar (e.Indent) s.Direction s.BracketNumber s.Mode e.Info>;
 
-  (e.Indent) (& Algorithm.CmdRepeated s.Direction s.BracketNumber e.VarInfo) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdRepeated s.Direction s.BracketNumber e.VarInfo) =
     (e.Indent)
-    <& PrintMatchRepeated (e.Indent) s.Direction s.BracketNumber e.VarInfo>;
+    <PrintMatchRepeated (e.Indent) s.Direction s.BracketNumber e.VarInfo>;
 
-  (e.Indent) (& Algorithm.CmdClosedE & Algorithm.AlgLeft s.BracketNumber 'e' e.Index) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdClosedE & Cpp-SR-BE.Algorithm.AlgLeft s.BracketNumber 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      <& PrintEVar_B 1 'e' e.Index> ' = ' <& BracketsVar_B s.BracketNumber> ';'
+      <PrintEVar_B 1 'e' e.Index> ' = ' <BracketsVar_B s.BracketNumber> ';'
     )
-    (e.Indent 'refalrts::use( ' <& PrintEVar_B 1 'e' e.Index> ' );')
+    (e.Indent 'refalrts::use( ' <PrintEVar_B 1 'e' e.Index> ' );')
     (e.Indent
-      <& PrintEVar_E 1 'e' e.Index> ' = ' <& BracketsVar_E s.BracketNumber> ';'
+      <PrintEVar_E 1 'e' e.Index> ' = ' <BracketsVar_E s.BracketNumber> ';'
     )
-    (e.Indent 'refalrts::use( ' <& PrintEVar_E 1 'e' e.Index> ' );');
+    (e.Indent 'refalrts::use( ' <PrintEVar_E 1 'e' e.Index> ' );');
 
   (e.Indent)
-  (& Algorithm.CmdOpenedE & Algorithm.AlgLeft s.BracketNumber 'e' e.Index (e.BracketsForSave)) =
+  (& Cpp-SR-BE.Algorithm.CmdOpenedE & Cpp-SR-BE.Algorithm.AlgLeft s.BracketNumber 'e' e.Index (e.BracketsForSave)) =
     (e.Indent '  ')
-    <& LibraryEx.Map (& PrintStkBracket e.Indent) e.BracketsForSave>
+    <Cpp-SR-BE.LibraryEx.Map (& PrintStkBracket e.Indent) e.BracketsForSave>
     (e.Indent 'for( ')
     (e.Indent '  refalrts::Iter')
     (e.Indent
-      '    ' <& PrintEVar_B 1 'e' e.Index> ' = '
-        <& BracketsVar_B s.BracketNumber> '_stk,'
+      '    ' <PrintEVar_B 1 'e' e.Index> ' = '
+        <BracketsVar_B s.BracketNumber> '_stk,'
     )
     (e.Indent
-      '    ' <& PrintEVar_OE 1 'e' e.Index> ' = '
-        <& BracketsVar_B s.BracketNumber> '_stk,'
+      '    ' <PrintEVar_OE 1 'e' e.Index> ' = '
+        <BracketsVar_B s.BracketNumber> '_stk,'
     )
     (e.Indent
-      '    ' <& BracketsVar_B s.BracketNumber> ' = '
-        <& BracketsVar_B s.BracketNumber> '_stk,'
+      '    ' <BracketsVar_B s.BracketNumber> ' = '
+        <BracketsVar_B s.BracketNumber> '_stk,'
     )
     (e.Indent
-      '    ' <& BracketsVar_E s.BracketNumber> ' = '
-        <& BracketsVar_E s.BracketNumber> '_stk;'
+      '    ' <BracketsVar_E s.BracketNumber> ' = '
+        <BracketsVar_E s.BracketNumber> '_stk;'
     )
     (e.Indent '  '
-      '! empty_seq( ' <& PrintEVar_OE 1 'e' e.Index> ', '
-      <& BracketsVar_E s.BracketNumber> ' );'
+      '! empty_seq( ' <PrintEVar_OE 1 'e' e.Index> ', '
+      <BracketsVar_E s.BracketNumber> ' );'
     )
-    <& LibraryEx.Map (& PrintRecoverStackBracket e.Indent '  ') e.BracketsForSave>
+    <Cpp-SR-BE.LibraryEx.Map (& PrintRecoverStackBracket e.Indent '  ') e.BracketsForSave>
     (e.Indent '  '
-      'refalrts::next_term( ' <& PrintEVar_OE 1 'e' e.Index> ', '
-      <& BracketsVar_E s.BracketNumber> ' )'
+      'refalrts::next_term( ' <PrintEVar_OE 1 'e' e.Index> ', '
+      <BracketsVar_E s.BracketNumber> ' )'
     )
     (e.Indent ') {')
     (e.Indent '  '
-      <& BracketsVar_B s.BracketNumber> ' = ' <& PrintEVar_OE 1 'e' e.Index> ';'
+      <BracketsVar_B s.BracketNumber> ' = ' <PrintEVar_OE 1 'e' e.Index> ';'
     )
     (e.Indent '  '
-      <& PrintEVar_B 1 'e' e.Index> ' = ' <& BracketsVar_B s.BracketNumber> '_stk;'
+      <PrintEVar_B 1 'e' e.Index> ' = ' <BracketsVar_B s.BracketNumber> '_stk;'
     )
     (e.Indent '  '
-      <& PrintEVar_E 1 'e' e.Index> ' = ' <& PrintEVar_OE 1 'e' e.Index> ';'
+      <PrintEVar_E 1 'e' e.Index> ' = ' <PrintEVar_OE 1 'e' e.Index> ';'
     )
     (e.Indent
-      '  refalrts::move_right( ' <& PrintEVar_B 1 'e' e.Index> ', '
-      <& PrintEVar_E 1 'e' e.Index> ' );'
+      '  refalrts::move_right( ' <PrintEVar_B 1 'e' e.Index> ', '
+      <PrintEVar_E 1 'e' e.Index> ' );'
     );
 
-  (e.Indent) (& Algorithm.CmdEmptyResult) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdEmptyResult) =
     (e.Indent)
     ()
     (e.Indent 'refalrts::reset_allocator();')
     (e.Indent 'refalrts::Iter res = arg_begin;');
 
-  (e.Indent) (& Algorithm.CmdCopyEVar s.Usings 'e' e.Index) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdCopyEVar s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      'if( ! refalrts::copy_evar( ' <& PrintEVar_B s.Usings 'e' e.Index> ', '
-      <& PrintEVar_E s.Usings 'e' e.Index> ', '
-      <& PrintEVar_B <& LibraryEx.Dec s.Usings> 'e' e.Index> ', '
-      <& PrintEVar_E <& LibraryEx.Dec s.Usings> 'e' e.Index>
+      'if( ! refalrts::copy_evar( ' <PrintEVar_B s.Usings 'e' e.Index> ', '
+      <PrintEVar_E s.Usings 'e' e.Index> ', '
+      <PrintEVar_B <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar_E <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index>
       ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
-  (e.Indent) (& Algorithm.CmdCopyVar s.Usings s.Mode e.Index) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdCopyVar s.Usings s.Mode e.Index) =
     (e.Indent)
     (e.Indent
-      'if( ! refalrts::copy_stvar( ' <& PrintVar s.Usings s.Mode e.Index> ', '
-      <& PrintVar <& LibraryEx.Dec s.Usings> s.Mode e.Index> ' ) )'
+      'if( ! refalrts::copy_stvar( ' <PrintVar s.Usings s.Mode e.Index> ', '
+      <PrintVar <Cpp-SR-BE.LibraryEx.Dec s.Usings> s.Mode e.Index> ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
-  (e.Indent) (& Algorithm.CmdAllocateElem s.ElemNumber e.ElemInfo) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdAllocateElem s.ElemNumber e.ElemInfo) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <& PrintElemVar s.ElemNumber> ' = 0;')
-    <& PrintAllocateElem (e.Indent) s.ElemNumber e.ElemInfo>;
+    (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
+    <PrintAllocateElem (e.Indent) s.ElemNumber e.ElemInfo>;
 
-  (e.Indent) (& Algorithm.CmdLinkBrackets s.Left s.Right) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdLinkBrackets s.Left s.Right) =
     (e.Indent)
     (e.Indent
       'refalrts::link_brackets( '
-      <& PrintElemVar s.Left> ', ' <& PrintElemVar s.Right>
+      <PrintElemVar s.Left> ', ' <PrintElemVar s.Right>
       ' );'
     );
 
-  (e.Indent) (& Algorithm.CmdPushStack s.ElemNumber) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdPushStack s.ElemNumber) =
     (e.Indent)
-    (e.Indent 'refalrts::push_stack( ' <& PrintElemVar s.ElemNumber> ' );');
+    (e.Indent 'refalrts::push_stack( ' <PrintElemVar s.ElemNumber> ' );');
 
-  (e.Indent) (& Algorithm.CmdInsertElem & Algorithm.ElElem s.ElemNumber) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdInsertElem & Cpp-SR-BE.Algorithm.ElElem s.ElemNumber) =
     (e.Indent)
     (e.Indent
-      'res = refalrts::splice_elem( res, ' <& PrintElemVar s.ElemNumber> ' );'
+      'res = refalrts::splice_elem( res, ' <PrintElemVar s.ElemNumber> ' );'
     );
 
-  (e.Indent) (& Algorithm.CmdInsertElem & Algorithm.ElSTVar s.Usings s.Mode e.Index) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdInsertElem & Cpp-SR-BE.Algorithm.ElSTVar s.Usings s.Mode e.Index) =
     (e.Indent)
     (e.Indent
       'res = refalrts::splice_stvar( res, '
-      <& PrintVar s.Usings s.Mode e.Index> ' );'
+      <PrintVar s.Usings s.Mode e.Index> ' );'
     );
 
-  (e.Indent) (& Algorithm.CmdInsertEVar s.Usings 'e' e.Index) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdInsertEVar s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
       'res = refalrts::splice_evar( res, '
-      <& PrintEVar_B s.Usings 'e' e.Index> ', '
-      <& PrintEVar_E s.Usings 'e' e.Index> ' );'
+      <PrintEVar_B s.Usings 'e' e.Index> ', '
+      <PrintEVar_E s.Usings 'e' e.Index> ' );'
     );
 
-  (e.Indent) (& Algorithm.CmdReturnResult) =
+  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdReturnResult) =
     (e.Indent)
     (e.Indent 'refalrts::use( res );')
     (e.Indent 'refalrts::splice_to_freelist( arg_begin, arg_end );')
@@ -396,22 +389,20 @@ GenCommand {
 }
 
 PrintVar {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_' <& Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index = s.Mode e.Index '_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 PrintEVar_B {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_b_' <& Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index = s.Mode e.Index '_b_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 PrintEVar_E {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_e_' <& Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index = s.Mode e.Index '_e_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 PrintEVar_OE {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_oe_' <& Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index = s.Mode e.Index '_oe_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
-
- 
 
 Escape {
   '\n' = '\\n';
@@ -424,31 +415,31 @@ Escape {
 
 PrintMatchChar {
   (e.Indent) s.Direction s.BracketNumber s.Char =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('char') '\'' <& Escape s.Char> '\''
+      ('char') '\'' <Escape s.Char> '\''
     >;
 }
 
 PrintMatchNumber {
   (e.Indent) s.Direction s.BracketNumber s.Number =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('number') <& Library.StrFromInt s.Number> 'UL'
+      ('number') <Cpp-SR-BE.Library.StrFromInt s.Number> 'UL'
     >;
 }
 
 PrintMatchName {
-  (e.Indent) s.Direction s.BracketNumber e.Name =
-    <& PrintMatch
+  (e.Indent) s.Direction s.BracketNumber t.Name =
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('function') '& ' e.Name
+      ('function') '& ' <QNameCode t.Name>
     >;
 }
 
 PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNumber e.Name =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
       ('ident') ' & ' e.Name 'L_<int>::name'
     >;
@@ -456,20 +447,20 @@ PrintMatchIdent {
 
 PrintMatchBrackets {
   (e.Indent) s.Direction s.BracketNumber s.InnerNum =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
       ('brackets')
-      <& BracketsVar_B s.InnerNum> ', ' <& BracketsVar_E s.InnerNum>
+      <BracketsVar_B s.InnerNum> ', ' <BracketsVar_E s.InnerNum>
     >;
 }
 
 PrintMatchADT {
   (e.Indent) s.Direction s.BracketNumber s.InnerNum e.Name =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
       ('adt')
-      <& BracketsVar_B s.InnerNum> ', '
-      <& BracketsVar_E s.InnerNum> ', '
+      <BracketsVar_B s.InnerNum> ', '
+      <BracketsVar_E s.InnerNum> ', '
       '& ' e.Name
     >;
 }
@@ -483,67 +474,65 @@ BreakerFromIndent {
 PrintMatchEmpty {
   (e.Indent) s.BracketNumber =
     (e.Indent
-      'if( ! empty_seq( ' <& BracketsVar_B s.BracketNumber> ', '
-      <& BracketsVar_E s.BracketNumber> ' ) )'
+      'if( ! empty_seq( ' <BracketsVar_B s.BracketNumber> ', '
+      <BracketsVar_E s.BracketNumber> ' ) )'
     )
-    (e.Indent '  ' <& BreakerFromIndent e.Indent>);
+    (e.Indent '  ' <BreakerFromIndent e.Indent>);
 }
 
 StrFromDirection {
-  & Algorithm.AlgLeft = 'left'; & Algorithm.AlgRight = 'right';
+  & Cpp-SR-BE.Algorithm.AlgLeft = 'left'; & Cpp-SR-BE.Algorithm.AlgRight = 'right';
 }
 
 VarMatchFunction { 's' = 'svar'; 't' = 'tvar'; }
 
 PrintMatchSTVar {
   (e.Indent) s.Direction s.BracketNumber s.Mode e.Index =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      (<& VarMatchFunction s.Mode>) <& PrintVar 1 s.Mode e.Index>
+      (<VarMatchFunction s.Mode>) <PrintVar 1 s.Mode e.Index>
     >;
 }
 
 PrintMatchRepeated {
   (e.Indent) s.Direction s.BracketNumber s.Usings 'e' e.Index =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
       ('repeated_evar')
-      <& PrintEVar_B s.Usings 'e' e.Index> ', '
-      <& PrintEVar_E s.Usings 'e' e.Index> ', '
-      <& PrintEVar_B <& LibraryEx.Dec s.Usings> 'e' e.Index> ', '
-      <& PrintEVar_E <& LibraryEx.Dec s.Usings> 'e' e.Index>
+      <PrintEVar_B s.Usings 'e' e.Index> ', '
+      <PrintEVar_E s.Usings 'e' e.Index> ', '
+      <PrintEVar_B <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar_E <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index>
     >;
 
   (e.Indent) s.Direction s.BracketNumber s.Usings s.Mode e.Index =
-    <& PrintMatch
+    <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('repeated_stvar') <& PrintVar s.Usings s.Mode e.Index>
-      ', ' <& PrintVar <& LibraryEx.Dec s.Usings> s.Mode e.Index>
+      ('repeated_stvar') <PrintVar s.Usings s.Mode e.Index>
+      ', ' <PrintVar <Cpp-SR-BE.LibraryEx.Dec s.Usings> s.Mode e.Index>
     >;
 }
 
 PrintMatch {
   (e.Indent) s.Direction s.BracketNumber (e.Function) e.TextRep =
     (e.Indent
-      'if( ! refalrts::' e.Function '_' <& StrFromDirection s.Direction>
-      '( ' e.TextRep ', ' <& BracketsVar_B s.BracketNumber> ', '
-      <& BracketsVar_E s.BracketNumber> ' ) ) '
+      'if( ! refalrts::' e.Function '_' <StrFromDirection s.Direction>
+      '( ' e.TextRep ', ' <BracketsVar_B s.BracketNumber> ', '
+      <BracketsVar_E s.BracketNumber> ' ) ) '
     )
-    (e.Indent '  ' <& BreakerFromIndent e.Indent>);
+    (e.Indent '  ' <BreakerFromIndent e.Indent>);
 }
 
 PrintElemVar {
-  s.Number = 'n' <& Library.StrFromInt s.Number>;
+  s.Number = 'n' <Cpp-SR-BE.Library.StrFromInt s.Number>;
 }
-
-   
 
 PrintAllocateElem {
   (e.Indent) s.ElemNumber s.ElementType e.Info =
-    <& PrintAllocate_Aux
+    <PrintAllocate_Aux
       (e.Indent) s.ElemNumber
-      ( <& SwAllocator s.ElementType> )
-      ( <& SwInfo s.ElementType e.Info> )
+      ( <SwAllocator s.ElementType> )
+      ( <SwInfo s.ElementType e.Info> )
     >
     (e.Indent '  return refalrts::cNoMemory;');
 }
@@ -551,35 +540,37 @@ PrintAllocateElem {
 PrintAllocate_Aux {
   (e.Indent) s.ElemNumber (e.Constructor) (e.Value) =
     (e.Indent
-      'if( ! refalrts::' e.Constructor '( ' <& PrintElemVar s.ElemNumber>
+      'if( ! refalrts::' e.Constructor '( ' <PrintElemVar s.ElemNumber>
       e.Value ' ) )'
     );
 }
 
 SwAllocator {
-  & Algorithm.ElChar = 'alloc_char';
-  & Algorithm.ElName = 'alloc_name';
-  & Algorithm.ElNumber = 'alloc_number';
-  & Algorithm.ElIdent = 'alloc_ident';
+  & Cpp-SR-BE.Algorithm.ElChar = 'alloc_char';
+  & Cpp-SR-BE.Algorithm.ElName = 'alloc_name';
+  & Cpp-SR-BE.Algorithm.ElNumber = 'alloc_number';
+  & Cpp-SR-BE.Algorithm.ElIdent = 'alloc_ident';
 
-  & Algorithm.ElOpenADT = 'alloc_open_adt';
-  & Algorithm.ElCloseADT = 'alloc_close_adt';
+  & Cpp-SR-BE.Algorithm.ElOpenADT = 'alloc_open_adt';
+  & Cpp-SR-BE.Algorithm.ElCloseADT = 'alloc_close_adt';
 
-  & Algorithm.ElOpenBracket = 'alloc_open_bracket';
-  & Algorithm.ElCloseBracket = 'alloc_close_bracket';
+  & Cpp-SR-BE.Algorithm.ElOpenBracket = 'alloc_open_bracket';
+  & Cpp-SR-BE.Algorithm.ElCloseBracket = 'alloc_close_bracket';
 
-  & Algorithm.ElOpenCall = 'alloc_open_call';
-  & Algorithm.ElCloseCall = 'alloc_close_call';
+  & Cpp-SR-BE.Algorithm.ElOpenCall = 'alloc_open_call';
+  & Cpp-SR-BE.Algorithm.ElCloseCall = 'alloc_close_call';
 }
 
 SwInfo {
-  & Algorithm.ElChar s.Char = ', ' '\'' <& Escape s.Char> '\'';
+  & Cpp-SR-BE.Algorithm.ElChar s.Char = ', ' '\'' <Escape s.Char> '\'';
 
-  & Algorithm.ElName e.Name = ', & ' e.Name ', "' e.Name '"';
+  & Cpp-SR-BE.Algorithm.ElName t.Name =
+    ', & ' <QNameCode t.Name>
+    ', "' <MQualifiedName::ToPrintable-Dot t.Name> '"';
 
-  & Algorithm.ElNumber s.Number = ', ' <& Library.StrFromInt s.Number> 'UL';
+  & Cpp-SR-BE.Algorithm.ElNumber s.Number = ', ' <Cpp-SR-BE.Library.StrFromInt s.Number> 'UL';
 
-  & Algorithm.ElIdent e.Name = ', & ' e.Name 'L_<int>::name';
+  & Cpp-SR-BE.Algorithm.ElIdent e.Name = ', & ' e.Name 'L_<int>::name';
 
   // Остальное -- скобки
   s.Other = ;
@@ -589,29 +580,27 @@ GenCloseBrackets {
   '    ' = ('  } while ( 0 );');
 
   '  ' e.Indent =
-    (e.Indent '}') <& GenCloseBrackets e.Indent>;
+    (e.Indent '}') <GenCloseBrackets e.Indent>;
 }
 
 ElemVarName {
-  s.Num = 'h' <& Library.StrFromInt s.Num>;
+  s.Num = 'h' <Cpp-SR-BE.Library.StrFromInt s.Num>;
 }
 
 InsertElem {
-  & Algorithm.ElElem s.Number = <& ElemVarName s.Number>;
+  & Cpp-SR-BE.Algorithm.ElElem s.Number = <ElemVarName s.Number>;
 
-  & Algorithm.ElSTVar s.Usings s.Mode e.Index =
-    <& PrintVar s.Usings s.Mode e.Index>;
+  & Cpp-SR-BE.Algorithm.ElSTVar s.Usings s.Mode e.Index =
+    <PrintVar s.Usings s.Mode e.Index>;
 }
 
- 
- 
-
 SwStringFromCommand {
-  & Algorithm.CmdReturnResult = 'RETURN res';
+  & Cpp-SR-BE.Algorithm.CmdReturnResult = 'RETURN res';
 }
 
 StringFromCommand {
   (s.Command e.Arguments) =
-    ( '    // ' <& SwStringFromCommand s.Command e.Arguments> );
+    ( '    // ' <SwStringFromCommand s.Command e.Arguments> );
 }
-$END Generator.
+
+$END Cpp-SR-BE::Generator.

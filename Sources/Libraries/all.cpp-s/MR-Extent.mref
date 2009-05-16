@@ -1,0 +1,71 @@
+$MODULE MR-Extent;
+
+$IMPORT FileIO;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MSelfDiag;
+$IMPORT MSwapSupport;
+$IMPORT MXXIO;
+
+$SWAP G_TempFileName;
+
+$ENTRY Init
+  = <MOS::System 'echo %random%>~suf.tmp'>
+  <G_TempFileName
+    <MOS::Env 'TEMP'> '\\~dirlist_'
+    <MLambda::UnBracket <FileIO::Load '~suf.tmp'>>
+    '.tmp'
+  >
+  <MOS::System 'del ~suf.tmp'>
+  <MR-Extent-CheckVersion>;
+
+MR-Extent-CheckVersion
+  =
+    <SwMR-Extent-CheckVersion
+      <MOS::System 'mr-extent VERSION >'<TempName>>
+      <MXXIO::Load <TempName>>
+    >;
+
+SwMR-Extent-CheckVersion {
+  Success 'mr-extent' 0 1 =
+    /* Всё правильно */;
+
+  Success e.OtherAttribs =
+    <MSelfDiag::Error 'Invalid version of utility mr-extent'>;
+
+  Fails =
+    <MSelfDiag::Error 'Utility mr-exxtent not found'>;
+}
+
+//------------------------------------------------------------------------------
+
+$ENTRY Final
+  = <MOS::System 'del \"' <TempName> '\" >nul 2>nul'>;
+
+//------------------------------------------------------------------------------
+
+TempName = <MSwapSupport::Read &G_TempFileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Call e.MR-Extent-Command>
+    == Success e.MR-Extent-Result
+    == Fails
+*/
+$ENTRY Call
+  e.Command =
+    <MOS::System 'mr-extent ' e.Command ' >' <TempName>>
+    <Decode
+      <MXXIO::Load <TempName>>
+    >;
+
+Decode {
+  Success 'S' e.Result = Success e.Result;
+
+  Success 'E' e.ErrMessage = Fails;
+
+  Fails = Fails;
+}
+
+$END MR-Extent.

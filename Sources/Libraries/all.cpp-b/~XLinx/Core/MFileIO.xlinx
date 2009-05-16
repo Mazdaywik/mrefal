@@ -1,0 +1,7 @@
+((!(Module)(Core::MFileIO)('..\\Libraries\\all.sr-b\\Core\\MFil
+eIO.mref',\d0321)))((!(Entry)(Core::MFileIO::WriteLine)('..\\Li
+braries\\all.sr-b\\Core\\MFileIO.mref',\d03212)))((!(Entry)(Cor
+e::MFileIO::ReadLine)('..\\Libraries\\all.sr-b\\Core\\MFileIO.m
+ref',\d0329)))((!(Entry)(Core::MFileIO::Close)('..\\Libraries\\
+all.sr-b\\Core\\MFileIO.mref',\d0326)))((!(Entry)(Core::MFileIO
+::Open)('..\\Libraries\\all.sr-b\\Core\\MFileIO.mref',\d0323)))

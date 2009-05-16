@@ -1,7 +1,7 @@
-$MODULE Lexer;$IMPORT LibraryEx;
+$MODULE Cpp-SR-BE::Lexer;$IMPORT Cpp-SR-BE::LibraryEx;
       
 
-$IMPORT Library;
+$IMPORT Cpp-SR-BE::Library;
   
 
 LinearizeLine {
@@ -14,7 +14,7 @@ $ENTRY LexFolding {
   e.FileName =
     <& NormalizeTokens
       <& Root ()
-        <& LibraryEx.Map & LinearizeLine <& LibraryEx.LoadFile e.FileName>>
+        <& Cpp-SR-BE.LibraryEx.Map & LinearizeLine <& Cpp-SR-BE.LibraryEx.LoadFile e.FileName>>
       >
     >;
 }
@@ -60,7 +60,7 @@ $ENTRY StrFromToken {
   & TkError e.Message = 'LEXER ERROR: ' e.Message;
   & TkIdentMarker = '"#"';
   & TkName e.Name = 'Name ' e.Name;
-  & TkNumber s.Number = 'Number ' <& Library.StrFromInt s.Number>;
+  & TkNumber s.Number = 'Number ' <& Cpp-SR-BE.Library.StrFromInt s.Number>;
   & TkOpenADT = '"["';
   & TkOpenCall = '"<"';
   & TkOpenBlock = '"{"';
@@ -102,7 +102,7 @@ NormalizeToken {
   (& TkLiteral_Char s.Char) = (& TkChar s.Char);
 
   (& TkLiteral_Code e.DecCode) =
-    (& TkChar <& Library.Chr <& LibraryEx.FastIntFromStr e.DecCode>>);
+    (& TkChar <& Cpp-SR-BE.Library.Chr <& Cpp-SR-BE.LibraryEx.FastIntFromStr e.DecCode>>);
 
   (& TkLiteral_NewLine 'n') = (& TkChar '\n');
 
@@ -114,7 +114,7 @@ NormalizeToken {
 
   (& TkNewLine e.Accumulated) = (& TkNewLine);
 
-  (& TkNumber e.Digits) = (& TkNumber <& LibraryEx.FastIntFromStr e.Digits>);
+  (& TkNumber e.Digits) = (& TkNumber <& Cpp-SR-BE.LibraryEx.FastIntFromStr e.Digits>);
 
   (& TkPunctuation s.Punctuation) = (<& SwPunctuation s.Punctuation>);
 
@@ -153,7 +153,7 @@ SwPunctuation {
 
 AddLineNumber {
   s.LineNumber (& TkNewLine) =
-    <& LibraryEx.Inc s.LineNumber>;
+    <& Cpp-SR-BE.LibraryEx.Inc s.LineNumber>;
 
   s.LineNumber (s.TokType e.Info) =
     s.LineNumber (s.TokType s.LineNumber e.Info);
@@ -161,10 +161,10 @@ AddLineNumber {
 
 NormalizeTokens {
   e.Tokens =
-    <& LibraryEx.DelAccummulator
-      <& LibraryEx.MapReduce
+    <& Cpp-SR-BE.LibraryEx.DelAccummulator
+      <& Cpp-SR-BE.LibraryEx.MapReduce
         & AddLineNumber 1
-        <& LibraryEx.Map & NormalizeToken e.Tokens>
+        <& Cpp-SR-BE.LibraryEx.Map & NormalizeToken e.Tokens>
       >
     >;
 }
@@ -810,4 +810,4 @@ SL_E_C2 {
     (& TokenUnexpected s.Unexpected) <& Root () e.Text>;
   (e.Accum) = (& TokenAccum e.Accum) (& TokenUnexpectedEOF);
 }
-$END Lexer.
+$END Cpp-SR-BE::Lexer.

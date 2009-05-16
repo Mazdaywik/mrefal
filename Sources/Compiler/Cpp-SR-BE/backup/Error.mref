@@ -1,0 +1,71 @@
+$MODULE Cpp-SR-BE::Error; ErrorList { }
+
+$ENTRY EL_Create {
+  = (& ErrorList);
+}
+
+$ENTRY EL_AddError {
+  (& ErrorList e.Errors) e.Message =
+    (& ErrorList
+      e.Errors
+      ('  ERROR: ' e.Message)
+    );
+}
+
+$IMPORT Cpp-SR-BE::Library;
+ 
+
+$ENTRY EL_AddErrorAt {
+  (& ErrorList e.Errors) s.LineNumber e.Message =
+    (& ErrorList
+      e.Errors
+      ('  ERROR at ' <& Cpp-SR-BE.Library.StrFromInt s.LineNumber> ': ' e.Message)
+    );
+}
+
+$IMPORT Cpp-SR-BE::Lexer;
+    
+
+$ENTRY EL_AddUnexpected {
+  t.ErrorList (& Cpp-SR-BE.Lexer.TkError s.LineNumber e.Message) e.Expected =
+    <& EL_AddErrorAt
+      t.ErrorList s.LineNumber e.Message
+    >;
+
+  t.ErrorList (& Cpp-SR-BE.Lexer.TkUnexpected s.LineNumber e.Unexpected) e.Expected =
+    <& EL_AddErrorAt
+      t.ErrorList s.LineNumber
+      'Unknown characters "' e.Unexpected '"'
+    >;
+
+  t.ErrorList (s.Unexpected s.LineNumber e.Info) e.Expected =
+    <& EL_AddErrorAt
+      t.ErrorList s.LineNumber
+      'Unexpected ' <& Cpp-SR-BE.Lexer.StrFromToken s.Unexpected e.Info>
+      ', expected ' e.Expected
+    >;
+}
+
+$IMPORT Cpp-SR-BE::LibraryEx;
+ 
+
+ 
+ 
+
+PrintError {
+  (e.Line) = <& Cpp-SR-BE.Library.WriteLine e.Line>;
+}
+
+$ENTRY EL_Print {
+  (& ErrorList e.Errors) =
+    <& Cpp-SR-BE.LibraryEx.Map & PrintError e.Errors> (& ErrorList e.Errors);
+}
+
+ $ENTRY EL_NoErrors { } $ENTRY EL_HasErrors { }
+
+$ENTRY EL_IsEmpty {
+  (& ErrorList) = & EL_NoErrors;
+
+  t.ErrorList = & EL_HasErrors;
+}
+$END Cpp-SR-BE::Error.

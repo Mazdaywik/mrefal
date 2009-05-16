@@ -1,4 +1,4 @@
-$MODULE Library;
+$MODULE Cpp-SR-BE::Library;
 
 $IMPORT FileIO;
 $IMPORT InOut;
@@ -118,4 +118,4 @@ $ENTRY SymbCompare { }
 
 $ENTRY SymbType { }
 
-$END Library.
+$END Cpp-SR-BE::Library.

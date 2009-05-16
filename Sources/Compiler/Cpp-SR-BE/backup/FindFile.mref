@@ -1,0 +1,108 @@
+$MODULE Cpp-SR-BE::FindFile; $ENTRY Source { } $ENTRY Output { } $ENTRY NotFound { }
+
+ 
+
+ Current { }
+
+$IMPORT Cpp-SR-BE::LibraryEx;
+ 
+
+/**
+  <FindFiles (e.Folders) e.Files>
+    == t.FoundFile*
+
+  t.FoundFile ::=
+    (Source (e.Source) e.Output)
+    (Output e.Output)
+    (NotFound e.FileName)
+*/
+$ENTRY FindFiles {
+  (e.Folders) e.Files =
+    <& Cpp-SR-BE.LibraryEx.Map (& AnalyzeFile_ByFolders & Current e.Folders) e.Files>;
+}
+
+  
+
+AnalyzeFile_ByFolders {
+  e.Folders (e.FileName) =
+    <& AnalyzeFile_CheckNotFound
+      (e.FileName)
+      <& Cpp-SR-BE.LibraryEx.Map (& AnalyzeInFolder e.FileName) e.Folders>
+    >;
+}
+
+ 
+
+AnalyzeInFolder {
+  e.FileName & Current = <& AnalyzeFile e.FileName>;
+
+  e.FileName (e.Folder) = <& AnalyzeFile e.Folder '/' e.FileName>;
+}
+
+AnalyzeFile_CheckNotFound {
+  (e.FileName) (& Source (e.Source) e.Output) e.Variants =
+    (& Source (e.Source) e.Output);
+
+  (e.FileName) (& Output e.Output) e.Variants =
+    (& Output e.Output);
+
+  (e.FileName) (& NotFound e.NotFoundPath) e.Variants =
+    <& AnalyzeFile_CheckNotFound (e.FileName) e.Variants>;
+
+  (e.FileName) = (& NotFound e.FileName);
+}
+
+//------------------------------------------------------------------------------
+
+  
+  
+
+$IMPORT Cpp-SR-BE::Library;
+   
+
+ExistFile_T {
+  e.FileName = <& Cpp-SR-BE.Library.ExistFile e.FileName> e.FileName;
+}
+
+AnalyzeFile {
+  e.FileName '.sref' =
+    <& AnalyzeSource_CheckExist
+      <& ExistFile_T e.FileName '.sref'>
+    >;
+
+  e.FileName '.cpp' =
+    <& AnalyzeOutput_CheckExist
+      <& ExistFile_T e.FileName '.cpp'>
+    >;
+
+  e.FileName =
+    <& AnalyzeBoth_CheckExist
+      ( <& ExistFile_T e.FileName '.sref'> )
+      <& ExistFile_T e.FileName '.cpp'>
+    >;
+}
+
+AnalyzeSource_CheckExist {
+  & Cpp-SR-BE.Library.True e.UnitName '.sref' =
+    (& Source (e.UnitName '.sref') e.UnitName '.cpp');
+
+  & Cpp-SR-BE.Library.False e.SourceName = (& NotFound e.SourceName);
+}
+
+AnalyzeOutput_CheckExist {
+  & Cpp-SR-BE.Library.True e.OutName = (& Output e.OutName);
+
+  & Cpp-SR-BE.Library.False e.OutName = (& NotFound e.OutName);
+}
+
+AnalyzeBoth_CheckExist {
+  ( & Cpp-SR-BE.Library.True e.SourceName ) s.Res e.OutName =
+    (& Source (e.SourceName) e.OutName);
+
+  ( & Cpp-SR-BE.Library.False e.SourceName ) & Cpp-SR-BE.Library.True e.OutName =
+    (& Output e.OutName);
+
+  ( & Cpp-SR-BE.Library.False e.UnitName '.sref' ) & Cpp-SR-BE.Library.False e.UnitName '.cpp' =
+    (& NotFound e.UnitName);
+}
+$END Cpp-SR-BE::FindFile.

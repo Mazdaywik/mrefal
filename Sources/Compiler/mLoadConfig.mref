@@ -115,6 +115,7 @@ InitConfig {
 BE-Sets-Table =
   (Refal5 SymInfo Refal5BE)
   (SimpleRefal SymInfo SRefal-BE)
+  (Cpp-SR SymInfo Cpp-SR-BE)
   (XLinx XLinxBE);
 
 BE-Sets

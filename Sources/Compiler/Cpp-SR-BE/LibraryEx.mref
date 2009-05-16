@@ -1,4 +1,4 @@
-$MODULE LibraryEx;
+$MODULE Cpp-SR-BE::LibraryEx;
 // Расширения библиотеки и функции, реализуемые
 // средствами самого Простого Рефала
 
@@ -59,7 +59,7 @@ $ENTRY DelAccummulator {
   t.Acc e.Tail = e.Tail;
 }
 
-$IMPORT Library;
+$IMPORT Cpp-SR-BE::Library;
     
 
  
@@ -67,19 +67,19 @@ $IMPORT Library;
 $ENTRY LoadFile {
   e.FileName =
     <& DoLoadFile
-      <& Library.FReadLine <& Library.FOpen 'r' e.FileName>>
+      <& Cpp-SR-BE.Library.FReadLine <& Cpp-SR-BE.Library.FOpen 'r' e.FileName>>
     >;
 }
 
 DoLoadFile {
-  t.File 0 = <& Library.FClose t.File>;
+  t.File 0 = <& Cpp-SR-BE.Library.FClose t.File>;
 
-  t.File e.Line 0 = (e.Line) <& Library.FClose t.File>;
+  t.File e.Line 0 = (e.Line) <& Cpp-SR-BE.Library.FClose t.File>;
 
   t.File e.Line =
     (e.Line)
     <& DoLoadFile
-      <& Library.FReadLine t.File>
+      <& Cpp-SR-BE.Library.FReadLine t.File>
     >;
 }
 
@@ -87,41 +87,41 @@ DoLoadFile {
 
 $ENTRY SaveFile {
   (e.FileName) e.Lines =
-    <& Library.FClose
+    <& Cpp-SR-BE.Library.FClose
       <& Reduce
         & WriteBracketLine
-        <& Library.FOpen 'w' e.FileName>
+        <& Cpp-SR-BE.Library.FOpen 'w' e.FileName>
         e.Lines
       >
     >;
 }
 
 WriteBracketLine {
-  t.File (e.Line) = <& Library.FWriteLine t.File e.Line>;
+  t.File (e.Line) = <& Cpp-SR-BE.Library.FWriteLine t.File e.Line>;
 }
 
  
   
 
 $ENTRY Inc {
-  s.Num = <& Library.Add s.Num 1>;
+  s.Num = <& Cpp-SR-BE.Library.Add s.Num 1>;
 }
 
 $ENTRY Dec {
-  s.Num = <& Library.Sub s.Num 1>;
+  s.Num = <& Cpp-SR-BE.Library.Sub s.Num 1>;
 }
 
  
    
 
 FastIntFromStr_Guard {
-  & Library.Success s.Number = s.Number;
+  & Cpp-SR-BE.Library.Success s.Number = s.Number;
 }
 
 $ENTRY FastIntFromStr {
   e.Digits =
     <& FastIntFromStr_Guard
-      <& Library.IntFromStr e.Digits>
+      <& Cpp-SR-BE.Library.IntFromStr e.Digits>
     >;
 }
 
@@ -137,7 +137,7 @@ $ENTRY ArgList {
  
 
 DoArgList {
-  s.Next = <& SwDoArgList <& Inc s.Next> <& Library.Arg s.Next>>;
+  s.Next = <& SwDoArgList <& Inc s.Next> <& Cpp-SR-BE.Library.Arg s.Next>>;
 }
 
 SwDoArgList {
@@ -157,7 +157,7 @@ $ENTRY Compare {
   (e.Left) s.Right = '>';
   s.Left (e.Right) = '<';
 
-  s.Left s.Right = <& Library.SymbCompare s.Left s.Right>;
+  s.Left s.Right = <& Cpp-SR-BE.Library.SymbCompare s.Left s.Right>;
 }
 
  
@@ -189,7 +189,7 @@ $ENTRY Compare_T {
   (e.Left) s.Right = '>' (e.Left) s.Right;
   s.Left (e.Right) = '<' s.Left (e.Right);
 
-  s.Left s.Right = <& Library.SymbCompare s.Left s.Right> s.Left s.Right;
+  s.Left s.Right = <& Cpp-SR-BE.Library.SymbCompare s.Left s.Right> s.Left s.Right;
 }
 
  
@@ -239,12 +239,12 @@ Lexicon_T_Aux {
 
 $ENTRY Type {
   (e.InBracket) = & TypeBracket;
-  s.Symbol = <& Library.SymbType s.Symbol>;
+  s.Symbol = <& Cpp-SR-BE.Library.SymbType s.Symbol>;
 }
 
 $ENTRY Type_T {
   (e.InBrackets) e.Tail = & TypeBracket (e.InBrackets) e.Tail;
-  s.Symbol e.Tail = <& Library.SymbType s.Symbol> s.Symbol e.Tail;
+  s.Symbol e.Tail = <& Cpp-SR-BE.Library.SymbType s.Symbol> s.Symbol e.Tail;
   = '*';
 }
 
@@ -261,4 +261,4 @@ Trim_R {
   e.Line '\t' = <& Trim_R e.Line>;
   e.Line = e.Line;
 }
-$END LibraryEx.
+$END Cpp-SR-BE::LibraryEx.

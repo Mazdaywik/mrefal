@@ -772,6 +772,7 @@ SelectBackEnd {
   'Simple' = SimpleRefal;
   'SimpleRefal' = SimpleRefal;
   'SR' = SimpleRefal;
+  'CPPSR' = Cpp-SR;
 
   e.Other = Other e.Other;
 }

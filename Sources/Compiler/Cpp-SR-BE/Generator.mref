@@ -128,7 +128,7 @@ $ENTRY GenIdent {
   e.Name =
     ('//$LABEL ' e.Name)
     ('template <typename T>')
-    ('struct ' e.Name 'L_ {')
+    ('struct ' <NameCode e.Name> 'L_ {')
     ('  static const char *name() {')
     ('    return "' e.Name '";')
     ('  }')
@@ -389,19 +389,23 @@ GenCommand {
 }
 
 PrintVar {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index =
+    s.Mode <NameCode e.Index> '_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 PrintEVar_B {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_b_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index =
+    s.Mode <NameCode e.Index> '_b_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 PrintEVar_E {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_e_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index =
+    s.Mode <NameCode e.Index> '_e_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 PrintEVar_OE {
-  s.Usings s.Mode e.Index = s.Mode e.Index '_oe_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+  s.Usings s.Mode e.Index =
+    s.Mode <NameCode e.Index> '_oe_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
 }
 
 Escape {
@@ -441,7 +445,7 @@ PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNumber e.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('ident') ' & ' e.Name 'L_<int>::name'
+      ('ident') ' & ' <NameCode e.Name> 'L_<int>::name'
     >;
 }
 
@@ -455,13 +459,13 @@ PrintMatchBrackets {
 }
 
 PrintMatchADT {
-  (e.Indent) s.Direction s.BracketNumber s.InnerNum e.Name =
+  (e.Indent) s.Direction s.BracketNumber s.InnerNum t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
       ('adt')
       <BracketsVar_B s.InnerNum> ', '
       <BracketsVar_E s.InnerNum> ', '
-      '& ' e.Name
+      '& ' <QNameCode t.Name>
     >;
 }
 
@@ -570,7 +574,8 @@ SwInfo {
 
   & Cpp-SR-BE.Algorithm.ElNumber s.Number = ', ' <Cpp-SR-BE.Library.StrFromInt s.Number> 'UL';
 
-  & Cpp-SR-BE.Algorithm.ElIdent e.Name = ', & ' e.Name 'L_<int>::name';
+  & Cpp-SR-BE.Algorithm.ElIdent e.Name =
+    ', & ' <NameCode e.Name> 'L_<int>::name';
 
   // Остальное -- скобки
   s.Other = ;

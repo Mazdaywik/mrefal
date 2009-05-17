@@ -3,6 +3,8 @@ $MODULE Cpp-SR-BE::MCompiler;
 $IMPORT Algorithm = Cpp-SR-BE::Algorithm;
 $IMPORT FileIO;
 $IMPORT Generator = Cpp-SR-BE::Generator;
+$IMPORT Lx = Cpp-SR-BE::Lexer;
+$IMPORT Math;
 $IMPORT MIModule;
 $IMPORT MLambda;
 
@@ -62,6 +64,7 @@ Generate-Aux
     t.hIModule
     <FileIO::Save
       (e.OutName)
+      <Generator::GenCommonHeaders>
       <FilterDecls e.Info>
     >;
 
@@ -103,12 +106,23 @@ GenSwap
 
 GenFunction {
   t.AbsolutName s.ScopeClass e.Sentences =
-    <GenFunction-Declarations e.Sentences>
+    <FilterSelf
+      t.AbsolutName
+      <GenFunction-Declarations e.Sentences>
+    >
     (Define
       Function
       t.AbsolutName
       (& GenFunction-Code t.AbsolutName s.ScopeClass e.Sentences)
     );
+}
+
+FilterSelf {
+  t.FnName e.Decls-Begin (Declare Function t.FnName t.Gen) e.Decls-End =
+    e.Decls-Begin
+    <FilterSelf t.FnName e.Decls-End>;
+
+  t.FnName e.Decls = e.Decls;
 }
 
 GenFunction-Declarations {
@@ -182,7 +196,103 @@ GenFunction-Decl {
 GenFunction-Code {
   t.FuncName s.ScopeClass e.Sentences =
     <Generator::GenFnStart s.ScopeClass t.FuncName>
+    <MLambda::Map & GenSentence e.Sentences>
     <Generator::GenFnEnd>;
 }
+
+GenSentence
+  ((Pattern e.Pattern) (Result e.Result)) =
+    <Generator::GenSentence
+      <Algorithm::MakeAlgorithm
+        ( <PrepareExpr e.Pattern> ) ( <PrepareExpr e.Result> )
+      >
+    >;
+
+PrepareExpr
+  e.Expr = <DoPrepareExpr 1 e.Expr '$'>;
+
+DoPrepareExpr {
+  s.BracketNum (Identifier t.SrcPos e.Name) e.Tail t.MultiBracket =
+    (& Algorithm.TkIdentifier e.Name)
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (EVar e.Index) e.Tail t.MultiBracket =
+    (& Lx.TkVariable 'e' e.Index)
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (TVar e.Index) e.Tail t.MultiBracket =
+    (& Lx.TkVariable 't' e.Index)
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (SVar e.Index) e.Tail t.MultiBracket =
+    (& Lx.TkVariable 's' e.Index)
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (Literal e.Content) e.Tail t.MultiBracket =
+    <PrepareLiteral e.Content>
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (Macro s.Value) e.Tail t.MultiBracket =
+    (& Lx.TkNumber s.Value)
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail t.MultiBracket =
+    (& Lx.TkName t.Name)
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (Structure e.InBrackets) e.Tail t.MultiBracket =
+    (& Lx.TkOpenBracket s.BracketNum)
+    <DoPrepareExpr
+      <Math::Inc s.BracketNum>
+      e.InBrackets
+      ((& Lx.TkCloseBracket s.BracketNum) e.Tail t.MultiBracket)
+    >;
+
+  s.BracketNum
+  (Abstract (s.CallType t.SrcPos t.Name) e.InBrackets)
+  e.Tail t.MultiBracket =
+    (& Lx.TkOpenADT s.BracketNum)
+    (& Lx.TkName t.Name)
+    <DoPrepareExpr
+      <Math::Inc s.BracketNum>
+      e.InBrackets
+      ((& Lx.TkCloseADT s.BracketNum) e.Tail t.MultiBracket)
+    >;
+
+  s.BracketNum
+  (Function (s.CallType t.SrcPos t.Name) e.InBrackets)
+  e.Tail t.MultiBracket =
+    (& Lx.TkOpenCall s.BracketNum)
+    (& Lx.TkName t.Name)
+    <DoPrepareExpr
+      <Math::Inc s.BracketNum>
+      e.InBrackets
+      ((& Lx.TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
+    >;
+
+  s.BracketNum
+  (IndirectCall (SVar e.Index) e.InBrackets)
+  e.Tail t.MultiBracket =
+    (& Lx.TkOpenCall s.BracketNum)
+    (& Lx.TkVariable 's' e.Index)
+    <DoPrepareExpr
+      <Math::Inc s.BracketNum>
+      e.InBrackets
+      ((& Lx.TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
+    >;
+
+  s.BracketNum (t.CloseBracket e.Tail t.MultiBracket) =
+    t.CloseBracket
+    <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum '$' = ;
+}
+
+PrepareLiteral {
+  s.First e.Tail = (& Lx.TkChar s.First) <PrepareLiteral e.Tail>;
+
+  = ;
+}
+    
 
 $END Cpp-SR-BE::MCompiler.

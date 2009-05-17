@@ -1,7 +1,7 @@
 $MODULE Cpp-SR-BE::Driver;$IMPORT Cpp-SR-BE::Library;
   
 
-$IMPORT Cpp-SR-BE::Lexer;
+$IMPORT Lx = Cpp-SR-BE::Lexer;
  
 
  
@@ -15,7 +15,7 @@ $ENTRY CompileFile {
   (e.SrcName) e.OutputName =
     <& ParseAndGenerate
       (e.OutputName)
-      <& Cpp-SR-BE.Lexer.LexFolding e.SrcName>
+      <& Lx.LexFolding e.SrcName>
     >;
 }
 
@@ -129,15 +129,15 @@ WriteGenerated {
   
 
 ParseElements {
-  t.ErrorList t.SymTable (& Cpp-SR-BE.Lexer.TkEOF s.LnNum) =
+  t.ErrorList t.SymTable (& Lx.TkEOF s.LnNum) =
     <& Cpp-SR-BE.Error.EL_IsEmpty <& Cpp-SR-BE.Error.EL_Print t.ErrorList>>;
 
-  t.ErrorList t.SymTable (& Cpp-SR-BE.Lexer.TkDirective s.LnNum s.Directive) e.Tail =
+  t.ErrorList t.SymTable (& Lx.TkDirective s.LnNum s.Directive) e.Tail =
     <& ParseElement_SwDirective
       t.ErrorList t.SymTable s.Directive e.Tail
     >;
 
-  t.ErrorList t.SymTable (& Cpp-SR-BE.Lexer.TkName s.LnNum e.Name) e.Tail =
+  t.ErrorList t.SymTable (& Lx.TkName s.LnNum e.Name) e.Tail =
     <& ParseFunction
       & Cpp-SR-BE.Generator.GN_Local (e.Name)
       <& Cpp-SR-BE.SymTable.ST_AddDefined t.ErrorList t.SymTable & Cpp-SR-BE.Generator.GN_Local s.LnNum e.Name>
@@ -157,25 +157,25 @@ ParseElements {
  
 
 GenFunctionsFromDirective {
-  & Cpp-SR-BE.Lexer.EEnum   = & Cpp-SR-BE.Generator.GenEEnum   & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Entry;
-  & Cpp-SR-BE.Lexer.Enum    = & Cpp-SR-BE.Generator.GenEnum    & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Local;
-  & Cpp-SR-BE.Lexer.Extern  = & Cpp-SR-BE.Generator.GenExtern  & Cpp-SR-BE.SymTable.ST_AddDeclared & Cpp-SR-BE.Generator.GN_Entry;
-  & Cpp-SR-BE.Lexer.Forward = & Cpp-SR-BE.Generator.GenForward & Cpp-SR-BE.SymTable.ST_AddDeclared & Cpp-SR-BE.Generator.GN_Local;
-  & Cpp-SR-BE.Lexer.ESwap   = & Cpp-SR-BE.Generator.GenESwap   & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Entry;
-  & Cpp-SR-BE.Lexer.Swap    = & Cpp-SR-BE.Generator.GenSwap    & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Local;
+  & Lx.EEnum   = & Cpp-SR-BE.Generator.GenEEnum   & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Entry;
+  & Lx.Enum    = & Cpp-SR-BE.Generator.GenEnum    & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Local;
+  & Lx.Extern  = & Cpp-SR-BE.Generator.GenExtern  & Cpp-SR-BE.SymTable.ST_AddDeclared & Cpp-SR-BE.Generator.GN_Entry;
+  & Lx.Forward = & Cpp-SR-BE.Generator.GenForward & Cpp-SR-BE.SymTable.ST_AddDeclared & Cpp-SR-BE.Generator.GN_Local;
+  & Lx.ESwap   = & Cpp-SR-BE.Generator.GenESwap   & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Entry;
+  & Lx.Swap    = & Cpp-SR-BE.Generator.GenSwap    & Cpp-SR-BE.SymTable.ST_AddDefined  & Cpp-SR-BE.Generator.GN_Local;
   // Для меток не важно: entry или local.
-  & Cpp-SR-BE.Lexer.Ident   = & Cpp-SR-BE.Generator.GenIdent   & Cpp-SR-BE.SymTable.ST_AddIdent    & Cpp-SR-BE.Generator.GN_Entry;
+  & Lx.Ident   = & Cpp-SR-BE.Generator.GenIdent   & Cpp-SR-BE.SymTable.ST_AddIdent    & Cpp-SR-BE.Generator.GN_Entry;
 }
 
 ParseElement_SwDirective {
-  t.ErrorList t.SymTable & Cpp-SR-BE.Lexer.Entry (& Cpp-SR-BE.Lexer.TkName s.LnNum e.Name) e.Tail =
+  t.ErrorList t.SymTable & Lx.Entry (& Lx.TkName s.LnNum e.Name) e.Tail =
     <& ParseFunction
       & Cpp-SR-BE.Generator.GN_Entry (e.Name)
       <& Cpp-SR-BE.SymTable.ST_AddDefined t.ErrorList t.SymTable & Cpp-SR-BE.Generator.GN_Entry s.LnNum e.Name>
       e.Tail
     >;
 
-  t.ErrorList t.SymTable & Cpp-SR-BE.Lexer.Entry t.Unexpected e.Tail =
+  t.ErrorList t.SymTable & Lx.Entry t.Unexpected e.Tail =
     <& ParseElements
       <& Cpp-SR-BE.Error.EL_AddUnexpected t.ErrorList t.Unexpected 'function name'>
       t.SymTable t.Unexpected e.Tail
@@ -200,7 +200,7 @@ ParseElement_SwDirective {
 
 ParseNameList {
   t.ErrorList t.SymTable s.GenFunc s.TableChangeFunc s.ScopeClass
-  (& Cpp-SR-BE.Lexer.TkName s.LnNum e.Name) e.Tail =
+  (& Lx.TkName s.LnNum e.Name) e.Tail =
     <s.GenFunc e.Name>
     <& ParseNameList_Tail
       <s.TableChangeFunc t.ErrorList t.SymTable s.ScopeClass s.LnNum e.Name>
@@ -218,13 +218,13 @@ ParseNameList {
 
 ParseNameList_Tail {
   t.ErrorList t.SymTable s.GenFunc s.TableChangeFunc s.ScopeClass
-  (& Cpp-SR-BE.Lexer.TkComma s.LnNum) e.Tail =
+  (& Lx.TkComma s.LnNum) e.Tail =
     <& ParseNameList
       t.ErrorList t.SymTable s.GenFunc s.TableChangeFunc s.ScopeClass e.Tail
     >;
 
   t.ErrorList t.SymTable s.GenFunc s.TableChangeFunc s.ScopeClass
-  (& Cpp-SR-BE.Lexer.TkSemicolon s.LnNum) e.Tail =
+  (& Lx.TkSemicolon s.LnNum) e.Tail =
     <& ParseElements
       t.ErrorList t.SymTable e.Tail
     >;
@@ -251,7 +251,7 @@ ParseNameList_Tail {
 
 ParseFunction {
   s.ScopeClass (e.Name) t.ErrorList t.SymTable
-  (& Cpp-SR-BE.Lexer.TkOpenBlock s.LnNum) e.Tail =
+  (& Lx.TkOpenBlock s.LnNum) e.Tail =
     <& Cpp-SR-BE.Generator.GenFnStart s.ScopeClass e.Name>
     <& ParseSentences
       t.ErrorList t.SymTable e.Tail
@@ -272,7 +272,7 @@ ParseFunction {
 */
 
 ParseSentences {
-  t.ErrorList t.SymTable (& Cpp-SR-BE.Lexer.TkCloseBlock s.LnNumber) e.Tail =
+  t.ErrorList t.SymTable (& Lx.TkCloseBlock s.LnNumber) e.Tail =
     <& Cpp-SR-BE.Generator.GenFnEnd>
     <& ParseElements
       t.ErrorList t.SymTable e.Tail
@@ -302,49 +302,49 @@ $IMPORT Cpp-SR-BE::Algorithm;
 */
 
 ParsePattern {
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkChar s.LnNum s.Char) e.Tail =
+  (e.Pattern) (& Lx.TkChar s.LnNum s.Char) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkChar s.Char)) e.Tail
+      (e.Pattern (& Lx.TkChar s.Char)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkOpenBracket s.LnNum) e.Tail =
+  (e.Pattern) (& Lx.TkOpenBracket s.LnNum) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkOpenBracket s.LnNum)) e.Tail
+      (e.Pattern (& Lx.TkOpenBracket s.LnNum)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkCloseBracket s.LnNum) e.Tail =
+  (e.Pattern) (& Lx.TkCloseBracket s.LnNum) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkCloseBracket s.LnNum)) e.Tail
+      (e.Pattern (& Lx.TkCloseBracket s.LnNum)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkOpenADT s.LnNum) e.Tail =
+  (e.Pattern) (& Lx.TkOpenADT s.LnNum) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkOpenADT s.LnNum)) e.Tail
+      (e.Pattern (& Lx.TkOpenADT s.LnNum)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkCloseADT s.LnNum) e.Tail =
+  (e.Pattern) (& Lx.TkCloseADT s.LnNum) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkCloseADT s.LnNum)) e.Tail
+      (e.Pattern (& Lx.TkCloseADT s.LnNum)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkIdentMarker s.LnNum) e.Tail =
+  (e.Pattern) (& Lx.TkIdentMarker s.LnNum) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkIdentMarker s.LnNum)) e.Tail
+      (e.Pattern (& Lx.TkIdentMarker s.LnNum)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkNumber s.LnNum s.Number) e.Tail =
+  (e.Pattern) (& Lx.TkNumber s.LnNum s.Number) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkNumber s.Number)) e.Tail
+      (e.Pattern (& Lx.TkNumber s.Number)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkName s.LnNum e.Name) e.Tail =
+  (e.Pattern) (& Lx.TkName s.LnNum e.Name) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkName s.LnNum e.Name)) e.Tail
+      (e.Pattern (& Lx.TkName s.LnNum e.Name)) e.Tail
     >;
 
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkVariable s.LnNum e.ModeIndex) e.Tail =
+  (e.Pattern) (& Lx.TkVariable s.LnNum e.ModeIndex) e.Tail =
     <& ParsePattern
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkVariable s.LnNum e.ModeIndex)) e.Tail
+      (e.Pattern (& Lx.TkVariable s.LnNum e.ModeIndex)) e.Tail
     >;
 
   (e.Pattern) e.Tail = (e.Pattern) e.Tail;
@@ -356,16 +356,16 @@ ParsePattern {
   
 
 ParseSentences_Result {
-  t.ErrorList t.SymTable (e.Pattern) (& Cpp-SR-BE.Lexer.TkReplace s.LnNum) e.Tail =
+  t.ErrorList t.SymTable (e.Pattern) (& Lx.TkReplace s.LnNum) e.Tail =
     <& ParseSentence_Finish
       t.ErrorList t.SymTable (e.Pattern)
       <& ParseResult (/* Result */) e.Tail>
     >;
 
-  t.ErrorList t.SymTable (e.Pattern) (& Cpp-SR-BE.Lexer.TkEOF s.LnNum) =
+  t.ErrorList t.SymTable (e.Pattern) (& Lx.TkEOF s.LnNum) =
     <& ParseElements
-      <& Cpp-SR-BE.Error.EL_AddUnexpected t.ErrorList (& Cpp-SR-BE.Lexer.TkEOF s.LnNum) '"="'>
-      t.SymTable (& Cpp-SR-BE.Lexer.TkEOF s.LnNum)
+      <& Cpp-SR-BE.Error.EL_AddUnexpected t.ErrorList (& Lx.TkEOF s.LnNum) '"="'>
+      t.SymTable (& Lx.TkEOF s.LnNum)
     >;
 
   t.ErrorList t.SymTable (e.Pattern) t.Unexpected e.Tail =
@@ -397,14 +397,14 @@ ParseResult {
 }
 
 ParseResult_Aux {
-  (e.Result) (& Cpp-SR-BE.Lexer.TkOpenCall s.LnNum) e.Tail =
+  (e.Result) (& Lx.TkOpenCall s.LnNum) e.Tail =
     <& ParseResult
-      (e.Result (& Cpp-SR-BE.Lexer.TkOpenCall s.LnNum)) e.Tail
+      (e.Result (& Lx.TkOpenCall s.LnNum)) e.Tail
     >;
 
-  (e.Result) (& Cpp-SR-BE.Lexer.TkCloseCall s.LnNum) e.Tail =
+  (e.Result) (& Lx.TkCloseCall s.LnNum) e.Tail =
     <& ParseResult
-      (e.Result (& Cpp-SR-BE.Lexer.TkCloseCall s.LnNum)) e.Tail
+      (e.Result (& Lx.TkCloseCall s.LnNum)) e.Tail
     >;
 
   (e.Result) e.Tail = (e.Result) e.Tail;
@@ -414,7 +414,7 @@ ParseResult_Aux {
 
 ParseSentence_Finish {
   t.ErrorList t.SymTable (e.Pattern) (e.Result)
-  (& Cpp-SR-BE.Lexer.TkSemicolon s.LnNum) e.Tail =
+  (& Lx.TkSemicolon s.LnNum) e.Tail =
     <& CheckAndGenerateSentence
       (e.Result) <& CheckPaired t.ErrorList t.SymTable e.Pattern> e.Tail
     >;
@@ -433,98 +433,98 @@ ParseSentence_Finish {
  Brackets { }
 
 StrFromBracket {
-  & Cpp-SR-BE.Lexer.TkOpenBracket = '('; & Cpp-SR-BE.Lexer.TkCloseBracket = ')';
-  & Cpp-SR-BE.Lexer.TkOpenCall = '<'; & Cpp-SR-BE.Lexer.TkCloseCall = '>';
-  & Cpp-SR-BE.Lexer.TkOpenADT = '['; & Cpp-SR-BE.Lexer.TkCloseADT = ']';
+  & Lx.TkOpenBracket = '('; & Lx.TkCloseBracket = ')';
+  & Lx.TkOpenCall = '<'; & Lx.TkCloseCall = '>';
+  & Lx.TkOpenADT = '['; & Lx.TkCloseADT = ']';
 }
 
 CoBracket {
-  & Cpp-SR-BE.Lexer.TkOpenADT = & Cpp-SR-BE.Lexer.TkCloseADT;
-  & Cpp-SR-BE.Lexer.TkOpenBracket = & Cpp-SR-BE.Lexer.TkCloseBracket;
-  & Cpp-SR-BE.Lexer.TkOpenCall = & Cpp-SR-BE.Lexer.TkCloseCall;
-  & Cpp-SR-BE.Lexer.TkCloseADT = & Cpp-SR-BE.Lexer.TkOpenADT;
-  & Cpp-SR-BE.Lexer.TkCloseBracket = & Cpp-SR-BE.Lexer.TkOpenBracket;
-  & Cpp-SR-BE.Lexer.TkCloseCall = & Cpp-SR-BE.Lexer.TkOpenCall;
+  & Lx.TkOpenADT = & Lx.TkCloseADT;
+  & Lx.TkOpenBracket = & Lx.TkCloseBracket;
+  & Lx.TkOpenCall = & Lx.TkCloseCall;
+  & Lx.TkCloseADT = & Lx.TkOpenADT;
+  & Lx.TkCloseBracket = & Lx.TkOpenBracket;
+  & Lx.TkCloseCall = & Lx.TkOpenCall;
 }
 
 DoCheckPaired {
-  t.ErrorList t.SymTable t.MultiBracket e.Scanned ( (& Cpp-SR-BE.Lexer.TkChar s.Char) e.Expr ) =
+  t.ErrorList t.SymTable t.MultiBracket e.Scanned ( (& Lx.TkChar s.Char) e.Expr ) =
     <& DoCheckPaired
-      t.ErrorList t.SymTable t.MultiBracket e.Scanned (& Cpp-SR-BE.Lexer.TkChar s.Char) ( e.Expr )
+      t.ErrorList t.SymTable t.MultiBracket e.Scanned (& Lx.TkChar s.Char) ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkNumber s.Number) e.Expr ) =
+  ( (& Lx.TkNumber s.Number) e.Expr ) =
     <& DoCheckPaired
-      t.ErrorList t.SymTable t.MultiBracket e.Scanned (& Cpp-SR-BE.Lexer.TkNumber s.Number)
+      t.ErrorList t.SymTable t.MultiBracket e.Scanned (& Lx.TkNumber s.Number)
       ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkName s.LnNum e.Name) e.Expr ) =
+  ( (& Lx.TkName s.LnNum e.Name) e.Expr ) =
     <& DoCheckPaired
       <& Cpp-SR-BE.SymTable.ST_CheckDeclared t.ErrorList t.SymTable s.LnNum e.Name>
-      t.MultiBracket e.Scanned (& Cpp-SR-BE.Lexer.TkName e.Name) ( e.Expr )
+      t.MultiBracket e.Scanned (& Lx.TkName e.Name) ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkVariable s.LnNum e.ModeIndex) e.Expr ) =
+  ( (& Lx.TkVariable s.LnNum e.ModeIndex) e.Expr ) =
     <& DoCheckPaired
       t.ErrorList t.SymTable t.MultiBracket e.Scanned
-      (& Cpp-SR-BE.Lexer.TkVariable s.LnNum e.ModeIndex) ( e.Expr )
+      (& Lx.TkVariable s.LnNum e.ModeIndex) ( e.Expr )
     >;
 
   // Проверка для #
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkIdentMarker s.MrkLnNum) (& Cpp-SR-BE.Lexer.TkName s.NameLnNum e.Name) e.Expr ) =
+  ( (& Lx.TkIdentMarker s.MrkLnNum) (& Lx.TkName s.NameLnNum e.Name) e.Expr ) =
     <& DoCheckPaired
       <& Cpp-SR-BE.SymTable.ST_CheckIdent t.ErrorList t.SymTable s.NameLnNum e.Name>
       t.MultiBracket e.Scanned (& Cpp-SR-BE.Algorithm.TkIdentifier e.Name) ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkIdentMarker s.LnNum) e.Expr ) =
+  ( (& Lx.TkIdentMarker s.LnNum) e.Expr ) =
     <& DoCheckPaired
       <& Cpp-SR-BE.Error.EL_AddErrorAt t.ErrorList s.LnNum 'Missed name after \'#\''>
       t.SymTable t.MultiBracket e.Scanned ( e.Expr )
     >;
 
   /*
-    Все нетерминалы просмотрены. Обрабатываем только скобки.
+    Все атомы просмотрены. Обрабатываем только скобки.
   */
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkOpenBracket s.LnNum) e.Expr ) =
+  ( (& Lx.TkOpenBracket s.LnNum) e.Expr ) =
     <& DoCheckPaired
       t.ErrorList t.SymTable
-      ((t.MultiBracket & Cpp-SR-BE.Lexer.TkOpenBracket & Cpp-SR-BE.Lexer.TkCloseBracket s.LnNum) e.Scanned)
+      ((t.MultiBracket & Lx.TkOpenBracket & Lx.TkCloseBracket s.LnNum) e.Scanned)
       ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkOpenCall s.LnNum) e.Expr ) =
+  ( (& Lx.TkOpenCall s.LnNum) e.Expr ) =
     <& DoCheckPaired
       t.ErrorList t.SymTable
-      ((t.MultiBracket & Cpp-SR-BE.Lexer.TkOpenCall & Cpp-SR-BE.Lexer.TkCloseCall s.LnNum) e.Scanned)
+      ((t.MultiBracket & Lx.TkOpenCall & Lx.TkCloseCall s.LnNum) e.Scanned)
       ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkOpenADT s.BracketLnNum) (& Cpp-SR-BE.Lexer.TkName s.NameLnNum e.Name) e.Expr ) =
+  ( (& Lx.TkOpenADT s.BracketLnNum) (& Lx.TkName s.NameLnNum e.Name) e.Expr ) =
     <& DoCheckPaired
       <& Cpp-SR-BE.SymTable.ST_CheckDeclared t.ErrorList t.SymTable s.NameLnNum e.Name>
-      ((t.MultiBracket & Cpp-SR-BE.Lexer.TkOpenADT & Cpp-SR-BE.Lexer.TkCloseADT s.BracketLnNum) e.Scanned)
-      (& Cpp-SR-BE.Lexer.TkName e.Name) ( e.Expr )
+      ((t.MultiBracket & Lx.TkOpenADT & Lx.TkCloseADT s.BracketLnNum) e.Scanned)
+      (& Lx.TkName e.Name) ( e.Expr )
     >;
 
   t.ErrorList t.SymTable t.MultiBracket e.Scanned
-  ( (& Cpp-SR-BE.Lexer.TkOpenADT s.LnNum) e.Expr ) =
+  ( (& Lx.TkOpenADT s.LnNum) e.Expr ) =
     <& DoCheckPaired
       <& Cpp-SR-BE.Error.EL_AddErrorAt
         t.ErrorList s.LnNum 'Expected name after "["'
       >
       t.SymTable
-      ((t.MultiBracket & Cpp-SR-BE.Lexer.TkOpenADT & Cpp-SR-BE.Lexer.TkCloseADT s.LnNum) e.Scanned)
+      ((t.MultiBracket & Lx.TkOpenADT & Lx.TkCloseADT s.LnNum) e.Scanned)
       ( e.Expr )
     >;
 
@@ -646,14 +646,14 @@ CheckVariables_Pattern {
     t.ErrorList ( e.Variables ) (e.Pattern);
 
   t.ErrorList ( e.Variables_B (s.Mode e.Index) e.Variables_E )
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkVariable s.LnNum s.Mode e.Index) e.Tail =
+  (e.Pattern) (& Lx.TkVariable s.LnNum s.Mode e.Index) e.Tail =
     <& CheckVariables_Pattern
       t.ErrorList ( e.Variables_B (s.Mode e.Index) e.Variables_E )
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index)) e.Tail
+      (e.Pattern (& Lx.TkVariable s.Mode e.Index)) e.Tail
     >;
 
   t.ErrorList ( e.Variables_B (s.Mode1 e.Index) e.Variables_E )
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkVariable s.LnNum s.Mode2 e.Index) e.Tail =
+  (e.Pattern) (& Lx.TkVariable s.LnNum s.Mode2 e.Index) e.Tail =
     <& CheckVariables_Pattern
       <& Cpp-SR-BE.Error.EL_AddErrorAt
         t.ErrorList s.LnNum 'Variables ' s.Mode1 '.' e.Index ' and '
@@ -664,10 +664,10 @@ CheckVariables_Pattern {
     >;
 
   t.ErrorList ( e.Variables )
-  (e.Pattern) (& Cpp-SR-BE.Lexer.TkVariable s.LnNum s.Mode e.Index) e.Tail =
+  (e.Pattern) (& Lx.TkVariable s.LnNum s.Mode e.Index) e.Tail =
     <& CheckVariables_Pattern
       t.ErrorList ( e.Variables (s.Mode e.Index) )
-      (e.Pattern (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index)) e.Tail
+      (e.Pattern (& Lx.TkVariable s.Mode e.Index)) e.Tail
     >;
 
   t.ErrorList ( e.Variables ) (e.Pattern) t.OtherTerm e.Tail =
@@ -681,14 +681,14 @@ CheckVariables_Result {
     t.ErrorList (e.Pattern) (e.Result);
 
   t.ErrorList ( e.Variables_B (s.Mode e.Index) e.Variables_E )
-  (e.Pattern) (e.Result) (& Cpp-SR-BE.Lexer.TkVariable s.LnNum s.Mode e.Index) e.Tail =
+  (e.Pattern) (e.Result) (& Lx.TkVariable s.LnNum s.Mode e.Index) e.Tail =
     <& CheckVariables_Result
       t.ErrorList ( e.Variables_B (s.Mode e.Index) e.Variables_E )
-      (e.Pattern) (e.Result (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index)) e.Tail
+      (e.Pattern) (e.Result (& Lx.TkVariable s.Mode e.Index)) e.Tail
     >;
 
   t.ErrorList ( e.Variables ) (e.Pattern)
-  (e.Result) (& Cpp-SR-BE.Lexer.TkVariable s.LnNum s.Mode e.Index) e.Tail =
+  (e.Result) (& Lx.TkVariable s.LnNum s.Mode e.Index) e.Tail =
     <& CheckVariables_Result
       <& Cpp-SR-BE.Error.EL_AddErrorAt
         t.ErrorList s.LnNum 'Variable ' s.Mode '.' e.Index
@@ -709,20 +709,20 @@ CheckVariables_Result {
 
 DoNumerateBrackets {
   s.Number e.Expr_B
-  (& Brackets & Cpp-SR-BE.Lexer.TkOpenADT (& Cpp-SR-BE.Lexer.TkName e.Name) e.Inner & Cpp-SR-BE.Lexer.TkCloseADT)
+  (& Brackets & Lx.TkOpenADT (& Lx.TkName e.Name) e.Inner & Lx.TkCloseADT)
   e.Expr_E =
     <& DoNumerateBrackets
       <& Cpp-SR-BE.LibraryEx.Inc s.Number>
-      e.Expr_B (& Cpp-SR-BE.Lexer.TkOpenADT s.Number)
-      (& Cpp-SR-BE.Lexer.TkName e.Name) e.Inner
-      (& Cpp-SR-BE.Lexer.TkCloseADT s.Number) e.Expr_E
+      e.Expr_B (& Lx.TkOpenADT s.Number)
+      (& Lx.TkName e.Name) e.Inner
+      (& Lx.TkCloseADT s.Number) e.Expr_E
     >;
 
-  s.Number e.Expr_B (& Brackets & Cpp-SR-BE.Lexer.TkOpenADT e.Inner & Cpp-SR-BE.Lexer.TkCloseADT) e.Expr_E =
+  s.Number e.Expr_B (& Brackets & Lx.TkOpenADT e.Inner & Lx.TkCloseADT) e.Expr_E =
     <& DoNumerateBrackets
       <& Cpp-SR-BE.LibraryEx.Inc s.Number>
-      e.Expr_B (& Cpp-SR-BE.Lexer.TkOpenBracket s.Number) e.Inner
-      (& Cpp-SR-BE.Lexer.TkCloseBracket s.Number) e.Expr_E
+      e.Expr_B (& Lx.TkOpenBracket s.Number) e.Inner
+      (& Lx.TkCloseBracket s.Number) e.Expr_E
     >;
 
   s.Number e.Expr_B (& Brackets s.Open e.Inner s.Close) e.Expr_E =

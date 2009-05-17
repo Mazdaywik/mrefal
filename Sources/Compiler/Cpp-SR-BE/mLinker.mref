@@ -1,5 +1,12 @@
 $MODULE Cpp-SR-BE::MLinker;
 
+$IMPORT FileIO;
+$IMPORT Math;
+$IMPORT MFileSystem;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MStrings;
+
 /**
   <Link (e.ProgName) (t.ModuleName e.OutName)>
     == Success
@@ -7,6 +14,102 @@ $MODULE Cpp-SR-BE::MLinker;
 */
 $ENTRY Link
   (e.ProgName) e.Modules =
-    Fails;
+    Success
+    <FileIO::Save
+      ('call_cpp.tmp.bat')
+      ('@echo off')
+      <GenCommands
+        <EliminateCollisions e.Modules>
+      >
+      ('del *.obj')
+      ('rem del call_cpp.tmp.bat')
+    >
+    <MOS::System 'call_cpp.tmp.bat'>;
+
+EliminateCollisions
+  e.Modules =
+    <DoEliminateCollisions
+      () () <MLambda::Map & PrepareName e.Modules>
+      ('Library' ('..\\..\\Simple Refal\\SRLib\\Library.cpp'))
+      ('WinLib' ('..\\..\\Simple Refal\\SRLib\\WinLib.cpp'))
+
+    >;
+
+
+PrepareName
+  (t.ModuleName e.StrFileName) =
+    <PrepareName-Aux
+      (e.StrFileName)
+      <MFileSystem::PathFromStr e.StrFileName>
+    >;
+
+PrepareName-Aux
+  (e.StrFileName) e.PtFolder (e.File '.cpp') =
+    (e.File (e.StrFileName));
+
+DoEliminateCollisions {
+  (e.Names-B (e.File s.Num) e.Names-E)
+  (e.Scanned) (e.File (e.Path)) e.Tail =
+    <DoEliminateCollisions
+      (e.Names-B (e.File <Math::Inc s.Num>) e.Names-E)
+      (e.Scanned
+        (Rename (e.Path) (<AddNumber e.Path s.Num>))
+      )
+      e.Tail
+    >;
+
+  (e.Names) (e.Scanned) (e.File (e.Path)) e.Tail =
+    <DoEliminateCollisions
+      (e.Names (e.File 1)) (e.Scanned (NoRename e.Path)) e.Tail
+    >;
+
+  (e.Names) (e.Scanned) = e.Scanned;
+}
+
+AddNumber {
+  e.Path '.cpp' s.Number = e.Path '@' <MStrings::Symb s.Number> '.cpp';
+}
+
+GenCommands {
+  e.Commands =
+    <MLambda::Map & GenFwdRename e.Commands>
+    (<CompilerCmdLine> <MLambda::Map & GenFilename e.Commands>)
+    <MLambda::Map & GenRevRename e.Commands>;
+}
+
+CompilerCmdLine =
+  'call compile_cl '
+  '/Fegenerated.exe '
+  '/I\"../../Simple Refal/SRLib\" ';
+
+GenFwdRename {
+  (Rename (e.Name) (e.NewName)) =
+    ('echo ren ' e.Name ' ' <FileName e.NewName>)
+    ('ren \"' e.Name '\" ' <FileName e.NewName>);
+
+  (NoRename e.Path) = ;
+}
+
+FileName {
+  e.StrPath = <FileName-Aux <MFileSystem::PathFromStr e.StrPath>>;
+}
+
+FileName-Aux {
+  e.PtBegin (e.FileName) = e.FileName;
+}
+
+GenFilename {
+  (Rename (e.Name) (e.NewName)) = '\"' e.NewName '\" ';
+
+  (NoRename e.Path) = '\"' e.Path '\" ';
+}
+
+GenRevRename {
+  (Rename (e.Name) (e.NewName)) =
+    ('echo ren ' e.NewName ' ' <FileName e.Name>)
+    ('ren \"' e.NewName '\" ' <FileName e.Name>);
+
+  (NoRename e.Name) = ;
+}
 
 $END Cpp-SR-BE::MLinker.

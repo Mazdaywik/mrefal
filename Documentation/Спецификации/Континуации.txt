@@ -1,0 +1,34 @@
+(define (factorial n)
+ (if (= n 0)
+     1
+     (* n (factorial (- n 1)))))
+
+
+(define (factorial n k)
+  (= n 0 (lambda (b)
+          (if b
+              (k 1)
+              (- n 1 (lambda (nm1)
+                      (factorial nm1 (lambda (f)
+                                      (* n f k)))))))))
+Factorial {
+  0 = 1;
+  s.N = <Mul s.N <Factorial <Sub s.N 1>>>;
+}
+
+Factorial {
+  0 (s.FnCont e.Env) = s.FnCont e.Env 1;
+
+  s.N (s.FnCont e.Env) =
+    <Sub s.N 1 (& Factorial-1 s.N (s.FnCont e.Env))>;
+}
+
+Factorial-1 {
+  s.N (s.FnCont e.Env) s.N-1 =
+    <Factorial s.N-1 (& Factorial-2 s.N (s.FnCont e.Env))>;
+}
+
+Factorial-2 {
+  s.N (s.FnCont e.Env) s.Fact =
+    <Mult s.N s.Fact (s.FnCont e.Env)>;
+}

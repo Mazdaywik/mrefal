@@ -25,7 +25,12 @@ NameCode {
 }
 
 NameCodeChar {
-  '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; s.Other = s.Other;
+  '!' = 'B_';
+  '?' = 'Q_';
+  '_' = 'U_';
+  '-' = 'D_';
+  Entry = 'E_';
+  s.Other = s.Other;
 }
 
 FuncArguments {
@@ -37,7 +42,7 @@ NakedArguments {
 }
 
 TextFromMemoryClass {
-  Local = 'static '; Entry = ;
+  Local = 'static '; Entry = ; InitFinal = ;
 }
 
 SwGenFnStart {
@@ -49,6 +54,12 @@ SwGenFnStart {
       '(' <s.FnArguments> ') {'
     )
     ('  refalrts::this_is_generated_function();');
+}
+
+$ENTRY GenInitCounter {
+  InitFinal = ('  static unsigned s_counter = 0;');
+
+  s.Other = ;
 }
 
 $ENTRY GenFnStart {
@@ -386,6 +397,19 @@ GenCommand {
     (e.Indent 'refalrts::use( res );')
     (e.Indent 'refalrts::splice_to_freelist( arg_begin, arg_end );')
     (e.Indent 'return refalrts::cSuccess;');
+
+  (e.Indent) (CmdStartEntryCode s.EntryType) =
+    (e.Indent '  ')
+    (e.Indent 'if( ' <EntryCondition s.EntryType> ' ) {');
+
+  (e.Indent '  ') (CmdEndEntryCode) =
+    (e.Indent)
+    (e.Indent '}');
+}
+
+EntryCondition {
+  Init = '(s_counter ++) == 0';
+  Final = '(-- s_counter) == 0';
 }
 
 PrintVar {
@@ -569,8 +593,7 @@ SwInfo {
   & Cpp-SR-BE.Algorithm.ElChar s.Char = ', ' '\'' <Escape s.Char> '\'';
 
   & Cpp-SR-BE.Algorithm.ElName t.Name =
-    ', & ' <QNameCode t.Name>
-    ', "' <MQualifiedName::ToPrintable-Dot t.Name> '"';
+    ', & ' <QNameCode t.Name> ', "' <PrintableName t.Name> '"';
 
   & Cpp-SR-BE.Algorithm.ElNumber s.Number = ', ' <Cpp-SR-BE.Library.StrFromInt s.Number> 'UL';
 
@@ -579,6 +602,15 @@ SwInfo {
 
   // Остальное -- скобки
   s.Other = ;
+}
+
+PrintableName
+  t.Name = <PrintableName-Aux <MQualifiedName::ToPrintable-Dot t.Name>>;
+
+PrintableName-Aux {
+  e.Name-B Entry e.Name-E = e.Name-B '@' <PrintableName-Aux e.Name-E>;
+
+  e.Name = e.Name;
 }
 
 GenCloseBrackets {

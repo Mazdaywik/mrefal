@@ -119,7 +119,7 @@ $ENTRY ToRelativeFSPath-Pt
   <ToRelativeFSPath-Str t.QualifiedName>
     == e.Segment '/' e.Segment '/' ... '/' e.Segment
 */
-$ENTRY ToRelativeFSPath
+$ENTRY ToRelativeFSPath-Str
   [QName e.Segments] =
     <CreateTextual ('/') e.Segments>;
 

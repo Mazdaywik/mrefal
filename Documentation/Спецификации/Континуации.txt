@@ -16,8 +16,36 @@ Factorial {
   s.N = <Mul s.N <Factorial <Sub s.N 1>>>;
 }
 
+//------------------------------------------------------------------------------
+
 Factorial {
-  0 (s.FnCont e.Env) = s.FnCont e.Env 1;
+  0 = 1;
+
+  s.N = <Sub s.N 1> :: s.N-1 =
+    <Factorial s.N-1> :: s.Fact =
+    <Mult s.N s.Fact>;
+}
+
+//------------------------------------------------------------------------------
+
+Factorial {
+  0 = 1;
+
+  s.N = <Factorial-1 s.N <Sub s.N 1>>;
+}
+
+Factorial-1 {
+  s.N s.N-1 = <Factorial-2 s.N <Factorial s.N-1>>;
+}
+
+Factorial-2 {
+  s.N s.Fact = <Mult s.N s.Fact>;
+}
+
+//------------------------------------------------------------------------------
+
+Factorial {
+  0 (s.FnCont e.Env) = <s.FnCont e.Env 1>;
 
   s.N (s.FnCont e.Env) =
     <Sub s.N 1 (& Factorial-1 s.N (s.FnCont e.Env))>;
@@ -32,3 +60,63 @@ Factorial-2 {
   s.N (s.FnCont e.Env) s.Fact =
     <Mult s.N s.Fact (s.FnCont e.Env)>;
 }
+
+//------------------------------------------------------------------------------
+
+Fib {
+  0 = 1;
+  1 = 1;
+  s.N = <Add <Fib <Sub s.N 1>> <Fib <Sub s.N 2>>>;
+}
+
+//------------------------------------------------------------------------------
+
+Fib {
+  0 = 1;
+  1 = 1;
+
+  s.N = <Sub s.N 1> :: s.N-1 =
+    <Fib s.N-1> :: s.Fib-1 =
+    <Sub s.N 2> :: s.N-2 =
+    <Fib s.N-2> :: s.Fib-2 =
+    <Add s.Fib-1 s.Fib-2>;
+}
+
+Fib {
+  0 = 1;
+  1 = 1;
+  s.N = <Fib-1 s.N <Sub s.N 1>>;
+}
+
+Fib-1 s.N s.N-1 = <Fib-2 s.N <Fib s.N-1>>;
+
+Fib-2 s.N s.Fib-1 = <Fib-3 s.Fib-1 <Sub s.N 2>>;
+
+Fib-3 s.Fib-1 s.N-2 = <Fib-4 s.Fib-1 <Fib s.N-2>>;
+
+Fib-4 s.Fib-1 s.Fib-2 = <Add s.Fib-1 s.Fib-2>;
+
+//------------------------------------------------------------------------------
+
+Fib {
+  0 (s.FnCont e.Env) = <s.FnCont e.Env 1>;
+
+  1 (s.FnCont e.Env) = <s.FnCont e.Env 1>;
+
+  s.N (s.FnCont e.Env) = <Sub s.N 1 (& Fib-1 s.N (s.FnCont e.Env))>;
+}
+
+Fib-1 s.N (s.FnCont e.Env) s.N-1 = <Fib s.N-1 (& Fib-2 s.N (s.FnCont e.Env))>;
+
+Fib-2 s.N (s.FnCont e.Env) s.Fib-1 = <Sub s.N 2 (& Fib-3 s.Fib-1 (s.FnCont e.Env))>;
+
+Fib-3 s.Fib-1 (s.FnCont e.Env) s.N-2 = <Fib s.N-2 (& Fib-4 s.Fib-1 (s.FnCont e.Env))>;
+
+Fib-4 s.Fib-1 (s.FnCont e.Env) s.Fib-2 = <Add s.Fib-1 s.Fib-2 (s.FnCont e.Env)>;
+
+
+
+
+
+
+

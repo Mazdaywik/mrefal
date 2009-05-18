@@ -3,6 +3,7 @@ $MODULE Cpp-SR-BE::Algorithm;
 $IMPORT Cpp-SR-BE::Lexer;
 $IMPORT Cpp-SR-BE::LibraryEx;
 $IMPORT Cpp-SR-BE::Library;
+$IMPORT Math;
 
 $ENTRY MakeAlgorithm {
   (e.Pattern) (e.Result) =
@@ -456,6 +457,22 @@ GenResult {
     >;
 
   /*
+    Специальный тип команд -- маркер инициализации и финализации.
+    Результатное выражение, предварённое таким маркером,
+    выполняется только один раз.
+  */
+
+  (e.Vars) (e.Commands) s.Counter (EntryCode s.CodeType) e.Result =
+    <GenResult
+      (e.Vars) (e.Commands (CtEntryCode s.CodeType)) s.Counter e.Result
+    >;
+
+  (e.Vars) (e.Commands) s.Counter (EndEntryCode) e.Result =
+    <GenResult
+      (e.Vars) (e.Commands (CtEndEntryCode)) s.Counter e.Result
+    >;
+
+  /*
     Закрывающие скобки надо обрабатывать особым образом.
     Круглые скобки и АТД --
     слинковать, угловые -- добавить в стек.
@@ -622,6 +639,12 @@ ConvertCommand {
 
   (& CtBrackets & StLink s.LeftNumber s.RightNumber) =
     (& CmdLinkBrackets s.LeftNumber s.RightNumber);
+
+  (CtEntryCode s.CodeType) =
+    (CmdStartEntryCode s.CodeType);
+
+  (CtEndEntryCode) =
+    (CmdEndEntryCode);
 }
 
 //==============================================================================

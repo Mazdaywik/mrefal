@@ -7,6 +7,7 @@ $IMPORT Lx = Cpp-SR-BE::Lexer;
 $IMPORT Math;
 $IMPORT MIModule;
 $IMPORT MLambda;
+$IMPORT MQualifiedName;
 
 /**
   <Generate t.hIModule e.OutName>
@@ -14,7 +15,7 @@ $IMPORT MLambda;
 */
 $ENTRY Generate
   t.hIModule e.OutName =
-    <Generate-Aux
+    <Generate-EntryCode
       (e.OutName)
       <MLambda::MapReduce
         <MLambda::Composite
@@ -59,6 +60,26 @@ GenerateFunction-Aux {
     <GenFunction t.AbsolutName s.ScopeClass e.Sentences>;
 }
 
+Generate-EntryCode
+  (e.OutName) t.hIModule e.Info =
+    <Generate-Aux
+      (e.OutName)
+      <Generate-EntryCode-Aux
+        <MLambda::Apply
+          <MLambda::Parallel-H
+            & MIModule.GetModuleName
+            <MLambda::Composite
+              & MIModule.GetEntryPoint
+              & MLambda.Bracket-H
+            >
+            & MIModule.GetImportList-RealNames
+          >
+          t.hIModule
+        >
+      >
+      e.Info
+    >;
+
 Generate-Aux
   (e.OutName) t.hIModule e.Info =
     t.hIModule
@@ -99,10 +120,6 @@ GenerateElem {
 }
 
 //------------------------------------------------------------------------------
-
-GenSwap
-  t.AbsolutName =
-    <Generator::GenSwap t.AbsolutName>;
 
 GenFunction {
   t.AbsolutName s.ScopeClass e.Sentences =
@@ -148,6 +165,9 @@ Declarations-Expr {
 
   (IndirectCall (SVar e.Index) e.InBrackets) e.Tail =
     <Declarations-Expr e.InBrackets e.Tail>;
+
+  (EntryCode s.CodeType e.InBracket) e.Tail =
+    <Declarations-Expr e.InBracket e.Tail>;
 
   t.SimpleTerm e.Tail =
     <Declarations-Term t.SimpleTerm>
@@ -196,6 +216,7 @@ GenFunction-Decl {
 GenFunction-Code {
   t.FuncName s.ScopeClass e.Sentences =
     <Generator::GenFnStart s.ScopeClass t.FuncName>
+    <Generator::GenInitCounter s.ScopeClass>
     <MLambda::Map & GenSentence e.Sentences>
     <Generator::GenFnEnd>;
 }
@@ -209,7 +230,8 @@ GenSentence
     >;
 
 PrepareExpr
-  e.Expr = <DoPrepareExpr 1 e.Expr '$'>;
+  e.Expr =
+    <DoPrepareExpr 1 e.Expr '$'>;
 
 DoPrepareExpr {
   s.BracketNum (Identifier t.SrcPos e.Name) e.Tail t.MultiBracket =
@@ -239,6 +261,18 @@ DoPrepareExpr {
   s.BracketNum (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail t.MultiBracket =
     (& Lx.TkName t.Name)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
+
+  /*
+    Фокус! При генерации кода порядок команд инвертируется.
+    Для скобок это безразлично, а вот для кода инициализации ...
+  */
+  s.BracketNum (EntryCode s.CodeType e.InBrackets) e.Tail t.MultiBracket =
+    (EndEntryCode)
+    <DoPrepareExpr
+      s.BracketNum
+      e.InBrackets
+      ((EntryCode s.CodeType) e.Tail t.MultiBracket)
+    >;
 
   s.BracketNum (Structure e.InBrackets) e.Tail t.MultiBracket =
     (& Lx.TkOpenBracket s.BracketNum)
@@ -293,6 +327,84 @@ PrepareLiteral {
 
   = ;
 }
-    
+
+//------------------------------------------------------------------------------
+
+Generate-EntryCode-Aux {
+  t.hIModule t.ModuleName (Go (Result e.Result)) e.Imports =
+    t.hIModule
+    <GenFunction
+      <MQualifiedName::Create ('Go')>
+      Entry
+      (
+        (Pattern)
+        (Result
+          <MLambda::Map & GenInitImport e.Imports>
+          e.Result
+          (Function
+            (Entry NoPos <MQualifiedName::Create ('Exit' Entry)>)
+            (Macro 0) // код возврата
+          )
+        )
+      )
+    >
+    <GenFunction
+      <MQualifiedName::Create ('Exit' Entry)>
+      Entry
+      (
+        (Pattern (SVar 'RetCode'))
+        (Result
+          <MLambda::Map & GenFinalImport e.Imports>
+          (Function
+            (Entry NoPos <MQualifiedName::Create ('Exit')>)
+            (SVar 'RetCode')
+          )
+        )
+      )
+    >;
+
+  t.hIModule t.ModuleName (Regular t.InitSeq t.FinalSeq) e.Imports =
+    t.hIModule
+    <GenFunction
+      <MQualifiedName::AddSubName t.ModuleName 'Init' Entry>
+      InitFinal
+      (
+        (Pattern (Identifier NoPos 'Init'))
+        (Result
+          <MLambda::Map & GenInitImport e.Imports>
+          <GenEntry Init t.InitSeq>
+        )
+      )
+      (
+        (Pattern (Identifier NoPos 'Final'))
+        (Result
+          <GenEntry Final t.FinalSeq>
+          <MLambda::Map & GenFinalImport e.Imports>
+        )
+      )
+    >;
+}
+
+GenEntry {
+  s.CodeType None = ;
+
+  s.CodeType (Result e.Result) = (EntryCode s.CodeType e.Result);
+}
+
+GenInitImport {
+  t.ImportName =
+    (Function
+      (Entry NoPos <MQualifiedName::AddSubName t.ImportName 'Init' Entry>)
+      (Identifier NoPos 'Init')
+    );
+}
+
+GenFinalImport {
+  t.ImportName =
+    (Function
+      (Entry NoPos <MQualifiedName::AddSubName t.ImportName 'Init' Entry>)
+      (Identifier NoPos 'Final')
+    );
+}
 
 $END Cpp-SR-BE::MCompiler.

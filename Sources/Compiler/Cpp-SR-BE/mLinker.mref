@@ -31,8 +31,8 @@ EliminateCollisions
     <DoEliminateCollisions
       () () <MLambda::Map & PrepareName e.Modules>
       ('Library' ('..\\..\\Simple Refal\\SRLib\\Library.cpp'))
-      ('WinLib' ('..\\..\\Simple Refal\\SRLib\\WinLib.cpp'))
-
+      //('WinLib' ('..\\..\\Simple Refal\\SRLib\\WinLib.cpp'))
+      ('refalrts' ('..\\..\\Simple Refal\\SRLib\\refalrts.cpp'))
     >;
 
 

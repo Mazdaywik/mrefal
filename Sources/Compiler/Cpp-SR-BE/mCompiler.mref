@@ -3,7 +3,6 @@ $MODULE Cpp-SR-BE::MCompiler;
 $IMPORT Algorithm = Cpp-SR-BE::Algorithm;
 $IMPORT FileIO;
 $IMPORT Generator = Cpp-SR-BE::Generator;
-$IMPORT Lx = Cpp-SR-BE::Lexer;
 $IMPORT Math;
 $IMPORT MIModule;
 $IMPORT MLambda;
@@ -225,7 +224,8 @@ GenSentence
   ((Pattern e.Pattern) (Result e.Result)) =
     <Generator::GenSentence
       <Algorithm::MakeAlgorithm
-        ( <PrepareExpr e.Pattern> ) ( <PrepareExpr e.Result> )
+        ( <PrepareExpr e.Pattern> )
+        ( <OptimizeStrings <PrepareExpr e.Result>> )
       >
     >;
 
@@ -235,19 +235,19 @@ PrepareExpr
 
 DoPrepareExpr {
   s.BracketNum (Identifier t.SrcPos e.Name) e.Tail t.MultiBracket =
-    (& Algorithm.TkIdentifier e.Name)
+    (TkIdentifier e.Name)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (EVar e.Index) e.Tail t.MultiBracket =
-    (& Lx.TkVariable 'e' e.Index)
+    (TkVariable 'e' e.Index)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (TVar e.Index) e.Tail t.MultiBracket =
-    (& Lx.TkVariable 't' e.Index)
+    (TkVariable 't' e.Index)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (SVar e.Index) e.Tail t.MultiBracket =
-    (& Lx.TkVariable 's' e.Index)
+    (TkVariable 's' e.Index)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (Literal e.Content) e.Tail t.MultiBracket =
@@ -255,11 +255,11 @@ DoPrepareExpr {
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (Macro s.Value) e.Tail t.MultiBracket =
-    (& Lx.TkNumber s.Value)
+    (TkNumber s.Value)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail t.MultiBracket =
-    (& Lx.TkName t.Name)
+    (TkName t.Name)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   /*
@@ -275,44 +275,44 @@ DoPrepareExpr {
     >;
 
   s.BracketNum (Structure e.InBrackets) e.Tail t.MultiBracket =
-    (& Lx.TkOpenBracket s.BracketNum)
+    (TkOpenBracket s.BracketNum)
     <DoPrepareExpr
       <Math::Inc s.BracketNum>
       e.InBrackets
-      ((& Lx.TkCloseBracket s.BracketNum) e.Tail t.MultiBracket)
+      ((TkCloseBracket s.BracketNum) e.Tail t.MultiBracket)
     >;
 
   s.BracketNum
   (Abstract (s.CallType t.SrcPos t.Name) e.InBrackets)
   e.Tail t.MultiBracket =
-    (& Lx.TkOpenADT s.BracketNum)
-    (& Lx.TkName t.Name)
+    (TkOpenADT s.BracketNum)
+    (TkName t.Name)
     <DoPrepareExpr
       <Math::Inc s.BracketNum>
       e.InBrackets
-      ((& Lx.TkCloseADT s.BracketNum) e.Tail t.MultiBracket)
+      ((TkCloseADT s.BracketNum) e.Tail t.MultiBracket)
     >;
 
   s.BracketNum
   (Function (s.CallType t.SrcPos t.Name) e.InBrackets)
   e.Tail t.MultiBracket =
-    (& Lx.TkOpenCall s.BracketNum)
-    (& Lx.TkName t.Name)
+    (TkOpenCall s.BracketNum)
+    (TkName t.Name)
     <DoPrepareExpr
       <Math::Inc s.BracketNum>
       e.InBrackets
-      ((& Lx.TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
+      ((TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
     >;
 
   s.BracketNum
   (IndirectCall (SVar e.Index) e.InBrackets)
   e.Tail t.MultiBracket =
-    (& Lx.TkOpenCall s.BracketNum)
-    (& Lx.TkVariable 's' e.Index)
+    (TkOpenCall s.BracketNum)
+    (TkVariable 's' e.Index)
     <DoPrepareExpr
       <Math::Inc s.BracketNum>
       e.InBrackets
-      ((& Lx.TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
+      ((TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
     >;
 
   s.BracketNum (t.CloseBracket e.Tail t.MultiBracket) =
@@ -323,9 +323,28 @@ DoPrepareExpr {
 }
 
 PrepareLiteral {
-  s.First e.Tail = (& Lx.TkChar s.First) <PrepareLiteral e.Tail>;
+  s.First e.Tail = (TkChar s.First) <PrepareLiteral e.Tail>;
 
   = ;
+}
+
+OptimizeStrings {
+  (TkChar s.First) (TkChar s.Second) e.Tail =
+    <OptimizeStrings-Collect (2 s.First s.Second) e.Tail>;
+
+  t.Other e.Tail = t.Other <OptimizeStrings e.Tail>;
+
+  = ;
+}
+
+OptimizeStrings-Collect {
+  (s.Len e.String) (TkChar s.Char) e.Tail =
+    <OptimizeStrings-Collect
+      (<Math::Inc s.Len> e.String s.Char) e.Tail
+    >;
+
+  (s.Len e.String) e.Tail =
+    (TkString s.Len e.String) <OptimizeStrings e.Tail>;
 }
 
 //------------------------------------------------------------------------------

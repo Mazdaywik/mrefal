@@ -1,9 +1,9 @@
 $MODULE Cpp-SR-BE::Generator;
 
 $IMPORT Cpp-SR-BE::Algorithm;
-$IMPORT Cpp-SR-BE::LibraryEx;
-$IMPORT Cpp-SR-BE::Library;
+$IMPORT Math;
 $IMPORT MLambda;
+$IMPORT MStrings;
 $IMPORT MQualifiedName;
 
 QNameCode {
@@ -162,7 +162,7 @@ $ENTRY GenSentence {
     ('    refalrts::move_left( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
     ('    refalrts::move_right( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
     <GenSentence_Aux
-      <Cpp-SR-BE.LibraryEx.MapReduce
+      <MLambda::MapReduce
         & GenCommand
         ('    ' /* indent */)
         e.Algorithm
@@ -176,11 +176,11 @@ GenSentence_Aux {
 }
 
 BracketsVar_B {
-  s.BracketNumber = 'bb_' <Cpp-SR-BE.Library.StrFromInt s.BracketNumber>;
+  s.BracketNumber = 'bb_' <MStrings::Symb s.BracketNumber>;
 }
 
 BracketsVar_E {
-  s.BracketNumber = 'be_' <Cpp-SR-BE.Library.StrFromInt s.BracketNumber>;
+  s.BracketNumber = 'be_' <MStrings::Symb s.BracketNumber>;
 }
 
 //BracketsVar-OE {
@@ -214,45 +214,41 @@ PrintRecoverStackBracket {
     );
 }
 
-BracketExcept {
-  e.Brackets_B s.Except e.Brackets_E s.Except = e.Brackets_B e.Brackets_E;
-}
-
 GenCommand {
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdComment e.Text) = (e.Indent) (e.Indent '//' e.Text);
+  (e.Indent) (CmdComment e.Text) = (e.Indent) (e.Indent '//' e.Text);
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdDeclareEVar e.VarInfo) =
+  (e.Indent) (CmdDeclareEVar e.VarInfo) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <PrintEVar_B e.VarInfo> ';')
     (e.Indent 'refalrts::Iter ' <PrintEVar_E e.VarInfo> ';');
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdDeclareVar e.VarInfo) =
+  (e.Indent) (CmdDeclareVar e.VarInfo) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <PrintVar e.VarInfo> ';');
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdChar s.Direction s.BracketNumber s.Char) =
+  (e.Indent) (CmdChar s.Direction s.BracketNumber s.Char) =
     (e.Indent)
     <PrintMatchChar (e.Indent) s.Direction s.BracketNumber s.Char>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdNumber s.Direction s.BracketNumber s.Number) =
+  (e.Indent) (CmdNumber s.Direction s.BracketNumber s.Number) =
     (e.Indent)
     <PrintMatchNumber (e.Indent) s.Direction s.BracketNumber s.Number>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdName s.Direction s.BracketNumber t.Name) =
+  (e.Indent) (CmdName s.Direction s.BracketNumber t.Name) =
     (e.Indent)
     <PrintMatchName (e.Indent) s.Direction s.BracketNumber t.Name>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdIdent s.Direction s.BracketNumber e.Name) =
+  (e.Indent) (CmdIdent s.Direction s.BracketNumber e.Name) =
     (e.Indent)
     <PrintMatchIdent (e.Indent) s.Direction s.BracketNumber e.Name>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdBrackets s.Direction s.BracketNumber s.InnerBrackets) =
+  (e.Indent) (CmdBrackets s.Direction s.BracketNumber s.InnerBrackets) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <BracketsVar_B s.InnerBrackets> ' = 0;')
     (e.Indent 'refalrts::Iter ' <BracketsVar_E s.InnerBrackets> ' = 0;')
     <PrintMatchBrackets (e.Indent) s.Direction s.BracketNumber s.InnerBrackets>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdADT s.Direction s.BracketNumber s.InnerBrackets e.Name) =
+  (e.Indent) (CmdADT s.Direction s.BracketNumber s.InnerBrackets e.Name) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <BracketsVar_B s.InnerBrackets> ' = 0;')
     (e.Indent 'refalrts::Iter ' <BracketsVar_E s.InnerBrackets> ' = 0;')
@@ -260,19 +256,19 @@ GenCommand {
       (e.Indent) s.Direction s.BracketNumber s.InnerBrackets e.Name
     >;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdEmpty s.BracketNumber) =
+  (e.Indent) (CmdEmpty s.BracketNumber) =
     (e.Indent)
     <PrintMatchEmpty (e.Indent) s.BracketNumber>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdVar s.Direction s.BracketNumber s.Mode e.Info) =
+  (e.Indent) (CmdVar s.Direction s.BracketNumber s.Mode e.Info) =
     (e.Indent)
     <PrintMatchSTVar (e.Indent) s.Direction s.BracketNumber s.Mode e.Info>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdRepeated s.Direction s.BracketNumber e.VarInfo) =
+  (e.Indent) (CmdRepeated s.Direction s.BracketNumber e.VarInfo) =
     (e.Indent)
     <PrintMatchRepeated (e.Indent) s.Direction s.BracketNumber e.VarInfo>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdClosedE & Cpp-SR-BE.Algorithm.AlgLeft s.BracketNumber 'e' e.Index) =
+  (e.Indent) (CmdClosedE AlgLeft s.BracketNumber 'e' e.Index) =
     (e.Indent)
     (e.Indent
       <PrintEVar_B 1 'e' e.Index> ' = ' <BracketsVar_B s.BracketNumber> ';'
@@ -284,9 +280,12 @@ GenCommand {
     (e.Indent 'refalrts::use( ' <PrintEVar_E 1 'e' e.Index> ' );');
 
   (e.Indent)
-  (& Cpp-SR-BE.Algorithm.CmdOpenedE & Cpp-SR-BE.Algorithm.AlgLeft s.BracketNumber 'e' e.Index (e.BracketsForSave)) =
+  (CmdOpenedE AlgLeft s.BracketNumber 'e' e.Index (e.BracketsForSave)) =
     (e.Indent '  ')
-    <Cpp-SR-BE.LibraryEx.Map (& PrintStkBracket e.Indent) e.BracketsForSave>
+    <MLambda::Map
+      <MLambda::BindLeft & PrintStkBracket e.Indent>
+      e.BracketsForSave
+    >
     (e.Indent 'for( ')
     (e.Indent '  refalrts::Iter')
     (e.Indent
@@ -309,7 +308,10 @@ GenCommand {
       '! empty_seq( ' <PrintEVar_OE 1 'e' e.Index> ', '
       <BracketsVar_E s.BracketNumber> ' );'
     )
-    <Cpp-SR-BE.LibraryEx.Map (& PrintRecoverStackBracket e.Indent '  ') e.BracketsForSave>
+    <MLambda::Map
+      <MLambda::BindLeft & PrintRecoverStackBracket e.Indent '  '>
+      e.BracketsForSave
+    >
     (e.Indent '  '
       'refalrts::next_term( ' <PrintEVar_OE 1 'e' e.Index> ', '
       <BracketsVar_E s.BracketNumber> ' )'
@@ -329,37 +331,47 @@ GenCommand {
       <PrintEVar_E 1 'e' e.Index> ' );'
     );
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdEmptyResult) =
+  (e.Indent) (CmdEmptyResult) =
     (e.Indent)
     ()
     (e.Indent 'refalrts::reset_allocator();')
     (e.Indent 'refalrts::Iter res = arg_begin;');
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdCopyEVar s.Usings 'e' e.Index) =
+  (e.Indent) (CmdCopyEVar s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
       'if( ! refalrts::copy_evar( ' <PrintEVar_B s.Usings 'e' e.Index> ', '
       <PrintEVar_E s.Usings 'e' e.Index> ', '
-      <PrintEVar_B <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index> ', '
-      <PrintEVar_E <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index>
+      <PrintEVar_B <Math::Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar_E <Math::Dec s.Usings> 'e' e.Index>
       ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdCopyVar s.Usings s.Mode e.Index) =
+  (e.Indent) (CmdCopyVar s.Usings s.Mode e.Index) =
     (e.Indent)
     (e.Indent
       'if( ! refalrts::copy_stvar( ' <PrintVar s.Usings s.Mode e.Index> ', '
-      <PrintVar <Cpp-SR-BE.LibraryEx.Dec s.Usings> s.Mode e.Index> ' ) )'
+      <PrintVar <Math::Dec s.Usings> s.Mode e.Index> ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdAllocateElem s.ElemNumber e.ElemInfo) =
+  (e.Indent) (CmdAllocateElem s.ElemNumber e.ElemInfo) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
     <PrintAllocateElem (e.Indent) s.ElemNumber e.ElemInfo>;
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdLinkBrackets s.Left s.Right) =
+  (e.Indent) (CmdAllocateString s.BeginNumber s.EndNumber s.Len e.String) =
+    (e.Indent)
+    (e.Indent 'refalrts::Iter ' <PrintElemVar s.BeginNumber> ' = 0;')
+    (e.Indent 'refalrts::Iter ' <PrintElemVar s.EndNumber> ' = 0;')
+    (e.Indent 'if( ! refalrts::alloc_chars( '
+      <PrintElemVar s.BeginNumber> ', ' <PrintElemVar s.EndNumber> ', '
+      '\"' <MLambda::Map & Escape e.String> '\", ' <MStrings::Symb s.Len> ' ) )'
+    )
+    (e.Indent '  return refalrts::cNoMemory;');
+
+  (e.Indent) (CmdLinkBrackets s.Left s.Right) =
     (e.Indent)
     (e.Indent
       'refalrts::link_brackets( '
@@ -367,24 +379,31 @@ GenCommand {
       ' );'
     );
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdPushStack s.ElemNumber) =
+  (e.Indent) (CmdPushStack s.ElemNumber) =
     (e.Indent)
     (e.Indent 'refalrts::push_stack( ' <PrintElemVar s.ElemNumber> ' );');
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdInsertElem & Cpp-SR-BE.Algorithm.ElElem s.ElemNumber) =
+  (e.Indent) (CmdInsertElem ElElem s.ElemNumber) =
     (e.Indent)
     (e.Indent
       'res = refalrts::splice_elem( res, ' <PrintElemVar s.ElemNumber> ' );'
     );
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdInsertElem & Cpp-SR-BE.Algorithm.ElSTVar s.Usings s.Mode e.Index) =
+  (e.Indent) (CmdInsertElem ElSTVar s.Usings s.Mode e.Index) =
     (e.Indent)
     (e.Indent
       'res = refalrts::splice_stvar( res, '
       <PrintVar s.Usings s.Mode e.Index> ' );'
     );
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdInsertEVar s.Usings 'e' e.Index) =
+  (e.Indent) (CmdInsertString s.NumBegin s.NumEnd) =
+    (e.Indent)
+    (e.Indent
+      'res = refalrts::splice_evar( res, '
+      <PrintElemVar s.NumBegin> ', ' <PrintElemVar s.NumEnd> ' );'
+    );
+
+  (e.Indent) (CmdInsertEVar s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
       'res = refalrts::splice_evar( res, '
@@ -392,7 +411,7 @@ GenCommand {
       <PrintEVar_E s.Usings 'e' e.Index> ' );'
     );
 
-  (e.Indent) (& Cpp-SR-BE.Algorithm.CmdReturnResult) =
+  (e.Indent) (CmdReturnResult) =
     (e.Indent)
     (e.Indent 'refalrts::use( res );')
     (e.Indent 'refalrts::splice_to_freelist( arg_begin, arg_end );')
@@ -414,22 +433,22 @@ EntryCondition {
 
 PrintVar {
   s.Usings s.Mode e.Index =
-    s.Mode <NameCode e.Index> '_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+    s.Mode <NameCode e.Index> '_' <MStrings::Symb s.Usings>;
 }
 
 PrintEVar_B {
   s.Usings s.Mode e.Index =
-    s.Mode <NameCode e.Index> '_b_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+    s.Mode <NameCode e.Index> '_b_' <MStrings::Symb s.Usings>;
 }
 
 PrintEVar_E {
   s.Usings s.Mode e.Index =
-    s.Mode <NameCode e.Index> '_e_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+    s.Mode <NameCode e.Index> '_e_' <MStrings::Symb s.Usings>;
 }
 
 PrintEVar_OE {
   s.Usings s.Mode e.Index =
-    s.Mode <NameCode e.Index> '_oe_' <Cpp-SR-BE.Library.StrFromInt s.Usings>;
+    s.Mode <NameCode e.Index> '_oe_' <MStrings::Symb s.Usings>;
 }
 
 Escape {
@@ -438,6 +457,7 @@ Escape {
   '\r' = '\\r';
   '\\' = '\\\\';
   '\'' = '\\' '\'';
+  '\"' = '\\' '\"';
   s.Other = s.Other;
 }
 
@@ -453,7 +473,7 @@ PrintMatchNumber {
   (e.Indent) s.Direction s.BracketNumber s.Number =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('number') <Cpp-SR-BE.Library.StrFromInt s.Number> 'UL'
+      ('number') <MStrings::Symb s.Number> 'UL'
     >;
 }
 
@@ -509,7 +529,7 @@ PrintMatchEmpty {
 }
 
 StrFromDirection {
-  & Cpp-SR-BE.Algorithm.AlgLeft = 'left'; & Cpp-SR-BE.Algorithm.AlgRight = 'right';
+  AlgLeft = 'left'; AlgRight = 'right';
 }
 
 VarMatchFunction { 's' = 'svar'; 't' = 'tvar'; }
@@ -529,15 +549,15 @@ PrintMatchRepeated {
       ('repeated_evar')
       <PrintEVar_B s.Usings 'e' e.Index> ', '
       <PrintEVar_E s.Usings 'e' e.Index> ', '
-      <PrintEVar_B <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index> ', '
-      <PrintEVar_E <Cpp-SR-BE.LibraryEx.Dec s.Usings> 'e' e.Index>
+      <PrintEVar_B <Math::Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar_E <Math::Dec s.Usings> 'e' e.Index>
     >;
 
   (e.Indent) s.Direction s.BracketNumber s.Usings s.Mode e.Index =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
       ('repeated_stvar') <PrintVar s.Usings s.Mode e.Index>
-      ', ' <PrintVar <Cpp-SR-BE.LibraryEx.Dec s.Usings> s.Mode e.Index>
+      ', ' <PrintVar <Math::Dec s.Usings> s.Mode e.Index>
     >;
 }
 
@@ -552,7 +572,7 @@ PrintMatch {
 }
 
 PrintElemVar {
-  s.Number = 'n' <Cpp-SR-BE.Library.StrFromInt s.Number>;
+  s.Number = 'n' <MStrings::Symb s.Number>;
 }
 
 PrintAllocateElem {
@@ -574,31 +594,29 @@ PrintAllocate_Aux {
 }
 
 SwAllocator {
-  & Cpp-SR-BE.Algorithm.ElChar = 'alloc_char';
-  & Cpp-SR-BE.Algorithm.ElName = 'alloc_name';
-  & Cpp-SR-BE.Algorithm.ElNumber = 'alloc_number';
-  & Cpp-SR-BE.Algorithm.ElIdent = 'alloc_ident';
+  ElChar = 'alloc_char';
+  ElName = 'alloc_name';
+  ElNumber = 'alloc_number';
+  ElIdent = 'alloc_ident';
 
-  & Cpp-SR-BE.Algorithm.ElOpenADT = 'alloc_open_adt';
-  & Cpp-SR-BE.Algorithm.ElCloseADT = 'alloc_close_adt';
+  ElOpenADT = 'alloc_open_adt';
+  ElCloseADT = 'alloc_close_adt';
 
-  & Cpp-SR-BE.Algorithm.ElOpenBracket = 'alloc_open_bracket';
-  & Cpp-SR-BE.Algorithm.ElCloseBracket = 'alloc_close_bracket';
+  ElOpenBracket = 'alloc_open_bracket';
+  ElCloseBracket = 'alloc_close_bracket';
 
-  & Cpp-SR-BE.Algorithm.ElOpenCall = 'alloc_open_call';
-  & Cpp-SR-BE.Algorithm.ElCloseCall = 'alloc_close_call';
+  ElOpenCall = 'alloc_open_call';
+  ElCloseCall = 'alloc_close_call';
 }
 
 SwInfo {
-  & Cpp-SR-BE.Algorithm.ElChar s.Char = ', ' '\'' <Escape s.Char> '\'';
+  ElChar s.Char = ', ' '\'' <Escape s.Char> '\'';
 
-  & Cpp-SR-BE.Algorithm.ElName t.Name =
-    ', & ' <QNameCode t.Name> ', "' <PrintableName t.Name> '"';
+  ElName t.Name = ', & ' <QNameCode t.Name> ', "' <PrintableName t.Name> '"';
 
-  & Cpp-SR-BE.Algorithm.ElNumber s.Number = ', ' <Cpp-SR-BE.Library.StrFromInt s.Number> 'UL';
+  ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 
-  & Cpp-SR-BE.Algorithm.ElIdent e.Name =
-    ', & ' <NameCode e.Name> 'L_<int>::name';
+  ElIdent e.Name = ', & ' <NameCode e.Name> 'L_<int>::name';
 
   // Остальное -- скобки
   s.Other = ;
@@ -618,26 +636,6 @@ GenCloseBrackets {
 
   '  ' e.Indent =
     (e.Indent '}') <GenCloseBrackets e.Indent>;
-}
-
-ElemVarName {
-  s.Num = 'h' <Cpp-SR-BE.Library.StrFromInt s.Num>;
-}
-
-InsertElem {
-  & Cpp-SR-BE.Algorithm.ElElem s.Number = <ElemVarName s.Number>;
-
-  & Cpp-SR-BE.Algorithm.ElSTVar s.Usings s.Mode e.Index =
-    <PrintVar s.Usings s.Mode e.Index>;
-}
-
-SwStringFromCommand {
-  & Cpp-SR-BE.Algorithm.CmdReturnResult = 'RETURN res';
-}
-
-StringFromCommand {
-  (s.Command e.Arguments) =
-    ( '    // ' <SwStringFromCommand s.Command e.Arguments> );
 }
 
 $END Cpp-SR-BE::Generator.

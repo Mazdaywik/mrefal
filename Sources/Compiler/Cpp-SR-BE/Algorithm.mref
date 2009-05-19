@@ -1,15 +1,14 @@
 $MODULE Cpp-SR-BE::Algorithm;
 
-$IMPORT Cpp-SR-BE::Lexer;
-$IMPORT Cpp-SR-BE::LibraryEx;
-$IMPORT Cpp-SR-BE::Library;
 $IMPORT Math;
+$IMPORT MLambda;
+$IMPORT MStrings;
 
 $ENTRY MakeAlgorithm {
   (e.Pattern) (e.Result) =
     <GeneralizeResult
       <GenPattern
-        (& LeftPtr 0) e.Pattern (& RightPtr 0)
+        (LeftPtr 0) e.Pattern (RightPtr 0)
         (/* vars */) (/* commands */)
       >
       <GenResult
@@ -26,18 +25,6 @@ $ENTRY MakeAlgorithm {
 //==============================================================================
 // Генерация образца
 //==============================================================================
-
-LeftPtr { } RightPtr { }
-
-// Направление распознавания
- $ENTRY AlgLeft { } $ENTRY AlgRight { }
-
-/*
-  Тип идентификатора следует сделать доступным
-  и из Driver'а, и из Generator'а.
-  Остаётся только импортировать отсюда.
-*/
- $ENTRY TkIdentifier { }
 
 /*
 Команды распознавания
@@ -56,190 +43,183 @@ LeftPtr { } RightPtr { }
   Комментарий, вносимый в исходный код (CmdComment e.Text)
 */
 
-  $ENTRY CmdChar { } $ENTRY CmdNumber { } $ENTRY CmdName { } $ENTRY CmdIdent { }
-  $ENTRY CmdBrackets { } $ENTRY CmdADT { } $ENTRY CmdEmpty { }
-  $ENTRY CmdRepeated { } $ENTRY CmdVar { } $ENTRY CmdOpenedE { } $ENTRY CmdClosedE { }
-  $ENTRY CmdComment { }
-
-  
-
 GenPattern {
   // Распознавание литералов (символьных, целочисленных, имён)
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkChar s.Char) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkChar s.Char) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkChar s.Char) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdChar & AlgLeft s.Num s.Char))
+      e.Pattern_B (TkChar s.Char) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars) (e.Commands (CmdChar AlgLeft s.Num s.Char))
     >;
 
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkNumber s.Number) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkNumber s.Number) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkNumber s.Number) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdNumber & AlgLeft s.Num s.Number))
+      e.Pattern_B (TkNumber s.Number) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars) (e.Commands (CmdNumber AlgLeft s.Num s.Number))
     >;
 
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkName e.Name) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkName e.Name) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkName e.Name) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdName & AlgLeft s.Num e.Name))
+      e.Pattern_B (TkName e.Name) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars) (e.Commands (CmdName AlgLeft s.Num e.Name))
     >;
 
-  e.Pattern_B (& LeftPtr s.Num) (& TkIdentifier e.Name) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkIdentifier e.Name) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& TkIdentifier e.Name) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdIdent & AlgLeft s.Num e.Name))
+      e.Pattern_B (TkIdentifier e.Name) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars) (e.Commands (CmdIdent AlgLeft s.Num e.Name))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkChar s.Char) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkChar s.Char) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkChar s.Char) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdChar & AlgRight s.Num s.Char))
+      e.Pattern_B (RightPtr s.Num) (TkChar s.Char) e.Pattern_E
+      (e.Vars) (e.Commands (CmdChar AlgRight s.Num s.Char))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkNumber s.Number) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkNumber s.Number) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkNumber s.Number) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdNumber & AlgRight s.Num s.Number))
+      e.Pattern_B (RightPtr s.Num) (TkNumber s.Number) e.Pattern_E
+      (e.Vars) (e.Commands (CmdNumber AlgRight s.Num s.Number))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkName e.Name) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkName e.Name) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkName e.Name) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdName & AlgRight s.Num e.Name))
+      e.Pattern_B (RightPtr s.Num) (TkName e.Name) e.Pattern_E
+      (e.Vars) (e.Commands (CmdName AlgRight s.Num e.Name))
     >;
 
-  e.Pattern_B (& TkIdentifier e.Name) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkIdentifier e.Name) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& TkIdentifier e.Name) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdIdent & AlgRight s.Num e.Name))
+      e.Pattern_B (RightPtr s.Num) (TkIdentifier e.Name) e.Pattern_E
+      (e.Vars) (e.Commands (CmdIdent AlgRight s.Num e.Name))
     >;
 
   // Распознавание скобок
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkOpenBracket s.Inner)
-  e.Pattern_M (& Cpp-SR-BE.Lexer.TkCloseBracket s.Inner) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkOpenBracket s.Inner)
+  e.Pattern_M (TkCloseBracket s.Inner) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkOpenBracket s.Inner)
-      (& LeftPtr s.Inner) e.Pattern_M (& RightPtr s.Inner)
-      (& Cpp-SR-BE.Lexer.TkCloseBracket s.Inner) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdBrackets & AlgLeft s.Num s.Inner))
+      e.Pattern_B (TkOpenBracket s.Inner)
+      (LeftPtr s.Inner) e.Pattern_M (RightPtr s.Inner)
+      (TkCloseBracket s.Inner) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars) (e.Commands (CmdBrackets AlgLeft s.Num s.Inner))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkOpenBracket s.Inner) e.Pattern_M
-  (& Cpp-SR-BE.Lexer.TkCloseBracket s.Inner) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkOpenBracket s.Inner) e.Pattern_M
+  (TkCloseBracket s.Inner) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkOpenBracket s.Inner)
-      (& LeftPtr s.Inner) e.Pattern_M (& RightPtr s.Inner)
-      (& Cpp-SR-BE.Lexer.TkCloseBracket s.Inner) e.Pattern_E
-      (e.Vars) (e.Commands (& CmdBrackets & AlgRight s.Num s.Inner))
+      e.Pattern_B (RightPtr s.Num) (TkOpenBracket s.Inner)
+      (LeftPtr s.Inner) e.Pattern_M (RightPtr s.Inner)
+      (TkCloseBracket s.Inner) e.Pattern_E
+      (e.Vars) (e.Commands (CmdBrackets AlgRight s.Num s.Inner))
     >;
 
   // Распознавание АТД-скобок
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkOpenADT s.Inner)
-  (& Cpp-SR-BE.Lexer.TkName e.Name) e.Pattern_M (& Cpp-SR-BE.Lexer.TkCloseADT s.Inner) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkOpenADT s.Inner)
+  (TkName e.Name) e.Pattern_M (TkCloseADT s.Inner) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkOpenADT s.Inner) (& Cpp-SR-BE.Lexer.TkName e.Name)
-      (& LeftPtr s.Inner) e.Pattern_M (& RightPtr s.Inner)
-      (& Cpp-SR-BE.Lexer.TkCloseADT s.Inner) (& LeftPtr s.Num) e.Pattern_E
+      e.Pattern_B (TkOpenADT s.Inner) (TkName e.Name)
+      (LeftPtr s.Inner) e.Pattern_M (RightPtr s.Inner)
+      (TkCloseADT s.Inner) (LeftPtr s.Num) e.Pattern_E
       (e.Vars)
-      (e.Commands (& CmdADT & AlgLeft s.Num s.Inner e.Name))
+      (e.Commands (CmdADT AlgLeft s.Num s.Inner e.Name))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkOpenADT s.Inner) (& Cpp-SR-BE.Lexer.TkName e.Name) e.Pattern_M
-  (& Cpp-SR-BE.Lexer.TkCloseADT s.Inner) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkOpenADT s.Inner) (TkName e.Name) e.Pattern_M
+  (TkCloseADT s.Inner) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkOpenADT s.Inner)
-      (& Cpp-SR-BE.Lexer.TkName e.Name) (& LeftPtr s.Inner) e.Pattern_M (& RightPtr s.Inner)
-      (& Cpp-SR-BE.Lexer.TkCloseADT s.Inner) e.Pattern_E
+      e.Pattern_B (RightPtr s.Num) (TkOpenADT s.Inner)
+      (TkName e.Name) (LeftPtr s.Inner) e.Pattern_M (RightPtr s.Inner)
+      (TkCloseADT s.Inner) e.Pattern_E
       (e.Vars)
-      (e.Commands (& CmdADT & AlgRight s.Num s.Inner e.Name))
+      (e.Commands (CmdADT AlgRight s.Num s.Inner e.Name))
     >;
 
   // Указатели аннигилируют при встрече
-  e.Pattern_B (& LeftPtr s.Num) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
       e.Pattern_B e.Pattern_E
-      (e.Vars) (e.Commands (& CmdEmpty s.Num))
+      (e.Vars) (e.Commands (CmdEmpty s.Num))
     >;
 
   // Распознавание переменных
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkVariable s.Mode e.Index) e.Pattern_E
   (e.Vars_B (s.Count s.Mode e.Index) e.Vars_E) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars_B (<Cpp-SR-BE.LibraryEx.Inc s.Count> s.Mode e.Index) e.Vars_E)
-      (e.Commands (& CmdRepeated & AlgLeft s.Num <Cpp-SR-BE.LibraryEx.Inc s.Count> s.Mode e.Index))
+      e.Pattern_B (TkVariable s.Mode e.Index) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars_B (<Math::Inc s.Count> s.Mode e.Index) e.Vars_E)
+      (e.Commands (CmdRepeated AlgLeft s.Num <Math::Inc s.Count> s.Mode e.Index))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkVariable s.Mode e.Index) (RightPtr s.Num) e.Pattern_E
   (e.Vars_B (s.Count s.Mode e.Index) e.Vars_E) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) e.Pattern_E
-      (e.Vars_B (<Cpp-SR-BE.LibraryEx.Inc s.Count> s.Mode e.Index) e.Vars_E)
-      (e.Commands (& CmdRepeated & AlgRight s.Num <Cpp-SR-BE.LibraryEx.Inc s.Count> s.Mode e.Index))
+      e.Pattern_B (RightPtr s.Num) (TkVariable s.Mode e.Index) e.Pattern_E
+      (e.Vars_B (<Math::Inc s.Count> s.Mode e.Index) e.Vars_E)
+      (e.Commands (CmdRepeated AlgRight s.Num <Math::Inc s.Count> s.Mode e.Index))
     >;
 
   // Указатели аннигилируют через закрытую e-переменную
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable 'e' e.Index)
-  (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkVariable 'e' e.Index)
+  (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable 'e' e.Index) e.Pattern_E
+      e.Pattern_B (TkVariable 'e' e.Index) e.Pattern_E
       (e.Vars (1 'e' e.Index))
-      (e.Commands (& CmdClosedE & AlgLeft s.Num 'e' e.Index))
+      (e.Commands (CmdClosedE AlgLeft s.Num 'e' e.Index))
     >;
 
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable 's' e.Index) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkVariable 's' e.Index) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable 's' e.Index) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars (1 's' e.Index)) (e.Commands (& CmdVar & AlgLeft s.Num 's' e.Index))
+      e.Pattern_B (TkVariable 's' e.Index) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars (1 's' e.Index)) (e.Commands (CmdVar AlgLeft s.Num 's' e.Index))
     >;
 
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable 't' e.Index) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkVariable 't' e.Index) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable 't' e.Index) (& LeftPtr s.Num) e.Pattern_E
-      (e.Vars (1 't' e.Index)) (e.Commands (& CmdVar & AlgLeft s.Num 't' e.Index))
+      e.Pattern_B (TkVariable 't' e.Index) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars (1 't' e.Index)) (e.Commands (CmdVar AlgLeft s.Num 't' e.Index))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable 's' e.Index) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkVariable 's' e.Index) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable 's' e.Index) e.Pattern_E
-      (e.Vars (1 's' e.Index)) (e.Commands (& CmdVar & AlgRight s.Num 's' e.Index))
+      e.Pattern_B (RightPtr s.Num) (TkVariable 's' e.Index) e.Pattern_E
+      (e.Vars (1 's' e.Index)) (e.Commands (CmdVar AlgRight s.Num 's' e.Index))
     >;
 
-  e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable 't' e.Index) (& RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkVariable 't' e.Index) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& RightPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable 't' e.Index) e.Pattern_E
-      (e.Vars (1 't' e.Index)) (e.Commands (& CmdVar & AlgRight s.Num 't' e.Index))
+      e.Pattern_B (RightPtr s.Num) (TkVariable 't' e.Index) e.Pattern_E
+      (e.Vars (1 't' e.Index)) (e.Commands (CmdVar AlgRight s.Num 't' e.Index))
     >;
 
-  e.Pattern_B (& LeftPtr s.Num) (& Cpp-SR-BE.Lexer.TkVariable 'e' e.Index) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkVariable 'e' e.Index) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (& Cpp-SR-BE.Lexer.TkVariable 'e' e.Index) (& LeftPtr s.Num) e.Pattern_E
+      e.Pattern_B (TkVariable 'e' e.Index) (LeftPtr s.Num) e.Pattern_E
       (e.Vars (1 'e' e.Index))
-      (e.Commands (& CmdOpenedE & AlgLeft s.Num 'e' e.Index))
+      (e.Commands (CmdOpenedE AlgLeft s.Num 'e' e.Index))
     >;
 
   // Завершение разбора. Все указатели аннигилировали.
   e.Pattern (e.Vars) (e.Commands) =
     (e.Vars)
-    ((& CmdComment <TextFromPattern e.Pattern> )
+    ((CmdComment <TextFromPattern e.Pattern> )
       <SaveBrackets e.Commands >
     );
 }
@@ -250,11 +230,11 @@ SaveBrackets {
 
 DoSaveBrackets {
   (e.Scanned)
-  e.Commands_B (& CmdOpenedE & AlgLeft s.Num 'e' e.Index) e.Commands_E =
+  e.Commands_B (CmdOpenedE AlgLeft s.Num 'e' e.Index) e.Commands_E =
     <DoSaveBrackets_Aux
       (e.Scanned
         e.Commands_B
-        (& CmdOpenedE & AlgLeft s.Num 'e' e.Index)
+        (CmdOpenedE AlgLeft s.Num 'e' e.Index)
       )
       e.Commands_E
     >;
@@ -263,15 +243,15 @@ DoSaveBrackets {
 }
 
 DoSaveBrackets_Aux {
-  (e.Scanned (& CmdOpenedE & AlgLeft s.Num 'e' e.Index )) e.Commands =
+  (e.Scanned (CmdOpenedE AlgLeft s.Num 'e' e.Index )) e.Commands =
     <DoSaveBrackets
       (e.Scanned
-        (& CmdOpenedE
-          & AlgLeft s.Num 'e' e.Index
+        (CmdOpenedE
+          AlgLeft s.Num 'e' e.Index
           (
             <CalcSavedBrackets
-              (e.Scanned (& CmdOpenedE & AlgLeft s.Num 'e' e.Index))
-              e.Commands (& CmdOpenedE & AlgLeft s.Num 'e' e.Index)
+              (e.Scanned (CmdOpenedE AlgLeft s.Num 'e' e.Index))
+              e.Commands (CmdOpenedE AlgLeft s.Num 'e' e.Index)
             >
           )
         )
@@ -283,8 +263,8 @@ DoSaveBrackets_Aux {
 CalcSavedBrackets {
   (e.Scanned) e.Commands =
     <Brackets_Intersect
-      ( <Brackets_Set <Cpp-SR-BE.LibraryEx.Map & ExtractBrackets e.Scanned>> )
-      ( <Brackets_Set <Cpp-SR-BE.LibraryEx.Map & ExtractBrackets e.Commands>> )
+      ( <Brackets_Set <MLambda::Map & ExtractBrackets e.Scanned>> )
+      ( <Brackets_Set <MLambda::Map & ExtractBrackets e.Commands>> )
     >;
 }
 
@@ -294,9 +274,9 @@ ExtractBrackets {
     третьим термом, общий формат
     (s.Command s.Direction s.BracketNum e.Info)
   */
-  (& CmdEmpty s.BracketNum) = s.BracketNum;
+  (CmdEmpty s.BracketNum) = s.BracketNum;
 
-  (& CmdBrackets s.Direction s.BracketNum s.InnerNum) =
+  (CmdBrackets s.Direction s.BracketNum s.InnerNum) =
     s.BracketNum s.InnerNum;
 
   (s.Command s.Direction s.BracketNum e.Info) = s.BracketNum;
@@ -317,31 +297,31 @@ Brackets_Intersect {
 }
 
 TextFromPattern {
-  (& Cpp-SR-BE.Lexer.TkOpenBracket s.Number) e.Tail =
-    ' (~' <Cpp-SR-BE.Library.StrFromInt s.Number> <TextFromPattern e.Tail>;
+  (TkOpenBracket s.Number) e.Tail =
+    ' (~' <MStrings::Symb s.Number> <TextFromPattern e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkCloseBracket s.Number) e.Tail =
-    ' )~' <Cpp-SR-BE.Library.StrFromInt s.Number> <TextFromPattern e.Tail>;
+  (TkCloseBracket s.Number) e.Tail =
+    ' )~' <MStrings::Symb s.Number> <TextFromPattern e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkOpenADT s.Number) e.Tail =
-    ' [~' <Cpp-SR-BE.Library.StrFromInt s.Number> <TextFromPattern e.Tail>;
+  (TkOpenADT s.Number) e.Tail =
+    ' [~' <MStrings::Symb s.Number> <TextFromPattern e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkCloseADT s.Number) e.Tail =
-    ' ]~' <Cpp-SR-BE.Library.StrFromInt s.Number> <TextFromPattern e.Tail>;
+  (TkCloseADT s.Number) e.Tail =
+    ' ]~' <MStrings::Symb s.Number> <TextFromPattern e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkChar s.Char) e.Tail =
-    ' ' '\'' <TextFromPattern_Char (& Cpp-SR-BE.Lexer.TkChar s.Char) e.Tail>;
+  (TkChar s.Char) e.Tail =
+    ' ' '\'' <TextFromPattern_Char (TkChar s.Char) e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkNumber s.Number) e.Tail =
-    ' ' <Cpp-SR-BE.Library.StrFromInt s.Number> <TextFromPattern e.Tail>;
+  (TkNumber s.Number) e.Tail =
+    ' ' <MStrings::Symb s.Number> <TextFromPattern e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkName e.Name) e.Tail =
+  (TkName e.Name) e.Tail =
     ' & ' e.Name <TextFromPattern e.Tail>;
 
-  (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) e.Tail =
+  (TkVariable s.Mode e.Index) e.Tail =
     ' ' s.Mode '.' e.Index <TextFromPattern e.Tail>;
 
-  (& TkIdentifier e.Name) e.Tail =
+  (TkIdentifier e.Name) e.Tail =
     ' # ' e.Name <TextFromPattern e.Tail>;
 
   = ;
@@ -359,7 +339,7 @@ Escape {
 }
 
 TextFromPattern_Char {
-  (& Cpp-SR-BE.Lexer.TkChar s.Char) e.Tail =
+  (TkChar s.Char) e.Tail =
     <Escape s.Char> <TextFromPattern_Char e.Tail>;
 
   = '\'';
@@ -372,88 +352,100 @@ TextFromPattern_Char {
 //==============================================================================
 
 // Тип команды
- CtAlloc { } CtInsert { } CtBrackets { } CtInsertVar { }
+// CtAlloc { } CtInsert { } CtBrackets { } CtInsertVar { }
 // Подтип команды
 
-  StChar { } StName { } StNumber { } StIdent { }
-  StOpenBracket { } StCloseBracket { } StOpenCall { } StCloseCall { }
-  StOpenADT { } StCloseADT { }
-  StLink { } StStack { }
+//  StChar { } StName { } StNumber { } StIdent { }
+//  StOpenBracket { } StCloseBracket { } StOpenCall { } StCloseCall { }
+//  StOpenADT { } StCloseADT { }
+//  StLink { } StStack { }
 
 GenResult {
   // Создаём литералы
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkChar s.Value) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkChar s.Value) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StChar s.Counter s.Value)
-        (& CtInsert s.Counter)
+        (CtAlloc StChar s.Counter s.Value)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkName e.Name) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkName e.Name) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StName s.Counter e.Name)
-        (& CtInsert s.Counter)
+        (CtAlloc StName s.Counter e.Name)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkNumber s.Number) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkNumber s.Number) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StNumber s.Counter s.Number)
-        (& CtInsert s.Counter)
+        (CtAlloc StNumber s.Counter s.Number)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (& TkIdentifier e.Name) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkIdentifier e.Name) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StIdent s.Counter e.Name)
-        (& CtInsert s.Counter)
+        (CtAlloc StIdent s.Counter e.Name)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
+    >;
+
+  (e.Vars) (e.Commands) s.Counter (TkString s.Len e.String) e.Result =
+    <GenResult
+      (e.Vars)
+      (e.Commands
+        (CtAllocString
+          s.Counter <Math::Inc s.Counter> s.Len e.String
+        )
+        (CtInsertString s.Counter <Math::Inc s.Counter>)
+      )
+      <Math::Add s.Counter 2> e.Result
     >;
 
   /*
     Обработка открывающих скобок обоих типов ничем не отличается
     от обработки литералов.
   */
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkOpenBracket s.Num) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkOpenBracket s.Num) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StOpenBracket s.Counter s.Num)
-        (& CtInsert s.Counter)
+        (CtAlloc StOpenBracket s.Counter s.Num)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkOpenCall s.Num) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkOpenCall s.Num) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StOpenCall s.Counter s.Num)
-        (& CtInsert s.Counter)
+        (CtAlloc StOpenCall s.Counter s.Num)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkOpenADT s.Num) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkOpenADT s.Num) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (& CtAlloc & StOpenADT s.Counter s.Num)
-        (& CtInsert s.Counter)
+        (CtAlloc StOpenADT s.Counter s.Num)
+        (CtInsert s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
   /*
@@ -478,70 +470,70 @@ GenResult {
     слинковать, угловые -- добавить в стек.
   */
   (e.Vars)
-  (e.Commands_B (& CtAlloc & StOpenBracket s.OpenCounter s.Num) e.Commands_E)
-  s.Counter (& Cpp-SR-BE.Lexer.TkCloseBracket s.Num) e.Result =
+  (e.Commands_B (CtAlloc StOpenBracket s.OpenCounter s.Num) e.Commands_E)
+  s.Counter (TkCloseBracket s.Num) e.Result =
     <GenResult
       (e.Vars)
       (
         e.Commands_B
-        (& CtAlloc & StOpenBracket s.OpenCounter s.Num)
+        (CtAlloc StOpenBracket s.OpenCounter s.Num)
         e.Commands_E
-        (& CtAlloc & StCloseBracket s.Counter s.Num)
-        (& CtInsert s.Counter)
-        (& CtBrackets & StLink s.OpenCounter s.Counter)
+        (CtAlloc StCloseBracket s.Counter s.Num)
+        (CtInsert s.Counter)
+        (CtBrackets StLink s.OpenCounter s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
   (e.Vars)
-  (e.Commands_B (& CtAlloc & StOpenADT s.OpenCounter s.Num) e.Commands_E)
-  s.Counter (& Cpp-SR-BE.Lexer.TkCloseADT s.Num) e.Result =
+  (e.Commands_B (CtAlloc StOpenADT s.OpenCounter s.Num) e.Commands_E)
+  s.Counter (TkCloseADT s.Num) e.Result =
     <GenResult
       (e.Vars)
       (
         e.Commands_B
-        (& CtAlloc & StOpenADT s.OpenCounter s.Num)
+        (CtAlloc StOpenADT s.OpenCounter s.Num)
         e.Commands_E
-        (& CtAlloc & StCloseADT s.Counter s.Num)
-        (& CtInsert s.Counter)
-        (& CtBrackets & StLink s.OpenCounter s.Counter)
+        (CtAlloc StCloseADT s.Counter s.Num)
+        (CtInsert s.Counter)
+        (CtBrackets StLink s.OpenCounter s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
   (e.Vars)
-  (e.Commands_B (& CtAlloc & StOpenCall s.OpenCounter s.Num) e.Commands_E)
-  s.Counter (& Cpp-SR-BE.Lexer.TkCloseCall s.Num) e.Result =
+  (e.Commands_B (CtAlloc StOpenCall s.OpenCounter s.Num) e.Commands_E)
+  s.Counter (TkCloseCall s.Num) e.Result =
     <GenResult
       (e.Vars)
       (
         e.Commands_B
-        (& CtAlloc & StOpenCall s.OpenCounter s.Num)
+        (CtAlloc StOpenCall s.OpenCounter s.Num)
         e.Commands_E
-        (& CtAlloc & StCloseCall s.Counter s.Num)
-        (& CtInsert s.Counter)
-        (& CtBrackets & StStack s.OpenCounter)
-        (& CtBrackets & StStack s.Counter)
+        (CtAlloc StCloseCall s.Counter s.Num)
+        (CtInsert s.Counter)
+        (CtBrackets StStack s.OpenCounter)
+        (CtBrackets StStack s.Counter)
       )
-      <Cpp-SR-BE.LibraryEx.Inc s.Counter> e.Result
+      <Math::Inc s.Counter> e.Result
     >;
 
   // Обработка переменных
   (e.Vars_B (s.Usings s.Mode e.Index) e.Vars_E)
-  (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) e.Result =
+  (e.Commands) s.Counter (TkVariable s.Mode e.Index) e.Result =
     <GenResult
-      (e.Vars_B (<Cpp-SR-BE.LibraryEx.Inc s.Usings> s.Mode e.Index) e.Vars_E)
+      (e.Vars_B (<Math::Inc s.Usings> s.Mode e.Index) e.Vars_E)
       (e.Commands
-        (& CtInsertVar <Cpp-SR-BE.LibraryEx.Inc s.Usings> s.Mode e.Index)
+        (CtInsertVar <Math::Inc s.Usings> s.Mode e.Index)
       )
       s.Counter e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (& Cpp-SR-BE.Lexer.TkVariable s.Mode e.Index) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkVariable s.Mode e.Index) e.Result =
     <GenResult
       (e.Vars (1 s.Mode e.Index))
       (e.Commands
-        (& CtInsertVar 1 s.Mode e.Index)
+        (CtInsertVar 1 s.Mode e.Index)
       )
       s.Counter e.Result
     >;
@@ -559,8 +551,11 @@ GenResult {
 */
 
 SeparateAllocates {
-  (e.Allocates) (& CtAlloc e.Info) =
-    (e.Allocates (& CtAlloc e.Info));
+  (e.Allocates) (CtAlloc e.Info) =
+    (e.Allocates (CtAlloc e.Info));
+
+  (e.Allocates) (CtAllocString e.Info) =
+    (e.Allocates (CtAllocString e.Info));
 
   (e.Allocates) t.Other = (e.Allocates) t.Other;
 }
@@ -568,7 +563,7 @@ SeparateAllocates {
 GenResult_Commands {
   e.Commands =
     <ConvertCommands_Separated
-      <Cpp-SR-BE.LibraryEx.MapReduce
+      <MLambda::MapReduce
         & SeparateAllocates
         (/* Allocates */)
         e.Commands
@@ -578,8 +573,8 @@ GenResult_Commands {
 
 ConvertCommands_Separated {
   (e.Allocates) e.OtherCommands =
-    <Cpp-SR-BE.LibraryEx.Map & ConvertAllocates e.Allocates>
-    <Cpp-SR-BE.LibraryEx.Map & ConvertCommand <Reverse e.OtherCommands>>;
+    <MLambda::Map & ConvertAllocates e.Allocates>
+    <MLambda::Map & ConvertCommand <Reverse e.OtherCommands>>;
 }
 
 Reverse {
@@ -595,50 +590,50 @@ Reverse {
 //  (CmdInsertElem s.Number)
 //  (CmdInsertEVar s.Usings 'e' e.Index)
 
-  $ENTRY CmdAllocateElem { }
-  $ENTRY CmdLinkBrackets { }
-  $ENTRY CmdPushStack { }
-  $ENTRY CmdInsertElem { }
-  $ENTRY CmdInsertEVar { }
-
 // Спецификаторы команд (элементы)
 
-  $ENTRY ElChar { } $ENTRY ElName { } $ENTRY ElNumber { } $ENTRY ElIdent { }
-  $ENTRY ElOpenADT { } $ENTRY ElCloseADT { }
-  $ENTRY ElOpenBracket { } $ENTRY ElCloseBracket { }
-  $ENTRY ElOpenCall { } $ENTRY ElCloseCall { }
-  $ENTRY ElElem { } $ENTRY ElSTVar { }
+//  $ENTRY ElChar { } $ENTRY ElName { } $ENTRY ElNumber { } $ENTRY ElIdent { }
+//  $ENTRY ElOpenADT { } $ENTRY ElCloseADT { }
+//  $ENTRY ElOpenBracket { } $ENTRY ElCloseBracket { }
+//  $ENTRY ElOpenCall { } $ENTRY ElCloseCall { }
+//  $ENTRY ElElem { } $ENTRY ElSTVar { }
 
 ElemType {
-  & StChar s.Char = & ElChar s.Char;
-  & StName e.Name = & ElName e.Name;
-  & StNumber s.Number = & ElNumber s.Number;
-  & StIdent e.Name = & ElIdent e.Name;
-  & StOpenADT s.Num = & ElOpenADT;
-  & StCloseADT s.Num = & ElCloseADT;
-  & StOpenBracket s.Num = & ElOpenBracket;
-  & StCloseBracket s.Num = & ElCloseBracket;
-  & StOpenCall s.Num = & ElOpenCall;
-  & StCloseCall s.Num = & ElCloseCall;
+  StChar s.Char = ElChar s.Char;
+  StName e.Name = ElName e.Name;
+  StNumber s.Number = ElNumber s.Number;
+  StIdent e.Name = ElIdent e.Name;
+  StOpenADT s.Num = ElOpenADT;
+  StCloseADT s.Num = ElCloseADT;
+  StOpenBracket s.Num = ElOpenBracket;
+  StCloseBracket s.Num = ElCloseBracket;
+  StOpenCall s.Num = ElOpenCall;
+  StCloseCall s.Num = ElCloseCall;
 }
 
 ConvertAllocates {
-  (& CtAlloc s.Type s.Number e.Value) =
-    (& CmdAllocateElem s.Number <ElemType s.Type e.Value>);
+  (CtAlloc s.Type s.Number e.Value) =
+    (CmdAllocateElem s.Number <ElemType s.Type e.Value>);
+
+  (CtAllocString s.NumBegin s.NumEnd s.Len e.Value) =
+    (CmdAllocateString s.NumBegin s.NumEnd s.Len e.Value);
 }
 
 ConvertCommand {
-  (& CtInsert s.Number) = (& CmdInsertElem & ElElem s.Number);
+  (CtInsert s.Number) = (CmdInsertElem ElElem s.Number);
 
-  (& CtInsertVar s.Usings 'e' e.Index) = (& CmdInsertEVar s.Usings 'e' e.Index);
+  (CtInsertString s.NumBegin s.NumEnd) =
+    (CmdInsertString s.NumBegin s.NumEnd);
 
-  (& CtInsertVar s.Usings s.STMode e.Index) =
-    (& CmdInsertElem & ElSTVar s.Usings s.STMode e.Index);
+  (CtInsertVar s.Usings 'e' e.Index) = (CmdInsertEVar s.Usings 'e' e.Index);
 
-  (& CtBrackets & StStack s.Number) = (& CmdPushStack s.Number);
+  (CtInsertVar s.Usings s.STMode e.Index) =
+    (CmdInsertElem ElSTVar s.Usings s.STMode e.Index);
 
-  (& CtBrackets & StLink s.LeftNumber s.RightNumber) =
-    (& CmdLinkBrackets s.LeftNumber s.RightNumber);
+  (CtBrackets StStack s.Number) = (CmdPushStack s.Number);
+
+  (CtBrackets StLink s.LeftNumber s.RightNumber) =
+    (CmdLinkBrackets s.LeftNumber s.RightNumber);
 
   (CtEntryCode s.CodeType) =
     (CmdStartEntryCode s.CodeType);
@@ -666,12 +661,12 @@ ReplicateVar {
   (1 s.Mode e.Index) = (1 s.Mode e.Index);
 
   (s.Using s.Mode e.Index) =
-    <ReplicateVar (<Cpp-SR-BE.LibraryEx.Dec s.Using> s.Mode e.Index)>
+    <ReplicateVar (<Math::Dec s.Using> s.Mode e.Index)>
     (s.Using s.Mode e.Index);
 }
 
 ReplicateVars {
-  e.Vars = <Cpp-SR-BE.LibraryEx.Map & ReplicateVar e.Vars>;
+  e.Vars = <MLambda::Map & ReplicateVar e.Vars>;
 }
 
 GeneralizeResult_Vars {
@@ -700,35 +695,28 @@ VarSetDifference {
   ( e.Set1 ) ( e.Set2 ) = e.Set1;
 }
 
-
- $ENTRY CmdEmptyResult { } $ENTRY CmdReturnResult { }
-
 GeneralizeResult_CopyVars {
   ( e.CommonVars ) ( e.Pattern ) ( e.CopiedVars ) ( e.Result ) =
-    <Cpp-SR-BE.LibraryEx.Map & MakeDeclaration e.CommonVars>
+    <MLambda::Map & MakeDeclaration e.CommonVars>
     e.Pattern
-    (& CmdEmptyResult)
-    <Cpp-SR-BE.LibraryEx.Map & MakeCopyVar e.CopiedVars>
+    (CmdEmptyResult)
+    <MLambda::Map & MakeCopyVar e.CopiedVars>
     e.Result
-    (& CmdReturnResult);
+    (CmdReturnResult);
 }
-
- $ENTRY CmdDeclareEVar { } $ENTRY CmdDeclareVar { }
 
 MakeDeclaration {
-  ( s.Usings 'e' e.Index ) = (& CmdDeclareEVar s.Usings 'e' e.Index);
+  ( s.Usings 'e' e.Index ) = (CmdDeclareEVar s.Usings 'e' e.Index);
 
   ( s.Usings s.Mode e.Index ) =
-    (& CmdDeclareVar s.Usings s.Mode e.Index);
+    (CmdDeclareVar s.Usings s.Mode e.Index);
 }
 
- $ENTRY CmdCopyEVar { } $ENTRY CmdCopyVar { }
-
 MakeCopyVar {
-  ( s.Usings 'e' e.Index ) = (& CmdCopyEVar s.Usings 'e' e.Index);
+  ( s.Usings 'e' e.Index ) = (CmdCopyEVar s.Usings 'e' e.Index);
 
   ( s.Usings s.Mode e.Index ) =
-    (& CmdCopyVar s.Usings s.Mode e.Index);
+    (CmdCopyVar s.Usings s.Mode e.Index);
 }
 
 $END Cpp-SR-BE::Algorithm.

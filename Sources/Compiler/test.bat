@@ -1,1 +1,1 @@
-mrefal +make +cfg:mp-work-CPPSR.cfg MRefal
+mrefal +make +cfg:mp-work-CPPSR.cfg -xlinx MRefal

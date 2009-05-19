@@ -5,7 +5,6 @@ $IMPORT MRefalRTS;
 $IMPORT Core::MFileSystem;
 $IMPORT MLambda;
 $IMPORT MOS;
-$IMPORT MR-Extent;
 $IMPORT MSelfDiag;
 $IMPORT MStrings;
 
@@ -282,41 +281,6 @@ SwFileAttribute {
     (e.Value);
 }
 
-FailDown { }
-
-$ENTRY FileAttribute_
-  s.Attribute e.FileName =
-    <SwFileAttribute
-      s.Attribute
-      <MR-Extent::Call 'INFO ' <Quoting e.FileName>>
-      (e.FileName)
-    >;
-
-SwFileAttribute_ {
-  s.Attribute Fails (e.FileName) =
-    <MSelfDiag::Error
-      'Files not found in MFileSystem::FileAttribute'
-    >;
-
-  s.Attribute Success 'N' = FileNotFound;
-
-  DateTime Success
-  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
-    (s.Year s.Month s.Day s.Hour s.Minute s.Second);
-
-  Size Success
-  'D' s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
-    (Directory);
-
-  Size Success
-  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
-    (s.Size);
-
-  LongName Success
-  s.Size s.Year s.Month s.Day s.Hour s.Minute s.Second e.LongName (e.FileName) =
-    (e.LongName);
-}
-
 //------------------------------------------------------------------------------
 
 /**
@@ -331,22 +295,6 @@ $ENTRY DirList
       Надо переписать.
     */
     <Core::MFileSystem::DirList e.DirectoryName>;
-
-$ENTRY DirList_
-  e.DirectoryName =
-    <DirListing-SwLoad
-      <MR-Extent::Call 'LIST ' <Quoting e.DirectoryName>>
-    >;
-
-DirListing-SwLoad {
-  Success 'S' e.FileNames-B 'F' e.FileNames-E = Fails;
-
-  Success 'S' e.FileNames = Success e.FileNames;
-
-  Success 'F' = Fails;
-
-  Fails = Fails;
-}
 
 //------------------------------------------------------------------------------
 

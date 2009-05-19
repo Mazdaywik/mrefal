@@ -114,6 +114,155 @@ Fib-3 s.Fib-1 (s.FnCont e.Env) s.N-2 = <Fib s.N-2 (& Fib-4 s.Fib-1 (s.FnCont e.E
 
 Fib-4 s.Fib-1 (s.FnCont e.Env) s.Fib-2 = <Add s.Fib-1 s.Fib-2 (s.FnCont e.Env)>;
 
+//------------------------------------------------------------------------------
+
+Map {
+  s.Func t.Next e.Tail =
+    <s.Func t.Next> <Map s.Func e.Tail>;
+
+  s.Func = ;
+}
+
+F {
+  s.Num e.Vect = <Map { s.Next = <Mul s.Next s.Num>; } e.Vect>;
+}
+
+//------------------------------------------------------------------------------
+
+Map {
+  s.Func t.Next e.Tail =
+    <s.Func t.Next> :: e.Res =
+    <Map s.Func e.Tail> :: e.TailRes =
+    e.Res e.TailRes;
+
+  s.Func = ;
+}
+
+//------------------------------------------------------------------------------
+
+Map {
+  s.Func t.Next e.Tail = <Map-1 s.Func (e.Tail) <s.Func t.Next>>;
+
+  s.Func = ;
+}
+
+Map-1 s.Func (e.Tail) e.Res = <Map-2 (e.Res) <Map s.Func e.Tail>>;
+
+Map-2 (e.Res) e.TailRes = e.Res e.TailRes;
+
+F {
+  s.Num e.Vect =
+    <Map F-1/s.Num/ e.Vect>;
+}
+
+F-1 /s.Num/ s.Next = <Mul s.Num s.Next>;
+
+//------------------------------------------------------------------------------
+
+Map {
+  s.Func t.Next e.Tail (s.FnCont e.Env) =
+    <s.Func t.Next (& Map-1 s.Func (e.Tail) (s.FnCont e.Env))>;
+
+  s.Func (s.FnCont e.Env) = <s.FnCont e.Env>;
+}
+
+Map-1 s.Func (e.Tail) (s.FnCont e.Env) e.Res =
+  <Map s.Func e.Tail (& Map-2 (e.Res) (s.FnCont e.Env)>;
+
+Map-2 (e.Res) (s.FnCont e.Env) e.ResTail =
+  <s.FnCont e.Env e.Res e.ResTail>;
+
+F s.Num e.Vect (s.FnCont e.Env) = <Map F-1/s.Num/ e.Vect (s.FnCont e.Env)>;
+
+F-1 /s.Num/ s.Next (s.FnCont e.Env) = <Mul s.Num s.Next (s.FnCont e.Env)>;
+
+//------------------------------------------------------------------------------
+
+<CallCC s.Func e.Env> == e.Res
+<s.Func t.Cont e.Env> == e.Res
+<ApplyCC t.Cont e.Arg> == e.Res
+
+F e.SomeArg = <CallCC & F-Res e.SomeArg>;
+
+F-Res {
+  t.Cont A = <F1 1> <ApplyCC t.Cont 2> <F3 3>;
+
+  t.Cont B = <F4 4> <F5 5>;
+}
+
+//------------------------------------------------------------------------------
+
+F-Res {
+  t.Cont A =
+    <F1 1> :: t.F1-Res =
+    <ApplyCC t.Cont 2> :: t.Cont-Res =
+    <F3 3> :: t.F3-Res =
+    t.F1-Res t.Cont-Res t.F3-Res;
+
+  t.Cont B =
+    <F4 4> :: t.F4-Res =
+    <F5 5> :: t.F5-Res =
+    t.F4-Res t.F5-Res;
+}
+
+//------------------------------------------------------------------------------
+
+F-Res {
+  t.Cont A = <F-Res-1 t.Cont <F1 1>>;
+
+  t.Cont B = <F-Res-4 <F4 4>;
+}
+
+F-Res-1 t.Cont t.F1-Res = <F-Res-2 t.F1-Res <ApplyCC t.Cont 2>>;
+
+F-Res-2 t.F1-Res t.Cont-Res = <F-Res-3 t.F1-Res t.Cont-Res <F3 3>>;
+
+F-Res-3 t.F1-Res t.Cont-Res t.F3-Res = t.F1-Res t.Cont-Res t.F3-Res;
+
+F-Res-4 t.F4-Res = <F-Res-5 t.F4-Res <F5 5>>;
+
+F-Res-5 t.F4-Res t.F5-Res = t.F4-Res t.F5-Res;
+
+//------------------------------------------------------------------------------
+
+F e.SomeArg (s.FnCont e.Env) =
+  <CallCC & F-Res e.SomeArg (s.FnCont e.Env)>;
+
+CallCC
+  s.FnRes e.SomeArg (s.FnCont e.Env) =
+    <s.FnRes (s.FnCont e.Env) e.SomeArg (s.FnCont e.Env)>;
+
+F-Res {
+  (s.FnCont e.Env) A (s.FnCont e.Env) =
+    <F1 1 (& F-Res-1 (s.FnCont e.Env) (s.FnCont e.Env))>;
+
+  (s.FnCont e.Env) B (s.FnCont e.Env) =
+    <F4 4 (& F-Res-4 (s.FnCont e.Env))>;
+}
+
+F-Res-1 (s.FnCont e.Env) (s.FnCont e.Env) t.F1-Res =
+  <Apply-CC (s.FnCont e.Env) 2 (& F-Res-2 t.F1-Res (s.FnCont e.Env))>;
+
+Apply-CC
+  (s.FnCont e.Env) e.Res (s.FnOtherCont e.OtherEnv) =
+    <s.FnCont e.Env e.Res>;
+
+дальше понятно
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

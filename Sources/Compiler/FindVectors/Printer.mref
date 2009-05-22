@@ -1,0 +1,60 @@
+$MODULE FindVectors::Printer;
+
+$IMPORT FileIO;
+$IMPORT MLambda;
+$IMPORT MStrings;
+$IMPORT MOrder;
+
+ClassList = 'E:\\Коновалов\\xxxx\\classes.txt';
+
+Classes =
+  <MLambda::Map
+    & ParseClassList
+    <FileIO::Load <ClassList>>
+  >;
+
+ParseClassList {
+  (e.Type '*' e.Name) = ((<MStrings::Trim e.Type>) (<MStrings::Trim e.Name>));
+
+  (e.OtherLine) = ;
+}
+
+//------------------------------------------------------------------------------
+
+OutName = 'E:\\Коновалов\\xxxx\\uses.txt';
+
+$ENTRY Print
+  e.Info =
+    <FileIO::Save
+      (<OutName>)
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          & PrintUse
+        >
+        e.Info
+      >
+    >;
+
+PrintUse
+  (e.Class) (e.Function) e.Tail =
+    (e.Class '::' e.Function)
+    <MLambda::TerminateAccumulator
+      & MLambda.Nil
+      <MLambda::MapReduce
+        & PrintUse-Aux
+        ( <Classes> )
+        <MStrings::Unique <MOrder::Sort e.Tail>>
+      >
+    >;
+
+PrintUse-Aux {
+  ( e.Classes-B ((e.Type) (e.Name)) e.Classes-E ) (e.Name) =
+    ( e.Classes-B ((e.Type) (e.Name)) e.Classes-E )
+    ('  Type ' e.Type);
+
+  ( e.Classes ) (e.Name) =
+    ( e.Classes ) ('  Name ' e.Name);
+}
+
+$END FindVectors::Printer.

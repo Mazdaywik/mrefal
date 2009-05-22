@@ -6,6 +6,7 @@ $IMPORT Generator = Cpp-SR-BE::Generator;
 $IMPORT Math;
 $IMPORT MIModule;
 $IMPORT MLambda;
+$IMPORT MStrings;
 $IMPORT MQualifiedName;
 
 /**
@@ -373,7 +374,10 @@ Generate-EntryCode-Aux {
       (
         (Pattern (SVar 'RetCode'))
         (Result
-          <MLambda::Map & GenFinalImport e.Imports>
+          <MLambda::Map
+            & GenFinalImport
+            <MStrings::Reverse e.Imports>
+          >
           (Function
             (Entry NoPos <MQualifiedName::Create ('Exit')>)
             (SVar 'RetCode')
@@ -398,7 +402,10 @@ Generate-EntryCode-Aux {
         (Pattern (Identifier NoPos 'Final'))
         (Result
           <GenEntry Final t.FinalSeq>
-          <MLambda::Map & GenFinalImport e.Imports>
+          <MLambda::Map
+            & GenFinalImport
+            <MStrings::Reverse e.Imports>
+          >
         )
       )
     >;

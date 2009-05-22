@@ -78,9 +78,8 @@ GenCommands {
 }
 
 CompilerCmdLine =
-  'call compile_cl '
-  '/Fegenerated.exe '
-  '/I\"../../Simple Refal/SRLib\" ';
+  'call compile_bcc '
+  '-I\"..\\..\\Simple Refal\\SRLib\" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

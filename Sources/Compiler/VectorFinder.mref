@@ -9,8 +9,11 @@ $IMPORT FindVectors::Printer;
 $ENTRY Go =
   <FindVectors::Printer::Print
     <MLambda::Map
-      & FindVectors.Scanner.ScanFile
-      <FindVectors::FileList>
+      <MLambda::Composite
+        & MLambda.UnBracket
+        & FindVectors.Scanner.ScanFile
+      >
+      <FindVectors::FileList::GetList>
     >
   >;
 

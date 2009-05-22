@@ -1,0 +1,9 @@
+$MODULE FindVectors::FileList;
+
+Directories =
+  ('E:\Коновалов\xxxx\include\yyyylib')
+  ('E:\Коновалов\xxxx\srclib\yyyylib');
+
+$ENTRY GetList
+
+$END FindVectors::FileList.

@@ -1,0 +1,17 @@
+$PROGRAM VectorFinder;
+
+$IMPORT MLambda;
+
+$IMPORT FindVectors::FileList;
+$IMPORT FindVectors::Scanner;
+$IMPORT FindVectors::Printer;
+
+$ENTRY Go =
+  <FindVectors::Printer::Print
+    <MLambda::Map
+      & FindVectors.Scanner.ScanFile
+      <FindVectors::FileList>
+    >
+  >;
+
+$END VectorFinder.

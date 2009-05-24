@@ -1,0 +1,24 @@
+$MODULE Core::MFileIO;
+
+$ENTRY Open {
+  s.Mode e.FileName = <FOpen s.Mode e.FileName>;
+}
+
+$ENTRY Close {
+  s.Handle = <FClose s.Handle>;
+}
+
+$ENTRY ReadLine {
+  s.Handle = <FReadLine s.Handle>;
+}
+
+$ENTRY WriteLine {
+  s.Handle e.Text = <FWriteLine s.Handle e.Text>;
+}
+
+$ENTRY FOpen { }
+$ENTRY FClose { }
+$ENTRY FReadLine { }
+$ENTRY FWriteLine { }
+
+$END Core::MFileIO.

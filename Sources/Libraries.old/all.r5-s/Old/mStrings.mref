@@ -1,0 +1,326 @@
+$MODULE Old::MStrings;
+
+$IMPORT MRefalRTS;
+$IMPORT Math = Old::Math;
+$IMPORT MLambda = Old::MLambda;
+
+//------------------------------------------------------------------------------
+
+// Вызовы встроенных функций.
+
+$ENTRY Numb e.Digits = <MRefalRTS::Numb e.Digits>;
+
+$ENTRY Symb s.Num = <MRefalRTS::Symb s.Num>;
+
+$ENTRY Ord e.Line = <MRefalRTS::Ord e.Line>;
+
+$ENTRY Chr e.Line = <MRefalRTS::Chr e.Line>;
+
+//------------------------------------------------------------------------------
+
+UpperLowerTable =
+  ('Aa') ('Bb') ('Cc') ('Dd') ('Ee')
+  ('Ff') ('Gg') ('Hh') ('Ii') ('Jj')
+  ('Kk') ('Ll') ('Mm') ('Nn') ('Oo')
+  ('Pp') ('Qq') ('Rr') ('Ss') ('Tt')
+  ('Uu') ('Vv') ('Ww') ('Xx') ('Yy')
+  ('Zz');
+
+/**
+  <Upper e.Text> == e.UpperText
+  <Lower e.Text> == e.LowerText
+*/
+$ENTRY Upper
+  e.Expr = <RMap &UpChar e.Expr>;
+
+$ENTRY Lower
+  e.Expr = <RMap &LoChar e.Expr>;
+
+RMap
+  s.Func e.Expr =
+    <DoRMap
+      s.Func (<UpperLowerTable>) ('$') e.Expr '$'
+    >;
+
+DoRMap {
+  s.Func t.UpperLower (e.Scanned) s.Next e.Expr t.MultiBracket =
+    <DoRMap
+      s.Func
+      <s.Func t.UpperLower (e.Scanned) s.Next>
+      e.Expr t.MultiBracket
+    >;
+
+  s.Func t.UpperLower (e.Scanned) (e.Inner) e.Expr t.MultiBracket =
+    <DoRMap
+      s.Func t.UpperLower ( (e.Scanned) ) e.Inner (e.Expr t.MultiBracket)
+    >;
+
+  s.Func t.UpperLower ( (e.Scanned) e.Inner ) (e.Expr t.MultiBracket) =
+    <DoRMap
+      s.Func t.UpperLower ( e.Scanned (e.Inner) ) e.Expr t.MultiBracket
+    >;
+
+  s.Func t.UpperLower ('$' e.Scanned) '$' =
+    e.Scanned;
+}
+
+UpChar {
+  ( e.Letters-B (s.Upper s.Lower) e.Letters-E ) (e.Scanned) s.Lower =
+    ( (s.Upper s.Lower) e.Letters-B e.Letters-E ) (e.Scanned s.Upper);
+
+  ( e.Letters ) (e.Scanned) s.Next =
+    ( e.Letters ) (e.Scanned s.Next);
+}
+
+LoChar {
+  ( e.Letters-B (s.Upper s.Lower) e.Letters-E ) (e.Scanned) s.Upper =
+    ( (s.Upper s.Lower) e.Letters-B e.Letters-E ) (e.Scanned s.Lower);
+
+  ( e.Letters ) (e.Scanned) s.Next =
+    ( e.Letters ) (e.Scanned s.Next);
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Length e.Expr> == s.Length
+  <Length e.Expr> == s.Length e.Expr
+*/
+$ENTRY Length e.Expr = <UnLen <Length-T e.Expr> >;
+
+UnLen s.Length e.Expr = s.Length;
+
+$ENTRY Length-T
+  e.Expr = <DoLength-T 0 () e.Expr>;
+
+DoLength-T {
+  s.Length (e.Scanned) t.Next e.Tail =
+    <DoLength-T
+      <Math::Inc s.Length>
+      (e.Scanned t.Next) e.Tail
+    >;
+
+  s.Length (e.Scanned) =
+    s.Length e.Scanned;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <First-Parse s.Count e.Expr> ==
+    (e.First) e.Tail
+*/
+$ENTRY First-Parse s.Count e.Expr = <DoFirst s.Count () e.Expr>;
+
+DoFirst {
+  0 (e.First) e.Last = (e.First) e.Last;
+  s.Num (e.First) = (e.First);
+  s.Num (e.First) t.Next e.Last =
+    <DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <First s.Count e.Expr> == e.Truncate
+*/
+$ENTRY First
+  s.Count e.Expr =
+    <First-UnBracket <First-Parse s.Count e.Expr>>;
+
+First-UnBracket
+  (e.First) e.Rest = e.First;
+
+//------------------------------------------------------------------------------
+
+/**
+  <Skip s.Count e.Expr> == e.Truncated
+*/
+$ENTRY Skip {
+  0 e.Expr = e.Expr;
+
+  s.Num t.First e.Expr =
+    <Skip <Math::Dec s.Num> e.Expr>;
+
+  s.Num = ;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <At s.Index e.Expr> == t.ElemAt
+  Нумерация начинается с нуля.
+*/
+$ENTRY At {
+  0 t.ElemAt e.Tail = t.ElemAt;
+
+  s.Index t.Next e.Tail =
+    <At <Math::Dec s.Index> e.Tail>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Seq s.NFirst s.NLast>
+    == s.NFirst s.NFirst+1 ... s.NLast-1 s.NLast
+  s.NFirst и s.NLast -- числа,
+  причём должно быть s.NFirst <= s.NLast
+*/
+$ENTRY Seq {
+  s.Last s.Last = s.Last;
+  s.First s.Last =
+    s.First <Seq <Math::Inc s.First> s.Last>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Reverse e.Line> == e.eniL
+*/
+$ENTRY Reverse {
+  t.First e.Mid t.Tail =
+    t.Tail <Reverse e.Mid> t.First;
+
+  // t.One или empty
+  e.Other = e.Other;
+}
+
+//------------------------------------------------------------------------------
+
+$ENTRY Trim {
+  ' ' e.Line = <Trim e.Line>;
+  '\t' e.Line = <Trim e.Line>;
+  '\n' e.Line = <Trim e.Line>;
+
+  e.Line = <Trim-R e.Line>;
+}
+
+Trim-R {
+  e.Line ' ' = <Trim-R e.Line>;
+  e.Line '\t' = <Trim-R e.Line>;
+  e.Line '\n' = <Trim-R e.Line>;
+
+  e.Line = e.Line;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Repeat s.Num e.Expr>
+    == e.Expr e.Expr ... e.Expr
+  <Length <Repeat s.Num e.Expr>> == s.Num
+  s.Num >= 0
+*/
+$ENTRY Repeat {
+  0 e.Expr = ;
+
+  1 e.Expr = e.Expr;
+
+  s.Num e.Expr =
+    e.Expr <Repeat <Math::Dec s.Num> e.Expr>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Fields (e.Fields) e.Line>
+    == (e.SubField)*
+  e.Fields = s<num>*
+*/
+$ENTRY Fields
+  (e.Fields) e.Line =
+    <Fields-Rot
+      <MLambda::MapReduce
+        & FindField
+        (e.Line) e.Fields
+      >
+    >;
+
+Fields-Rot
+  (e.Tail) e.Fields = e.Fields (e.Tail);
+
+FindField
+  (e.Line) s.Length =
+    <FindField-Aux
+      <First-Parse s.Length e.Line>
+    >;
+
+FindField-Aux
+  (e.First) e.Rest = (e.Rest) (e.First);
+
+//------------------------------------------------------------------------------
+
+/**
+  <Decart ( t.ElemA* ) ( t.ElemB* )>
+    == (t.ElemA t.ElemB)*
+
+  Пример:
+  <Decart (1 2 3) (A B C D)> ==
+    (1 A) (1 B) (1 C) (1 D)
+    (2 A) (2 B) (2 C) (2 D)
+    (3 A) (3 B) (3 C) (3 D)
+*/
+$ENTRY Decart {
+  ( ) ( e.ElemsB ) = /* Пусто */;
+
+  ( e.ElemsA ) ( ) = /* Пусто */;
+
+  ( t.ElemA ) ( e.ElemsB ) =
+    <Folding t.ElemA e.ElemsB>;
+
+  ( t.ElemA e.ElemsA ) ( e.ElemsB ) =
+    <Folding t.ElemA e.ElemsB>
+    <Decart ( e.ElemsA ) ( e.ElemsB )>;
+}
+
+Folding {
+  t.ElemA = /* Пусто */;
+
+  t.ElemA t.ElemB = ( t.ElemA t.ElemB );
+
+  t.ElemA t.NextB e.TailB =
+    ( t.ElemA t.NextB ) <Folding t.ElemA e.TailB>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Unique e.Elems> == e.Set
+*/
+$ENTRY Unique {
+  e.Elems-B t.Double e.Elems-M t.Double e.Elems-E =
+    e.Elems-B <Unique t.Double e.Elems-M e.Elems-E>;
+
+  e.Elems = e.Elems;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Set-Intersect (e.Set1) (e.Set2)>
+    == e.Set1*Set2
+*/
+$ENTRY Set-Intersect {
+  (e.Set1-B t.Common e.Set1-E) (e.Set2-B t.Common e.Set2-E) =
+    t.Common
+    <Set-Intersect (e.Set1-E) (e.Set2-B e.Set2-E)>;
+
+  (e.Set1) (e.Set2) = ;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Set-Difference (e.Set1) (e.Set2)>
+    == e.Set1-Set2
+*/
+$ENTRY Set-Difference {
+  (e.Set1-B t.Common e.Set1-E) (e.Set2-B t.Common e.Set2-E) =
+    <Set-Difference
+      (e.Set1-B e.Set1-E) (e.Set2-B e.Set2-E)
+    >;
+
+  (e.Set1) (e.Set2) = e.Set1;
+}
+
+$END Old::MStrings.

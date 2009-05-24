@@ -1,0 +1,7 @@
+$module Core::MFileSystem;
+
+
+$entry DirList;
+$entry GetFileAttributes;
+
+$end Core::MFileSystem.

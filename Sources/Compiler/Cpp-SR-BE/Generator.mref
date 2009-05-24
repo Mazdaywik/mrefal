@@ -136,12 +136,12 @@ GenSwap_Aux {
 }
 
 $ENTRY GenIdent {
-  e.Name =
-    ('//$LABEL ' e.Name)
+  t.Name =
+    ('//$LABEL ' <MQualifiedName::ToPrintable-Dot t.Name>)
     ('template <typename T>')
-    ('struct ' <NameCode e.Name> 'L_ {')
+    ('struct ' <QNameCode t.Name> 'L_ {')
     ('  static const char *name() {')
-    ('    return "' e.Name '";')
+    ('    return "' <MQualifiedName::ToPrintable-Dot t.Name> '";')
     ('  }')
     ('};')
     ();
@@ -238,9 +238,9 @@ GenCommand {
     (e.Indent)
     <PrintMatchName (e.Indent) s.Direction s.BracketNumber t.Name>;
 
-  (e.Indent) (CmdIdent s.Direction s.BracketNumber e.Name) =
+  (e.Indent) (CmdIdent s.Direction s.BracketNumber t.Name) =
     (e.Indent)
-    <PrintMatchIdent (e.Indent) s.Direction s.BracketNumber e.Name>;
+    <PrintMatchIdent (e.Indent) s.Direction s.BracketNumber t.Name>;
 
   (e.Indent) (CmdBrackets s.Direction s.BracketNumber s.InnerBrackets) =
     (e.Indent)
@@ -486,10 +486,10 @@ PrintMatchName {
 }
 
 PrintMatchIdent {
-  (e.Indent) s.Direction s.BracketNumber e.Name =
+  (e.Indent) s.Direction s.BracketNumber t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNumber
-      ('ident') ' & ' <NameCode e.Name> 'L_<int>::name'
+      ('ident') ' & ' <QNameCode t.Name> 'L_<int>::name'
     >;
 }
 
@@ -612,15 +612,17 @@ SwAllocator {
 SwInfo {
   ElChar s.Char = ', ' '\'' <Escape s.Char> '\'';
 
-  ElName t.Name = ', & ' <QNameCode t.Name> ', "' <PrintableName t.Name> '"';
+  ElName t.Name = ', & ' <QNameCode t.Name> <Info-Ident t.Name>;
 
   ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 
-  ElIdent e.Name = ', & ' <NameCode e.Name> 'L_<int>::name';
+  ElIdent t.Name = <Info-Ident t.Name>;
 
   // Остальное -- скобки
   s.Other = ;
 }
+
+Info-Ident t.Name = ', & ' <QNameCode t.Name> 'L_<int>::name';
 
 PrintableName
   t.Name = <PrintableName-Aux <MQualifiedName::ToPrintable-Dot t.Name>>;

@@ -1,0 +1,76 @@
+$MODULE Std::Types;
+
+/**=============================================================================
+  Модуль предоставляет средства для работы с типами атомов: запрос типа,
+  преобразование типов.
+==============================================================================*/
+
+$IMPORT Chains = Std::Chains;
+$IMPORT CorePr = Std::CorePr::Types;
+$IMPORT Math = Std::Math;
+
+/**
+  Функция запроса типа первого атома выражения
+  <Type-T e.Expr>
+    == s.Type e.Expr
+    == Empty // если выражение пустое
+
+  s.Type ::=
+    // типы атомов
+    Handle | Identifier | Function | Char | Number |
+    // типы составных термов
+    Bracket | ADT
+*/
+$ENTRY Type-T {
+  s.Atom e.Tail = <CorePr::AtomType s.Atom> s.Atom e.Tail>;
+
+  (e.Brackets) e.Tail = Brackets (e.Brackets) e.Tail;
+
+  // Как атом и как скобки распознать не можем -- АТД
+  t.ADT e.Tail = ADT t.ADT e.Tail;
+
+  = Empty;
+}
+
+/**
+  <CharFromInt s.Codepage s.Int> == s.Char
+*/
+$ENTRY CharFromInt
+  s.Codepage s.Int = <CorePr::CharFromInt s.Codepage s.Int>;
+
+/**
+  <IntFromChar s.Codepage s.Char> == s.Int
+*/
+$ENTRY IntFromChar
+  s.Codepage s.Char = <CorePr::IntFromChar s.Codepage s.Char>;
+
+/**
+  Преобразование атома в некоторое строковое представление.
+  Непереносимо между разными профилями компиляции.
+  <StrFromAtom s.Atom> == e.String
+*/
+$ENTRY StrFromAtom
+  s.Atom = <CorePr::StrFromAtom s.Atom>;
+
+/**
+  <StrFromInt s.Base s.Int> == e.Number
+  s.Base ::= 2..36
+*/
+$ENTRY StrFromInt {
+  s.Base 0 = '0';
+
+  s.Base s.Int =
+    <DoStrFromInt s.Base <Math::DivMod s.Int s.Base>>;
+}
+
+DoStrFromInt {
+  s.Base 0 s.Mod =
+    <CorePr::CharFromDigit s.Mod>;
+
+  s.Base s.Div s.Mod =
+    <DoStrFromInt s.Base <Math::DivMod s.Div s.Base>>
+    <CorePR::CharFromDigit s.Mod>;
+}
+
+$END Std::Types.
+

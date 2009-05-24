@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <exception>
+
 #include <assert.h>
 
 #include "refalrts.h"
@@ -1537,9 +1539,9 @@ void print_seq( FILE *output, refalrts::Iter begin, refalrts::Iter end ) {
 
   while( (state != cStateFinish) && ! refalrts::empty_seq( begin, end ) ) {
     ++ loop_counter;
-    if( loop_counter > 100000UL ) {
-      throw "Loop counter";
-    }
+    //if( loop_counter > 100000UL ) {
+    //  throw "Loop counter";
+    //}
 
     switch( state ) {
       case cStateView:
@@ -1728,6 +1730,8 @@ int main(int argc, char **argv) {
   } catch ( refalrts::UnexpectedTypeException ) {
     fprintf(stderr, "INTERNAL ERROR: check all switches\n");
     return 3;
+  } catch ( std::exception& e ) {
+    fprintf(stderr, "INTERNAL ERROR: %s\n", e.what());
   } catch (...) {
     fprintf(stderr, "INTERNAL ERROR: unknown exception\n");
     return 4;

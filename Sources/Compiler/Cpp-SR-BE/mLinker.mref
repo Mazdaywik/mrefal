@@ -19,6 +19,7 @@ $ENTRY Link
       ('call_cpp.tmp.bat')
       ('@echo off')
       <GenCommands
+        (e.ProgName)
         <EliminateCollisions e.Modules>
       >
       ('del *.obj')
@@ -30,9 +31,8 @@ EliminateCollisions
   e.Modules =
     <DoEliminateCollisions
       () () <MLambda::Map & PrepareName e.Modules>
-      ('Library' ('..\\..\\Simple Refal\\SRLib\\Library.cpp'))
-      //('WinLib' ('..\\..\\Simple Refal\\SRLib\\WinLib.cpp'))
-      ('refalrts' ('..\\..\\Simple Refal\\SRLib\\refalrts.cpp'))
+      ('Library' ('..\\Runtime\\windows.cpp\\Library.cpp'))
+      ('refalrts' ('..\\Runtime\\windows.cpp\\refalrts.cpp'))
     >;
 
 
@@ -71,15 +71,19 @@ AddNumber {
 }
 
 GenCommands {
-  e.Commands =
+  (e.ProgName) e.Commands =
     <MLambda::Map & GenFwdRename e.Commands>
-    (<CompilerCmdLine> <MLambda::Map & GenFilename e.Commands>)
+    (
+      <CompilerCmdLine>
+      '/Fe' e.ProgName '.cpp.exe '
+      <MLambda::Map & GenFilename e.Commands>
+    )
     <MLambda::Map & GenRevRename e.Commands>;
 }
 
 CompilerCmdLine =
-  'call compile_bcc '
-  '-I\"..\\..\\Simple Refal\\SRLib\" ';
+  'call compile_cl '
+  '/I\"..\\Runtime\\windows.cpp\" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

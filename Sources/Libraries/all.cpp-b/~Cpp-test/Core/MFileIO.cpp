@@ -94,7 +94,7 @@ refalrts::FnResult CoreP_MFileIOP_WriteLine(refalrts::Iter arg_begin, refalrts::
     if( ! refalrts::alloc_open_call( n0 ) )
       return refalrts::cNoMemory;
     refalrts::Iter n1 = 0;
-    if( ! refalrts::alloc_name( n1, & FWriteLine, "FWriteLine" ) )
+    if( ! refalrts::alloc_name( n1, & FWriteLine ) )
       return refalrts::cNoMemory;
     refalrts::Iter n2 = 0;
     if( ! refalrts::alloc_close_call( n2 ) )
@@ -135,7 +135,7 @@ refalrts::FnResult CoreP_MFileIOP_ReadLine(refalrts::Iter arg_begin, refalrts::I
     if( ! refalrts::alloc_open_call( n0 ) )
       return refalrts::cNoMemory;
     refalrts::Iter n1 = 0;
-    if( ! refalrts::alloc_name( n1, & FReadLine, "FReadLine" ) )
+    if( ! refalrts::alloc_name( n1, & FReadLine ) )
       return refalrts::cNoMemory;
     refalrts::Iter n2 = 0;
     if( ! refalrts::alloc_close_call( n2 ) )
@@ -175,7 +175,7 @@ refalrts::FnResult CoreP_MFileIOP_Close(refalrts::Iter arg_begin, refalrts::Iter
     if( ! refalrts::alloc_open_call( n0 ) )
       return refalrts::cNoMemory;
     refalrts::Iter n1 = 0;
-    if( ! refalrts::alloc_name( n1, & FClose, "FClose" ) )
+    if( ! refalrts::alloc_name( n1, & FClose ) )
       return refalrts::cNoMemory;
     refalrts::Iter n2 = 0;
     if( ! refalrts::alloc_close_call( n2 ) )
@@ -219,7 +219,7 @@ refalrts::FnResult CoreP_MFileIOP_Open(refalrts::Iter arg_begin, refalrts::Iter 
     if( ! refalrts::alloc_open_call( n0 ) )
       return refalrts::cNoMemory;
     refalrts::Iter n1 = 0;
-    if( ! refalrts::alloc_name( n1, & FOpen, "FOpen" ) )
+    if( ! refalrts::alloc_name( n1, & FOpen ) )
       return refalrts::cNoMemory;
     refalrts::Iter n2 = 0;
     if( ! refalrts::alloc_close_call( n2 ) )

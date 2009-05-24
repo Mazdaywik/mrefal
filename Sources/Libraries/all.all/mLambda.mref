@@ -10,7 +10,7 @@ $DATA L-Lambda, LH-Lambda, R-Lambda, C-Lambda, H-Lambda, P-Lambda, PH-Lambda,
   [R-Lambda t.Lambda e.RightLinked]
   [C-Lambda t.InnerLambda t.OuterLambda]
   [H-Lambda t.Lambda]
-  [P-Lambda t.Lambda]
+  [P-Lambda t.Lambda-L t.Lambda-R]
   [PH-Lambda t.Lambda*]
   [Const-Lambda e.Value]
 ------------------------------------------------------------------------------*/

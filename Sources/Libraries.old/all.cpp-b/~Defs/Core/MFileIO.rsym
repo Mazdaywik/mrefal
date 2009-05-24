@@ -1,0 +1,13 @@
+$module Core::MFileIO;
+
+
+$entry Close;
+$entry FClose;
+$entry FOpen;
+$entry FReadLine;
+$entry FWriteLine;
+$entry Open;
+$entry ReadLine;
+$entry WriteLine;
+
+$end Core::MFileIO.

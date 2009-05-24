@@ -1,0 +1,85 @@
+v ROUT3 Module Refal 0.1
+
+b Entry::MRefalRTS::Prout
+c $Entry::MRefalRTS::Prout$ { e.Arg = <Prout e.Arg >; }
+
+b Entry::MRefalRTS::Card
+c $Entry::MRefalRTS::Card$ { = <Card >; }
+
+b Entry::MRefalRTS::Open
+c $Entry::MRefalRTS::Open$ {
+c   s.Mode s.Channel e.FName = <Open s.Mode s.Channel e.FName >;
+c }
+
+b Entry::MRefalRTS::Get
+c $Entry::MRefalRTS::Get$ { s.Channel = <Get s.Channel >; }
+
+b Entry::MRefalRTS::Put
+c $Entry::MRefalRTS::Put$ { s.Channel e.Line = <Put s.Channel e.Line >; }
+
+b Entry::MRefalRTS::Putout
+c $Entry::MRefalRTS::Putout$ { s.Channel e.Line = <Putout s.Channel e.Line >; }
+
+b Entry::MRefalRTS::Arg
+p Arg
+
+b Entry::MRefalRTS::Exit
+c $Entry::MRefalRTS::Exit$ {
+c   s.$Index::RetCode$ =
+c     <$Local::MRefalRTS::Exit-Aux$ s.$Index::RetCode$ <Dg 'Finalizers' > > ;
+c }
+
+b Local::MRefalRTS::Exit-Aux
+c $Local::MRefalRTS::Exit-Aux$ {
+c   s.$Index::RetCode$ =
+c     <Exit s.$Index::RetCode$ > ;
+c   s.$Index::RetCode$ s.$Index::Finalizer$ =
+c     <Mu s.$Index::Finalizer$ > <$Entry::MRefalRTS::Exit$ s.$Index::RetCode$ > ;
+c }
+
+b Entry::MRefalRTS::ExistFile
+c $Entry::MRefalRTS::ExistFile$ {
+c   e.FileName = <$Local::MRefalRTS::ExistFileAux$ e.FileName >;
+c }
+
+b Local::MRefalRTS::ExistFileAux
+c $Local::MRefalRTS::ExistFileAux$ {
+c   e.FileName =
+c     <$Local::MRefalRTS::SwExistFileAux$
+c       <ExistFile e.FileName>
+c     >;
+c }
+
+b Local::MRefalRTS::SwExistFileAux
+c $Local::MRefalRTS::SwExistFileAux$ {
+c   True = $Ident::True$;
+c   False = $Ident::False$;
+c }
+
+b Entry::MRefalRTS::Add
+p Add
+
+b Entry::MRefalRTS::Sub
+p Sub
+
+b Entry::MRefalRTS::Numb
+p Numb
+
+b Entry::MRefalRTS::Compare
+p Compare
+
+b Entry::MRefalRTS::Symb
+p Symb
+
+b Entry::MRefalRTS::System
+p System
+
+b Entry::MRefalRTS::Ord
+p Ord
+
+b Entry::MRefalRTS::Chr
+p Chr
+
+b Entry::MRefalRTS::Env
+p GetEnv
+

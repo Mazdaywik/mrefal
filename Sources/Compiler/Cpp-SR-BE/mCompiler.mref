@@ -179,6 +179,10 @@ Declarations-Expr {
 Declarations-Callable {
   (s.CallType t.SrcPos t.QualifiedName) =
     (Declare
+      Identifier t.QualifiedName
+      (& Generator.GenIdent t.QualifiedName)
+    )
+    (Declare
       Function
       t.QualifiedName
       (& GenFunction-Decl s.CallType t.QualifiedName)
@@ -187,7 +191,10 @@ Declarations-Callable {
 
 Declarations-Term {
   (Identifier t.SrcPos e.Name) =
-    (Declare Identifier (e.Name) (& Generator.GenIdent e.Name));
+    (Declare
+      Identifier <MQualifiedName::Create (e.Name)>
+      (& Generator.GenIdent <MQualifiedName::Create (e.Name)>)
+    );
 
   (EVar e.Index) = ;
   (TVar e.Index) = ;
@@ -236,7 +243,7 @@ PrepareExpr
 
 DoPrepareExpr {
   s.BracketNum (Identifier t.SrcPos e.Name) e.Tail t.MultiBracket =
-    (TkIdentifier e.Name)
+    (TkIdentifier <MQualifiedName::Create (e.Name)>)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
   s.BracketNum (EVar e.Index) e.Tail t.MultiBracket =

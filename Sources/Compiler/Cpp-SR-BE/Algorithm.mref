@@ -3,6 +3,7 @@ $MODULE Cpp-SR-BE::Algorithm;
 $IMPORT Math;
 $IMPORT MLambda;
 $IMPORT MStrings;
+$IMPORT MQualifiedName;
 
 $ENTRY MakeAlgorithm {
   (e.Pattern) (e.Result) =
@@ -66,11 +67,11 @@ GenPattern {
       (e.Vars) (e.Commands (CmdName AlgLeft s.Num e.Name))
     >;
 
-  e.Pattern_B (LeftPtr s.Num) (TkIdentifier e.Name) e.Pattern_E
+  e.Pattern_B (LeftPtr s.Num) (TkIdentifier t.Name) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (TkIdentifier e.Name) (LeftPtr s.Num) e.Pattern_E
-      (e.Vars) (e.Commands (CmdIdent AlgLeft s.Num e.Name))
+      e.Pattern_B (TkIdentifier t.Name) (LeftPtr s.Num) e.Pattern_E
+      (e.Vars) (e.Commands (CmdIdent AlgLeft s.Num t.Name))
     >;
 
   e.Pattern_B (TkChar s.Char) (RightPtr s.Num) e.Pattern_E
@@ -94,11 +95,11 @@ GenPattern {
       (e.Vars) (e.Commands (CmdName AlgRight s.Num e.Name))
     >;
 
-  e.Pattern_B (TkIdentifier e.Name) (RightPtr s.Num) e.Pattern_E
+  e.Pattern_B (TkIdentifier t.Name) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
-      e.Pattern_B (RightPtr s.Num) (TkIdentifier e.Name) e.Pattern_E
-      (e.Vars) (e.Commands (CmdIdent AlgRight s.Num e.Name))
+      e.Pattern_B (RightPtr s.Num) (TkIdentifier t.Name) e.Pattern_E
+      (e.Vars) (e.Commands (CmdIdent AlgRight s.Num t.Name))
     >;
 
   // Распознавание скобок
@@ -321,8 +322,8 @@ TextFromPattern {
   (TkVariable s.Mode e.Index) e.Tail =
     ' ' s.Mode '.' e.Index <TextFromPattern e.Tail>;
 
-  (TkIdentifier e.Name) e.Tail =
-    ' # ' e.Name <TextFromPattern e.Tail>;
+  (TkIdentifier t.Name) e.Tail =
+    ' # ' <MQualifiedName::ToPrintable-Dot t.Name> <TextFromPattern e.Tail>;
 
   = ;
 }
@@ -392,11 +393,11 @@ GenResult {
       <Math::Inc s.Counter> e.Result
     >;
 
-  (e.Vars) (e.Commands) s.Counter (TkIdentifier e.Name) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkIdentifier t.Name) e.Result =
     <GenResult
       (e.Vars)
       (e.Commands
-        (CtAlloc StIdent s.Counter e.Name)
+        (CtAlloc StIdent s.Counter t.Name)
         (CtInsert s.Counter)
       )
       <Math::Inc s.Counter> e.Result
@@ -602,7 +603,7 @@ ElemType {
   StChar s.Char = ElChar s.Char;
   StName e.Name = ElName e.Name;
   StNumber s.Number = ElNumber s.Number;
-  StIdent e.Name = ElIdent e.Name;
+  StIdent t.Name = ElIdent t.Name;
   StOpenADT s.Num = ElOpenADT;
   StCloseADT s.Num = ElCloseADT;
   StOpenBracket s.Num = ElOpenBracket;

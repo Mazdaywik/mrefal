@@ -1,0 +1,1 @@
+@srefc -c "compile_cl /I\"../../Simple Refal/SRLib\"" -d ..\..\Simple" "Refal\SRLib %* refalrts Library WinLib

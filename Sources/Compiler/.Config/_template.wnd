@@ -1,0 +1,7 @@
+﻿:    -- Заголовок окна --
+:    -- Последняя команда --
+-:  
+F3:  Сброс окон
+    .Config\change_window default
+F7:  Сохранить окно
+    .Config\save_window _template

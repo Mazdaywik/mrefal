@@ -1,0 +1,32 @@
+﻿:  [ГЛАГНЕЪ]
+C:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%)
+    if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
+    %COMP% %MODE% +cfg:%PROFILE% %XLINX% MRefal
+B:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
+    if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
+    %COMP% %MODE% +cfg:%PROFILE% %XLINX% MRefal 2>__err >__out
+    view:__err
+1:  1
+-:  
+1:  1
+-:  
+:  Конфигурация
+D:  Режим %MODE% (сменить)
+{
+F:  Полная перекомпиляция
+    set MODE=+build
+    .Config\ncmenu
+M:  Make
+    set MODE=+make
+    .Config\ncmenu
+L:  Только линковка
+    set MODE=+linkonly
+    .Config\ncmenu
+}
+1:  1
+O:  Просмотр старого меню
+    .Config\change_window old
+:  -- Последняя команда --
+-:  
+F7:  Сохранить окно
+    .Config\save_window default

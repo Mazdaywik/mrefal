@@ -2,9 +2,6 @@
     cd ..
     ncmenu
 -:  
-<:  Возврат
-    .Config\change_window default
--:  
 С:  Компиляция (R5->R5)
 {
 .:  << Назад

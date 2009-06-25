@@ -1,0 +1,7 @@
+L:  Загрузить my_config
+    set PROFILE-SHORT=R5
+    set PROFILE=mp-work-R5
+    set MODE=+make
+    .Config\change_window default
+X:  Возврат без загрузки
+    .Config\change_window default

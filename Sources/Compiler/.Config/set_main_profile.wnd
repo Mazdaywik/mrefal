@@ -1,0 +1,20 @@
+﻿:  [Установка основного профиля (по умолчанию %PROFILE-SHORT%)]
+-:  
+5:  Рефал 5
+    set PROFILE=mp-work-R5
+    set PROFILE-SHORT=R5
+    .Config\change_window default
+S:  Простой Рефал
+    set PROFILE=mp-work-SR
+    set PROFILE-SHORT=SR
+    .Config\change_window default
+C:  Back-end Си++/Простой Рефал
+    set PROFILE=mp-work-CPPSR
+    set PROFILE-SHORT=Си++/SR
+    .Config\change_window default
+-:  
+D:  Оставить по умолчанию (%PROFILE-SHORT%)
+    .Config\change_window default
+-:  
+F7:  Сохранить окно
+    .Config\save_window set_main_profile

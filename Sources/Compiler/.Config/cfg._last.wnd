@@ -1,9 +1,6 @@
 L:  Загрузить _last
-    set COMP-SHORT=C++/SR
-Module Refal 0.1.959 (c) Mazdaywik 2007-2009
-COMMAND LINE ERROR (Command line): Files for compiling not found
-COMMAND LINE ERROR (Command line): Not found one of options '-make', '-build' or '-linkonly'
-COMMAND LINE ERROR (Command line): Option '-be:back-end' not found
+    set COMP-SHORT=SR
+    set COMP=echo
     set PROFILE-SHORT=R5
     set PROFILE=mp-work-R5
     set MODE=+make

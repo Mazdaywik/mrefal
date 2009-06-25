@@ -1,4 +1,4 @@
-﻿:  [Установка основного профиля (по умолчанию %PROFILE-SHORT%)]
+﻿:  [Установка основного компилятора (по умолчанию %COMP-SHORT%)]
     .Config\change_window default
 -:  
 5:  Рефал 5
@@ -6,11 +6,13 @@
     set COMP-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал
-    set COMP=copy mrefal.exe mrefal_.exe && mrefal_.exe
+    rem set COMP=copy mrefal.exe mrefal_.exe && mrefal_.exe
+    set COMP=echo
     set COMP-SHORT=SR
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
-    set COMP=copy mrefal.cpp.exe mrefal_.cpp.exe && mrefal_.cpp.exe
+    rem set COMP=copy mrefal.cpp.exe mrefal_.cpp.exe && mrefal_.cpp.exe
+    set COMP=echo
     set COMP-SHORT=C++/SR
     .Config\change_window default
 -:  

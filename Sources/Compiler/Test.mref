@@ -1,9 +1,0 @@
-$PROGRAM Test;
-
-$IMPORT Math;
-
-$ENTRY Go = <Loop 1>;
-
-Loop s.Number = s.Number <Loop <Math::Inc s.Number>>;
-
-$END Test.

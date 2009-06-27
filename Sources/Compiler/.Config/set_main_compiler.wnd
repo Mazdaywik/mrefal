@@ -6,13 +6,11 @@
     set COMP-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал
-    rem set COMP=copy mrefal.exe mrefal_.exe && mrefal_.exe
-    set COMP=echo
+    set COMP=start-sr
     set COMP-SHORT=SR
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
-    rem set COMP=copy mrefal.cpp.exe mrefal_.cpp.exe && mrefal_.cpp.exe
-    set COMP=echo
+    set COMP=start-cpp
     set COMP-SHORT=C++/SR
     .Config\change_window default
 -:  

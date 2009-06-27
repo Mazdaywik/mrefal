@@ -1,8 +1,12 @@
 L:  Загрузить _last
-    set COMP-SHORT=SR
-    set COMP=echo
-    set PROFILE-SHORT=R5
-    set PROFILE=mp-work-R5
+    set COMP-SHORT=C++/SR
+    set COMP=start-cpp
+    set PROFILE-SHORT=SR
+    set PROFILE=mp-work-SR
+    set SCOMP-SHORT=R5
+    set SCOMP=refgo -c150 -l30
+    set SPROFILE-SHORT=Си++/SR
+    set SPROFILE=mp-work-CPPSR
     set MODE=+make
     .Config\change_window default
 X:  Возврат без загрузки

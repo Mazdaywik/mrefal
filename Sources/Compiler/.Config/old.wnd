@@ -371,3 +371,6 @@ E:  Декодировать файл дампа !.! (6 Кбайт/с)
     view:!.!
 X:  Перекрёстные связи
     view:.Info/MRefal.xlinx.txt
+-:  
+F7:  Сохранить окно
+    .Config\save_window old

@@ -3,7 +3,6 @@
     cd ..
     ncmenu
 -:  
-:  [ГЛАГНЕЪ]
 C:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
@@ -13,9 +12,42 @@ B:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET set PATHSET=SET
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal 2>__err >__out
     view:__err
-1:  1
+S:  Перекомпилировать/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%)
+    if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
+    if NOT %PAHTSET%==SET set PATHSET=SET
+    %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
 -:  
-1:  1
+M:  Собрать
+-:  
+K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
+    if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
+    if NOT %PAHTSET%==SET set PATHSET=SET
+    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+C:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
+    if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
+    if NOT %PAHTSET%==SET set PATHSET=SET
+    %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
+    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
+    if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
+    if NOT %PAHTSET%==SET set PATHSET=SET
+    %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
+    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal 2>__err >__out
+    view:__err
+-:  
+T:  Перейти
+{
+}
+-:  
+A:  Псевдонимы (Рефал 5)
+I:  Интерфейсы
+U:  Обновить интерфейсы
+-:  
+L:  Список нескомпонованных элементов
+X:  Перекрёстные связи
+-:  
+E:  Декодировать файл дампа !.! (6 Кбайт/с)
 -:  
 K:  Конфигурация
 {
@@ -32,12 +64,14 @@ L:  Только линковка
     .Config\ncmenu
 }
 -:  
-P:  Профиль %PROFILE-SHORT% (сменить) ...
-    .Config\change_window set_main_profile
 С:  Компилятор %COMP-SHORT% (сменить) ...
     .Config\change_window set_main_compiler
+P:  Профиль %PROFILE-SHORT% (сменить) ...
+    .Config\change_window set_main_profile
 S:  Стабильный компилятор %SCOMP-SHORT%  (сменить) ...
+    .Config\change_window set_stable_compiler
 T:  Стабильный профиль %SPROFILE-SHORT% (сменить) ...
+    .Config\change_window set_stable_profile
 -:  
 L:  Загрузить конфигурацию
     .Config\load_config !?Укажите имя конфигурации?!
@@ -55,10 +89,8 @@ A:  Сохранить как последнюю конфигурацию
     .Config\save_config _last
     .Config\ncmenu
 }
-1:  1
 O:  Просмотр старого меню
     .Config\change_window old
-:  -- Последняя команда --
 -:  
 F7:  Сохранить окно
     .Config\save_window default

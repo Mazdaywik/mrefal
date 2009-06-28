@@ -1,0 +1,169 @@
+Y {
+  s.Func =
+    {
+      e.Arg = <s.Func <Y s.Func> e.Arg>;
+    };
+}
+
+Fact-Aux {
+  s.Loop 0 = 1;
+
+  s.Loop s.Count = <Mul s.Count <s.Loop <Dec s.Count>>>;
+}
+
+Fact {
+  s.Count = <<Y Fact-Aux> s.Count>;
+}
+
+<Fact 2>
+<<Y Fact-Aux> 2>
+<{ e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>; } 2>
+<Fact-Aux <Y Fact-Aux> 2>
+<Fact-Aux { e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>;} 2>
+<Mul 2 <{ e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>;} <Dec 2>>>
+<Mul 2 <{ e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>;} 1>>
+<Mul 2 <Fact-Aux <Y Fact-Aux> 1>>
+<Mul 2 <Fact-Aux { e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>;} 1>>
+<Mul 2 <Mul 1 <Fact-Aux <Y Fact-Aux> <Dec 1>>>>
+<Mul 2 <Mul 1 <Fact-Aux { e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>;} <Dec 1>>>>
+<Mul 2 <Mul 1 <Fact-Aux { e.Arg = <Fact-Aux <Y Fact-Aux> e.Arg>;} 0>>>
+<Mul 2 <Mul 1 1>>
+<Mul 2 1>
+2
+
+Y {
+  s.Func = <bind-left lambda1 s.Func>;
+}
+
+lambda1 {
+  s.Func e.Arg = <s.Func <Y s.Func> e.Arg>;
+}
+
+<Fact 2>
+<Y Fact-Aux 2>
+<<bind-left labmda1 Fact-Aux> 2>
+<lambda1{ Fact-Aux } 2>
+<lambda1 Fact-Aux 2>
+<Fact-Aux <Y Fact-Aux> 2>
+<Fact-Aux <bind-left lambda1 Fact-Aux> 2>
+<Fact-Aux lambda1{ Fact-Aux } 2>
+<Mul 2 <lambda1{ Fact-Aux } <Dec 2>>>
+<Mul 2 <lambda1{ Fact-Aux } 1>>
+<Mul 2 <lambda1 Fact-Aux 1>>
+<Mul 2 <Fact-Aux <Y Fact-Aux> 1>>
+<Mul 2 <Fact-Aux <bind-left lambda1 Func-Aux> 1>>
+<Mul 2 <Fact-Aux lambda1{ Fact-Aux } 1>>
+<Mul 2 <Mul 1 <lambda1{ Fact-Aux } <Dec 1>>>>
+<Mul 2 <Mul 1 <lambda1{ Faxt-Aux } 0>>>
+<Mul 2 <Mul 1 <lambda1 Fact-Aux 0>>>
+<Mul 2 <Mul 1 <Fact-Aux <Y Fact-Aux> 0>>>
+<Mul 2 <Mul 1 <Fact-Aux <bind-left lambda1 Fact-Aux> 0>>>
+<Mul 2 <Mul 1 <Fact-Aux lambda1{ Fact-Aux } 0>>>
+<Mul 2 <Mul 1 1>>
+<Mul 2 1>
+2
+
+
+Y {
+  s.Func =
+    {
+      e.Arg = <s.Func <Y s.Func> e.Arg>;
+    };
+}
+
+Fact {
+  0 = 1;
+
+  s.Number =
+    <
+      <Y {
+        s.Loop s.Product s.Number =
+          <Mul s.Product s.Number>;
+
+        s.Loop s.Product s.Iter =
+          <s.Loop
+            <Mul s.Product s.Iter> <Inc s.Iter>
+          >;
+      }>
+      1 1
+    >;
+}
+
+Y {
+  s.Func = <bind-left lambda1 s.Func>;
+}
+
+lambda1 {
+  s.Func e.Arg = <s.Func <Y s.Func> e.Arg>;
+}
+
+Fact {
+  0 = 1;
+
+  s.Number =
+    <<Y <bind-left lambda2 s.Number>> 1 1>;
+}
+
+lambda2 {
+  s.Number s.Loop s.Product s.Number =
+    <Mul s.Product s.Number>;
+
+  s.Number s.Loop s.Product s.Iter =
+    <s.Loop
+      <Mul s.Product s.Iter> <Inc s.Iter>
+    >;
+}
+
+<Fact 3>
+<<Y <bind-left lambda2 3>> 1 1>
+<<Y lambda2{ 3 }> 1>
+<<bind-left lambda1 lambda2{ 3 }> 1 1>
+<lambda1{ lambda2 { 3 } } 1 1>
+<lambda1 lambda2{ 3 } 1 1>
+<lambda2{ 3 } <Y lambda2{ 3 }> 1 1>
+<lambda2{ 3 } <bind-left lambda1 lambda2{ 3 }> 1 1>
+<lambda2{ 3 } lambda1{ lambda2{ 3 } } 1 1>
+<lambda2 3 lambda1{ lambda2{ 3 } } 1 1>
+<lambda1{ lambda2{ 3 } } <Mul 1 1> <Inc 1>>
+<lambda1{ lambda2{ 3 } } 1 2>
+<lambda1 lambda2{ 3 } 1 2>
+<lambda2{ 3 } <Y lambda2{ 3 }> 1 2>
+<lambda2{ 3 } <bind-left lambda1 lambda2{ 3 }> 1 2>
+<lambda2{ 3 } lambda1{ lambda2{ 3 } } 1 2>
+<lambda2 3 lambda1{ lambda2{ 3 } } 1 2>
+<lambda1{ lambda2{ 3 } } <Mul 1 2> <Inc 2>>
+<lambda1{ lambda2{ 3 } } 2 3>
+<lambda1 lambda2{ 3 } 2 3>
+<lambda2{ 3 } <Y lambda2{ 3 }> 2 3>
+<lambda2{ 3 } <bind-left lambda1 lambda2{ 3 }> 2 3>
+<lambda2{ 3 } lambda1{ lambda2{ 3 } } 2 3>
+<lambda2 3 lambda1{ lambda2{ 3 } } 2 3>
+<Mul 2 3>
+6
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

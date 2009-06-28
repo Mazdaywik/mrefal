@@ -24,6 +24,12 @@ $ENTRY Create-CmdLine-Common
   = (SrcPos 'CC');
 
 /**
+  <Create-RunTime> == t.SrcPos
+*/
+$ENTRY Create-RunTime
+  = (SrcPos 'RT');
+
+/**
   <ToString t.SrcPos> == s.Char*
 */
 $ENTRY ToString {
@@ -34,6 +40,8 @@ $ENTRY ToString {
 
   (SrcPos 'C' s.ArgNo) =
     'Command line, argument ' <MStrings::Symb s.ArgNo>;
+
+  (SrcPos 'RT') = 'Runtime call';
 }
 
 $END MSrcPos.

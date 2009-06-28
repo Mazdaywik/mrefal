@@ -2,15 +2,15 @@
     .Config\change_window default
 -:  
 5:  Рефал 5
-    set SCOMP=refgo -c150 -l30
+    set SCOMP=refgo -c150 -l30 ~s\MRefal.s.rsl
     set SCOMP-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал
-    set SCOMP=start-sr
+    set SCOMP=mrefal.s.exe
     set SCOMP-SHORT=SR
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
-    set SCOMP=start-cpp
+    set SCOMP=~s\mrefal.s.cpp.exe
     set SCOMP-SHORT=C++/SR
     .Config\change_window default
 -:  

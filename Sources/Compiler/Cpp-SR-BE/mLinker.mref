@@ -77,6 +77,7 @@ GenCommands {
       <CompilerCmdLine>
       '/Fe' e.ProgName '.cpp.exe '
       <MLambda::Map & GenFilename e.Commands>
+      '>nul'
     )
     <MLambda::Map & GenRevRename e.Commands>;
 }
@@ -87,7 +88,7 @@ CompilerCmdLine =
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =
-    ('echo ren ' e.Name ' ' <FileName e.NewName>)
+    //('echo ren ' e.Name ' ' <FileName e.NewName>)
     ('ren \"' e.Name '\" ' <FileName e.NewName>);
 
   (NoRename e.Path) = ;
@@ -109,7 +110,7 @@ GenFilename {
 
 GenRevRename {
   (Rename (e.Name) (e.NewName)) =
-    ('echo ren ' e.NewName ' ' <FileName e.Name>)
+    //('echo ren ' e.NewName ' ' <FileName e.Name>)
     ('ren \"' e.NewName '\" ' <FileName e.Name>);
 
   (NoRename e.Name) = ;

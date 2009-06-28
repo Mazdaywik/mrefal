@@ -1,5 +1,5 @@
 ﻿.:  ..
-    .Config\save_config _last
+    rem .Config\save_config _last
     cd ..
     ncmenu
 -:  
@@ -7,6 +7,7 @@ C:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    if exist __errors view:__errors
 B:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
@@ -16,19 +17,23 @@ S:  Перекомпилировать/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%)
     if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
+    if exist __errors view:__errors
 -:  
 M:  Собрать
+    make
 -:  
 K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    if exist __errors view:__errors
 C:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    if exist __errors view:__errors
 G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
@@ -38,18 +43,47 @@ G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%
 -:  
 T:  Перейти
 {
+C:  Cpp-SR-BE
+    cd Cpp-SR-BE
+    ncmenu
+M:  MRefal-FE
+    cd MRefal-FE
+    ncmenu
+R:  Refal5
+    cd Refal5
+    ncmenu
+S:  SRefal-BE
+    cd SRefal-BE
+    ncmenu
 }
 -:  
 A:  Псевдонимы (Рефал 5)
+    view:.Info\Aliases.als
 I:  Интерфейсы
+    view:interfaces.txt
 U:  Обновить интерфейсы
+    subst U: ..
+    dir /b /s U:\*.mref>mrefs.tmp
+    refgo ..\..\Bin\Grab_info @mrefs.tmp
+    subst U: /D
+    del mrefs.tmp
+    view:interfaces.txt
 -:  
 L:  Список нескомпонованных элементов
+    cd .Info
+    unlib.bat
+    cd ..
+    view:.Info/"Not linked.txt
+R:  Показ дерева модулей
+    view:.Info/MRefal.tree.txt
 X:  Перекрёстные связи
+    view:.Info/MRefal.xlinx.txt
 -:  
 E:  Декодировать файл дампа !.! (6 Кбайт/с)
--:  
-K:  Конфигурация
+    copy !.! !.!.bak
+    refgo -l1000 -t ..\..\Bin\ErrorDecoder !.!
+    view:!.!
+F:  Конфигурация
 {
 M:  Режим %MODE% (сменить)
 {

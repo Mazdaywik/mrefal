@@ -1,15 +1,15 @@
 ﻿:  [Установка стабильного профиля (по умолчанию %SPROFILE-SHORT%)]
 -:  
 5:  Рефал 5
-    set SPROFILE=mp-work-R5
+    set SPROFILE=mp-stable-R5
     set SPROFILE-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал
-    set SPROFILE=mp-work-SR
+    set SPROFILE=mp-stable-SR
     set SPROFILE-SHORT=SR
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
-    set SPROFILE=mp-work-CPPSR
+    set SPROFILE=mp-stable-CPPSR
     set SPROFILE-SHORT=Си++/SR
     .Config\change_window default
 -:  

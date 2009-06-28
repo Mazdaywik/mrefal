@@ -34,6 +34,7 @@ Generate
         <MLambda::Parallel-H
           & LoadImportInfo
           & LoadADTInfo
+          & LoadEntryPointInfo
           & LoadFunctionInfo
         >
         t.hIModule
@@ -127,6 +128,45 @@ CreateADTInfo
 CreateADTInfo-Aux
   t.hIModule t.ADTName Found t.SrcPos =
     t.hIModule ADT t.ADTName t.SrcPos;
+
+//------------------------------------------------------------------------------
+
+/*
+  <LoadEntryPointInfo t.hIModule>
+    == t.hIModule t.RunTimeUsesInfo
+  t.RunTimeUsesInfo ::=
+    (
+      Entry RunTime t.SrcPos
+      (s.ScopeClass t.Name t.SrcPos)
+    )
+*/
+LoadEntryPointInfo
+  t.hIModule =
+    <LoadEntryPoint-Aux
+      <MIModule::GetEntryPoint t.hIModule>
+    >;
+
+LoadEntryPoint-Aux {
+  t.hIModule Go t.EntryPoint =
+    t.hIModule
+    (Entry RunTime <MSrcPos::Create-RunTime>
+      <PrintEntryPoint t.EntryPoint>
+    );
+
+  t.hIModule Regular t.Init t.Final =
+    t.hIModule
+    (Entry RunTime <MSrcPos::Create-RunTime>
+      <PrintEntryPoint t.Init>
+      <PrintEntryPoint t.Final>
+    );
+}
+
+PrintEntryPoint {
+  None = ;
+
+  (Result e.ResultExpr) = <ScanExpression e.ResultExpr>;
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -263,9 +303,15 @@ PrintEntity
   s.Sign s.ScopeClass t.Name t.SrcPos =
     (s.Sign
       (<StringFromScopeClass s.ScopeClass>)
-      (<MQualifiedName::ToPrintable-Quad t.Name>)
+      (<PrintName t.Name>)
       (<MSrcPos::ToString t.SrcPos>)
     );
+
+PrintName {
+  RunTime = 'RunTime';
+
+  t.Name = <MQualifiedName::ToPrintable-Quad t.Name>;
+}
 
 
 StringFromScopeClass {
@@ -287,26 +333,25 @@ GenerateSubEntity
 */
 Link
   (e.OutName) e.OutFileNames =
-    <FileIO::Save
-      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.xlinx.txt')
-      <Link-Aux
-        <MLambda::Map
-          <MLambda::Composite
-            & MLambda.UnBracket
-            <MLambda::BindLeft & MStrings.Skip 1>
-            & MXXIO.Load
-            <MLambda::BindLeft & MStrings.Skip 1>
-            & MLambda.Bracket
-          >
-          <MStrings::Reverse e.OutFileNames>
+    <Link-Aux
+      ( e.OutName )
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          <MLambda::BindLeft & MStrings.Skip 1>
+          & MXXIO.Load
+          <MLambda::BindLeft & MStrings.Skip 1>
+          & MLambda.Bracket
         >
+        <MStrings::Reverse e.OutFileNames>
       >
     >
     Success;
 
 Link-Aux
-  e.Modules =
-    <Link-Aux2
+  (e.OutName) e.Modules =
+    <Link-Aux-2
+      (e.OutName)
       <MLambda::MapReduce
         & AddInvertedInfo
         (
@@ -314,12 +359,30 @@ Link-Aux
             <MLambda::Map & MLambda.UnBracket e.Modules>
           >
         )
-        <MLambda::Map & ModulesUnBracket e.Modules>
+        <CollectDirectInfo
+          <MLambda::Map & ModulesUnBracket e.Modules>
+        >
       >
     >;
 
 ModulesUnBracket
   (e.Module) = (Parser) e.Module;
+
+/*
+  Данная функция нужна для того, чтобы объединить сведения
+  о использовании функций поддержкой времени выполнения
+  (runtime).
+*/
+CollectDirectInfo {
+  e.Info-B ((e.Header) e.SubInfo-1)
+  e.Info-M ((e.Header) e.SubInfo-2) e.Info-E =
+    e.Info-B
+    <CollectDirectInfo
+      ((e.Header) e.SubInfo-1 e.SubInfo-2) e.Info-M e.Info-E
+    >;
+
+  e.Info = e.Info;
+}
 
 InvertInfo
   e.Entities =
@@ -384,14 +447,26 @@ AddInvertedInfo {
     (e.InvertedInfo) t.OtherEntity;
 }
 
-Link-Aux2
-  (e.Inverted) e.Results =
-    <MLambda::Map
-      & PrintResult
-      <SkipParser e.Results>
-      (Parser)
-      <MLambda::Map & InvertedToResults e.Inverted>
+Link-Aux-2
+  (e.OutName) (e.Inverted) e.Results =
+    <FileIO::Save
+      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.tree.txt')
+      <PrintTree
+        <MLambda::Map & FilterModules e.Results>
+      >
+    >
+    <FileIO::Save
+      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.xlinx.txt')
+      <MLambda::Map
+        & PrintResult
+        <SkipParser e.Results>
+        (Parser)
+        <MLambda::Map & InvertedToResults e.Inverted>
+      >
     >;
+
+//------------------------------------------------------------------------------
+// Печать таблицы перекрёстных связей.
 
 InvertedToResults {
   (t.ScopeClass t.SubName e.Info) =
@@ -405,11 +480,13 @@ SkipParser {
 }
 
 PrintResult {
-  (Parser) = (<MStrings::Repeat 80 '='>) ();
+  (Parser) = <PrintParser>;
 
   (e.Info) =
     <MLambda::Map & PrintResult-Aux <MOrder::Sort e.Info>> ();
 }
+
+PrintParser = (<MStrings::Repeat 80 '='>) ();
 
 PrintResult-Aux {
   ('!' (e.ScopeClass) (e.EntityName) (e.SrcPos) ) =
@@ -426,5 +503,167 @@ Dot {
   e.Begin '::' e.End = e.Begin '.' <Dot e.End>;
   e.Line = e.Line;
 }
+
+//------------------------------------------------------------------------------
+// Печать таблицы перекрёстных связей.
+
+FilterModules {
+  (('!' ('Module') t.Name t.SrcPos) e.SubEntities) =
+    (('!'('Module') t.Name t.SrcPos) e.SubEntities);
+
+  t.OtherInfo = ;
+}
+
+
+PrintTree
+  e.Modules =
+    <PrintTree-Aux
+      <MLambda::Map & UsingsModules e.Modules>
+    >
+    <PrintParser>
+    <PrintTree-Aux
+      <MLambda::Map & UsedsModules e.Modules>
+    >;
+
+UsingsModules
+  (
+    ('!' ('Module') t.Name t.SrcPos)
+    e.SubEntities
+  ) =
+    (
+      t.Name
+      <MLambda::Map
+        <MLambda::BindLeft & FilterDependences '?'>
+        e.SubEntities
+      >
+    );
+
+UsedsModules
+  (
+    ('!' ('Module') t.Name t.SrcPos)
+    e.SubEntities
+  ) =
+    (
+      t.Name
+      <MLambda::Map
+        <MLambda::BindLeft & FilterDependences '>'>
+        e.SubEntities
+      >
+    );
+
+FilterDependences {
+  s.Sign (s.Sign ('Module') t.Name t.SrcPos) =
+    (t.Name t.SrcPos);
+
+  s.Sign t.OtherEntity = ;
+}
+
+PrintTree-Aux
+  e.Modules =
+    <CreateTrees
+      ( <FindRoots e.Modules> ) e.Modules
+    >;
+
+FindRoots
+  e.Modules =
+    <MLambda::Map
+      <MLambda::BindLeft & IsRoot e.Modules>
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          <MLambda::BindLeft & MStrings.First 1>
+        >
+        e.Modules
+      >
+    >;
+
+IsRoot {
+  e.Modules-B
+  (t.SuperName e.SubModules-B (t.SubName t.SrcPos) e.SubModules-E)
+  e.Modules-E t.SubName =
+    /* пусто */;
+
+  e.Modules t.RootName = t.RootName;
+}
+
+CreateTrees
+  (e.Roots) e.Modules =
+    <MLambda::Map
+      <MLambda::BindLeft & CreateTree e.Modules>
+      e.Roots
+    >;
+
+CreateTree
+  e.Modules (e.RootName) =
+    ()
+    (e.RootName ' =>')
+    <DoPrintUses
+      ()
+      <DoCreateTree () (e.RootName) e.Modules>
+    >;
+
+DoCreateTree {
+  (e.Indent)
+  (e.RootName)
+  e.Modules-B ((e.RootName) e.SubNames) e.Modules-E =
+    <MLambda::Map
+      <MLambda::BindLeft
+        & DoCreateTree-Aux
+        (e.Indent) e.Modules-B e.Modules-E
+      >
+      e.SubNames
+    >;
+
+  (e.Indent) (e.RootName) e.Modules = ;
+}
+
+DoCreateTree-Aux
+  (e.Indent) e.Modules ((e.Name) (e.SrcPos)) =
+    //(e.Indent ' * ' e.Name ', (' e.SrcPos ') =>')
+    ((e.Indent) (e.Name) (e.SrcPos))
+    <DoCreateTree
+      (e.Indent '  ') (e.Name) e.Modules
+    >;
+
+DoPrintUses {
+  (e.Printed-B (e.Name) e.Printed-E)
+  ((e.SameIndent) (e.Name) (e.SrcPos))
+  e.Skipped
+  ((e.SameIndent) (e.NextName) (e.NextSrcPos))
+  e.Tail =
+    (e.SameIndent ' @ ' e.Name ', (' e.SrcPos ')')
+    <DoPrintUses
+      (e.Printed-B (e.Name) e.Printed-E)
+      ((e.SameIndent) (e.NextName) (e.NextSrcPos))
+      e.Tail
+    >;
+
+  (e.Printed) ((e.Indent) (e.Name) (e.SrcPos)) e.Tail =
+    (e.Indent ' * ' e.Name ', (' e.SrcPos ')')
+    <DoPrintUses
+      (e.Printed (e.Name)) e.Tail
+    >;
+
+  (e.Printed) = <PrintParser>;
+}
+
+//CreateTrees
+//  (e.Roots) e.Modules =
+//    <MLambda::Map & PrintTree-Debug-PrintRoot e.Roots>
+//    <PrintParser>
+//    <MLambda::Map & PrintTree-Debug-Module e.Modules>;
+
+PrintTree-Debug-PrintRoot
+  (e.Name) = ('-> Root ' e.Name);
+
+PrintTree-Debug-Module
+  ((e.Name) e.SubEntities) =
+    (e.Name)
+    <MLambda::Map & PrintTree-Debug-Depended e.SubEntities>
+    ();
+
+PrintTree-Debug-Depended
+  ((e.Name) (e.SrcPos)) =
+    ('  ' e.Name ' ' e.SrcPos);
 
 $END MXLinx.

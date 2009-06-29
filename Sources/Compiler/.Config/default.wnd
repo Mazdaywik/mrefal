@@ -57,6 +57,8 @@ S:  SRefal-BE
     ncmenu
 }
 -:  
+I:  Статистика и информация
+{
 A:  Псевдонимы (Рефал 5)
     view:.Info\Aliases.als
 I:  Интерфейсы
@@ -74,10 +76,13 @@ L:  Список нескомпонованных элементов
     unlib.bat
     cd ..
     view:.Info/"Not linked.txt
-R:  Показ дерева модулей
+K:  Список нескомпонованных элементов
+    view:".Info/MRefal.not linked.txt"
+T:  Показ дерева модулей
     view:.Info/MRefal.tree.txt
 X:  Перекрёстные связи
     view:.Info/MRefal.xlinx.txt
+}
 -:  
 E:  Декодировать файл дампа !.! (6 Кбайт/с)
     copy !.! !.!.bak

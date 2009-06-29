@@ -316,7 +316,7 @@ PrintName {
 
 StringFromScopeClass {
   ADT = 'ADT'; Entry = 'Entry'; Identifier = 'Identifier';
-  Import = 'Import'; Local = 'Local'; Module = 'Module'; Swap = 'Swap';
+  Local = 'Local'; Module = 'Module'; Swap = 'Swap';
 }
 
 GenerateSubEntity
@@ -463,6 +463,10 @@ Link-Aux-2
         (Parser)
         <MLambda::Map & InvertedToResults e.Inverted>
       >
+    >
+    <FileIO::Save
+      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.not linked.txt')
+      <FindNotUsed e.Results>
     >;
 
 //------------------------------------------------------------------------------
@@ -505,7 +509,7 @@ Dot {
 }
 
 //------------------------------------------------------------------------------
-// Печать таблицы перекрёстных связей.
+// Печать дерева зависимостей модулей
 
 FilterModules {
   (('!' ('Module') t.Name t.SrcPos) e.SubEntities) =
@@ -595,75 +599,211 @@ CreateTrees
 
 CreateTree
   e.Modules (e.RootName) =
-    ()
     (e.RootName ' =>')
-    <DoPrintUses
-      ()
-      <DoCreateTree () (e.RootName) e.Modules>
+    <PrintUses
+      <DoCreateTree () () (e.RootName) e.Modules>
     >;
 
 DoCreateTree {
+  (e.Printed)
   (e.Indent)
   (e.RootName)
   e.Modules-B ((e.RootName) e.SubNames) e.Modules-E =
-    <MLambda::Map
+    <MLambda::Reduce
       <MLambda::BindLeft
         & DoCreateTree-Aux
         (e.Indent) e.Modules-B e.Modules-E
       >
+      (e.Printed)
       e.SubNames
     >;
 
-  (e.Indent) (e.RootName) e.Modules = ;
+  (e.Printed) (e.Indent) (e.RootName) e.Modules =
+    (e.Printed);
 }
 
-DoCreateTree-Aux
-  (e.Indent) e.Modules ((e.Name) (e.SrcPos)) =
-    //(e.Indent ' * ' e.Name ', (' e.SrcPos ') =>')
-    ((e.Indent) (e.Name) (e.SrcPos))
+DoCreateTree-Aux {
+  (e.L-Indent) e.L-Modules
+  (
+     e.Printed-B
+    (s.Sign (e.Name) (e.OtherIndent) (e.OtherSrcPos))
+    e.Printed-E
+  )
+  ((e.Name) (e.SrcPos)) =
+    (
+      e.Printed-B
+      (s.Sign (e.Name) (e.OtherIndent) (e.OtherSrcPos))
+      e.Printed-E
+      ('@' (e.Name) (e.L-Indent) (e.SrcPos))
+    );
+
+  (e.L-Indent) e.L-Modules
+  (e.Printed) ((e.Name) (e.SrcPos)) =
     <DoCreateTree
-      (e.Indent '  ') (e.Name) e.Modules
+      (
+        e.Printed
+        ('*' (e.Name) (e.L-Indent) (e.SrcPos))
+      )
+      (e.L-Indent '  ')
+      (e.Name) e.L-Modules
+    >;
+}
+
+PrintUses {
+  (e.Printed) =
+    <MLambda::Map & PrintUses-Elem e.Printed>
+    <PrintParser>;
+}
+
+PrintUses-Elem
+  (s.Sign (e.Name) (e.Indent) (e.SrcPos)) =
+    (e.Indent ' ' s.Sign ' ' e.Name ', (' e.SrcPos ')');
+
+
+//------------------------------------------------------------------------------
+// Поиск и печать нелинкованных элементов
+
+FindNotUsed
+  e.Results =
+    <SeparateUseds
+      (('RunTime')) (/* накопление запросов */)
+      <MLambda::Map & FilterFunction e.Results>
     >;
 
-DoPrintUses {
-  (e.Printed-B (e.Name) e.Printed-E)
-  ((e.SameIndent) (e.Name) (e.SrcPos))
-  e.Skipped
-  ((e.SameIndent) (e.NextName) (e.NextSrcPos))
+FilterFunction {
+  (
+    ('!' (e.ScopeClass) (e.Name) (e.SrcPos))
+    e.SubEntities
+  ) =
+    <SwFilterFunction
+      <IsFunctionScopeClass e.ScopeClass>
+      (e.Name) (e.SrcPos) e.SubEntities
+    >;
+
+  (Parser) = ;
+}
+
+IsFunctionScopeClass {
+  'Entry' = Function; 'Local' = Function; 'Swap' = Function;
+  e.Other = NotFunction;
+}
+
+SwFilterFunction {
+  Function (e.Name) (e.SrcPos) e.SubEntities =
+    (
+      (e.Name) (e.SrcPos)
+      <MLambda::Map
+        & FilterFunction-SubEntity e.SubEntities
+      >
+    );
+
+  NotFunction (e.Name) (e.SrcPos) e.SubEntities =
+    /* пусто */;
+}
+
+FilterFunction-SubEntity {
+  ('?' (e.ScopeClass) (e.Name) (e.SrcPos)) =
+    (e.Name);
+
+  ('>' (e.ScopeClass) (e.Name) (e.SrcPos)) =
+    /* пусто */;
+}
+
+SeparateUseds {
+  ((e.NextRequest) e.Requests) (e.SubRequests)
+  e.Entities-B
+  ((e.NextRequest) (e.SrcPos) e.SubEntities)
+  e.Entities-E =
+    <SeparateUseds
+      (e.Requests) (e.SubRequests e.SubEntities)
+      e.Entities-B e.Entities-E
+    >;
+
+  ((e.NextRequest) e.Requests) (e.SubRequests)
+  e.Entities =
+    <SeparateUseds
+      (e.Requests) (e.SubRequests) e.Entities
+    >;
+
+  () () e.NotLinkedEntities =
+    <PrintNotLinked e.NotLinkedEntities>;
+
+  () (e.SubRequests) e.Entities =
+    <SeparateUseds
+      ( <MStrings::Unique e.SubRequests> )
+      ()
+      e.Entities
+    >;
+}
+
+PrintNotLinked
+  e.Entities =
+    ('Not linked: ')
+    <PrintNotLinked-AsTree
+      (/* отступ */)
+      <CollectTree
+        <MLambda::Map & DeleteSubRequests
+          <MOrder::Sort e.Entities>
+        >
+      >
+    >;
+
+DeleteSubRequests {
+  ((e.Name) (e.SrcPos) e.SubRequests) =
+    ((e.Name) (e.SrcPos));
+}
+
+CollectTree {
+  ((e.Qualifier '::' e.SubName1) (e.SrcPos1))
+  ((e.Qualifier '::' e.SubName2) (e.SrcPos2))
   e.Tail =
-    (e.SameIndent ' @ ' e.Name ', (' e.SrcPos ')')
-    <DoPrintUses
-      (e.Printed-B (e.Name) e.Printed-E)
-      ((e.SameIndent) (e.NextName) (e.NextSrcPos))
+    <CollectTree-Aux
+      (e.Qualifier)
+      (((e.SubName1) (e.SrcPos1)) ((e.SubName2) (e.SrcPos2)))
       e.Tail
     >;
 
-  (e.Printed) ((e.Indent) (e.Name) (e.SrcPos)) e.Tail =
-    (e.Indent ' * ' e.Name ', (' e.SrcPos ')')
-    <DoPrintUses
-      (e.Printed (e.Name)) e.Tail
-    >;
+  ((e.Name) (e.SrcPos)) e.Tail =
+    (Leaf (e.Name) (e.SrcPos))
+    <CollectTree e.Tail>;
 
-  (e.Printed) = <PrintParser>;
+  = ;
 }
 
-//CreateTrees
-//  (e.Roots) e.Modules =
-//    <MLambda::Map & PrintTree-Debug-PrintRoot e.Roots>
-//    <PrintParser>
-//    <MLambda::Map & PrintTree-Debug-Module e.Modules>;
+CollectTree-Aux {
+  (e.Qualifier) (e.SubNames)
+  ((e.Qualifier '::' e.SubName) (e.SrcPos)) e.Tail =
+    <CollectTree-Aux
+      (e.Qualifier)
+      (e.SubNames ((e.SubName) (e.SrcPos))) e.Tail
+    >;
 
-PrintTree-Debug-PrintRoot
-  (e.Name) = ('-> Root ' e.Name);
+  (e.Qualifier) (e.SubNames) e.Tail =
+    (Tree
+      (e.Qualifier)
+      <CollectTree e.SubNames>
+    )
+    <CollectTree e.Tail>;
+}
 
-PrintTree-Debug-Module
-  ((e.Name) e.SubEntities) =
-    (e.Name)
-    <MLambda::Map & PrintTree-Debug-Depended e.SubEntities>
-    ();
+PrintNotLinked-AsTree {
+  (e.Indent) e.Tree =
+    <MLambda::Map
+      <MLambda::BindLeft & DoPrintNotLinked-AsTree (e.Indent)>
+      e.Tree
+    >;
+}
 
-PrintTree-Debug-Depended
-  ((e.Name) (e.SrcPos)) =
-    ('  ' e.Name ' ' e.SrcPos);
+DoPrintNotLinked-AsTree {
+  (e.Indent) (Tree (e.Root) e.SubTrees) =
+    (e.Indent e.Root '::')
+    <MLambda::Map
+      <MLambda::BindLeft & DoPrintNotLinked-AsTree (e.Indent '  ')>
+      e.SubTrees
+    >;
+
+  (e.Indent) (Leaf (e.Name) (e.SrcPos)) =
+    (e.Indent e.Name ', (' e.SrcPos ')');
+}
 
 $END MXLinx.

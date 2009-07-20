@@ -84,7 +84,7 @@ LoChar {
 
 /**
   <Length e.Expr> == s.Length
-  <Length e.Expr> == s.Length e.Expr
+  <Length-T e.Expr> == s.Length e.Expr
 */
 $ENTRY Length e.Expr = <UnLen <Length-T e.Expr> >;
 

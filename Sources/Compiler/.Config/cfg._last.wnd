@@ -5,8 +5,8 @@ L:  Загрузить _last
     set PROFILE=mp-work-CPPSR
     set SCOMP-SHORT=SR
     set SCOMP=mrefal.s.exe
-    set SPROFILE-SHORT=Си++/SR
-    set SPROFILE=mp-work-CPPSR
+    set SPROFILE-SHORT=SR
+    set SPROFILE=mp-stable-SR
     set MODE=+make
     .Config\change_window default
 X:  Возврат без загрузки

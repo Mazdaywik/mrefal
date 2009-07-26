@@ -339,7 +339,7 @@ $ENTRY Identity e.Value = e.Value;
 */
 $ENTRY Bracketed
   t.Lambda =
-    <Parallel & UnBracket t.Lambda & Bracket>;
+    <Composite & UnBracket t.Lambda & Bracket>;
 
 /**
   <Bracketed-H t.Lambda>
@@ -351,6 +351,6 @@ $ENTRY Bracketed
 */
 $ENTRY Bracketed-H
   t.Lambda =
-    <Parallel-H & UnBracket-H t.Lambda & Brakcet-H>;
+    <Composite-H & UnBracket-H t.Lambda & Brakcet-H>;
 
 $END Std::Lambda.

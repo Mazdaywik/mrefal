@@ -142,28 +142,77 @@ lambda2 {
 6
 
 
+---------------------------------------------------------------------
 
+  Y-i {
+    s.Func = { e.Arg = <<s.Func <Y-i s.Func>> e.Arg>; };
+  }
 
+  Fetch-Y {
+    e.Argument s.Function = <<Y-i s.Function> e.Argument>;
+  }
 
+  Fact {
+    0 = 1;
 
+    s.N =
+      <Fetch-Y
+        1 1 {
+          s.Loop = {
+            s.Prod s.N = <Mul s.Prod s.N>;
+            s.Prod s.K = <s.Loop <s.Prod s.K> <Inc s.K>>;
+          };
+        }
+      >;
+  }
 
+--------------------------------------------------------------------------------
+/**
+  <Y { s.Loop = { тело }; }> == s.Loop
+*/
 
+Y {
+  s.Func = { e.Arg = <<s.Func <Y s.Func>> e.Arg>; };
+}
 
+/**
+  <Y2 { s.Loop1 s.Loop2 = { тело1 } { тело2 }; }> == s.Loop1 s.Loop2
+*/
+Y2 {
+  s.Func =
+    { e.Arg1 = <Y2-1 <s.Func <Y2 s.Func>> e.Arg1>; }
+    { e.Arg2 = <Y2-2 <s.Func <Y2 s.Func>> e.Arg2>; };
+}
 
+Y2-1 { s.Loop1 s.Loop2 e.Arg = <s.Loop1 e.Arg>;
+Y2-2 { s.Loop1 s.Loop2 e.Arg = <s.Loop2 e.Arg>;
 
+(define (Y func)
+  (lambda (. arg)
+    (apply (func (Y func)) arg)
+  )
+)
 
+(define (Y2 func)
+  (list
+    (lambda (. arg)
+      (Y2-1 (Y2 func) arg)
+    )
+    (lambda (. arg)
+      (Y2-2 (Y2 func) arg)
+    )
+  )
+)
 
+(define (Y2-1 funcs arg) (apply (car funcs) arg))
+(define (Y2-1 funcs arg) (apply (car (cdr funcs)) arg))
 
-
-
-
-
-
-
-
-
-
-
-
-
+(define (fact n)
+  ((Y
+    (lambda (loop)
+      (lambda (x acc) (loop (- x 1) (* acc x)))
+    )
+  )
+  n 1)
+)
 

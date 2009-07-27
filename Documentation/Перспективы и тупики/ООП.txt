@@ -1,0 +1,220 @@
+/*
+  <FirstParse s.Len (e.Expr)
+    == (e.Begin) (e.End),
+      len(e.Expr) >= s.Len,
+      len(e.Begin) == s.Len,
+      e.Begin e.End: e.Expr
+    == faildown, len(e.Expr) < s.Len
+
+  Выполняется за постоянное время.
+*/
+$EXTERN FirstParse;
+
+/*
+  <Hash e.Exrp> == s.Int
+  Выполняется за время, пропорциональное длине или размеру e.Expr.
+*/
+$EXTERN Hash;
+
+/*
+  <Length e.Exrp> == s.Int
+  Выполняется за постоянное время.
+*/
+$EXTERN Length;
+
+/*
+  <At e.Exrp> == s.ArrayClass
+  <s.ArrayClass s.Pos> == s.TermAt
+  <s.ArrayClass s.Pos '=' t.NewValue> == s.UpdArrayClass
+  <s.ArrayClass Len> == s.Len
+*/
+$ENTRY At {
+  e.Expr = <Length e.Expr> :: s.Len =
+    ? {
+      Len = s.Len;
+
+      s.Pos = <FirstParse e.Expr> :: (e.Begin) (t.At e.End) = t.At;
+
+      s.Pos '=' t.NewAt =
+        <FirstParse e.Expr> :: (e.Begin) (t.At e.End) =
+        <At e.Begin t.NewAt e.End>;
+    };
+}
+
+/*
+  Интерфейс ассоциативного контейнера.
+  Предполагается, что в контейнере не могут находиться несколько
+  разных значений, ассоциированных с одним ключом.
+
+  <s.Container Add (e.Key) (e.Value)> == s.Container
+
+    Добавляет в контейнер значение e.Value, соответствующее e.Key.
+    Если до этого в контейнере уже было значение, ассоциированное с e.Key,
+    оно удаляется.
+
+  <s.Container Lookup (e.Key)>
+    == e.Value
+    == <>
+
+    Осуществляет поиск значения, ассоциированного с e.Key.
+    При отсутствии значения, ассоциированного с ключом,
+    возвращается неуспех.
+
+  <s.Container Extact (e.Key)>
+    == s.Container (e.Value)
+    == <>
+
+    Извлекает значение, ассоциированное с ключом e.Key,
+    удаляя при этом ассоциацию (ключ, значение).
+    Если значение отсутствует, возвращается неуспех.
+
+  <s.Container Delete (e.Key)>
+    == s.Container
+    == <>
+
+    Аналогично Extract, но без возврата значения.
+
+  <s.Container AddNew (e.Key) (e.Value)>
+    == s.Container
+    == <>
+
+    Добавляет новую пару (ключ, значение).
+    Если уже существует значение, ассоциированное с e.Key,
+    возвращается неуспех.
+*/
+
+/*
+  <AssocList> == s.AssocList
+  Ассоциативный список, сложность всех операций O(N).
+  Интерфейс ассоциативного контейнера.
+*/
+$ENTRY AssocList = <AssocList-Internal ()>;
+
+AssocList-Internal
+  t.List =
+    $func Self ? {
+      Add (e.Key) (e.Value) =
+        t.List =>
+          $func Add {
+            () = ((e.Key) (e.Value) t.Tail);
+
+            ((e.Key) (e.OldValue) t.Tail) =
+              <AssocList-Internal ((e.Key) (e.Value) t.Tail)>;
+
+            ((e.OtherKey) (e.OtherValue) t.Tail) =
+              ((e.OtherKey) (e.OtherValue) <Add t.Tail>);
+          };
+
+      Lookup (e.Key),
+        t.List ->
+          $func Lookup ? {
+            () = <>;
+
+            ((e.Key) (e.Value) t.Tail) = e.Value;
+
+            ((e.OtherKey) (e.OtherValue) t.Tail) = <Lookup t.Tail>;
+          };
+
+      Extract (e.Key),
+        t.List ->
+          $func Extract {
+            () = <>;
+
+            ((e.Key) (e.Value) t.Tail) = t.Tail (e.Value));
+
+            ((e.OtherKey) (e.OtherValue) t.Tail),
+              /*
+                Было бы переопределение переменных, можно было бы
+                написать ... :: t.Tail^ (e.Value)
+              */
+              <Extract t.Tail> :: t.NewTail (e.Value) =
+              ((e.OtherKey) (e.OtherValue) t.NewTail) (e.Value);
+          }
+          :: t.NewList (e.Value) =
+          <AssocList-Internal t.NewList> (e.Value);
+
+      Delete (e.Key),
+        /*<Self Extract (e.Key)> ::
+        s.NewList (e.Value) = s.NewList;*/
+        t.List ->
+          $func Delete {
+            () = <>;
+
+            ((e.Key) (e.Value) t.Tail) = t.Tail;
+
+            ((e.OtherKey) (e.OtherValue) t.Tail =
+              ((e.OtherKey) (e.OtherValue) <Delete t.Tail>);
+          }
+
+      AddNew (e.Key) (e.Value),
+        -> {
+          , <Self Lookup (e.Key)> = <>;
+          = <Self Add (e.Key) (e.Value)>;
+        };
+    };
+
+$EXTERN Mod, Dec;
+
+HashSize = 1000; /* размер хеша */
+
+/*
+  <HashTable> == s.HashClass
+  Хеш-таблица, сложность операций O(1) (ну, почти O(1)).
+  Интерфейс ассоциативного контейнера.
+*/
+$ENTRY HashTable =
+  $func Repeat {
+    0 = ;
+    s.N = () <Repeat <Dec s.N>>;
+  } =
+  /* устранится оптимизатором */
+  <HashSize> => Repeat => At => HashTable-Internal;
+
+HashTable-Internal
+  s.Array =
+    $func GetPos {
+      e.Key =
+        <Hash e.Key> :: s.Hash =
+        <Mod s.Hash <s.Array Len>>;
+    }
+    $func Update {
+      e.ArrayCmd => s.Array => HashTable-Internal;
+    }
+    =
+    $func Self ? {
+      Add (e.Key) (e.Value) =
+        <GetPos e.Key> :: s.Pos =
+        <s.Array s.Pos> :: s.Socket =
+        <s.Socket Add (e.Key) (e.Value)> :: s.NewSocket =
+        s.Pos '=' s.NewSocket => Update;
+        /*<s.Array s.Pos> => {
+          (e.Elems-B ((e.Key) (e.OldValue)) e.Elems-E) =
+            s.Pos '=' (((e.Key) (e.Value)) e.Elems-B e.Elems-E) =>
+            Update;
+        
+          (e.Elems) =
+            s.Pos '=' (((e.Key) (e.Value)) e.Elems)> => Update;
+        };*/
+
+      Lookup (e.Key),
+        <GetPos e.Key>: s.Pos,
+        <s.Array s.Pos>: s.Socket, <s.Socket Lookup (e.Key)>;
+        /*<s.Array s.Pos>: (e ((e.Key) (e.Value)) e) = e.Value;*/
+
+      Extract (e.Key),
+        <GetPos e.Key>: s.Pos,
+        <s.Array s.Pos>: s.Socket,
+        <s.Socket Extract (e.Key)> :: s.NewSocket (e.Value) =
+        <Update s.Pos '=' s.NewSocket> (e.Value);
+        /*<s.Array s.Pos>: (e.Elems-B ((e.Key) (e.Value)) e.Elems-E) =
+        <Update s.Pos '=' (e.Elems-B e.Elems-E)> (e.Value);*/
+
+      Delete (e.Key),
+        <Self Extract (e.Key)> :: s.NewTable (e.Value) = s.NewTable;
+
+      AddNew (e.Key) (e.Value),
+        -> {
+          , <Self Lookup (e.Key)> = <>;
+          = <Self Add (e.Key) (e.Value)>;
+        };
+    };

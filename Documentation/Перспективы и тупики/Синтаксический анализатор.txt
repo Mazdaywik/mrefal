@@ -21,52 +21,528 @@ $ENTRY Parse
   <ФункцияПодготовки t.State> == t.State
 */
 
-Tokens = Variable Char Number Name '=()<>;{},' Entry Extern;
+Tokens =
+  Variable Char Number Name '=()[]<>;{},#'
+  Entry Extern Forward Swap ESwap Enum EEnum Label;
 
-Root = (& Declaration & Root & Root-Func);
-
-Root-Func
-  t.State () () = t.State ();
+Root =
+  ( & Declaration & Root { t.State () () = t.State (); } )
+  ( /* пусто */ { t.State = t.State (); } );
 
 Declaration =
-  (Extern & NameList & Externals-Func)
-  (Entry & Body & Entry-Func)
-  (& Body & Local-Func)
-  (& LL1.Other & Root & UnexpectedRoot-Func);
+  (
+    & DeclHeader & NameList
+    {
+      (t.ErrorList t.SymTable) (s.Type s.ScopeClass) (e.NameList) =
+        (
+          <MLambda::Reduce
+            {
+              (t.ErrorList t.SymTable) (t.SrcPos e.Name) =
+                /*
+                  Предполагается, что функция MSymTable::Add проверяет
+                  правильность добавления имени в таблицу символов и
+                  в случае ошибки добавляет запись в список ошибок.
+                */
+                <MSymTable::Add
+                  t.ErrorList t.SymTable s.Type s.ScopeClass t.SrcPos e.Name
+                >;
+            }
+            (t.ErrorList t.SymTable) e.Names
+          >
+        )
+        ();
+    }
+  )
+  (
+    ( & LL1.Prepare
+      { (t.ErrorList t.SymTable) = (t.ErrorList t.SymTable <Context::Create>); }
+    )
+    Entry & Body
+    {
+      t.State (Entry t.SrcPos) t.Body = <Function t.State Entry t.Body>;
+    }
+  )
+  (
+    ( & LL1.Prepare
+      { (t.ErrorList t.SymTable) = (t.ErrorList t.SymTable <Context::Create>); }
+    )
+    & Body
+    {
+      t.State t.Body = <Function t.State Local t.Body>;
+    }
+  )
+  (';' & Root { t.State (';' t.SrcPos) () = t.State (); } )
+  ( & LL1.Other & Root & UnexpectedRoot-ErrorFunc );
 
-UnexpectedRoot-Func
+Function
+  (t.ErrorList t.SymTable)
+  s.ScopeClass (t.SrcPos (e.Name) (e.Sentences)) =
+    (
+      <MSymTable::AddFunction
+        t.ErrorList t.SymTable s.ScopeClass (e.Name) (e.Sentences)
+      >
+    )
+    ();
+
+UnexpectedRoot-ErrorFunc
   (t.ErrorList t.SymTable) t.OtherToken () =
     (
       <MErrorList::AddUnexpected
-        t.ErrorList t.OtherToken
-        'Entry, extern or function'
+        t.ErrorList t.OtherToken 'One-line declaration or function'
       >
       t.SymTable
     )
-    (e.Declarations);
+    ();
 
-Externals-Func
-  t.State () = t.State ();
+Decl-Header =
+ ( Forward { t.State (Forward t.SrcPos) = t.State (Extern Local); } )
+ ( Extern { t.State (Extern t.SrcPos) = t.State (Extern Entry); } )
+ ( Swap ( t.State (Swap t.SrcPos) = t.State (Swap Local); } )
+ ( ESwap ( t.State (ESwap t.SrcPos) = t.State (Swap Entry); } )
+ ( Enum ( t.State (Enum t.SrcPos) = t.State (Enum Local); } )
+ ( EEnum ( t.State (EEnum t.SrcPos) = t.State (Enum Entry); } )
+ ( Label ( t.State (Label t.SrcPos) = t.State (Label Entry); } );
 
 NameList =
-  (Name & NameListTail & NameList-Func)
-  (& LL1.Other & Root & UnexpectedRoot-Error);
-
-NameList-Func
-  (t.ErrorList t.SymTable) (Name t.SrcPos e.Name) =
-    (t.ErrorList <MSymTable::AddName t.SymTable t.SrcPos e.Name>) ();
+  (
+    Name & NameListTail
+    {
+      t.State (Name t.SrcPos e.Name) (e.Names) = t.State ((t.SrcPos e.Name) e.Names);
+    }
+  )
+  (& LL1.Other & Root & UnexpectedRoot-ErrorFunc);
 
 NameListTail =
-  (',' & NameList & NameListTail-Comma-Func)
-  (';' & NameListTail-Semicolon-Func)
-  (& LL1.Other & Root UnexpectedRoot-Func);
+  (
+    ',' & NameList { t.State (',' t.SrcPos) (e.Names) = t.State (e.Names); }
+  )
+  ( ';' { t.State (';' t.SrcPos) = t.State (); } )
+  (& LL1.Other & Root UnexpectedRoot-ErrorFunc);
 
-NameListTail-Comma-Func
-  t.State (',' t.SrcPos) () = t.State ();
+Body =
+  (
+    Name
+    // ВНИМАНИЕ!!! Эта вложенная функция -- нетерминал, а не обработчик!!!
+    // Блок или предложение.
+    {
+      =
+        (
+          & Sentence ';'
+          {
+            (t.ErrorList t.SymTable t.Context) (e.Sentence) (';' t.SrcPos) =
+              (t.ErrorList t.SymTable) ((e.Sentence));
+          }
+        )
+        (
+          & Block
+          {
+            (t.ErrorList t.SymTable t.Context)
+            ((/* контекст блока пустой*/) e.Sentences) =
+              (t.ErrorList t.SymTable) (e.Sentences);
+          }
+        );
+    }
+    // А вот это -- обработчик.
+    {
+      t.State (Name t.SrcPos e.Name) (e.Sentences) =
+        t.State (t.SrcPos (e.Name) (e.Sentences));
+    }
+  );
 
-NameListTail-Semicolon-Func
-  t.State = t.State;
+Block =
+  (
+    '{' & BlockContent
+    {
+      (t.ErrorList t.SymTable t.Context)
+      ('{' s.LnNum) (e.Sentences) =
+        <MLambdaX::Fetch
+          <Context::PopContext t.Context>
+          {
+            t.Context^ e.Variables =
+              (t.ErrorList t.SymTable t.Context)
+              ((e.Variables) e.Sentences)
+          }
+        >;
+    }
+  );
 
-// и так далее
+BlockContent =
+  (
+    & Sentence ';' & BlockContent
+    {
+      t.State (e.Sentence) (';' t.SrcPos) (e.Sentences) =
+        t.State ((e.Sentence) e.Sentences);
+    }
+  )
+  (
+    ('}')
+    {
+      t.State ('}' t.SrcPos) = t.State ();
+    }
+  )
+  (
+    & LL1.Other & BlockContent
+    {
+      (t.ErrorList t.SymTable t.Context) t.OtherToken (e.Sentences) =
+        (
+          <MErrorList::AddUnexpected
+            t.ErrorList t.OtherToken 'Valid begin of sentence'
+          >
+          t.SymTable t.Context
+        )
+        (e.Sentences);
+    }
+  );
+
+Sentence =
+  (
+    (
+      & LL1.Prepare
+      {
+        (t.ErrorList t.SymTable t.Context) =
+          (t.ErrorList t.SymTable <Context::PrepareSentence t.Context>);
+      }
+    )
+    & Pattern & BeginResult
+    {
+      t.State (e.Pattern) (e.Result) = t.State ((e.Pattern) (e.Result));
+    }
+  );
+
+Pattern =
+  (
+    & PatternTerm & Pattern
+    { t.State t.PatternTerm (e.Pattern) = t.State (t.PatternTerm e.Pattern); }
+  )
+  (
+    & PatCloseBracket & Pattern
+    {
+      (t.ErrorList t.SymTable t.Context) (s.CloseBracket t.SrcPos) (e.Pattern) =
+        (
+          <MErrorList::AddErrorAt
+            t.ErrorList t.SrcPos 'Unballanced bracket "' s.CloseBracket '"'
+          >
+          t.SymTable t.Context
+        )
+        (e.Pattern);
+    }
+  )
+  ( /* пусто */ { t.State = t.State (); } );
+
+PatCloseBracket = (')' & BracketAsIs) (']' & BracketAsIs);
+
+BracketAsIs {
+  t.State (s.Bracket t.SrcPos) = t.State (s.Bracket t.SrcPos);
+}
+
+PatternTerm =
+  (
+    Variable
+    {
+      (t.ErrorList t.SymTable t.Context) (Variable t.SrcPos s.Mode e.Index) =
+        <MLambdaX::Fetch
+          <Context::AddVariable t.ErrorList t.Context>
+          {
+            t.ErrorList^ t.Context^ =
+              (t.ErrorList t.SymTable t.Context) (Variable s.Mode e.Index);
+          }
+        >;
+    }
+  )
+  ( Char { t.State (Char t.SrcPos s.Char) = t.State (Char s.Char); } )
+  ( Number { t.State (Number t.SrcPos s.Number) = t.State (Number s.Number); } )
+  (
+    Name
+    {
+      (t.ErrorList t.SymTable t.Context) (Name t.SrcPos e.Name) =
+        (
+          <MSymTable::CheckName t.ErrorList t.SymTable t.SrcPos e.Name>
+          t.Context
+        )
+        (Name e.Name)
+    }
+  )
+  (
+    '#'
+    // ВНИМАНИЕ!!! Эта вложенная функция -- нетерминал, а не обработчик!!!
+    // Ожидание имени
+    {
+      =
+        (
+          Name
+          {
+            (t.ErrorList t.SymTable t.Context) (Name t.SrcPos e.Name) =
+              (
+                <MSymTable::CheckLabel t.ErrorList t.SymTable t.SrcPos e.Name>
+                t.Context
+              )
+              (e.Name);
+          }
+        )
+        (
+          /* пусто */ (& LL1.LookAhead & LL1.Other)
+          {
+            (t.ErrorList t.SymTable t.Context) t.OtherToken =
+              (
+                <MErrorList::AddUnexpected
+                  t.ErrorList t.OtherToken 'Name after #'
+                >
+                t.SymTable t.Context
+              )
+              ('foobar');
+          }
+        );
+    }
+    // А вот это -- уже обработчик.
+    {
+      ('#' t.SrcPos) (e.Name) = (Identifier e.Name);
+    }
+  )
+  (
+    '(' Pattern <ExpectCloseBracket ')'>
+    {
+      t.State ('(' t.OpenSrcPos) (e.Pattern) (')' t.CloseSrcPos) =
+        t.State (Brackets e.Pattern);
+    }
+  )
+  (
+    '['
+    // ВНИМАНИЕ!!! Эта вложенная функция -- нетерминал, а не обработчик!!!
+    // Ожидание имени
+    {
+      =
+        (
+          Name
+          {
+            (t.ErrorList t.SymTable t.Context) (Name t.SrcPos e.Name) =
+              (
+                <MSymTable::CheckName t.ErrorList t.SymTable t.SrcPos e.Name>
+                t.Context
+              )
+              (e.Name)
+          }
+        )
+        (
+          /* пусто */ (& LL1.LookAhead & LL1.Other)
+          {
+            (t.ErrorList t.SymTable t.Context) t.OtherToken =
+              (
+                <MErrorList::AddUnexpected
+                  t.ErrorList t.OtherToken 'Name after ['
+                >
+                t.SymTable t.Context
+              )
+              ('foobar');
+          }
+        );
+    }
+    Pattern <ExpectCloseBracket ']'>
+    {
+      t.State ('[' t.OpenSrcPos) (e.Name) (e.Pattern) (']' t.CloseSrcPos) =
+        t.State (ADT (Name e.Name) e.Pattern);
+    }
+  );
+
+ExpectCloseBracket
+  s.CloseBracket =
+    {
+      =
+        (
+          s.CloseBracket
+          { t.State (s.CloseBracket t.SrcPos) = t.State (s.CloseBracket t.SrcPos); }
+        )
+        (
+          /* пусто */ (& LL1.LookAhead & LL1.Other)
+          {
+            (t.ErrorList t.SymTable t.Context) (s.Token t.SrcPos e.Info) =
+              (
+                <MErrorList::AddUnexpected
+                  t.ErrorList (s.Token t.SrcPos e.Info) 'Bracket "' s.CloseBracket '"'
+                >
+              )
+              (s.CloseBracket t.SrcPos);
+          }
+        );
+    };
+
+BeginResult =
+  ('=' Result { t.State (e.Result) = t.State (e.Result); } )
+  (
+    Result
+    {
+      (t.ErrorList t.SymTable t.Context) (e.Result) =
+        (
+        )
+        (e.Result)
+    }
+  );
+
+Result =
+  (
+    & ResultTerm & Result
+    { t.State t.ResultTerm (e.Result) = t.State (t.ResultTerm e.Result); }
+  )
+  (
+    & ResCloseBracket & Result
+    {
+      (t.ErrorList t.SymTable t.Context) (s.CloseBracket t.SrcPos) (e.Result) =
+        (
+          <MErrorList::AddErrorAt
+            t.ErrorList t.SrcPos 'Unballanced bracket "' s.CloseBracket '"'
+          >
+        )
+        (e.Result);
+    }
+  )
+  ( /* пусто */ { t.State = t.State (); } );
+
+ResCloseBracket = (')' & BracketAsIs) (']' & BracketAsIs) ('>' & BracketAsIs);
+
+ResultTerm =
+  (
+    Variable
+    {
+      (t.ErrorList t.SymTable t.Context) (Variable t.SrcPos s.Mode e.Index) =
+        <MLambdaX::Fetch
+          <Context::CheckVariable t.ErrorList t.Context>
+          {
+            t.ErrorList^ t.Context^ =
+              (t.ErrorList t.SymTable t.Context) (Variable s.Mode e.Index);
+          }
+        >;
+    }
+  )
+  ( Char { t.State (Char t.SrcPos s.Char) = t.State (Char s.Char); } )
+  ( Number { t.State (Number t.SrcPos s.Number) = t.State (Number s.Number); } )
+  (
+    Name
+    {
+      (t.ErrorList t.SymTable t.Context) (Name t.SrcPos e.Name) =
+        (
+          <MSymTable::CheckName t.ErrorList t.SymTable t.SrcPos e.Name>
+          t.Context
+        )
+        (Name e.Name)
+    }
+  )
+  (
+    '#'
+    // ВНИМАНИЕ!!! Эта вложенная функция -- нетерминал, а не обработчик!!!
+    // Ожидание имени
+    {
+      =
+        (
+          Name
+          {
+            (t.ErrorList t.SymTable t.Context) (Name t.SrcPos e.Name) =
+              (
+                <MSymTable::CheckLabel t.ErrorList t.SymTable t.SrcPos e.Name>
+                t.Context
+              )
+              (e.Name);
+          }
+        )
+        (
+          /* пусто */ (& LL1.LookAhead & LL1.Other)
+          {
+            (t.ErrorList t.SymTable t.Context) t.OtherToken =
+              (
+                <MErrorList::AddUnexpected
+                  t.ErrorList t.OtherToken 'Name after #'
+                >
+                t.SymTable t.Context
+              )
+              ('foobar');
+          }
+        );
+    }
+    // А вот это -- уже обработчик.
+    {
+      ('#' t.SrcPos) (e.Name) = (Identifier e.Name);
+    }
+  )
+  (
+    '(' Result <ExpectCloseBracket ')'>
+    {
+      t.State ('(' t.OpenSrcPos) (e.Result) (')' t.CloseSrcPos) =
+        t.State (Brackets e.Result);
+    }
+  )
+  (
+    '['
+    // ВНИМАНИЕ!!! Эта вложенная функция -- нетерминал, а не обработчик!!!
+    // Ожидание имени
+    {
+      =
+        (
+          Name
+          {
+            (t.ErrorList t.SymTable t.Context) (Name t.SrcPos e.Name) =
+              (
+                <MSymTable::CheckName t.ErrorList t.SymTable t.SrcPos e.Name>
+                t.Context
+              )
+              (e.Name)
+          }
+        )
+        (
+          /* пусто */ (& LL1.LookAhead & LL1.Other)
+          {
+            (t.ErrorList t.SymTable t.Context) t.OtherToken =
+              (
+                <MErrorList::AddUnexpected
+                  t.ErrorList t.OtherToken 'Name after ['
+                >
+                t.SymTable t.Context
+              )
+              ('foobar');
+          }
+        );
+    }
+    Result <ExpectCloseBracket ']'>
+    {
+      t.State ('[' t.OpenSrcPos) (e.Name) (e.Result) (']' t.CloseSrcPos) =
+        t.State (ADT (Name e.Name) e.Result);
+    }
+  )
+  (
+    '<' Result <ExpectCloseBracket '>'>
+    {
+      t.State ('<' t.OpenSrcPos) (e.Result) ('>' t.CloseSrcPos) =
+        t.State (Call e.Result);
+    }
+  )
+  (
+    (
+      & LL1.Prepare
+      {
+        (t.ErrorList t.SymTable t.Context) =
+          (t.ErrorList t.SymTable <Context::PushContext t.Context>);
+      }
+    )
+    & Block
+    {
+      (t.ErrorList t.SymTable t.Context) ((e.SubContext) e.Sentences) =
+        <MLambdaX::Fetch
+          <MSymTable::GetUniqueName t.SymTable>
+          {
+            t.SymTable^ e.UniqueName =
+              (
+                <MSymTable::AddFunction
+                  t.ErrorList t.SymTable Local (e.UniqueName) (e.Sentences)
+                >
+                t.Context
+              )
+              (CreateClosure (e.UniqueName) e.SubContext)
+          }
+        >;
+    }
+  );
 
 $END Parser.
+
+
+
+
+
+

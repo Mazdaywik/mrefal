@@ -11,12 +11,6 @@
 $EXTERN FirstParse;
 
 /*
-  <Hash e.Exrp> == s.Int
-  Выполняется за время, пропорциональное длине или размеру e.Expr.
-*/
-$EXTERN Hash;
-
-/*
   <Length e.Exrp> == s.Int
   Выполняется за постоянное время.
 */
@@ -152,6 +146,12 @@ AssocList-Internal
           = <Self Add (e.Key) (e.Value)>;
         };
     };
+
+/*
+  <Hash e.Exrp> == s.Int
+  Выполняется за время, пропорциональное длине или размеру e.Expr.
+*/
+$EXTERN Hash;
 
 $EXTERN Mod, Dec;
 

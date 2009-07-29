@@ -216,3 +216,42 @@ Y2-2 { s.Loop1 s.Loop2 e.Arg = <s.Loop2 e.Arg>;
   n 1)
 )
 
+ChAB-Q-G {
+  s.A s.B s.Q e.Expr =
+    <
+      { s.Loop1 s.Loop2 e.Arg = <s.Loop1 e.Arg>; }
+      <Y2 {
+        s.ChAB s.Quotted =
+          {
+            s.A e.Tail = s.B <s.ChAB e.Tail>;
+            s.Q e.Tail = s.Q <s.Quotted e.Tail>;
+            s.Other e.Tail = s.Other <s.ChAB e.Tail>;
+            = ;
+          }
+          {
+            s.Q e.Tail = <s.ChAB e.Tail>;
+            s.Other e.Tail = <s.Quotted e.Tail>;
+            = ;
+          };
+      }>
+      e.Expr
+    >;
+}
+
+(define (chAB-Q-G a b q list)
+  ((car (Y2
+      (lambda (chAB-Q quotted)
+        (lambda (list)
+          (if (null? list)
+            '()
+            (if (eq? (car list) q)
+              (cons q (quotted (cdr list)))
+              (if (eq? (car lst) a)
+                (cons b (chAB-Q (cdr list)))
+                (cons (car list) (chAB-Q (cdr list)))))))
+        (lambda (list)
+          (if (null? list)
+            '()
+            (if (eq? (car list) q)
+              (cons q (chAB-Q (cdr list)))
+              (cons (car list) (quotted (cdr list)))))))))))

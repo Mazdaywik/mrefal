@@ -188,24 +188,24 @@ Y2-1 { s.Loop1 s.Loop2 e.Arg = <s.Loop1 e.Arg>;
 Y2-2 { s.Loop1 s.Loop2 e.Arg = <s.Loop2 e.Arg>;
 
 (define (Y func)
-  (lambda (. arg)
+  (lambda arg
     (apply (func (Y func)) arg)
   )
 )
 
 (define (Y2 func)
   (list
-    (lambda (. arg)
+    (lambda arg
       (Y2-1 (Y2 func) arg)
     )
-    (lambda (. arg)
+    (lambda arg
       (Y2-2 (Y2 func) arg)
     )
   )
 )
 
 (define (Y2-1 funcs arg) (apply (car funcs) arg))
-(define (Y2-1 funcs arg) (apply (car (cdr funcs)) arg))
+(define (Y2-2 funcs arg) (apply (car (cdr funcs)) arg))
 
 (define (fact n)
   ((Y
@@ -255,3 +255,57 @@ ChAB-Q-G {
             (if (eq? (car list) q)
               (cons q (chAB-Q (cdr list)))
               (cons (car list) (quotted (cdr list)))))))))))
+
+Yn {
+  s.N =
+    {
+      s.Func =
+        <
+          <Y
+            {
+              s.Next-K =
+                {
+                  s.N = /* пусто */;
+
+                  s.K =
+                    {
+                      e.Arg-K =
+                        <Select-K (s.K <s.Func <<Yn s.N> s.Func>>) e.Arg>
+                    }
+                    <s.Next-K <Inc s.K>>;
+                };
+            }
+          >
+          0
+        >;
+    };
+}
+
+Select-K {
+  (0 s.Func e.OtherFuncs) e.Arg = <s.Func e.Arg>;
+
+  (s.K s.Func e.OtherFuncs) e.Arg =
+    <Select-K (<Dec s.K> e.OtherFuncs) e.Arg>;
+}
+
+(define (Yn N)
+ (lambda (func)
+  (
+   (Y
+    (lambda (next-k)
+     (lambda (k)
+      (if (eq? N k)
+       '()
+       (cons
+        (lambda arg-k
+         (select-k k (func ((Yn N) func)) arg-k))
+        (next-k (+ k 1)))))))
+   0)))
+
+(define (select-k k funcs arg)
+ (if (eq? k 0)
+   (apply (car funcs) arg)
+   (select-k (- k 1) (cdr funcs) arg)
+ )
+)
+

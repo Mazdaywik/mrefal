@@ -1,6 +1,11 @@
 ﻿$MODULE Parser;
 
+$IMPORT Context;
 $IMPORT LL1;
+$IMPORT MErrorList;
+$IMPORT MLabmda;
+$IMPORT MLambdaX;
+$IMPORT MSymTable;
 
 $ENTRY Parse
   t.ErrorList t.SymTable e.Tokens =

@@ -83,8 +83,8 @@ GenCommands {
 }
 
 CompilerCmdLine =
-  'call compile_cl '
-  '/I\"..\\Runtime\\windows.cpp\" ';
+  'call compile_bcc '
+  '-I\"..\\Runtime\\windows.cpp\" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

@@ -357,7 +357,7 @@ ParseAnalyze-Param {
       <MError::AddCmdLineError
         t.hErrorList t.SrcPos 'After option ' e.Option ' expected group'
       >
-      Fails t.FnOptionsMap t.Collected
+      Fails t.FnOptionsMap t.Collected e.Tail
     >;
 
   t.hErrorList s.Result t.FnOptionsMap t.Collected

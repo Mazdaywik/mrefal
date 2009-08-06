@@ -75,16 +75,15 @@ GenCommands {
     <MLambda::Map & GenFwdRename e.Commands>
     (
       <CompilerCmdLine>
-      '/Fe' e.ProgName '.cpp.exe '
+      '-o' e.ProgName '.cpp.exe '
       <MLambda::Map & GenFilename e.Commands>
-      '>nul'
+      // '>nul'
     )
     <MLambda::Map & GenRevRename e.Commands>;
 }
 
 CompilerCmdLine =
-  'call compile_bcc '
-  '-I\"..\\Runtime\\windows.cpp\" ';
+  'g++ -I\"..\\Runtime\\windows.cpp\" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

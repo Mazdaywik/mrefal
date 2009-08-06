@@ -17,7 +17,7 @@ $ENTRY Link
       (
         '@call compile_sr '
         <MLambda::Map & FilePath e.Modules>
-        '>nul'
+        // '>nul'
       )
       ('@del *.obj')
       ('@rem del %0')

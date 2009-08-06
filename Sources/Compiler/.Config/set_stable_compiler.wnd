@@ -1,8 +1,8 @@
-﻿:  [Установка стабильного компилятора (по умолчанию %CSOMP-SHORT%)]
+﻿:  [Установка стабильного компилятора (по умолчанию %SCOMP-SHORT%)]
     .Config\change_window default
 -:  
 5:  Рефал 5
-    set SCOMP=refgo -c150 -l30 ~s\MRefal.s.rsl
+    set SCOMP=refgo -c150 -l30 MRefal.s.rsl
     set SCOMP-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал
@@ -10,7 +10,7 @@ S:  Простой Рефал
     set SCOMP-SHORT=SR
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
-    set SCOMP=~s\mrefal.s.cpp.exe
+    set SCOMP=mrefal.s.cpp.exe
     set SCOMP-SHORT=C++/SR
     .Config\change_window default
 -:  

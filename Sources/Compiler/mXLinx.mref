@@ -6,6 +6,7 @@ $IMPORT MCreateDirIfNeed;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
+$IMPORT MOutModuleStatus;
 $IMPORT MSrcPos;
 $IMPORT MStrings;
 $IMPORT MQualifiedName;
@@ -333,6 +334,8 @@ GenerateSubEntity
 */
 Link
   (e.OutName) e.OutFileNames =
+    <MOutModuleStatus::Linking e.OutName ' / create xlinx table'>
+    <MOutModuleStatus::Flush>
     <Link-Aux
       ( e.OutName )
       <MLambda::Map

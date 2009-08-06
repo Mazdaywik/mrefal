@@ -4,8 +4,8 @@
     ncmenu
 -:  
 C:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%)
-    if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
-    if NOT %PAHTSET%==SET set PATHSET=SET
+    if NOT %PATHSET%==SET set PATH=%PATH%;..\..\Bin
+    if NOT %PATHSET%==SET set PATHSET=SET
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
     if exist __errors view:__errors
 B:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err

@@ -1,7 +1,7 @@
 $MODULE MCompiler;
 
 $IMPORT MClusters;
-$IMPORT MConfig;
+$IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MIModule;

@@ -6,7 +6,7 @@ $MODULE MSymModule;
 */
 
 $IMPORT FileIO;
-$IMPORT MConfig;
+$IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MIModule;

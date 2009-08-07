@@ -3742,3 +3742,8 @@ Cpp-SR-BE::
 FileIO::
   G_Handles, ('..\Libraries\all.cpp-s\FileIO.mref', 7)
   WriteLine-T, ('..\Libraries\all.cpp-s\FileIO.mref', 28)
+
+
+[07.08.2009 - 21:04:53,72]
+
+  [TODO: Командная строка: дополнительная параметризация back-end'ов]

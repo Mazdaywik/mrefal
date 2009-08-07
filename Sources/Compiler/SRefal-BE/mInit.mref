@@ -1,12 +1,12 @@
 $MODULE SRefal-BE::MInit;
 
-$IMPORT MConfig;
+$IMPORT Config::MConfig;
 $IMPORT SRefal-BE::MCompiler;
 $IMPORT SRefal-BE::MLinker;
 
 $ENTRY Register
   t.Config (e.Directory) (e.Ext) =
-    <MConfig::RegisterBackEnd
+    <Config::MConfig::RegisterBackEnd
       t.Config
       SRefal-BE
       & SRefal-BE.MCompiler.Generate

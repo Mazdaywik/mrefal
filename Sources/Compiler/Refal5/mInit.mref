@@ -1,12 +1,12 @@
 $MODULE Refal5::MInit;
 
-$IMPORT MConfig;
+$IMPORT Config::MConfig;
 $IMPORT Refal5::MBackEnd;
 $IMPORT Refal5::MLinker;
 
 $ENTRY Register
   t.Config (e.Directory) (e.Ext) =
-    <MConfig::RegisterBackEnd
+    <Config::MConfig::RegisterBackEnd
       t.Config
       Refal5BE
       & Refal5.MBackEnd.Generate-T

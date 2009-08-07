@@ -1,7 +1,7 @@
 $MODULE MXLinx;
 
 $IMPORT FileIO;
-$IMPORT MConfig;
+$IMPORT Config::MConfig;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MIModule;
 $IMPORT MLambda;
@@ -14,7 +14,7 @@ $IMPORT MXXIO;
 
 $ENTRY Register
   t.Config (e.Dir) (e.Ext) =
-    <MConfig::RegisterBackEnd
+    <Config::MConfig::RegisterBackEnd
       t.Config
       XLinxBE
       & Generate

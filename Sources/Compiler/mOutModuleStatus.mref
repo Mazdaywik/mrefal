@@ -95,7 +95,7 @@ StatusStr {
   Fails =      '  FAILS ';
 }
 
-MaxLength = 78;
+MaxLength = 77;
 
 CheckLength
   e.Line = <DoCheckLength <MaxLength> e.Line>;

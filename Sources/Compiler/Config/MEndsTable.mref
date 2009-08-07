@@ -1,0 +1,50 @@
+$MODULE Config::MEndsTable;
+
+$IMPORT MRefal-FE::MInit;
+$IMPORT MSymModule;
+$IMPORT MXLinx;
+$IMPORT Refal5::MInit;
+$IMPORT SRefal-BE::MInit;
+$IMPORT Cpp-SR-BE::MInit;
+
+$ENTRY DefTuners =
+  (TuneBE Refal5BE ((Relative) ('~ROut')) ('rout'))
+  (TuneBE SymInfo ((Relative) ('~Defs')) ('rsym'))
+  (TuneBE XLinxBE ((Relative) ('~XLinx')) ('xlinx'))
+  (TuneBE SRefal-BE ((Relative) ('~SimRef')) ('sref'))
+  (TuneBE Cpp-SR-BE ((Relative) ('~CppSR')) ('cpp'))
+  (TuneFE MRefal_FrontEnd ('mref'));
+
+$ENTRY TunerName {
+  Refal5BE = 'Refal5';
+  SymInfo = 'SymInfo';
+  XLinxBE = 'XLinx';
+  SRefal-BE = 'SRefal-BE';
+  Cpp-SR-BE = 'Cpp-SR-BE';
+  MRefal_FrontEnd = 'MRefal';
+}
+
+$ENTRY EndMakerFunc {
+  Refal5BE = & Refal5.MInit.Register;
+  SymInfo = & MSymModule.Register;
+  XLinxBE = & MXLinx.Register;
+  SRefal-BE = & SRefal-BE.MInit.Register;
+  Cpp-SR-BE = & Cpp-SR-BE.MInit.Register;
+  MRefal_FrontEnd = & MRefal-FE.MInit.Register;
+}
+
+$ENTRY SelectLowBackEnd {
+  'Refal5' = (Refal5BE ((Relative) ('~ROut')) ('rout'));
+  'SymInfo' = (SymInfo ((Relative) ('~RSym')) ('rsym'));
+  'XLinx' = (XLinxBE ((Relative) ('~XLinx')) ('xlinx'));
+  'SRefal-BE' = (SRefal-BE ((Relative) ('~SimRef')) ('sref'));
+  'Cpp-SR-BE' = (Cpp-SR-BE ((Relative) ('~CppSR')) ('cpp'));
+  e.Other = Unknown (e.Other);
+}
+
+$ENTRY SelectLowFrontEnd {
+  'MRefal' = (MRefal_FrontEnd ('mref'));
+  e.Other = Unknown (e.Other);
+}
+
+$END Config::MEndsTable.

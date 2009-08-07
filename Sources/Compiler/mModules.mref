@@ -1,6 +1,6 @@
 $MODULE MModules;
 
-$IMPORT MConfig;
+$IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MFileSystem;
 $IMPORT MLambda;

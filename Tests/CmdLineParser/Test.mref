@@ -1,0 +1,28 @@
+$PROGRAM Test;
+
+$IMPORT InOut;
+$IMPORT CmdLine::MParser;
+$IMPORT MErrorList = MError;
+
+$ENTRY Go =
+  <FinishAnalyzeCmdLine
+    <CmdLine::MParser::Parse
+      <MErrorList::CreateErrList>
+      & TopLevelDescription
+    >
+  >;
+
+TopLevelDescription { }
+
+FinishAnalyzeCmdLine {
+  t.ErrorList Success (e.Collected) =
+    <MErrorList::PrintErrors t.ErrorList>
+    <InOut::WriteLine 'Scan successed'>
+    <InOut::WriteText e.Collected>;
+
+  t.ErrorList Fails =
+    <MErrorList::PrintErrors t.ErrorList>
+    <InOut::WriteLine 'Scan failed'>;
+}
+
+$END Test.

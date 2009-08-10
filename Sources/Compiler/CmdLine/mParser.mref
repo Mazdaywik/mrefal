@@ -1,0 +1,100 @@
+$MODULE CmdLine::MParser;
+
+/*=============================================================================
+  Модуль пишется в соответствии со спецификацией
+  "DSL описания командной строки.01.txt"
+=============================================================================*/
+
+$IMPORT MError;
+$IMPORT MLambda;
+$IMPORT MOS;
+
+/**
+  <Parse t.ErrorList t.FnCmdLineDescription>
+    == t.ErrorList Success t.Collected
+    == t.ErrorList Fails
+*/
+$ENTRY Parse
+  t.ErrorList t.FnCmdLineDescription =
+    <Parse-SwErrors
+      t.ErrorList
+      <Semantics
+        <Syntax
+          <Lexer
+            <MError::CreateErrList>
+            <MOS::ArgList>
+          >
+        >
+        t.FnCmdLineDescription
+      >
+    >;
+
+Parse-SwErrors {
+  t.MainErrorList t.SubErrorList Success t.Collected =
+    <Parse-SwErrors-SwEmpty
+      t.MainErrorList
+      <MError::ContentLevel t.SubErrorList>
+      t.Collected
+    >;
+
+  t.MainErrorList t.SubErrorList Fails =
+    <MError::MergeLists t.MainErrorList t.SubErrorList> Fails;
+}
+
+Parse-SwErrors-SwEmpty {
+  t.MainErrorList t.SubErrorList Errors t.Collected =
+    <MError::MergeLists t.MainErrorList t.SubErrorList> Fails;
+
+  t.MainErrorList t.SubErrorList s.Other t.Collected =
+    <MError::MergeLists t.MainErrorList t.SubErrorList>
+    Success t.Collected;
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  <Lexer t.ErrorList e.CmdLine>
+    == t.ErrorList t.Element*
+
+  t.Element ::=
+    (OpenBracket t.SrcPos)
+    (CloseBracket t.SrcPos)
+    (Option t.SrcPos (e.Name) e.Param)
+
+  e.Name ::= char* | File
+  e.Param ::= NoParam | Param char*
+*/
+Lexer
+  t.ErrorList e.CmdLine = t.ErrorList e.CmdLine;
+
+//------------------------------------------------------------------------------
+
+/*
+  <Syntax t.ErrorList t.Element*>
+    == t.ErrorList e.ExCmdLine
+
+  e.ExCmdLine ::= t.ExArgument*
+
+  t.ExArgument ::= (t.SimpleArgument [e.Group])
+
+  t.SimpleArgument ::= (t.SrcPos (e.Name) e.Param)
+
+  e.Name ::= char* | File | EOG
+
+  e.Param ::= NoParam | Param char*
+*/
+Syntax
+  t.ErrorList e.Elements = t.ErrorList e.Elements;
+
+//------------------------------------------------------------------------------
+
+/*
+  <Semantics t.ErrorList e.ExCmdLine t.FnCmdLineDescription>
+    == t.ErrorList Success t.Collected
+    == t.ErrorList Fails
+*/
+Semantics
+  t.ErrorList e.ExCmdLine t.FnDescription =
+    t.ErrorList Success (e.ExCmdLine);
+
+$END CmdLine::MParser.

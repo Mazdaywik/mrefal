@@ -108,6 +108,66 @@ $ENTRY AddCmdLineError
 //------------------------------------------------------------------------------
 
 /**
+  <IllegalCmdLineArgument t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY IllegalCmdLineArgument
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Illegal option "-' e.Name '"'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CmdLine-ExpectParam t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY CmdLine-ExpectParam
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Option "-' e.Name '" expect parameter'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CmdLine-ExpectGroup t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY CmdLine-ExpectGroup
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Option "-' e.Name '" expect group'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CmdLine-DontExpectParam t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY CmdLine-DontExpectParam
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Option "-' e.Name '" don\'t expect parameter'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CmdLine-DontExpectGroup t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY CmdLine-DontExpectGroup
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Option "-' e.Name '" don\'t expect group'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
   <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
     == t.UpdatedErrorList
 */

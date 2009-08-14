@@ -12,17 +12,87 @@ $ENTRY Go =
     >
   >;
 
-TopLevelDescription { }
+TopLevelDescription =
+  (
+    & EmptyBrackets
+    (
+      (Naked ('a') ('b') ('c'))
+      & Handler
+      Required
+      OneTime
+    )
+    (
+      (Naked ('e') ('s') ('u') ('x'))
+      & Handler
+      Required
+      OneTime
+    )
+    (
+      (Switch (('v') ('w')) (('y')))
+      & Handler
+      Required
+      OneTime
+    )
+    (
+      (Naked (EOG))
+      & Handler
+      Required
+      OneTime
+    )
+  )
+  (
+    & EmptyBrackets
+    (
+      (Param ('c') ('d'))
+      & Handler
+      Required
+      OneTime
+    )
+  );
+
+EmptyBrackets = ();
+
+Handler
+  t.hErrorList (e.Collected) t.SrcPos (e.Param) (e.Group) =
+    t.hErrorList
+    (e.Collected ((t.SrcPos ('?') e.Param) e.Group))
+    <InOut::WriteLine>
+    <InOut::WriteLine 'Handler/param: ' e.Param>
+    <InOut::WriteLine 'Handler/group: ' e.Group>;
 
 FinishAnalyzeCmdLine {
   t.ErrorList Success (e.Collected) =
     <MErrorList::PrintErrors t.ErrorList>
     <InOut::WriteLine 'Scan successed'>
-    <InOut::WriteText e.Collected>;
+    <WriteOptions () e.Collected>;
 
   t.ErrorList Fails =
     <MErrorList::PrintErrors t.ErrorList>
     <InOut::WriteLine 'Scan failed'>;
+}
+
+WriteOptions {
+  (e.Indent) = ;
+
+  (e.Indent) Group e.Tail = <WriteOptions (e.Indent) e.Tail>;
+
+  (e.Indent) ((t.SrcPos (e.Name) e.Param) e.Group) e.Tail =
+    <InOut::WriteLine
+      e.Indent '+' e.Name ': ' e.Param t.SrcPos
+    >
+    <WriteOptions (e.Indent '  ') e.Group>
+    <WriteOptions (e.Indent) e.Tail>;
+
+  (e.Indent) ((t.SrcPos s.Num e.Param) e.Group) e.Tail =
+    <InOut::WriteLine
+      e.Indent '+' s.Num ': ' e.Param t.SrcPos
+    >
+    <WriteOptions (e.Indent '  ') e.Group>
+    <WriteOptions (e.Indent) e.Tail>;
+
+  (e.Indent) t.OtherTerm e.Tail =
+    <InOut::WriteLine e.Indent 'Other = ' t.OtherTerm>
+    <WriteOptions (e.Indent) e.Tail>;
 }
 
 $END Test.

@@ -127,11 +127,12 @@ PathFromStr-Net-FindServer {
 
   (e.Invalid) (e.Server ' ') '/' e.Tail = Fails;
 
-  (e.Invalid) (e.Server) '\\' e.Tail =
-    <PathFromStr-Tail (Absolut-Net e.Server) e.Tail>;
+  // Пока нет v-переменных, извращаемся
+  (e.Invalid) (s.Server-s e.Server-e) '\\' e.Tail =
+    <PathFromStr-Tail (Absolut-Net s.Server-s e.Server-e) e.Tail>;
 
-  (e.Invalid) (e.Server) '/' e.Tail =
-    <PathFromStr-Tail (Absolut-Net e.Server) e.Tail>;
+  (e.Invalid) (s.Server-s e.Server-e) '/' e.Tail =
+    <PathFromStr-Tail (Absolut-Net s.Server-s e.Server-e) e.Tail>;
 
   (e.Invalid-B s.Char e.Invalid-E) (e.Server) s.Char e.Tail = Fails;
 

@@ -447,11 +447,21 @@ DoSyntax-BindWithOptions-InBrackets
     == t.hErrorList Success t.Collected
     == t.hErrorList Fails
 */
-Semantics2
-  t.hErrorList e.ExCmdLine t.FnDescription =
-    t.hErrorList Success (e.ExCmdLine);
+$import MSelfDiag;
 
 Semantics
+  t.hErrorList e.ExCmdLine t.FnDescription =
+    <MSelfDiag::Log '<Semantics>'>
+    <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
+    <MSelfDiag::Log '  e.ExCmdLine = ' e.ExCmdLine>
+    <MSelfDiag::Log
+      '  <t.FnDescription> = '
+      <MLambda::Apply t.FnDescription>
+    >
+    <MSelfDiag::Log>
+    <?Semantics t.hErrorList e.ExCmdLine t.FnDescription>;
+
+?Semantics
   t.hErrorList e.ExCmdLine t.FnDescription =
     <Semantics-Init
       t.hErrorList (e.ExCmdLine)
@@ -461,11 +471,10 @@ Semantics
 Semantics-Init {
   t.hErrorList
   (((t.SrcPos (File) Param e.ProgName)) t.EOG)
-  e.Description =
-    <MError::AddCmdLineError
-      t.hErrorList t.SrcPos 'Command line is empty'
-    >
-    Fails;
+  (t.DefaultInitializer e.Options) e.Descriptions =
+    <Semantics-Analyze
+      t.hErrorList (t.DefaultInitializer e.Options) t.EOG
+    >;
 
   t.hErrorList (t.ProgName e.Options) e.Description =
     <Semantics-Init-Aux
@@ -518,11 +527,33 @@ Semantics-Init-Aux {
   t.hErrorList
   (t.ProgName ((t.SrcPos (e.Name) e.Param) e.Group) e.Options)
   e.Descriptions =
-    <MError::IllegalCmdLineArgument t.hErrorList t.SrcPos e.Name>
+    <Semantics-Init-Aux
+      <MError::IllegalCmdLineArgument t.hErrorList t.SrcPos e.Name>
+      (t.ProgName e.Options) e.Descriptions
+    >;
+
+  t.hErrorList
+  (((t.SrcPos (File) e.ProgName) e.Group))
+  e.Descriptions =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'All command line arguments is invalid'
+    >
     Fails;
 }
 
-Semantics-Analyze {
+Semantics-Analyze
+  t.hErrorList (t.FnInitCollected e.OptionDescrs) e.Options =
+    <MSelfDiag::Log '<Semantics-Analyze>'>
+    <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
+    <MSelfDiag::Log '  t.FnInitCollected = ' t.FnInitCollected>
+    <MSelfDiag::Log '  e.OptionDescrs = ' e.OptionDescrs>
+    <MSelfDiag::Log '  e.Options = ' e.Options>
+    <MSelfDiag::Log>
+    <?Semantics-Analyze
+      t.hErrorList (t.FnInitCollected e.OptionDescrs) e.Options
+    >;
+
+?Semantics-Analyze {
   t.hErrorList (t.FnInitCollected e.OptionDescrs) e.Options =
     <Semantics-Analyze-PrepareNames
       (<NumerateDescrs e.OptionDescrs>)
@@ -537,6 +568,12 @@ NumerateDescrs
     <DoNumerateDescrs 0 e.Descrs>;
 
 DoNumerateDescrs {
+  s.NextNum
+  ((s.DescrType (EOG)) e.Tweaks)
+  e.Tail =
+    (EOG (s.DescrType (EOG)) e.Tweaks)
+    <DoNumerateDescrs <Math::Inc s.NextNum> e.Tail>;
+
   s.NextNum
   ((s.DescrType e.Names-B (EOG) e.Names-E) e.Tweaks)
   e.Tail =
@@ -608,9 +645,10 @@ PrepareArgumentName {
 Semantics-Analyze-FindUndefinedNames
   (e.OptionDescrs) t.hErrorList t.Collected e.Options =
     <DoSemantics-Analyze
+      <GetEOGHandler e.OptionDescrs>
       (<MLambda::Map & RemoveName e.OptionDescrs>)
-      //(<MLambda::Map & InitOneTime e.OptionDescrs>)
-      //(<MLambda::Map & InitRequired e.OptionDescrs>)
+      (<MLambda::Map & InitOneTime e.OptionDescrs>)
+      (<MLambda::Map & InitRequired e.OptionDescrs>)
       <Semantics-Analyze-Unbracket
         <MLambda::MapReduce
           & AddUndefinedNames
@@ -620,8 +658,68 @@ Semantics-Analyze-FindUndefinedNames
       >
     >;
 
-RemoveName
-  (s.Num (e.Descrs) e.Tweaks) = (s.Num e.Tweaks);
+GetEOGHandler {
+  (EOG (s.Type (EOG)) t.Handler e.Tweaks) e.Other = t.Handler;
+
+  t.Other e.Tail = <GetEOGHandler e.Tail>;
+}
+
+InitOneTime
+  e.Arg =
+    <MSelfDiag::Log '<InitOneTime>'>
+    <MSelfDiag::Log '  e.Arg = ' e.Arg>
+    <MSelfDiag::Log>
+    <?InitOneTime e.Arg>;
+
+?InitOneTime {
+  (EOG (s.Type (EOG)) e.Tweaks) = /* пусто */;
+
+  (s.Num (e.Descrs) t.Handler t.Optional OneTime e.GroupInfo) =
+    (s.Num OneTime-NotUsed <OptionName e.Descrs>);
+
+  (s.Num (e.Descrs) t.Handler t.Optional Multiply e.GroupInfo) =
+    (s.Num Multiply <OptionName e.Descrs>);
+}
+
+InitRequired {
+  (EOG (s.Type (EOG)) e.Tweaks) = /* пусто */;
+
+  (s.Num (e.Descrs) t.Handler Required t.Multiply e.GroupInfo) =
+    (s.Num Required-NotUsed <OptionName e.Descrs>);
+
+  (s.Num (e.Descrs) t.Handler (Optional) t.Multiply e.GroupInfo) =
+    (s.Num (Optional) <OptionName e.Descrs>);
+
+  (s.Num
+    (e.Descrs) t.Handler (Optional t.OptHandler)
+    t.Multiply e.GroupInfo
+  ) =
+    (s.Num (Optional t.OptHandler) <OptionName e.Descrs>);
+}
+
+OptionName {
+  Switch e.NameSets =
+    <DoOptionName
+      <MLambda::Map & MLambda.UnBracket e.NameSets>
+    >;
+
+  s.NoSwitch e.Names = <DoOptionName e.Names>;
+}
+
+DoOptionName {
+  (e.First) = e.First;
+
+  (e.First1) (e.First2) = e.First1 ' or ' e.First2;
+
+  (e.First) e.Names = e.First ', ' <DoOptionName e.Names>;
+}
+
+RemoveName {
+  (EOG (s.Type (EOG)) e.Tweaks) = /* пусто */;
+
+  (s.Num (s.Type e.Descrs) t.Handler t.Optional t.Multiply e.Group) =
+    (s.Num s.Type t.Handler e.Group);
+}
 
 Semantics-Analyze-Unbracket
   (t.hErrorList t.Collected) e.Options =
@@ -645,27 +743,324 @@ AddUndefinedNames {
     (<s.ErrorFunc t.hErrorList e.Args> t.Collected);
 }
 
-DoSemantics-Analyze {
-  (e.OptionDescrs) t.hErrorList t.Collected t.NextOption e.Tail =
+DoSemantics-Analyze
+  t.EOG-Handler (e.OptionDescrs) (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected t.NextOption e.Tail =
+    <MSelfDiag::Log '<DoSemantics-Analyze>'>
+    <MSelfDiag::Log '  t.EOG-Handler = ' t.EOG-Handler>
+    <MSelfDiag::Log '  e.OptionDescrs = ' e.OptionDescrs>
+    <MSelfDiag::Log '  e.Counters = ' e.Counters>
+    <MSelfDiag::Log '  e.Requireds = ' e.Requireds>
+    <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
+    <MSelfDiag::Log '  t.Collected = ' t.Collected>
+    <MSelfDiag::Log '  t.NextOption = ' t.NextOption>
+    <MSelfDiag::Log '  e.Tail = ' e.Tail>
+    <MSelfDiag::Log>
+    <?DoSemantics-Analyze
+      t.EOG-Handler (e.OptionDescrs) (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected t.NextOption e.Tail
+    >;
+
+?DoSemantics-Analyze {
+  t.EOG-Handler (e.OptionDescrs) (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected
+  ((t.EOG-SrcPos EOG NoParam) /* без группы */) =
+    <ProcessOptionalFinalizers
+      t.hErrorList t.Collected e.Requireds t.EOG-Handler t.EOG-SrcPos
+    >;
+
+  t.EOG-Handler (e.OptionDescrs) (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected t.NextOption e.Tail =
     <DoSemantics-Analyze
+      t.EOG-Handler
       (e.OptionDescrs)
       <Semantics-NextOption
-        (e.OptionDescrs) t.hErrorList t.Collected t.NextOption
+        (e.OptionDescrs) (e.Counters) (e.Requireds)
+        t.hErrorList t.Collected t.NextOption
       >
       e.Tail
     >;
 
-  (e.OptionDescrs) t.hErrorList t.Collected =
+  (e.OptionDescrs) (e.Counters) (e.Requireds) t.hErrorList t.Collected =
     t.hErrorList Success t.Collected;
 }
 
 Semantics-NextOption {
-  (e.OptionDescrs-B (s.Num t.FnHandler e.Tweaks) e.OptionDescrs-E)
+  (e.OptionDescrs-B (s.Num s.Type t.FnHandler e.GroupInfo) e.OptionDescrs-E)
+  (e.Counters-B (s.Num s.Multiply e.Name) e.Counters-E)
+  (e.Requireds)
   t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
-    <MLambda::Apply
-      t.FnHandler
-      t.hErrorList t.Collected t.SrcPos (e.Param) (e.Group)
+    <Semantics-NextOption-Counters
+      s.Type t.FnHandler (e.GroupInfo)
+      (e.Counters-B) (s.Num s.Multiply e.Name) (e.Counters-E)
+      (e.Requireds)
+      t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group)
     >;
 }
+
+Semantics-NextOption-Counters {
+  s.Type t.FnHandler (e.GroupInfo)
+  (e.Counters-B) (s.Num OneTime-NotUsed e.Name) (e.Counters-E)
+  (e.Requireds)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-Requireds
+      (/* [Error] */) s.Type t.FnHandler (e.GroupInfo)
+      (e.Counters-B (s.Num OneTime-Used e.Name) e.Counters-E)
+      (e.Requireds)
+      t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group)
+    >;
+
+  s.Type t.FnHandler (e.GroupInfo)
+  (e.Counters-B) (s.Num OneTime-Used e.Name) (e.Counters-E)
+  (e.Requireds)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-Requireds
+      (Error) s.Type t.FnHandler (e.GroupInfo)
+      (e.Counters-B (s.Num OneTime-Used e.Name) e.Counters-E)
+      (e.Requireds)
+      <MError::CmdLine-AlreadyAppeared
+        t.hErrorList t.SrcPos e.Name
+      >
+      t.Collected ((t.SrcPos s.Num e.Param) e.Group)
+    >;
+
+  s.Type t.FnHandler (e.GroupInfo)
+  (e.Counters-B) (s.Num Multiply e.Name) (e.Counters-E)
+  (e.Requireds)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-Requireds
+      () s.Type t.FnHandler (e.GroupInfo)
+      (e.Counters-B (s.Num Multiply e.Name) e.Counters-E)
+      (e.Requireds)
+      t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group)
+    >;
+}
+
+Semantics-NextOption-Requireds {
+  (e.Errors) s.Type t.FnHandler (e.GroupInfo)
+  (e.Counters)
+  (e.Requireds-B (s.Num t.Optional e.Name) e.Requireds-E)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-SwParam
+      (e.Errors)
+      (<CheckNeedParam s.Type e.Param>) (e.Name)
+      t.FnHandler (e.GroupInfo)
+      (e.Counters)
+      (e.Requireds-B (s.Num Used e.Name) e.Requireds-E)
+      t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group)
+    >;
+}
+
+CheckNeedParam {
+  Naked NoParam = ;
+  Naked Param e.Param = & MError.CmdLine-DontExpectParam;
+
+  Param NoParam = & MError.CmdLine-ExpectParam;
+  Param Param e.Param = ;
+
+  ParamOpt NoParam = ;
+  ParamOpt Param e.Param = ;
+
+  Switch Param e.Param = ; // Всегда должно срабатывать.
+}
+
+Semantics-NextOption-SwParam {
+  (e.Errors) () (e.Name) t.FnHandler (e.GroupInfo)
+  (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-PrepareGroup
+      (e.Name) (e.Errors) t.FnHandler (e.GroupInfo)
+      (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group)
+    >;
+
+  (e.Errors) (s.FnError) (e.Name) t.FnHandler (e.GroupInfo)
+  (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-PrepareGroup
+      (e.Name) (e.Errors Error) t.FnHandler (e.GroupInfo)
+      (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group)
+    >;
+}
+
+Semantics-NextOption-PrepareGroup
+  (e.Name) (e.Errors) t.FnHandler (e.GroupInfo)
+  (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected ((t.SrcPos s.Num e.Param) e.Group) =
+    <Semantics-NextOption-SwGroup
+      (e.Name) (e.Errors) t.FnHandler
+      (<CheckNeedGroup (e.GroupInfo) e.Group>)
+      (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+    >;
+
+CheckNeedGroup {
+  (Required t.FnGroup e.FnGroupEx) Group e.Group =
+    Group (t.FnGroup e.FnGroupEx) e.Group;
+
+  (Required t.FnGroup e.FnGroupEx) /* пусто */ =
+    Error & MError.CmdLine-ExpectGroup;
+
+  (Optional t.FnGroup e.FnGroupEx) Group e.Group =
+    Group (t.FnGroup e.FnGroupEx) e.Group;
+
+  (Optional t.FnGroup e.FnGroupEx) /* пусто */ =
+    NoGroup;
+
+  ( /* пусто */ ) Group e.Group =
+    Error & MError.CmdLine-DontExpectGroup;
+
+  ( /* пусто */ ) /* пусто */ = NoGroup;
+}
+
+Semantics-NextOption-SwGroup {
+  (e.Name) (e.Errors) t.FnHandler
+  (Group (t.FnGroup e.FnGroupEx) e.Group)
+  (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected (t.SrcPos s.Num e.Param) =
+    <Semantics-NextOption-Process-Group
+      (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+      <Semantics
+        t.hErrorList e.Group
+        <CalcGroupHandler (t.FnGroup e.FnGroupEx) e.Param>
+      >
+      t.Collected (t.SrcPos s.Num e.Param)
+    >;
+
+  (e.Name) (e.Errors) t.FnHandler (NoGroup)
+  (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected (t.SrcPos s.Num e.Param) =
+    <Semantics-NextOption-Process
+      (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+      NoGroup
+    >;
+
+  (e.Name) (e.Errors) t.FnHandler
+  (Error s.FnError)
+  (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected (t.SrcPos s.Num e.Param) =
+    <Semantics-NextOption-Process
+      (Error e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+      <s.FnError t.hErrorList t.SrcPos e.Name>
+      t.Collected (t.SrcPos s.Num e.Param)
+      NoGroup
+    >;
+}
+
+CalcGroupHandler {
+  (t.FnGroupHandler) e.Param = t.FnGroupHandler;
+
+  (t.FnGroupHandler t.FnGroupHandlerEx) NoParam = t.FnGroupHandler;
+
+  (t.FnGroupHandler t.FnGroupHandlerEx) Param e.Param =
+    <MLambda::Parallel
+      t.FnGroupHandler
+      <MLambda::Apply t.FnGroupHandlerEx e.Param>
+    >;
+}
+
+Semantics-NextOption-Process-Group {
+  (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+  t.hErrorList Success t.GroupCollected
+  t.Collected (t.SrcPos s.Num e.Param) =
+    <Semantics-NextOption-Process
+      (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+      t.GroupCollected
+    >;
+
+  (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+  t.hErrorList Fails
+  t.Collected (t.SrcPos s.Num e.Param) =
+    <Semantics-NextOption-Process
+      (Error e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+      NoGroup
+    >;
+}
+
+Semantics-NextOption-Process {
+  () t.FnHandler (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+  t.GroupCollected =
+    (e.Counters) (e.Requireds)
+    <MLambda::Apply
+      t.FnHandler
+      t.hErrorList t.Collected t.SrcPos
+      <MakeArgParam e.Param> t.GroupCollected
+    >;
+
+  (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+  t.GroupCollected =
+    (e.Counters) (e.Requireds) t.hErrorList t.Collected;
+}
+
+MakeArgParam {
+  NoParam = NoParam;
+
+  Param e.Param = (e.Param);
+}
+
+ProcessOptionalFinalizers
+  t.hErrorList t.Collected e.Tail t.EOG-Handler t.EOG-SrcPos =
+    <MSelfDiag::Log '<ProcessOptionalFinalizers>'>
+    <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
+    <MSelfDiag::Log '  t.Collected = ' t.Collected>
+    <MSelfDiag::Log '  e.Tail = ' e.Tail>
+    <MSelfDiag::Log '  t.EOG-Handler = ' t.EOG-Handler>
+    <MSelfDiag::Log '  t.EOG-SrcPos = ' t.EOG-SrcPos>
+    <MSelfDiag::Log>
+    <?ProcessOptionalFinalizers
+      t.hErrorList t.Collected e.Tail t.EOG-Handler t.EOG-SrcPos
+    >;
+
+?ProcessOptionalFinalizers {
+  t.hErrorList t.Collected (s.Num Required-NotUsed e.Name)
+  e.Tail t.EOG-Handler t.EOG-SrcPos =
+    <ProcessOptionalFinalizers
+      <MError::CmdLine-AddMissedRequired
+        t.hErrorList t.EOG-SrcPos e.Name
+      >
+      t.Collected
+      e.Tail t.EOG-Handler t.EOG-SrcPos
+    >;
+
+  t.hErrorList t.Collected (s.Num Used e.Name)
+  e.Tail t.EOG-Handler t.EOG-SrcPos =
+    <ProcessOptionalFinalizers
+      t.hErrorList t.Collected
+      e.Tail t.EOG-Handler t.EOG-SrcPos
+    >;
+
+  t.hErrorList t.Collected (s.Num (Optional) e.Name)
+  e.Tail t.EOG-Handler t.EOG-SrcPos =
+    <ProcessOptionalFinalizers
+      t.hErrorList t.Collected
+      e.Tail t.EOG-Handler t.EOG-SrcPos
+    >;
+
+  t.hErrorList t.Collected (s.Num (Optional t.FnOptionalHandler) e.Name)
+  e.Tail t.EOG-Handler t.EOG-SrcPos =
+    <ProcessOptionalFinalizers
+      <MLambda::Apply
+        t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
+      >
+      e.Tail t.EOG-Handler t.EOG-SrcPos
+    >;
+
+  t.hErrorList t.Collected t.EOG-Handler t.EOG-SrcPos =
+    <Semantics-Analyze-AddSuccess
+      <MLambda::Apply
+        t.EOG-Handler t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
+      >
+    >;
+}
+
+Semantics-Analyze-AddSuccess
+  t.hErrorList t.Collected =
+    t.hErrorList Success t.Collected;
 
 $END CmdLine::MParser.

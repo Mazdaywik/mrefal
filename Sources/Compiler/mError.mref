@@ -168,6 +168,30 @@ $ENTRY CmdLine-DontExpectGroup
 //------------------------------------------------------------------------------
 
 /**
+  <CmdLine-AddMissedRequired t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY CmdLine-AddMissedRequired
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Expected option "-' e.Name '"'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CmdLine-AlreadyAppeared t.hErrorList t.SrcPos e.Name>
+    == t.hErrorList
+*/
+$ENTRY CmdLine-AlreadyAppeared
+  t.hErrorList t.SrcPos e.Name =
+    <AddCmdLineError
+      t.hErrorList t.SrcPos 'Option "-' e.Name '" already appeared'
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
   <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
     == t.UpdatedErrorList
 */

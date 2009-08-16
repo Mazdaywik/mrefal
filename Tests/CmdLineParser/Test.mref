@@ -19,19 +19,20 @@ TopLevelDescription =
       (Naked ('a') ('b') ('c'))
       & Handler
       Required
-      OneTime
+      Multiply
     )
     (
-      (Naked ('e') ('s') ('u') ('x'))
+      (Param ('e') ('s') ('u') ('x'))
       & Handler
       Required
-      OneTime
+      Multiply
+      Optional & TopLevelDescription
     )
     (
       (Switch (('v') ('w')) (('y')))
       & Handler
       Required
-      OneTime
+      Multiply
     )
     (
       (Naked (EOG))
@@ -45,6 +46,18 @@ TopLevelDescription =
     (
       (Param ('c') ('d'))
       & Handler
+      (Optional)
+      Multiply
+    )
+    (
+      (ParamOpt ('r'))
+      & Handler
+      (Optional)
+      Multiply
+    )
+    (
+      (Naked (EOG))
+      & Handler
       Required
       OneTime
     )
@@ -52,13 +65,21 @@ TopLevelDescription =
 
 EmptyBrackets = ();
 
-Handler
+Handler {
   t.hErrorList (e.Collected) t.SrcPos (e.Param) (e.Group) =
     t.hErrorList
     (e.Collected ((t.SrcPos ('?') e.Param) e.Group))
     <InOut::WriteLine>
-    <InOut::WriteLine 'Handler/param: ' e.Param>
-    <InOut::WriteLine 'Handler/group: ' e.Group>;
+    <InOut::WriteLine 'Handler/param/(): ' e.Param>
+    <InOut::WriteLine 'Handler/group/(): ' e.Group>;
+
+  t.hErrorList (e.Collected) t.SrcPos t.Param t.Group =
+    t.hErrorList
+    (e.Collected ((t.SrcPos ('?') t.Param) t.Group))
+    <InOut::WriteLine>
+    <InOut::WriteLine 'Handler/param/t: ' t.Param>
+    <InOut::WriteLine 'Handler/group/t: ' t.Group>;
+}
 
 FinishAnalyzeCmdLine {
   t.ErrorList Success (e.Collected) =

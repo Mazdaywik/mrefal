@@ -461,24 +461,58 @@ Semantics
     <MSelfDiag::Log>
     <?Semantics t.hErrorList e.ExCmdLine t.FnDescription>;
 
-?Semantics
-  t.hErrorList e.ExCmdLine t.FnDescription =
+?Semantics {
+  t.hErrorList
+  ((t.SrcPos (File) Param e.ProgName)) e.ExCmdLine
+  t.FnDescription =
+    <Semantics-Loop
+      t.hErrorList t.SrcPos e.ExCmdLine t.FnDescription
+    >;
+
+  t.hErrorList
+  ((t.SrcPos (File) Param e.ProgName) Group e.Group) e.ExCmdLine
+  t.FnDescription =
+    <Semantics-Loop
+      <MError::CmdLine-DontExpectGroup
+        t.hErrorList t.SrcPos 'Program name'
+      >
+      t.SrcPos e.ExCmdLine t.FnDescription
+    >;
+
+}
+
+Semantics-Loop
+  t.hErrorList t.SrcPos-Group e.ExCmdLine t.FnDescription =
+    <MSelfDiag::Log '<Semantics-Loop>'>
+    <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
+    <MSelfDiag::Log '  t.SrcPos-Group = ' t.SrcPos-Group>
+    <MSelfDiag::Log '  e.ExCmdLine = ' e.ExCmdLine>
+    <MSelfDiag::Log
+      '  <t.FnDescription> = '
+      <MLambda::Apply t.FnDescription>
+    >
+    <MSelfDiag::Log>
+    <?Semantics-Loop
+      t.hErrorList t.SrcPos-Group e.ExCmdLine t.FnDescription
+    >;
+
+?Semantics-Loop
+  t.hErrorList t.SrcPos-Group e.ExCmdLine t.FnDescription =
     <Semantics-Init
-      t.hErrorList (e.ExCmdLine)
+      t.hErrorList t.SrcPos-Group (e.ExCmdLine)
       <MLambda::Apply t.FnDescription>
     >;
 
 Semantics-Init {
-  t.hErrorList
-  (((t.SrcPos (File) Param e.ProgName)) t.EOG)
+  t.hErrorList t.SrcPos-Group (t.EOG)
   (t.DefaultInitializer e.Options) e.Descriptions =
     <Semantics-Analyze
       t.hErrorList (t.DefaultInitializer e.Options) t.EOG
     >;
 
-  t.hErrorList (t.ProgName e.Options) e.Description =
+  t.hErrorList t.SrcPos-Group (e.Options) e.Description =
     <Semantics-Init-Aux
-      t.hErrorList (t.ProgName e.Options)
+      t.hErrorList t.SrcPos-Group (e.Options)
       <MLambda::Map
         & CreateSetsMarkers e.Description
       >
@@ -512,8 +546,8 @@ CreateSetsMarkers-Aux-ScanDescr {
 }
 
 Semantics-Init-Aux {
-  t.hErrorList
-  (t.ProgName ((t.SrcPos (e.Name) e.Param) e.Group) e.Options)
+  t.hErrorList t.SrcPos-Group
+  (((t.SrcPos (e.Name) e.Param) e.Group) e.Options)
   e.Descriptions-B
   (
     e.Markers-B (e.Name) e.Markers-E t.Description
@@ -524,19 +558,20 @@ Semantics-Init-Aux {
       ((t.SrcPos (e.Name) e.Param) e.Group) e.Options
     >;
 
-  t.hErrorList
-  (t.ProgName ((t.SrcPos (e.Name) e.Param) e.Group) e.Options)
+  t.hErrorList t.SrcPos-Group
+  (((t.SrcPos (e.Name) e.Param) e.Group) e.Options)
   e.Descriptions =
     <Semantics-Init-Aux
       <MError::IllegalCmdLineArgument t.hErrorList t.SrcPos e.Name>
-      (t.ProgName e.Options) e.Descriptions
+      t.SrcPos-Group
+      (e.Options) e.Descriptions
     >;
 
-  t.hErrorList
-  (((t.SrcPos (File) e.ProgName) e.Group))
+  t.hErrorList t.SrcPos-Group ()
   e.Descriptions =
     <MError::AddCmdLineError
-      t.hErrorList t.SrcPos 'All command line arguments is invalid'
+      t.hErrorList t.SrcPos-Group
+      'All arguments in command line/group is invalid'
     >
     Fails;
 }
@@ -664,14 +699,7 @@ GetEOGHandler {
   t.Other e.Tail = <GetEOGHandler e.Tail>;
 }
 
-InitOneTime
-  e.Arg =
-    <MSelfDiag::Log '<InitOneTime>'>
-    <MSelfDiag::Log '  e.Arg = ' e.Arg>
-    <MSelfDiag::Log>
-    <?InitOneTime e.Arg>;
-
-?InitOneTime {
+InitOneTime {
   (EOG (s.Type (EOG)) e.Tweaks) = /* пусто */;
 
   (s.Num (e.Descrs) t.Handler t.Optional OneTime e.GroupInfo) =
@@ -921,8 +949,8 @@ Semantics-NextOption-SwGroup {
   t.hErrorList t.Collected (t.SrcPos s.Num e.Param) =
     <Semantics-NextOption-Process-Group
       (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
-      <Semantics
-        t.hErrorList e.Group
+      <Semantics-Loop
+        t.hErrorList t.SrcPos e.Group
         <CalcGroupHandler (t.FnGroup e.FnGroupEx) e.Param>
       >
       t.Collected (t.SrcPos s.Num e.Param)
@@ -982,6 +1010,29 @@ Semantics-NextOption-Process-Group {
 }
 
 Semantics-NextOption-Process {
+  (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+  t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+  t.GroupCollected =
+    <MSelfDiag::Log '<Semantics-NextOption-Process>'>
+    <MSelfDiag::Log '  e.Errors = ' e.Errors>
+    <MSelfDiag::Log '  t.FnHandler = ' t.FnHandler>
+    <MSelfDiag::Log '  e.Counters = ' e.Counters>
+    <MSelfDiag::Log '  e.Requireds = ' e.Requireds>
+    <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
+    <MSelfDiag::Log '  t.Collected = ' t.Collected>
+    <MSelfDiag::Log '  t.SrcPos = ' t.SrcPos>
+    <MSelfDiag::Log '  s.Num = ' s.Num>
+    <MSelfDiag::Log '  e.Param = ' e.Param>
+    <MSelfDiag::Log '  t.GroupCollected = ' t.GroupCollected>
+    <MSelfDiag::Log>
+    <?Semantics-NextOption-Process
+      (e.Errors) t.FnHandler (e.Counters) (e.Requireds)
+      t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
+      t.GroupCollected
+    >;
+}
+
+?Semantics-NextOption-Process {
   () t.FnHandler (e.Counters) (e.Requireds)
   t.hErrorList t.Collected (t.SrcPos s.Num e.Param)
   t.GroupCollected =
@@ -1046,6 +1097,7 @@ ProcessOptionalFinalizers
   e.Tail t.EOG-Handler t.EOG-SrcPos =
     <ProcessOptionalFinalizers
       <MLambda::Apply
+        t.FnOptionalHandler
         t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
       >
       e.Tail t.EOG-Handler t.EOG-SrcPos
@@ -1054,7 +1106,8 @@ ProcessOptionalFinalizers
   t.hErrorList t.Collected t.EOG-Handler t.EOG-SrcPos =
     <Semantics-Analyze-AddSuccess
       <MLambda::Apply
-        t.EOG-Handler t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
+        t.EOG-Handler
+        t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
       >
     >;
 }

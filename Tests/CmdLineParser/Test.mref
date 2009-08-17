@@ -3,6 +3,8 @@ $PROGRAM Test;
 $IMPORT InOut;
 $IMPORT CmdLine::MParser;
 $IMPORT MErrorList = MError;
+$IMPORT MLambda;
+$IMPORT MSrcPos;
 
 $ENTRY Go =
   <FinishAnalyzeCmdLine
@@ -15,71 +17,46 @@ $ENTRY Go =
 TopLevelDescription =
   (
     & EmptyBrackets
+    <MLambda::Map
+      & GenDescription 'abcdefghijklmnopqrstuvwxyz'
+    >
     (
-      (Naked ('a') ('b') ('c'))
-      & Handler
-      Required
-      Multiply
-    )
-    (
-      (Param ('e') ('s') ('u') ('x'))
-      & Handler
-      Required
+      (Param (File))
+      <MLambda::BindLeft & Handler 'File'>
+      (Optional <MLambda::BindLeft & Handler '[File]'>)
       Multiply
       Optional & TopLevelDescription
     )
     (
-      (Switch (('v') ('w')) (('y')))
-      & Handler
-      Required
-      Multiply
-    )
-    (
       (Naked (EOG))
-      & Handler
-      Required
-      OneTime
-    )
-  )
-  (
-    & EmptyBrackets
-    (
-      (Param ('c') ('d'))
-      & Handler
-      (Optional)
-      Multiply
-    )
-    (
-      (ParamOpt ('r'))
-      & Handler
-      (Optional)
-      Multiply
-    )
-    (
-      (Naked (EOG))
-      & Handler
+      <MLambda::BindLeft & Handler 'EOG'>
       Required
       OneTime
     )
   );
 
-EmptyBrackets = ();
+GenDescription
+  s.Letter =
+    (
+      (ParamOpt (s.Letter))
+      <MLambda::BindLeft & Handler s.Letter>
+      //(Optional <MLambda::BindLeft & Handler '[' s.Letter ']'>)
+      (Optional)
+      Multiply
+      Optional & TopLevelDescription
+    );
 
 Handler {
-  t.hErrorList (e.Collected) t.SrcPos (e.Param) (e.Group) =
+  e.Option t.hErrorList (e.Collected) t.SrcPos NoParam t.Group =
     t.hErrorList
-    (e.Collected ((t.SrcPos ('?') e.Param) e.Group))
-    <InOut::WriteLine>
-    <InOut::WriteLine 'Handler/param/(): ' e.Param>
-    <InOut::WriteLine 'Handler/group/(): ' e.Group>;
+    (e.Collected ((t.SrcPos (e.Option) '-') t.Group));
 
-  t.hErrorList (e.Collected) t.SrcPos t.Param t.Group =
+  e.Option t.hErrorList (e.Collected) t.SrcPos (e.Param) t.Group =
     t.hErrorList
-    (e.Collected ((t.SrcPos ('?') t.Param) t.Group))
-    <InOut::WriteLine>
-    <InOut::WriteLine 'Handler/param/t: ' t.Param>
-    <InOut::WriteLine 'Handler/group/t: ' t.Group>;
+    (e.Collected ((t.SrcPos (e.Option) e.Param) t.Group));
 }
+
+EmptyBrackets = ();
 
 FinishAnalyzeCmdLine {
   t.ErrorList Success (e.Collected) =
@@ -95,18 +72,17 @@ FinishAnalyzeCmdLine {
 WriteOptions {
   (e.Indent) = ;
 
-  (e.Indent) Group e.Tail = <WriteOptions (e.Indent) e.Tail>;
-
-  (e.Indent) ((t.SrcPos (e.Name) e.Param) e.Group) e.Tail =
+  (e.Indent) ((t.SrcPos (e.Name) e.Param) NoGroup) e.Tail =
     <InOut::WriteLine
-      e.Indent '+' e.Name ': ' e.Param t.SrcPos
+      e.Indent '+' e.Name ': ' e.Param ' (no group) '
+      <MSrcPos::ToString t.SrcPos> 
     >
-    <WriteOptions (e.Indent '  ') e.Group>
     <WriteOptions (e.Indent) e.Tail>;
 
-  (e.Indent) ((t.SrcPos s.Num e.Param) e.Group) e.Tail =
+  (e.Indent) ((t.SrcPos (e.Name) e.Param) (e.Group)) e.Tail =
     <InOut::WriteLine
-      e.Indent '+' s.Num ': ' e.Param t.SrcPos
+      e.Indent '+' e.Name ': ' e.Param ' '
+      <MSrcPos::ToString t.SrcPos>
     >
     <WriteOptions (e.Indent '  ') e.Group>
     <WriteOptions (e.Indent) e.Tail>;

@@ -87,9 +87,7 @@ CompilerCmdLine =
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =
-    //('echo ren ' e.Name ' ' <FileName e.NewName>)
-    //('ren \"' e.Name '\" ' <FileName e.NewName>);
-    ('copy \"' e.Name '\" \"' e.NewName '\"');
+    ('copy \"' e.Name '\" \"' e.NewName '\">nul');
 
   (NoRename e.Path) = ;
 }
@@ -110,8 +108,6 @@ GenFilename {
 
 GenRevRename {
   (Rename (e.Name) (e.NewName)) =
-    //('echo ren ' e.NewName ' ' <FileName e.Name>)
-    //('ren \"' e.NewName '\" ' <FileName e.Name>);
     ('del \"' e.NewName '\"');
 
   (NoRename e.Name) = ;

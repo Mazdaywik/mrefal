@@ -1,0 +1,290 @@
+﻿$MODULE Config::MLoad2;
+
+$IMPORT CmdLine::MParser;
+$IMPORT MError;
+$IMPORT MFileSystem;
+
+// Регистраторы
+
+$IMPORT Cpp-SR-BE::MInit;
+$IMPORT MSymModule;
+$IMPORT MXLinx;
+$IMPORT Refal5::MInit;
+$IMPORT SRefal-BE::MInit;
+
+/**
+  <Load t.hErrorList (e.Argument)>
+    == t.hErrorList Success t.Config (e.PtFileName)*
+    == t.hErrorList Fails
+*/
+$ENTRY Load
+  t.hErrorList e.CommandLine =
+    <Load-Aux
+      <CmdLine::MParser::Parse
+        t.hErrorList
+        & TopLevelDescription
+        e.CommandLine
+      >
+    >;
+
+Load-Aux {
+  t.hErrorList Success (Help e.Message) =
+    t.hErrorList Success (Help e.Message);
+
+  t.hErrorList Success (Config t.Config e.PtFiles) =
+    t.hErrorList Success t.Config e.PtFiles;
+
+  t.hErrorList Fails = t.hErrorList Fails;
+}
+
+TopLevelDescription =
+  (
+    & HelpConfig
+    ((Naked ('help') ('h') ('?') (EOG))
+      & HelpHandler
+      Required
+      Multiply
+    )
+  )
+  (
+    & RealConfig
+    ((Param (File))
+      & FileHandler
+      Required
+      Multiply
+      // Здесь возможно будет описание группы
+    )
+    ((Param ('MP'))
+      & ModulePathHandler
+      (Optional)
+      Multiply
+    )
+    ((Switch (('make')) (('build')) (('linkonly')))
+      & MakeModeHandler
+      Required
+      OneTime
+    )
+    ((Param ('be') ('profile'))
+      & BackEndSelectorHandler
+      Required
+      OneTime
+    )
+    ((Naked ('xlinx'))
+      & XLinxOnHandler
+      (Optional)
+      OneTime
+    )
+    ((Param ('tune-be'))
+      & TuneBEHandler
+      (Optional)
+      Multiply
+      Required & TuneBEGroup
+    )
+    ((Param ('tune-fe'))
+      & TuneFEHandler
+      (Optional)
+      Multiply
+      Required & TuneFEGroup
+    )
+    ((Naked (EOG))
+      & EOGHandler
+      Required
+      OneTime
+    )
+  );
+
+HelpConfig =
+  (Help
+    ('Printing help for compiler')
+    ('use mrefal -foo -bar')
+  );
+
+HelpHandler
+  t.hErrorList t.Help t.SrcPos NoParam NoGroup =
+    t.hErrorList t.Help;
+
+RealConfig = ();
+
+FileHandler {
+  t.hErrorList
+  (e.Config-B (Files e.Files) e.Config-E)
+  t.SrcPos (e.FileName) NoGroup =
+    t.hErrorList
+    (e.Config-B (Files e.Files (e.FileName)) e.Config-E);
+
+  t.hErrorList (e.Config) t.SrcPos (e.FileName) NoGroup =
+    t.hErrorList (e.Config (Files (e.FileName)));
+}
+
+ModulePathHandler
+  t.hErrorList (e.Config) t.SrcPos (e.StrPath) NoGroup =
+    <ModulePath-IsCorrectPath
+      t.hErrorList (e.Config) t.SrcPos (e.StrPath)
+      <MFileSystem::PathFromStr e.StrPath>
+    >;
+
+ModulePath-IsCorrectPath {
+  t.hErrorList
+  (e.Config-B (ModulePath e.Paths) e.Config-E)
+  t.SrcPos (e.StrPath)
+  Success e.PtPath =
+    t.hErrorList
+    (e.Config-B (ModulePath e.Paths (e.PtPath)) e.Config-E);
+
+  t.hErrorList (e.Config) t.SrcPos (e.SrcPath)
+  Success e.PtPath =
+    t.hErrorList
+    (e.Config (ModulePath (e.PtPath)));
+
+  t.hErrorList (e.Config) t.SrcPos (e.StrPath) Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Incorrect path \'' e.StrPath '\''
+    >
+    (e.Config);
+}
+
+MakeModeHandler
+  t.hErrorList (e.Config) t.SrcPos (e.Mode) NoGroup =
+    t.hErrorList
+    (e.Config (Mode <MakeModeFromStr e.Mode>));
+
+MakeModeFromStr {
+  'make' = Make; 'build' = Build; 'linkonly' = LinkOnly;
+}
+
+BackEndSelectorHandler
+  t.hErrorList (e.Config) t.SrcPos (e.BackEnd) NoGroup =
+    <SwBackEndSelector
+      t.hErrorList (e.Config) t.SrcPos (e.BackEnd)
+      <ProfileBackEnd>
+    >;
+
+SwBackEndSelector {
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName)
+  e.BEProfiles-B
+  (s.ProfileName (e.Depended) e.Names-B (e.BackEndName) e.Names-E)
+  e.BEProfiles-E =
+    t.hErrorList
+    (<AddProfile s.ProfileName (e.Depended) e.Config>);
+
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) e.BEProfiles =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Unknown profile \"' e.BackEndName '\"'
+    >
+    (e.Config);
+}
+
+AddProfile {
+  s.Profile (e.Depended) e.Config-B XLinxOn e.Config-E =
+    e.Config-B e.Config-E (Profile s.Profile (e.Depended XLinx-BE));
+
+  s.Profile (e.Depended) e.Config =
+    e.Config (Profile s.Profile (e.Depended));
+}
+
+XLinxOnHandler {
+  t.hErrorList
+  (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E)
+  t.SrcPos NoParam NoGroup =
+    t.hErrorList
+    (e.Config-B (Profile s.Profile (e.Depended XLinx-BE)) e.Config-E);
+
+  t.hErrorList (e.Config) t.SrcPos NoParam NoGroup =
+    t.hErrorList (e.Config XLinxOn);
+}
+
+EOGHandler
+  t.hErrorList
+  (e.Config-B (Files e.Files) e.Config-E) =
+    <EOGHandler-Aux-MakeMode
+      t.hErrorList
+      (Files e.Files)
+      (e.Config-B e.Config-E)
+    >;
+
+EOGHandler-Aux-MakeMode
+  t.hErrorList
+  (Files e.Files)
+  (e.Config-B (Mode s.Mode) e.Config-E) =
+    <EOGHandler-Aux-Profile
+      t.hErrorList
+      (Files e.Files)
+      (Mode s.Mode)
+      (e.Config-B e.Config-E)
+    >;
+
+EOGHandler-Aux-Profile
+  t.hErrorList
+  (Files e.Files)
+  (Mode s.Mode)
+  (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E) =
+    ///
+    @#$@!#$@$@!$;
+
+//------------------------------------------------------------------------------
+
+BackEndsTable =
+  (Refal5BE
+    ('Refal5')
+    ((Relative) ('~ROut'))
+    ('rout')
+    & Refal5.MInit.Register
+    & ExtentNone
+  )
+  (SymInfo
+    ('SymInfo')
+    ((Relative) ('~Defs'))
+    ('rsym')
+    & MSymModule.Register
+    & ExtentNone
+  )
+  (
+    XLinxBE
+    ('XLinx')
+    ((Relative) ('~XLinx'))
+    ('xlinx')
+    & MXLinx.Register
+    & ExtentNone
+  )
+  (SRefal-BE
+    ('SRefal-BE')
+    ((Relative) ('~SimRef'))
+    ('sref')
+    & SRefal-BE.MInit.Register
+    & ExtentNone
+  )
+  (Cpp-SR-BE
+    ('Cpp-SR-BE')
+    ((Relative) ('~CppSR'))
+    ('cpp')
+    & Cpp-SR-BE.MInit.Register
+    & ExtentNone
+  );
+
+ExtentNone = ;
+
+ProfileBackEnd =
+  (Refal5 (Refal5BE SymInfo) ('Refal5') ('R5'))
+  (SimpleRefal (SRefal-BE SymInfo)
+    ('SRefal') ('Simple') ('SimpleRefal') ('SR')
+  )
+  (Cpp-SR (Cpp-SR-BE SymInfo) ('CPPSR'));
+
+//$ENTRY DefTuners =
+//  (TuneFE MRefal_FrontEnd ('mref'));
+//
+//$ENTRY TunerName {
+//  MRefal_FrontEnd = 'MRefal';
+//}
+//
+//$ENTRY EndMakerFunc {
+//  MRefal_FrontEnd = & MRefal-FE.MInit.Register;
+//}
+//
+//$ENTRY SelectLowFrontEnd {
+//  'MRefal' = (MRefal_FrontEnd ('mref'));
+//  e.Other = Unknown (e.Other);
+//}
+
+
+$END Config::MLoad2.

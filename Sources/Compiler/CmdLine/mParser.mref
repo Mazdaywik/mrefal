@@ -11,24 +11,22 @@ $IMPORT Math;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
-$IMPORT MOS;
 $IMPORT MSrcPos;
 $IMPORT MStrings;
 
 /**
-  <Parse t.hErrorList t.FnCmdLineDescription>
+  <Parse t.hErrorList t.FnCmdLineDescription e.ArgList>
     == t.hErrorList Success t.Collected
     == t.hErrorList Fails
 */
 $ENTRY Parse
-  t.hErrorList t.FnCmdLineDescription =
+  t.hErrorList t.FnCmdLineDescription e.ArgList =
     <Parse-SwErrors
       t.hErrorList
       <Semantics
         <Syntax
           <Lexer
-            <MError::CreateErrList>
-            <MOS::ArgList>
+            <MError::CreateErrList> e.ArgList
           >
         >
         t.FnCmdLineDescription
@@ -794,6 +792,7 @@ DoSemantics-Analyze
   t.hErrorList t.Collected
   ((t.EOG-SrcPos EOG NoParam) /* без группы */) =
     <ProcessOptionalFinalizers
+      NoMissedRequireds
       t.hErrorList t.Collected e.Requireds t.EOG-Handler t.EOG-SrcPos
     >;
 
@@ -1056,22 +1055,27 @@ MakeArgParam {
 }
 
 ProcessOptionalFinalizers
+  s.HasMissedRequireds
   t.hErrorList t.Collected e.Tail t.EOG-Handler t.EOG-SrcPos =
     <MSelfDiag::Log '<ProcessOptionalFinalizers>'>
+    <MSelfDiag::Log '  s.HasMissedRequireds = ' s.HasMissedRequireds>
     <MSelfDiag::Log '  t.hErrorList = ' t.hErrorList>
     <MSelfDiag::Log '  t.Collected = ' t.Collected>
     <MSelfDiag::Log '  e.Tail = ' e.Tail>
     <MSelfDiag::Log '  t.EOG-Handler = ' t.EOG-Handler>
     <MSelfDiag::Log '  t.EOG-SrcPos = ' t.EOG-SrcPos>
     <MSelfDiag::Log>
-    <?ProcessOptionalFinalizers
+    <?DoProcessOptionalFinalizers
+      s.HasMissedRequireds
       t.hErrorList t.Collected e.Tail t.EOG-Handler t.EOG-SrcPos
     >;
 
-?ProcessOptionalFinalizers {
+?DoProcessOptionalFinalizers {
+  s.HasMissedRequireds
   t.hErrorList t.Collected (s.Num Required-NotUsed e.Name)
   e.Tail t.EOG-Handler t.EOG-SrcPos =
     <ProcessOptionalFinalizers
+      FoundMissedRequireds
       <MError::CmdLine-AddMissedRequired
         t.hErrorList t.EOG-SrcPos e.Name
       >
@@ -1079,23 +1083,29 @@ ProcessOptionalFinalizers
       e.Tail t.EOG-Handler t.EOG-SrcPos
     >;
 
+  s.HasMissedRequireds
   t.hErrorList t.Collected (s.Num Used e.Name)
   e.Tail t.EOG-Handler t.EOG-SrcPos =
     <ProcessOptionalFinalizers
+      s.HasMissedRequireds
       t.hErrorList t.Collected
       e.Tail t.EOG-Handler t.EOG-SrcPos
     >;
 
+  s.HasMissedRequireds
   t.hErrorList t.Collected (s.Num (Optional) e.Name)
   e.Tail t.EOG-Handler t.EOG-SrcPos =
     <ProcessOptionalFinalizers
+      s.HasMissedRequireds
       t.hErrorList t.Collected
       e.Tail t.EOG-Handler t.EOG-SrcPos
     >;
 
+  s.HasMissedRequireds
   t.hErrorList t.Collected (s.Num (Optional t.FnOptionalHandler) e.Name)
   e.Tail t.EOG-Handler t.EOG-SrcPos =
     <ProcessOptionalFinalizers
+      s.HasMissedRequireds
       <MLambda::Apply
         t.FnOptionalHandler
         t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
@@ -1103,6 +1113,7 @@ ProcessOptionalFinalizers
       e.Tail t.EOG-Handler t.EOG-SrcPos
     >;
 
+  NoMissedRequireds
   t.hErrorList t.Collected t.EOG-Handler t.EOG-SrcPos =
     <Semantics-Analyze-AddSuccess
       <MLambda::Apply
@@ -1110,6 +1121,10 @@ ProcessOptionalFinalizers
         t.hErrorList t.Collected t.EOG-SrcPos NoParam NoGroup
       >
     >;
+
+  FoundMissedRequireds
+  t.hErrorList t.Collected t.EOG-Handler t.EOG-SrcPos =
+    t.hErrorList Fails;
 }
 
 Semantics-Analyze-AddSuccess

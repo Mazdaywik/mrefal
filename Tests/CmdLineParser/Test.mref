@@ -4,6 +4,7 @@ $IMPORT InOut;
 $IMPORT CmdLine::MParser;
 $IMPORT MErrorList = MError;
 $IMPORT MLambda;
+$IMPORT MOS;
 $IMPORT MSrcPos;
 
 $ENTRY Go =
@@ -11,6 +12,7 @@ $ENTRY Go =
     <CmdLine::MParser::Parse
       <MErrorList::CreateErrList>
       & TopLevelDescription
+      <MOS::ArgList>
     >
   >;
 
@@ -33,6 +35,18 @@ TopLevelDescription =
       Required
       OneTime
     )
+    //(
+    //  (Naked ('YYY'))
+    //  <MLambda::BindLeft & Handler 'YYY'>
+    //  Required
+    //  OneTime
+    //)
+    //(
+    //  (Naked ('ZZZ'))
+    //  <MLambda::BindLeft & Handler 'YYY'>
+    //  Required
+    //  OneTime
+    //)
   );
 
 GenDescription
@@ -48,10 +62,12 @@ GenDescription
 
 Handler {
   e.Option t.hErrorList (e.Collected) t.SrcPos NoParam t.Group =
+    //<InOut::WriteLine 'Handler ' e.Option ' no param'>
     t.hErrorList
     (e.Collected ((t.SrcPos (e.Option) '-') t.Group));
 
   e.Option t.hErrorList (e.Collected) t.SrcPos (e.Param) t.Group =
+    //<InOut::WriteLine 'Handler ' e.Option ' -> ' e.Param>
     t.hErrorList
     (e.Collected ((t.SrcPos (e.Option) e.Param) t.Group));
 }

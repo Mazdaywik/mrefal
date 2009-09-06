@@ -1,4 +1,4 @@
-$MODULE Config::MLoad;
+$MODULE Config::MLoad1;
 
 $IMPORT MCmdLineParser = Config::MCmdLineParser;
 $IMPORT MConfig = Config::MConfig;
@@ -188,4 +188,4 @@ InitConfig-XLinx {
 InitConfig-Files
   t.Config (Files e.PtFiles) = t.Config e.PtFiles;
 
-$END Config::MLoad.
+$END Config::MLoad1.

@@ -56,6 +56,11 @@ $ENTRY Create {
 }
 
 $ENTRY NextChar {
+  [SymStream 1 t.FInput (e.FileName)] =
+    <NextChar-CheckUTF-8
+      <CheckEnd (e.FileName) <FileIO::ReadLine t.FInput>>
+    >;
+
   [SymStream s.LineNumber t.FInput (e.FileName)] =
     <NextChar
       [SymStream
@@ -84,6 +89,29 @@ CheckEnd {
   (e.FileName) t.FInput e.Line = t.FInput (e.FileName) e.Line CrLf;
 }
 
+NextChar-CheckUTF-8 {
+  t.FInput (e.FileName) s.BOM1 s.BOM2 s.BOM3 s.Next e.Tail =
+    <SwNextChar-CheckUTF-8
+      t.FInput (e.FileName)
+      <MStrings::Ord s.BOM1 s.BOM2 s.BOM3>
+      s.BOM1 s.BOM2 s.BOM3 s.Next e.Tail
+    >;
+
+  t.FInput (e.FileName) e.OtherLine =
+    <NextChar-Init t.FInput (e.FileName) e.OtherLine>;
+}
+
+NextChar-Init
+  t.FInput (e.FileName) e.Buffer =
+    <NextChar [SymStream 1 t.FInput (e.FileName) e.Buffer]>;
+
+SwNextChar-CheckUTF-8 {
+  t.FInput (e.FileName) 239 187 191 s.BOM1 s.BOM2 s.BOM3 e.Tail =
+    <NextChar-Init t.FInput (e.FileName) e.Tail>;
+
+  t.FInput (e.FileName) s.Num1 s.Num2 s.Num3 e.Tail =
+    <NextChar-Init t.FInput (e.FileName) e.Tail>;
+}
 
 $ENTRY Destroy
   [SymStream s.LineNumber t.FInput (e.FileName) e.Buffered] =

@@ -1,0 +1,229 @@
+newtype Cont r a = Cont { runCont :: ((a -> r) -> r) }
+
+class (Monad m) => Monad m where
+  callCC :: ((a -> m b) -> m a) -> m a
+
+instance Monad (Cont r) where
+  return a       = Cont $ \k -> k a
+  (Cont c) >>= f = Cont $ \k -> c (\a -> runCont (f a) k)
+
+instance MonadCont (Cont r) where
+  callCC f = Cont $ \k -> runCont (f (\a -> Cont $ \_ -> k a)) k
+
+(>>=) :: m a -> (a -> m b) -> m b
+
+((a -> r) -> r) >>= (a -> ((b -> r) -> r)) -> ((b -> r) -> r)
+
+f :: a -> m b
+f :: a -> (b -> r) -> r
+
+
+f :: a -> b
+g :: b -> c
+
+h :: a -> c
+h aa = g f aa
+
+f :: a -> (b -> r) -> r
+g :: b -> (c -> r) -> r
+
+h :: a -> (c -> r) -> r
+h aa k = f aa (\bb -> g bb k)
+
+ff = res
+
+ff k = k res
+
+
+h aa = \k -> f aa (\bb -> g bb k)
+
+bind :: ((a -> r) -> r) -> (a -> ((b -> r) -> r)) -> (b -> r) -> r
+bind f g k = f (\a -> g a k)
+
+callCC :: ((a -> (b -> r) -> r) -> (a -> r) -> r) -> (a -> r) -> r
+callCC f k = f (\a k1 -> k a) k
+
+in_cont :: (a -> (b -> r) -> r) -> (a -> r) -> r
+in_cont exit k = if ... then k a1 else exit a2 k
+
+
+
+data IOTree
+    = PutChar Char
+    | IOTree `Then` IOTree
+    | NoOp
+    | GetChar (Char -> IOTree)
+
+getLine :: (String -> IOTree) -> IOTree
+getLine f = getLine' id
+    where
+    getLine' s = GetChar $ \ch ->
+        case ch of
+            '\n' -> f (s "")
+            _ -> getLine' \str -> s ch:str
+
+putLineIOTree :: String -> IOTree
+putLineIOTree []      = PutChar '\n'
+putLineIOTree ch:tail = (PutChar ch) `Then` putLineIOTree tail
+
+genTree str =
+  GetChar $ \ch ->
+    case ch of
+      '\n' -> putLineIOTree str
+      _ -> genTree ch:str
+
+
+newtype IO a = IO { runIO :: (a -> IOTree) -> IOTree }
+
+instance Monad IO where
+    return x = IO ($ x)
+    IO m >>= f = IO $ \c -> m (\a -> runIO (f a) c)
+
+
+putchar :: Char -> IO ()
+putchar :: Char -> (() -> IOTree) -> IOTree
+putchar ch = \k -> 
+
+
+getchar :: IO Char
+getchar :: (Char -> IOTree) -> IOTree
+getchar = IO $ GetChar
+
+-----------------------------------
+
+bind m f = \c -> m (\a -> f a c)
+
+getchar :: (Char -> IOTree) -> IOTree
+getchar func = GetChar func
+
+bind getchar (\ch1 -> bind getchar (\ch2 -> f ch1 ch2))
+\c -> GetChar (\a -> (\ch1 -> bind getchar (\ch2 -> f ch1 ch2)) a c)
+\c -> GetChar (\a -> (\ch1 -> \c1 -> GetChar (\a1 -> ((\ch2 -> f ch1 ch2) a1 c1) ) ) a c)
+\c -> GetChar (\a -> (\ch1 -> \c1 -> GetChar (\a1 -> (f ch1 a1 c1) ) ) a c)
+\c -> GetChar (\a -> (\c1 -> GetChar (\a1 -> (f a a1 c1) ) ) c)
+\c -> GetChar (\a -> GetChar (\a1 -> (f a a1 c)) )
+
+f :: Char -> Char -> (() -> IOTree) -> IOTree
+f = \c1 -> \c2 -> \k -> (PutChar c1) `Then` (PutChar c2) `Then` k ()
+
+\c -> GetChar (\a -> GetChar (\a1 -> ( (\c1 -> \c2 -> \k -> (PutChar c1) `Then` (PutChar c2) `Then` k ()) a a1 c)) )
+\c -> GetChar (\a -> GetChar (\a1 -> ( (\c2 -> \k -> (PutChar a) `Then` (PutChar c2) `Then` k ()) a1 c)) )
+\c -> GetChar (\a -> GetChar (\a1 -> ((PutChar a) `Then` (PutChar a1) `Then` c ())) )
+
+(\c -> GetChar (\a -> GetChar (\a1 -> ((PutChar a) `Then` (PutChar a1) `Then` c ())) )) \() -> NoOp
+GetChar \a -> GetChar \a1 -> (PutChar a) `Then` (PutChar a1) `Then` NoOp
+
+putchar :: Char -> (() -> IOTree) -> IOTree
+putchar = \ch -> \k -> (PutChar ch) `Then` k ()
+
+putchar 'a' `bind` \_ -> putchar 'b'
+\c -> putchar 'a' (\a -> (\_ -> putchar 'b') a c)
+\c -> putchar 'a' (\a -> putchar 'b' c)
+\c -> (\ch -> \k -> (PutChar ch) `Then` (k ())) 'a' (\a -> (\ch -> \k -> (PutChar ch) `Then` (k ())) 'b' c)
+\c -> (\k -> (PutChar 'a') `Then` (k ())) (\a -> (\k -> (PutChar 'b') `Then` (k ())) c)
+\c -> ((PutChar 'a') `Then` ((\a -> (\k -> (PutChar 'b') `Then` (k ())) c) ()))
+\c -> ((PutChar 'a') `Then` ((PutChar 'b') `Then` (c ())))
+
+(\c -> ((PutChar 'a') `Then` ((PutChar 'b') `Then` (c ())))) \() -> NoOp
+(PutChar 'a') `Then` ((PutChar 'b') `Then` NoOp)
+
+
+getchar >>= \ch -> g ch
+IO GetChar >>= \ch -> g ch
+IO $ \c -> GetChar (\a -> runIO ((\ch -> g ch) a) c)
+\c -> GetChar (\a -> g a c)
+
+//------------------------------------------------------------------------------
+
+ret x = ($ x)
+ret x = \f -> f x
+
+bind m f = \c -> m (\a -> f a c)
+
+Return {
+  e.Value = { s.Cont = <s.Cont e.Value>; };
+}
+
+Bind {
+  t.M-Start = t.M-Start;
+
+  t.M-Start s.FnM-Bind e.Binds =
+    <Bind
+      <Bind-Aux t.M-Start s.FnM-Bind> e.Binds
+    >;
+}
+
+Bind-Aux {
+  s.M-Start s.Fn-Bind =
+    {
+      s.Cont =
+        <s.M-Start
+          { e.Value = <<s.FnBind e.Value> s.Cont>
+        >;
+    };
+}
+
+<Bind-Aux <Return 'Foo'> { e.Arg = <Return e.Arg 'bar'> } >
+<Bind-Aux { s.Cont = <s.Cont 'Foo'> } { e.Arg = <Return e.Arg 'bar'> }>
+{ s.Cont1 = < {s.Cont = <s.Cont 'Foo>} { e.Value = << {e.Arg = <Return e.Arg 'bar'>} e.Value > s.Cont1 >} > }
+
+<<Bind-Aux ...> { e.Arg = e.Arg }>
+
+< { s.Cont1 = < {s.Cont = <s.Cont 'Foo>} { e.Value = << {e.Arg = <Return e.Arg 'bar'>} e.Value > s.Cont1 >} > } { e.Arg1 = e.Arg1 } >
+< {s.Cont = <s.Cont 'Foo'>} { e.Value = << {e.Arg = <Return e.Arg 'bar'>} e.Value > { e.Arg1 = e.Arg1 } >} >
+<
+  {
+    e.Value =
+      <
+        <{e.Arg = <Return e.Arg 'bar'>} e.Value>
+        { e.Arg1 = e.Arg1 }
+      >
+  }
+  'Foo'
+>
+<
+  <{e.Arg = <Return e.Arg 'bar'>} 'Foo'>
+  { e.Arg1 = e.Arg1 }
+>
+<<Return 'Foobar'> { e.Arg1 = e.Arg1 }>
+<{ s.Cont = <s.Cont 'Foobar'> } { e.Arg1 = e.Arg1 }>
+<{ e.Arg1 = e.Arg1 } 'Foobar'>
+'Foobar'
+
+data IOTree
+    = PutChar Char
+    | IOTree `Then` IOTree
+    | NoOp
+    | GetChar (Char -> IOTree)
+
+getchar :: (Char -> IOTree) -> IOTree
+getchar func = GetChar func
+
+putchar :: Char -> (() -> IOTree) -> IOTree
+putchar = \ch -> \k -> (PutChar ch) `Then` k ()
+
+perform :: ((() -> IOTree) -> IOTree) -> IOTree
+performt io = io \() -> NoOp
+
+
+/*
+  t.IOTree ::=
+    (PutChar s.Char) |
+    (t.IOTree1 Then t.IOTree2) |
+    (NoOp)
+    (GetChar s.FnGetChar)
+
+  <s.FnGetChar s.Char> == t.IOTree
+*/
+
+GetChar = { s.IOFunc = (GetChar s.IOFunc) };
+
+PutChar s.Char = { s.IOFunc = ((PutChar s.Char) Then <s.IOFunc>) };
+
+Perform s.IOFunc = <s.IOFunc { = (NoOp); }>;
+
+
+
+
+
+

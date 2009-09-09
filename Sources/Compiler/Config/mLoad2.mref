@@ -195,7 +195,7 @@ XLinxOnHandler {
 
 EOGHandler
   t.hErrorList
-  (e.Config-B (Files e.Files) e.Config-E) =
+  (e.Config-B (Files e.Files) e.Config-E) t.SrcPos NoParam NoGroup =
     <EOGHandler-Aux-MakeMode
       t.hErrorList
       (Files e.Files)
@@ -218,8 +218,74 @@ EOGHandler-Aux-Profile
   (Files e.Files)
   (Mode s.Mode)
   (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E) =
-    ///
-    @#$@!#$@$@!$;
+    <EOGHandler-Aux-Depended
+      t.hErrorList
+      (Files e.Files)
+      (Mode s.Mode)
+      (Profile s.Profile)
+      (e.Depended)
+      (e.Config-B e.Config-E)
+    >;
+
+//------------------------------------------------------------------------------
+
+TuneBEGroup =
+  (
+    & TuneEndConfig
+    ((Param ('ext'))
+      & ExtHandler
+      (Optional)
+      OneTime
+    )
+    ((Param ('dir'))
+      & DirHandler
+      (Optional)
+      OneTime
+    )
+    ((Naked (File))
+      & TunerEOGHandler
+      Required
+      OneTime
+    )
+  );
+
+TuneBEHandler {
+  t.hErrorList
+  (e.Config-B (BackEnd (e.BackEndName) e.Options) e.Config-E)
+  t.SrcPos (e.BackEndName) (e.NewOptions) =
+    <MergeOptions
+      t.hErrorList
+      (e.Config-B) (e.Config-E)
+      t.SrcPos
+      BackEnd
+      (e.BackEndName)
+      (/* merged options */)
+      (e.Options)
+      (e.NewOptions)
+    >;
+
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) t.BEGroup =
+    ;
+}
+
+MergeOptions {
+  t.hErrorList (e.Config-B) (e.Config-E)
+  t.SrcPos s.EndType (e.EndName)
+  (e.Merged)
+  ((s.NextOption t.OldSrcPos e.OldValue) e.OldOptions)
+  (e.NewOptions-B (s.NextOption t.NewSrcPos e.NewValue) e.NewOptions-E) =
+    <MergeOptions
+      <MError::AddCmdLineError
+        t.SrcPos s.NewSrcPos 'Redefinition of option'
+      >
+      (e.Config-B) (e.Config-E)
+      t.SrcPos s.EndType (e.EndName)
+      (e.Merged
+        (s.NextOption t.OldSrcPos e.OldValue)
+      )
+      (e.OldOptions) (e.NewOptions-B e.NewOptions-E)
+    >;
+}
 
 //------------------------------------------------------------------------------
 

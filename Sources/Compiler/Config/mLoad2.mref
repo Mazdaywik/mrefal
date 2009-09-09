@@ -249,6 +249,42 @@ TuneBEGroup =
     )
   );
 
+TuneEndConfig = ();
+
+ExtHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.Ext) NoGroup =
+    /*
+      Возможно, здесь следует встроить проверку на корректность расширения.
+    */
+    t.hErrorList
+    (e.TunerConfig (Ext ('ext') t.SrcPos e.Ext));
+
+DirHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.StrDirectory) NoGroup =
+    <DirHandler-SwCorrectDir
+      t.hErrorList (e.TunerConfig) t.SrcPos
+      (e.StrDirectory)
+      <MFileSystem::PathFromStr e.StrDirectory>
+    >;
+
+DirHandler-SwCorrectDir {
+  t.hErrorList (e.TunerConfig) t.SrcPos
+  (e.StrDirectory) Success (e.PtDirectory) =
+    t.hErrorList
+    (e.TunerConfig (Dir ('dir') t.SrcPos e.PtDirectory));
+
+  t.hErrorList (e.TunerConfig) t.SrcPos
+  (e.StrDirectory) Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Illegal folder path'
+    >
+    (e.TunerConfig);
+}
+
+TunerEOGHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos NoParam NoGroup =
+    t.hErrorList (e.TunerConfig);
+
 TuneBEHandler {
   t.hErrorList
   (e.Config-B (BackEnd (e.BackEndName) e.Options) e.Config-E)
@@ -264,27 +300,52 @@ TuneBEHandler {
       (e.NewOptions)
     >;
 
-  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) t.BEGroup =
-    ;
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) (e.Options) =
+    t.hErrorList (e.Config (BackEnd (e.BackEndName) e.Options));
 }
 
 MergeOptions {
   t.hErrorList (e.Config-B) (e.Config-E)
   t.SrcPos s.EndType (e.EndName)
   (e.Merged)
-  ((s.NextOption t.OldSrcPos e.OldValue) e.OldOptions)
-  (e.NewOptions-B (s.NextOption t.NewSrcPos e.NewValue) e.NewOptions-E) =
+  ((s.NextOption (e.Name) t.OldSrcPos e.OldValue) e.OldOptions)
+  (e.NewOptions-B (s.NextOption (e.Name) t.NewSrcPos e.NewValue) e.NewOptions-E) =
     <MergeOptions
       <MError::AddCmdLineError
-        t.SrcPos s.NewSrcPos 'Redefinition of option'
+        t.SrcPos t.NewSrcPos 'Redefinition of option \'-' e.Name '\''
       >
       (e.Config-B) (e.Config-E)
       t.SrcPos s.EndType (e.EndName)
       (e.Merged
-        (s.NextOption t.OldSrcPos e.OldValue)
+        (s.NextOption (e.Name) t.OldSrcPos e.OldValue)
       )
       (e.OldOptions) (e.NewOptions-B e.NewOptions-E)
     >;
+
+  t.hErrorList (e.Config-B) (e.Config-E)
+  t.SrcPos s.EndType (e.EndName)
+  (e.Merged)
+  ((s.NextOption (e.Name) t.SrcPos e.Value) e.OldOptions)
+  (e.NewOptions) =
+    <MergeOptions
+      t.hErrorList (e.Config-B) (e.Config-E)
+      t.SrcPos s.EndType (e.EndName)
+      (e.Merged
+        (s.NextOption (e.Name) t.SrcPos e.Value)
+      )
+      (e.OldOptions) (e.NewOptions)
+    >;
+
+  t.hErrorList (e.Config-B) (e.Config-E)
+  t.SrcPos s.EndType (e.EndName)
+  (e.Merged) (/* old options */)
+  (e.NewOptions) =
+    t.hErrorList
+    (
+      e.Config-B
+      (s.EndType (e.EndName) e.Merged e.NewOptions)
+      e.Config-E
+    );
 }
 
 //------------------------------------------------------------------------------

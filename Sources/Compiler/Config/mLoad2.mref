@@ -56,7 +56,7 @@ TopLevelDescription =
     )
     ((Param ('MP'))
       & ModulePathHandler
-      (Optional)
+      (Optional & DefaultModulePathHandler)
       Multiply
     )
     ((Switch (('make')) (('build')) (('linkonly')))
@@ -143,6 +143,12 @@ ModulePath-IsCorrectPath {
     (e.Config);
 }
 
+DefaultModulePathHandler
+  t.hErrorList (e.Config) t.SrcPos NoParam NoGroup =
+    <ModulePathHandler
+      t.hErrorList (e.Config) t.SrcPos ('.') NoGroup
+    >;
+
 MakeModeHandler
   t.hErrorList (e.Config) t.SrcPos (e.Mode) NoGroup =
     t.hErrorList
@@ -203,29 +209,98 @@ EOGHandler
     >;
 
 EOGHandler-Aux-MakeMode
-  t.hErrorList
-  (Files e.Files)
+  t.hErrorList (Files e.Files)
   (e.Config-B (Mode s.Mode) e.Config-E) =
-    <EOGHandler-Aux-Profile
+    <EOGHandler-Aux-ModulePath
       t.hErrorList
       (Files e.Files)
       (Mode s.Mode)
       (e.Config-B e.Config-E)
     >;
 
+EOGHandler-Aux-ModulePath
+  t.hErrorList (Files e.Files) (Mode s.Mode)
+  (e.Config-B (ModulePath e.ModulePath) e.Config-E) =
+    <EOGHandler-Aux-Profile
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (e.Config-B e.Config-E)
+    >;
+
 EOGHandler-Aux-Profile
   t.hErrorList
-  (Files e.Files)
-  (Mode s.Mode)
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
   (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E) =
     <EOGHandler-Aux-Depended
       t.hErrorList
-      (Files e.Files)
-      (Mode s.Mode)
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
       (Profile s.Profile)
       (e.Depended)
       (e.Config-B e.Config-E)
     >;
+
+EOGHandler-Aux-Depended
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile) (e.Depended) (e.Config) =
+    <EOGHandler-Aux-DoDepended
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile)
+      (/* scanned back-ends */)
+      (e.Config)
+      (e.Depended)
+    >;
+
+EOGHandler-Aux-DoDepended {
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath) (Profile s.Profile)
+  (e.ScannedBackEnds) (e.Config) () =
+    <EOGHandler-Aux-CheckDirExt
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile) (BackEnds e.ScannedBackEnds) (e.Config)
+    >;
+
+  t.hErrorList
+  t.Files t.Mode t.ModulePath t.Profile
+  (e.ScannedBackEnds) (e.Config) (s.NextId e.Ids) =
+    <EOGHandler-Aux-DoDepended
+      t.hErrorList
+      t.Files t.Mode t.ModulePath t.Profile
+      <ScanDepended-Ext
+        (e.ScannedBackEnds) (e.Config) s.NextId
+      >
+      (e.Ids)
+    >;
+}
+
+ScanDepended-Ext {
+  (e.ScannedBackEnds)
+  (
+    e.Config-B
+    (BackEnd s.Id
+      e.Tweaks-B
+      (Ext (e.OptName) t.SrcPos e.Ext)
+      e.Tweaks-E
+    )
+    e.Config-E
+  )
+  s.Id =
+    <ScanDepended-Dir
+      (e.ScannedBackEnds)
+      s.Id (Ext t.SrcPos e.Ext)
+      (e.Config-B (BackEnd s.Id e.Tweaks-B e.Tweaks-E) e.Config-E)
+    >;
+
+  (e.ScannedBackEnds) (e.Config) s.Id =
+    <ScanDepended-Dir
+      (e.ScannedBackEnds)
+      s.Id (Ext Default <LookupDefault-BE-Ext s.Id>)
+      (e.Config)
+    >;
+}
+    
 
 //------------------------------------------------------------------------------
 
@@ -242,7 +317,7 @@ TuneBEGroup =
       (Optional)
       OneTime
     )
-    ((Naked (File))
+    ((Naked (EOG))
       & TunerEOGHandler
       Required
       OneTime
@@ -285,28 +360,43 @@ TunerEOGHandler
   t.hErrorList (e.TunerConfig) t.SrcPos NoParam NoGroup =
     t.hErrorList (e.TunerConfig);
 
-TuneBEHandler {
+TuneBEHandler
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) (e.Options) =
+    <SwTuneBEHandler
+      t.hErrorList (e.Config) t.SrcPos
+      <BackEnd-IdFromName e.BackEndName>
+      (e.Options)
+    >;
+
+SwTuneBEHandler {
   t.hErrorList
-  (e.Config-B (BackEnd (e.BackEndName) e.Options) e.Config-E)
-  t.SrcPos (e.BackEndName) (e.NewOptions) =
+  (e.Config-B (BackEnd s.BackEndId e.Options) e.Config-E)
+  t.SrcPos Success s.BackEndId (e.NewOptions) =
     <MergeOptions
       t.hErrorList
       (e.Config-B) (e.Config-E)
       t.SrcPos
       BackEnd
-      (e.BackEndName)
+      s.BackEndId
       (/* merged options */)
       (e.Options)
       (e.NewOptions)
     >;
 
-  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) (e.Options) =
-    t.hErrorList (e.Config (BackEnd (e.BackEndName) e.Options));
+  t.hErrorList (e.Config) t.SrcPos Success s.BackEndId (e.Options) =
+    t.hErrorList (e.Config (BackEnd s.BackEndId e.Options));
+
+  t.hErrorList (e.Config) t.SrcPos Fails e.BackEndName (e.Options) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos
+      'Illegal name of back-end: \'' e.BackEndName '\''
+    >
+    (e.Config);
 }
 
 MergeOptions {
   t.hErrorList (e.Config-B) (e.Config-E)
-  t.SrcPos s.EndType (e.EndName)
+  t.SrcPos s.EndType s.EndId
   (e.Merged)
   ((s.NextOption (e.Name) t.OldSrcPos e.OldValue) e.OldOptions)
   (e.NewOptions-B (s.NextOption (e.Name) t.NewSrcPos e.NewValue) e.NewOptions-E) =
@@ -315,7 +405,7 @@ MergeOptions {
         t.SrcPos t.NewSrcPos 'Redefinition of option \'-' e.Name '\''
       >
       (e.Config-B) (e.Config-E)
-      t.SrcPos s.EndType (e.EndName)
+      t.SrcPos s.EndType s.EndId
       (e.Merged
         (s.NextOption (e.Name) t.OldSrcPos e.OldValue)
       )
@@ -323,13 +413,13 @@ MergeOptions {
     >;
 
   t.hErrorList (e.Config-B) (e.Config-E)
-  t.SrcPos s.EndType (e.EndName)
+  t.SrcPos s.EndType s.EndId
   (e.Merged)
   ((s.NextOption (e.Name) t.SrcPos e.Value) e.OldOptions)
   (e.NewOptions) =
     <MergeOptions
       t.hErrorList (e.Config-B) (e.Config-E)
-      t.SrcPos s.EndType (e.EndName)
+      t.SrcPos s.EndType s.EndId
       (e.Merged
         (s.NextOption (e.Name) t.SrcPos e.Value)
       )
@@ -337,16 +427,68 @@ MergeOptions {
     >;
 
   t.hErrorList (e.Config-B) (e.Config-E)
-  t.SrcPos s.EndType (e.EndName)
+  t.SrcPos s.EndType s.EndId
   (e.Merged) (/* old options */)
   (e.NewOptions) =
     t.hErrorList
     (
       e.Config-B
-      (s.EndType (e.EndName) e.Merged e.NewOptions)
+      (s.EndType s.EndId e.Merged e.NewOptions)
       e.Config-E
     );
 }
+
+//------------------------------------------------------------------------------
+
+TuneFEGroup =
+  (
+    & TuneEndConfig
+    ((Param ('ext'))
+      & ExtHandler
+      (Optional)
+      OneTime
+    )
+    ((Naked (EOG))
+      & TunerEOGHandler
+      Required
+      OneTime
+    )
+  );
+
+TuneFEHandler
+  t.hErrorList (e.Config) t.SrcPos (e.FrontEndName) (e.Options) =
+    <SwTuneFEHandler
+      t.hErrorList (e.Config) t.SrcPos
+      <FrontEnd-IdFromName e.FrontEndName>
+      (e.Options)
+    >;
+
+SwTuneFEHandler {
+  t.hErrorList
+  (e.Config-B (FrontEnd s.BackEndId e.Options) e.Config-E)
+  t.SrcPos Success s.FrontEndId (e.NewOptions) =
+    <MergeOptions
+      t.hErrorList
+      (e.Config-B) (e.Config-E)
+      t.SrcPos
+      FrontEnd
+      s.FrontEndId
+      (/* merged options */)
+      (e.Options)
+      (e.NewOptions)
+    >;
+
+  t.hErrorList (e.Config) t.SrcPos Success s.FrontEndId (e.Options) =
+    t.hErrorList (e.Config (FrontEnd s.FrontEndId e.Options));
+
+  t.hErrorList (e.Config) t.SrcPos Fails e.FrontEndName (e.Options) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos
+      'Illegal name of front-end: \'' e.FrontEndName '\''
+    >
+    (e.Config);
+}
+
 
 //------------------------------------------------------------------------------
 

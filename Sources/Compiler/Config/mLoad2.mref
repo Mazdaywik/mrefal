@@ -3,6 +3,7 @@
 $IMPORT CmdLine::MParser;
 $IMPORT MError;
 $IMPORT MFileSystem;
+$IMPORT MSrcPos;
 
 // Регистраторы
 
@@ -300,7 +301,118 @@ ScanDepended-Ext {
       (e.Config)
     >;
 }
-    
+
+ScanDepended-Dir {
+  (e.ScannedBackEnds) s.Id t.ExtInfo
+  (
+    e.Config-B
+    (BackEnd s.Id
+      e.Tweaks-B
+      (Dir (e.OptName) t.SrcPos e.Dir)
+      e.Tweaks-E
+    )
+    e.Config-E
+  ) =
+    <ScanDepended-Additional
+      (e.ScannedBackEnds) s.Id t.ExtInfo
+      (Dir t.SrcPos e.Dir)
+      (e.Config-B (BackEnd s.Id e.Tweaks-B e.Tweaks-E) e.Config-E)
+    >;
+
+  (e.ScannedBackEnds) s.Id t.ExtInfo
+  (e.Config) =
+    <ScanDepended-Additional
+      (e.ScannedBackEnds) s.Id t.ExtInfo
+      (Dir Default <LookupDefault-BE-Dir s.Id>)
+      (e.Config)
+    >;
+}
+
+ScanDepended-Additional {
+  (e.ScannedBackEnds) s.Id t.ExtInfo t.DirInfo
+  (e.Config-B (BackEnd s.Id e.Tweaks) e.Config-E) =
+    (e.ScannedBackEnds (s.Id t.ExtInfo t.DirInfo e.Tweaks))
+    (e.Config-B e.Config-E);
+
+  (e.ScannedBackEnds) s.Id t.ExtInfo t.DirInfo
+  (e.Config) =
+    (e.ScannedBackEnds (s.Id t.ExtInfo t.DirInfo <LookupDefault-BE-Tweaks s.Id>))
+    (e.Config);
+}
+
+/*
+  Проверять конфликты между front-end'ом и back-end'ом не будем, хотя надо
+  (в случае, если для back-end'а в качестве директории установлена текущая).
+  Вообще, это надо исправить.
+*/
+
+EOGHandler-Aux-CheckDirExt
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile)
+  (BackEnds e.BackEnds) (e.Config) =
+    <DoEOGHandler-Aux-CheckDirExt
+      Success t.hErrorList
+      (
+        (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+        (Profile s.Profile)
+      )
+      (BackEnds e.BackEnds) (e.Config)
+    >;
+
+DoEOGHandler-Aux-CheckDirExt {
+  s.Result t.hErrorList
+  (e.Options)
+  (BackEnds
+    e.BackEnds-B
+    (s.Id1 (Ext t.SrcPosExt1 e.Ext) (Dir t.SrcPosDir1 e.Dir) e.Tweaks1)
+    e.BackEnds-M
+    (s.Id2 (Ext t.SrcPosExt2 e.Ext) (Dir t.SrcPosDir2 e.Dir) e.Tweaks2)
+    e.BackEnds-E
+  )
+  (e.Config) =
+    <EOGHandler-Aux-CheckDirExt
+      Fails
+      <MError::AddCmdLineError
+        t.hErrorList
+        <SelectRealSrcPos t.SrcPosExt1 t.SrcPosDir1 t.SrcPosExt2 t.SrcPosDir2>
+        'Conflict between back-ends ' <BackEnd-NameFromId s.Id1> ' and '
+        <BackEnd-NameFromId s.Id2> ': back-ends have same output directory '
+        '(' e.Dir ', defined at ' <StrFromPos t.SrcPosDir1> ' and '
+        <StrFromPos t.SrcPosDir2> ') and same extension (' e.Ext ', '
+        'defined at ' <StrFromPos t.SrcPosExt1> ' and '
+        <StrFromPos t.SrcPosExt2> ')'
+      >
+      (e.Options)
+      (BackEnds
+        e.BackEnds-B
+        (s.Id1 (Ext t.SrcPosExt1 e.Ext) (Dir t.SrcPosDir1 e.Dir) e.Tweaks1)
+        e.BackEnds-M
+        e.BackEnds-E
+      )
+      (e.Config)
+    >;
+
+  s.Result t.hErrorList (e.Options) (BackEnds e.BackEnds) (e.Config) =
+    <><><>;
+}
+
+SelectRealSrcPos {
+  Default e.Tail = <SelectRealSrcPos e.Tail>;
+
+  t.SrcPos e.Tail = t.SrcPos;
+
+  /*
+    Как минимум одна действительная позиция ошибки должна присутствовать
+    в аргументе функции.
+  */
+}
+
+StrFromPos {
+  Default = '<by default>';
+
+  t.SrcPos = <MSrcPos::ToString t.SrcPos>;
+}
 
 //------------------------------------------------------------------------------
 

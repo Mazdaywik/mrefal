@@ -393,8 +393,48 @@ DoEOGHandler-Aux-CheckDirExt {
       (e.Config)
     >;
 
-  s.Result t.hErrorList (e.Options) (BackEnds e.BackEnds) (e.Config) =
-    <><><>;
+  s.Result t.hErrorList
+  (
+    (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+    (Profile s.Profile)
+  )
+  (BackEnds e.BackEnds) (e.Config) =
+    <EOGHandler-Aux-CollectFrontEnds
+      s.Result
+      (
+        (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+        (Profile s.Profile) (BackEnds e.BackEnds)
+      )
+      (<FrontEndIdList>)
+      (/* front ends */)
+      e.Config
+    >;
+}
+
+EOGHandler-Aux-CollectFrontEnd {
+  s.Result (e.Options) (e.FrontEnds)
+  e.Config-B (FrontEnd s.FrontEndId e.Options) e.Config-E =
+    <EOGHandler-Aux-CollectFrontEnd
+      s.Result (e.Options) (e.FrontEnds (s.FrontEndId e.Options))
+      e.Config-B e.Config-E
+    >;
+
+  s.Result (e.Options) (e.FrontEnds) e.Config =
+    <EOGHandler-Aux-CheckExtFE
+      s.Result (e.Options)
+      (FrontEnds <MergeDefaultFEOptions e.FrontEnds>)
+      (e.Config)
+    >;
+}
+
+MergeDefaultFEOptions
+  e.FrontEnds =
+    <DoMergeFEOptions
+      (<GetDefaultFEOptions>) e.FrontEnds
+    >;
+
+DoMergeFEOptions {
+  (*(*)(*)*)(*)*)*)(*)(
 }
 
 SelectRealSrcPos {
@@ -577,7 +617,7 @@ TuneFEHandler
 
 SwTuneFEHandler {
   t.hErrorList
-  (e.Config-B (FrontEnd s.BackEndId e.Options) e.Config-E)
+  (e.Config-B (FrontEnd s.FrontEndId e.Options) e.Config-E)
   t.SrcPos Success s.FrontEndId (e.NewOptions) =
     <MergeOptions
       t.hErrorList

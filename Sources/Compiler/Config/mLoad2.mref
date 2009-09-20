@@ -1,13 +1,16 @@
-﻿$MODULE Config::MLoad2;
+$MODULE Config::MLoad2;
 
 $IMPORT CmdLine::MParser;
+$IMPORT MConfig = Config::MConfig;
 $IMPORT MError;
 $IMPORT MFileSystem;
+$IMPORT MLambda;
 $IMPORT MSrcPos;
 
 // Регистраторы
 
 $IMPORT Cpp-SR-BE::MInit;
+$IMPORT MRefal-FE::MInit;
 $IMPORT MSymModule;
 $IMPORT MXLinx;
 $IMPORT Refal5::MInit;
@@ -46,6 +49,11 @@ TopLevelDescription =
       Required
       Multiply
     )
+    ((Naked (EOG))
+      & EOGHelpHandler
+      Required
+      OneTime
+    )
   )
   (
     & RealConfig
@@ -79,7 +87,7 @@ TopLevelDescription =
       & TuneBEHandler
       (Optional)
       Multiply
-      Required & TuneBEGroup
+      Required & TuneBEGroup & TuneBEGroupEx
     )
     ((Param ('tune-fe'))
       & TuneFEHandler
@@ -103,6 +111,10 @@ HelpConfig =
 HelpHandler
   t.hErrorList t.Help t.SrcPos NoParam NoGroup =
     t.hErrorList t.Help;
+
+EOGHelpHandler
+  t.hErrorList t.Help t.SrcPos NoParam NoGroup =
+    t.hErrorList Success t.Help;
 
 RealConfig = ();
 
@@ -399,43 +411,84 @@ DoEOGHandler-Aux-CheckDirExt {
     (Profile s.Profile)
   )
   (BackEnds e.BackEnds) (e.Config) =
-    <EOGHandler-Aux-CollectFrontEnds
-      s.Result
+    <EOGHandler-Aux-CollectFrontEnd
+      s.Result t.hErrorList
       (
         (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
         (Profile s.Profile) (BackEnds e.BackEnds)
       )
-      (<FrontEndIdList>)
       (/* front ends */)
       e.Config
     >;
 }
 
 EOGHandler-Aux-CollectFrontEnd {
-  s.Result (e.Options) (e.FrontEnds)
+  s.Result t.hErrorList (e.Options) (e.FrontEnds)
   e.Config-B (FrontEnd s.FrontEndId e.Options) e.Config-E =
     <EOGHandler-Aux-CollectFrontEnd
-      s.Result (e.Options) (e.FrontEnds (s.FrontEndId e.Options))
+      s.Result t.hErrorList (e.Options) (e.FrontEnds (s.FrontEndId e.Options))
       e.Config-B e.Config-E
     >;
 
-  s.Result (e.Options) (e.FrontEnds) e.Config =
+  s.Result t.hErrorList (e.Options) (e.FrontEnds) e.Config =
     <EOGHandler-Aux-CheckExtFE
-      s.Result (e.Options)
-      (FrontEnds <MergeDefaultFEOptions e.FrontEnds>)
+      s.Result t.hErrorList (e.Options)
+      (FrontEnds <MergeDefaultFEsOptions e.FrontEnds>)
       (e.Config)
     >;
 }
 
-MergeDefaultFEOptions
+MergeDefaultFEsOptions
   e.FrontEnds =
-    <DoMergeFEOptions
+    <DoMergeFEsOptions
       (<GetDefaultFEOptions>) e.FrontEnds
     >;
 
-DoMergeFEOptions {
-  (*(*)(*)*)(*)*)*)(*)(
+DoMergeFEsOptions {
+  ((s.FrontEndId e.DefaultOptions) e.Defaults)
+  e.FrontEnds-B (s.FrontEndId e.UserOptions) e.FrontEnds-E =
+    (s.FrontEndId <MergeFEOptions (e.DefaultOptions) e.UserOptions>)
+    <DoMergeFEsOptions
+      (e.Defaults) e.FrontEnds-B e.FrontEnds-E
+    >;
+
+  ((s.FrontEndId e.DefaultOptions) e.Defaults) e.FrontEnds =
+    (s.FrontEndId <MergeFEOptions (e.DefaultOptions)>)
+    <DoMergeFEsOptions (e.Defaults) e.FrontEnds>;
+
+  (/* пусто */) /* пусто */ =
+    /* пусто */;
+
+  /*
+    Вариант () v.FrontEnds не рассматриваем, т.к. множество дефолтовых
+    front-end'ов должно охватывать множество front-end'ов с явно описанными
+    параметрами.
+  */
 }
+
+MergeFEOptions {
+  ((s.OptionName e.DefaultValue) e.Defaults)
+  e.UserOptions-B
+  (s.OptionName (e.Name) t.SrcPos e.UserValue)
+  e.UserOptions-E =
+    (s.OptionName t.SrcPos e.UserValue)
+    <MergeFEOptions
+      (e.Defaults) e.UserOptions-B e.UserOptions-E
+    >;
+
+  ((s.OptionName e.DefaultValue) e.Defaults) e.UserOptions =
+    (s.OptionName Default e.DefaultValue)
+    <MergeFEOptions
+      (e.Defaults) e.UserOptions
+    >;
+
+  () e.UserOptions =
+    <MLambda::Map & PrepareFEUserOption e.UserOptions>;
+}
+
+PrepareFEUserOption
+  (s.OptionName (e.Name) t.SrcPos e.Value) =
+    (s.OptionName t.SrcPos e.Value);
 
 SelectRealSrcPos {
   Default e.Tail = <SelectRealSrcPos e.Tail>;
@@ -453,6 +506,114 @@ StrFromPos {
 
   t.SrcPos = <MSrcPos::ToString t.SrcPos>;
 }
+
+EOGHandler-Aux-CheckExtFE {
+  s.Result t.hErrorList (e.Options)
+  (FrontEnds
+    e.FrontEnds-B
+    (s.Id1 e.Tunes1-B (Ext t.SrcPos1 e.Ext) e.Tunes1-E)
+    e.FrontEnds-M
+    (s.Id2 e.Tunes2-B (Ext t.SrcPos2 e.Ext) e.Tunes2-E)
+    e.FrontEnds-E
+  )
+  (e.Config) =
+    <EOGHandler-Aux-CheckExtFE
+      Fails
+      <MError::AddCmdLineError
+        t.hErrorList <SelectRealSrcPos t.SrcPos1 t.SrcPos2>
+        'Conflict between front-ends ' <FrontEnd-NameFromId s.Id1> ' and '
+        <FrontEnd-NameFromId s.Id2> ': front-ends have same extension ('
+        e.Ext ', defined at ' <StrFromPos t.SrcPos1> ' and at '
+        <StrFromPos t.SrcPos2> ')'
+      >
+      (e.Options)
+      (FrontEnds
+        e.FrontEnds-B
+        (s.Id1 e.Tunes1-B (Ext t.SrcPos1 e.Ext) e.Tunes1-E)
+        e.FrontEnds-M
+        e.FrontEnds-E
+      )
+      (e.Config)
+    >;
+
+  s.Result t.hErrorList
+  (
+    (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+    (Profile s.Profile) (BackEnds e.BackEnds)
+  )
+  (FrontEnds e.FrontEnds)
+  (e.Config) =
+    <ConstructConfig
+      s.Result t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
+      (e.Config)
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+ConstructConfig {
+  Fails t.hErrorList e.Options
+  (/* опций остаться не должно */) =
+    t.hErrorList Fails;
+
+  Success t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
+  (/* опций остаться не должно */) =
+    t.hErrorList
+    (Config
+      <ConstructConfig-Aux
+        (Mode s.Mode) (ModulePath e.ModulePath)
+        (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
+      >
+      e.Files
+    );
+}
+
+ConstructConfig-Aux {
+  (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds) =
+    <MLambda::Apply
+      <MLambda::Composite
+        <MLambda::BindRight & MConfig.SetMakeMode s.Mode>
+        <MLambda::Map
+          & CreateBackEndRegister e.BackEnds
+        >
+        <MLambda::Map
+          & CreateFrontEndRegister e.FrontEnds
+        >
+      >
+      <MConfig::Create e.ModulePath>
+    >;
+}
+
+CreateBackEndRegister
+  (s.BackEndId (Ext t.SrcPosExt e.Ext) (Dir t.SrcPosDir e.Dir) e.Tweaks) =
+    //<MLambda::BindRight
+    //  & MConfig.RegisterBackEnd
+    //  s.BackEndId
+    //  <BackEnd-GetFnGenerator s.BackEndId e.Tweaks>
+    //  <BackEnd-GetFnLinker s.BackEndId e.Tweaks>
+    //  (e.Dir) (e.Ext)
+    //>;
+    <MLambda::BindRight
+      <BackEnd-GetFnRegister s.BackEndId>
+      (e.Dir) (e.Ext) e.Tweaks
+    >;
+
+CreateFrontEndRegister
+  (s.FrontEndId e.Tuners-B (Ext t.SrcPos e.Ext) e.Tuners-E) =
+    //<MLambda::BindRight
+    //  & MConfig.RegisterFrontEnd
+    //  s.FrontEndId
+    //  <FrontEnd-GetFnParser s.FrontEndId e.Tuners-B e.Tuners-E>
+    //  (e.Ext)
+    //>;
+    <MLambda::BindRight
+      <FrontEnd-GetFnRegister s.FrontEndId> (e.Ext)
+    >;
 
 //------------------------------------------------------------------------------
 
@@ -496,7 +657,7 @@ DirHandler
 
 DirHandler-SwCorrectDir {
   t.hErrorList (e.TunerConfig) t.SrcPos
-  (e.StrDirectory) Success (e.PtDirectory) =
+  (e.StrDirectory) Success e.PtDirectory =
     t.hErrorList
     (e.TunerConfig (Dir ('dir') t.SrcPos e.PtDirectory));
 
@@ -554,7 +715,7 @@ MergeOptions {
   (e.NewOptions-B (s.NextOption (e.Name) t.NewSrcPos e.NewValue) e.NewOptions-E) =
     <MergeOptions
       <MError::AddCmdLineError
-        t.SrcPos t.NewSrcPos 'Redefinition of option \'-' e.Name '\''
+        t.hErrorList t.NewSrcPos 'Redefinition of option \'-' e.Name '\''
       >
       (e.Config-B) (e.Config-E)
       t.SrcPos s.EndType s.EndId
@@ -588,6 +749,19 @@ MergeOptions {
       (s.EndType s.EndId e.Merged e.NewOptions)
       e.Config-E
     );
+}
+
+TuneBEGroupEx
+  e.BackEndName =
+    <TuneBEGroupEx-SwName
+      <BackEnd-IdFromName e.BackEndName>
+    >;
+
+TuneBEGroupEx-SwName {
+  Success s.BackEndId =
+    <BackEnd-GetExtension s.BackEndId>;
+
+  Fails e.BackEndName = /* пусто */;
 }
 
 //------------------------------------------------------------------------------
@@ -645,7 +819,7 @@ SwTuneFEHandler {
 //------------------------------------------------------------------------------
 
 BackEndsTable =
-  (Refal5BE
+  (Refal5-BE
     ('Refal5')
     ((Relative) ('~ROut'))
     ('rout')
@@ -660,7 +834,7 @@ BackEndsTable =
     & ExtentNone
   )
   (
-    XLinxBE
+    XLinx-BE
     ('XLinx')
     ((Relative) ('~XLinx'))
     ('xlinx')
@@ -679,33 +853,163 @@ BackEndsTable =
     ((Relative) ('~CppSR'))
     ('cpp')
     & Cpp-SR-BE.MInit.Register
-    & ExtentNone
+    & Extent-Cpp-SR-BE
+  );
+
+FrontEndsTable =
+  (MRefal-FE
+    ('MRefal')
+    ('mref')
+    & MRefal-FE.MInit.Register
   );
 
 ExtentNone = ;
 
+Extent-Cpp-SR-BE =
+  (
+    & TuneEndConfig
+    ((Param ('compiler'))
+      & Cpp-SR-BE-Compiler-Handler
+      (Optional)
+      OneTime
+    )
+  );
+
+Cpp-SR-BE-Compiler-Handler
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
+    t.hErrorList
+    (e.TunerConfig (CCompiler ('compiler') t.SrcPos e.CompilerCmdLine));
+
 ProfileBackEnd =
-  (Refal5 (Refal5BE SymInfo) ('Refal5') ('R5'))
+  (Refal5 (Refal5-BE SymInfo) ('Refal5') ('R5'))
   (SimpleRefal (SRefal-BE SymInfo)
     ('SRefal') ('Simple') ('SimpleRefal') ('SR')
   )
   (Cpp-SR (Cpp-SR-BE SymInfo) ('CPPSR'));
 
-//$ENTRY DefTuners =
-//  (TuneFE MRefal_FrontEnd ('mref'));
-//
-//$ENTRY TunerName {
-//  MRefal_FrontEnd = 'MRefal';
-//}
-//
-//$ENTRY EndMakerFunc {
-//  MRefal_FrontEnd = & MRefal-FE.MInit.Register;
-//}
-//
-//$ENTRY SelectLowFrontEnd {
-//  'MRefal' = (MRefal_FrontEnd ('mref'));
-//  e.Other = Unknown (e.Other);
-//}
+LookupDefault-BE-Ext
+  s.BackEndId =
+    <LookupDefault-BE-Ext-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
 
+SelectBEInfo
+  s.BackEndId =
+    <SelectBEInfo-Aux s.BackEndId <BackEndsTable>>;
+
+SelectBEInfo-Aux
+  s.BackEndId e.Infos-B (s.BackEndId e.Info) e.Infos-E =
+    s.BackEndId e.Info;
+
+LookupDefault-BE-Ext-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    e.Ext;
+
+LookupDefault-BE-Dir
+  s.BackEndId =
+    <LookupDefault-BE-Dir-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+LookupDefault-BE-Dir-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    e.Dir;
+
+LookupDefault-BE-Tweaks
+  s.BackEndId =
+    /* пусто */;
+
+BackEnd-NameFromId
+  s.BackEndId =
+    <BackEnd-NameFromId-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+BackEnd-NameFromId-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    e.Name;
+
+BackEnd-GetFnRegister
+  s.BackEndId =
+    <BackEnd-GetFnRegister-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+BackEnd-GetFnRegister-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    s.FnRegister;
+
+BackEnd-GetExtension
+  s.BackEndId =
+    <BackEnd-GetFnExtension-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+BackEnd-GetFnExtension-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    s.FnExtent;
+
+BackEnd-IdFromName
+  e.BackEndName =
+    <BackEnd-SwIdFromName
+      (e.BackEndName) <BackEndsTable>
+    >;
+
+BackEnd-SwIdFromName {
+  (e.Name) e.Infos-B (s.Id (e.Name) e.Info) e.Infos-E =
+    Success s.Id;
+
+  (e.Name) e.Infos = Fails e.Name;
+}
+
+FrontEnd-NameFromId
+  s.FrontEndId =
+    <FrontEnd-NameFromId-Aux
+      <SelectFEInfo s.FrontEndId>
+    >;
+
+SelectFEInfo
+  s.FrontEndId =
+    <SelectFEInfo-Aux s.FrontEndId <FrontEndsTable>>;
+
+SelectFEInfo-Aux
+  s.FrontEndId e.Infos-B (s.FrontEndId e.Info) e.Infos-E =
+    s.FrontEndId e.Info;
+
+FrontEnd-NameFromId-Aux
+  s.FrontEndId (e.Name) (e.Ext) s.FnRegister =
+    e.Name;
+
+GetDefaultFEOptions =
+  <MLambda::Map
+    & GetDefaultFEOptions-Aux <FrontEndsTable>
+  >;
+
+GetDefaultFEOptions-Aux
+  (s.FrontEndId (e.Name) (e.Ext) s.FnRegister) =
+    (s.FrontEndId (Ext e.Ext));
+
+FrontEnd-GetFnRegister
+  s.FrontEndId =
+    <FrontEnd-GetFnRegister-Aux
+      <SelectFEInfo s.FrontEndId>
+    >;
+
+FrontEnd-GetFnRegister-Aux
+  s.FrontEndId (e.Name) (e.Ext) s.FnRegister =
+    s.FnRegister;
+
+FrontEnd-IdFromName
+  e.Name =
+    <FrontEnd-SwIdFromName
+      (e.Name) <FrontEndsTable>
+    >;
+
+FrontEnd-SwIdFromName {
+  (e.Name) e.Infos-B (s.Id (e.Name) e.Info) e.Infos-E =
+    Success s.Id;
+
+  (e.Name) e.Infos = Fails e.Name;
+}
 
 $END Config::MLoad2.

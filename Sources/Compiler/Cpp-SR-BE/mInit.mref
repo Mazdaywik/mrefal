@@ -4,14 +4,34 @@ $IMPORT Config::MConfig;
 $IMPORT Cpp-SR-BE::MCompiler;
 $IMPORT Cpp-SR-BE::MLinker;
 
+$IMPORT MLambda;
+
 $ENTRY Register
-  t.Config (e.Directory) (e.Ext) =
+  t.Config (e.Directory) (e.Ext) e.Tunings =
     <Config::MConfig::RegisterBackEnd
       t.Config
       Cpp-SR-BE
       & Cpp-SR-BE.MCompiler.Generate
-      & Cpp-SR-BE.MLinker.Link
+      <MLambda::BindLeft
+        & Cpp-SR-BE.MLinker.Link
+        (<GetTuning CCompiler e.Tunings ('call call-C++.bat')>)
+      >
       (e.Directory) (e.Ext)
     >;
+
+/*
+  <GetTuning s.Tuning e.TunerList (e.Default)>
+    == e.TunerValue
+*/
+GetTuning
+  s.Tuning e.Tunings (e.Default) =
+    <GetTuning-Aux
+      s.Tuning
+      e.Tunings (s.Tuning ('default') Default e.Default)
+    >;
+
+GetTuning-Aux
+  s.Tuning e.Tunings-B (s.Tuning (e.Name) t.SrcPos e.Value) e.Tunigs-E =
+    e.Value;
 
 $END Cpp-SR-BE::MInit.

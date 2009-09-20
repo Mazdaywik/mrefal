@@ -186,6 +186,16 @@ InitConfig-XLinx {
 }
 
 InitConfig-Files
+  t.Config (Files e.PtFiles) =
+    <MSelfDiag::Log '<InitConfig-Files>'>
+    <MSelfDiag::Log '  t.Config = ' t.Config>
+    <MSelfDiag::Log '  e.PtFiles = ' e.PtFiles>
+    <MSelfDiag::Log>
+    <?InitConfig-Files t.Config (Files e.PtFiles)>;
+
+$import MSelfDiag;
+
+?InitConfig-Files
   t.Config (Files e.PtFiles) = t.Config e.PtFiles;
 
 $END Config::MLoad1.

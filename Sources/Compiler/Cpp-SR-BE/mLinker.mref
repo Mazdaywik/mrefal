@@ -8,17 +8,18 @@ $IMPORT MOS;
 $IMPORT MStrings;
 
 /**
-  <Link (e.ProgName) (t.ModuleName e.OutName)>
+  <Link (e.L-CCompiler) (e.ProgName) (t.ModuleName e.OutName)>
     == Success
     == Fails
 */
 $ENTRY Link
-  (e.ProgName) e.Modules =
+  (e.L-CCompiler) (e.ProgName) e.Modules =
     Success
     <FileIO::Save
       ('call_cpp.tmp.bat')
       ('@echo off')
       <GenCommands
+        (e.L-CCompiler)
         (e.ProgName)
         <EliminateCollisions e.Modules>
       >
@@ -71,10 +72,10 @@ AddNumber {
 }
 
 GenCommands {
-  (e.ProgName) e.Commands =
+  (e.CCompiler) (e.ProgName) e.Commands =
     <MLambda::Map & GenFwdRename e.Commands>
     (
-      <CompilerCmdLine>
+      <CompilerCmdLine e.CCompiler>
       '-o' e.ProgName '.cpp.exe '
       <MLambda::Map & GenFilename e.Commands>
       // '>nul'
@@ -82,8 +83,9 @@ GenCommands {
     <MLambda::Map & GenRevRename e.Commands>;
 }
 
-CompilerCmdLine =
-  'call Call-C++ -I\"..\\Runtime\\windows.cpp\" ';
+CompilerCmdLine
+  e.CCompiler =
+    e.CCompiler ' -I\"..\\Runtime\\windows.cpp\" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

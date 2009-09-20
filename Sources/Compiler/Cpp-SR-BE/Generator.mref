@@ -57,7 +57,9 @@ SwGenFnStart {
 }
 
 $ENTRY GenInitCounter {
-  InitFinal = ('  static unsigned s_counter = 0;');
+  InitFinal =
+    ('  static unsigned s_counter = 0;')
+    ('  refalrts::use_counter(s_counter);');
 
   s.Other = ;
 }

@@ -26,6 +26,11 @@ $ENTRY Go =
   >;
 
 CompileList {
+  t.hContext t.hErrorList Success (Help e.Message) =
+    <MContext::Destroy t.hContext>
+    <MError::DestroyErrList t.hErrorList>
+    <InOut::WriteText e.Message>;
+
   t.hContext t.hErrorList Success t.Config e.PtModules =
     <CompileList-Aux
       t.Config t.hContext t.hErrorList e.PtModules

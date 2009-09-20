@@ -28,7 +28,7 @@ K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFIL
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
     %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
     if exist __errors view:__errors
-C:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
+H:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal

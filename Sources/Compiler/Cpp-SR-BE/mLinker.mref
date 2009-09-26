@@ -8,32 +8,35 @@ $IMPORT MOS;
 $IMPORT MStrings;
 
 /**
-  <Link (e.L-CCompiler) (e.ProgName) (t.ModuleName e.OutName)>
+  <Link t.L-Config (e.ProgName) (t.ModuleName e.OutName)>
     == Success
     == Fails
 */
 $ENTRY Link
-  (e.L-CCompiler) (e.ProgName) e.Modules =
+  t.L-Config (e.ProgName) e.Modules =
     Success
     <FileIO::Save
       ('call_cpp.tmp.bat')
       ('@echo off')
       <GenCommands
-        (e.L-CCompiler)
+        t.L-Config
         (e.ProgName)
-        <EliminateCollisions e.Modules>
+        <EliminateCollisions t.L-Config e.Modules>
       >
       ('del *.obj')
       ('rem del call_cpp.tmp.bat')
     >
     <MOS::System 'call_cpp.tmp.bat'>;
 
+ConfigExtract
+  (e.Config-B (s.Option e.Value) e.Config-E) s.Option = e.Value;
+
 EliminateCollisions
-  e.Modules =
+  t.Config e.Modules =
     <DoEliminateCollisions
       () () <MLambda::Map & PrepareName e.Modules>
-      ('Library' ('..\\Runtime\\windows.cpp\\Library.cpp'))
-      ('refalrts' ('..\\Runtime\\windows.cpp\\refalrts.cpp'))
+      ('Library' (<ConfigExtract t.Config RunTimeDir> '\\Library.cpp'))
+      ('refalrts' (<ConfigExtract t.Config RunTimeDir> '\\refalrts.cpp'))
     >;
 
 
@@ -72,10 +75,10 @@ AddNumber {
 }
 
 GenCommands {
-  (e.CCompiler) (e.ProgName) e.Commands =
+  t.Config (e.ProgName) e.Commands =
     <MLambda::Map & GenFwdRename e.Commands>
     (
-      <CompilerCmdLine e.CCompiler>
+      <CompilerCmdLine t.Config>
       '-o' e.ProgName '.cpp.exe '
       <MLambda::Map & GenFilename e.Commands>
       // '>nul'
@@ -84,8 +87,9 @@ GenCommands {
 }
 
 CompilerCmdLine
-  e.CCompiler =
-    e.CCompiler ' -I\"..\\Runtime\\windows.cpp\" ';
+  t.Config =
+    <ConfigExtract t.Config CCompiler>
+    ' -I\"' <ConfigExtract t.Config RunTimeDir> '" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

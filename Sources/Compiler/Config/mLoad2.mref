@@ -853,7 +853,7 @@ BackEndsTable =
     ((Relative) ('~CppSR'))
     ('cpp')
     & Cpp-SR-BE.MInit.Register
-    & Extent-Cpp-SR-BE
+    & Cpp-SR-BE.MInit.Extent
   );
 
 FrontEndsTable =
@@ -863,22 +863,7 @@ FrontEndsTable =
     & MRefal-FE.MInit.Register
   );
 
-ExtentNone = ;
-
-Extent-Cpp-SR-BE =
-  (
-    & TuneEndConfig
-    ((Param ('compiler'))
-      & Cpp-SR-BE-Compiler-Handler
-      (Optional)
-      OneTime
-    )
-  );
-
-Cpp-SR-BE-Compiler-Handler
-  t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
-    t.hErrorList
-    (e.TunerConfig (CCompiler ('compiler') t.SrcPos e.CompilerCmdLine));
+ExtentNone s.TuneEndConfig = ;
 
 ProfileBackEnd =
   (Refal5 (Refal5-BE SymInfo) ('Refal5') ('R5'))
@@ -947,7 +932,7 @@ BackEnd-GetExtension
 
 BackEnd-GetFnExtension-Aux
   s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
-    s.FnExtent;
+    <MLambda::BindLeft s.FnExtent & TuneEndConfig>;
 
 BackEnd-IdFromName
   e.BackEndName =

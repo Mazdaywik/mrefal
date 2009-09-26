@@ -14,10 +14,35 @@ $ENTRY Register
       & Cpp-SR-BE.MCompiler.Generate
       <MLambda::BindLeft
         & Cpp-SR-BE.MLinker.Link
-        (<GetTuning CCompiler e.Tunings ('call call-C++.bat')>)
+        (
+          (<GetTuning CCompiler e.Tunings ('call call-C++.bat')>)
+          (<GetTuning RunTimeDir e.Tunings ('..\\Runtime\\windows.cpp')>)
+        )
       >
       (e.Directory) (e.Ext)
     >;
+
+$ENTRY Extent
+  s.TuneEndConfig =
+    (
+      s.TuneEndConfig
+      ((Param ('compiler'))
+        <MLambda::BindLeft & Handler CCompiler ('compiler')>
+        (Optional)
+        OneTime
+      )
+      ((Param ('runtime'))
+        <MLambda::BindLeft & Handler RunTimeDir ('rutime')>
+        (Optional)
+        OneTime
+      )
+    );
+
+Handler
+  s.OptionName (e.OptionText)
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
+    t.hErrorList
+    (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.CompilerCmdLine));
 
 /*
   <GetTuning s.Tuning e.TunerList (e.Default)>
@@ -32,6 +57,6 @@ GetTuning
 
 GetTuning-Aux
   s.Tuning e.Tunings-B (s.Tuning (e.Name) t.SrcPos e.Value) e.Tunigs-E =
-    e.Value;
+    s.Tuning e.Value;
 
 $END Cpp-SR-BE::MInit.

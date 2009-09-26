@@ -7,7 +7,7 @@ $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MFileSystem;
-$IMPORT MLoadConfig = Config::MLoad2;
+$IMPORT MLoadConfig = Config::MLoad;
 $IMPORT InOut;
 $IMPORT MLambda;
 $IMPORT MModules;

@@ -3,6 +3,7 @@ $MODULE Cpp-SR-BE::MLinker;
 $IMPORT FileIO;
 $IMPORT Math;
 $IMPORT MFileSystem;
+$IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MStrings;
@@ -28,15 +29,16 @@ $ENTRY Link
     >
     <MOS::System 'call_cpp.tmp.bat'>;
 
-ConfigExtract
-  (e.Config-B (s.Option e.Value) e.Config-E) s.Option = e.Value;
-
 EliminateCollisions
   t.Config e.Modules =
     <DoEliminateCollisions
       () () <MLambda::Map & PrepareName e.Modules>
-      ('Library' (<ConfigExtract t.Config RunTimeDir> '\\Library.cpp'))
-      ('refalrts' (<ConfigExtract t.Config RunTimeDir> '\\refalrts.cpp'))
+      ('Library'
+        (<MHelpers::ConfigExtract t.Config RunTimeDir> '\\Library.cpp')
+      )
+      ('refalrts'
+        (<MHelpers::ConfigExtract t.Config RunTimeDir> '\\refalrts.cpp')
+      )
     >;
 
 
@@ -88,8 +90,9 @@ GenCommands {
 
 CompilerCmdLine
   t.Config =
-    <ConfigExtract t.Config CCompiler>
-    ' -I\"' <ConfigExtract t.Config RunTimeDir> '" ';
+    <MHelpers::ConfigExtract t.Config CCompiler>
+    ' ' <MHelpers::ConfigExtract t.Config IncludeOpt>
+    '\"' <MHelpers::ConfigExtract t.Config RunTimeDir> '\" ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

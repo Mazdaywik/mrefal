@@ -1,9 +1,10 @@
-$MODULE Config::MLoad2;
+$MODULE Config::MLoad;
 
 $IMPORT CmdLine::MParser;
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MError;
 $IMPORT MFileSystem;
+$IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 $IMPORT MSrcPos;
 
@@ -619,7 +620,7 @@ CreateFrontEndRegister
 
 TuneBEGroup =
   (
-    & TuneEndConfig
+    & MHelpers.TuneEndConfig
     ((Param ('ext'))
       & ExtHandler
       (Optional)
@@ -636,8 +637,6 @@ TuneBEGroup =
       OneTime
     )
   );
-
-TuneEndConfig = ();
 
 ExtHandler
   t.hErrorList (e.TunerConfig) t.SrcPos (e.Ext) NoGroup =
@@ -768,7 +767,7 @@ TuneBEGroupEx-SwName {
 
 TuneFEGroup =
   (
-    & TuneEndConfig
+    & MHelpers.TuneEndConfig
     ((Param ('ext'))
       & ExtHandler
       (Optional)
@@ -863,7 +862,7 @@ FrontEndsTable =
     & MRefal-FE.MInit.Register
   );
 
-ExtentNone s.TuneEndConfig = ;
+ExtentNone = ;
 
 ProfileBackEnd =
   (Refal5 (Refal5-BE SymInfo) ('Refal5') ('R5'))
@@ -932,7 +931,7 @@ BackEnd-GetExtension
 
 BackEnd-GetFnExtension-Aux
   s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
-    <MLambda::BindLeft s.FnExtent & TuneEndConfig>;
+    <MLambda::BindLeft & MHelpers.GenExtent s.FnExtent>;
 
 BackEnd-IdFromName
   e.BackEndName =
@@ -997,4 +996,4 @@ FrontEnd-SwIdFromName {
   (e.Name) e.Infos = Fails e.Name;
 }
 
-$END Config::MLoad2.
+$END Config::MLoad.

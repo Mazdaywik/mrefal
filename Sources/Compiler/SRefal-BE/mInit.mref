@@ -4,14 +4,23 @@ $IMPORT Config::MConfig;
 $IMPORT SRefal-BE::MCompiler;
 $IMPORT SRefal-BE::MLinker;
 
+$IMPORT MHelpers = Config::MHelpers;
+$IMPORT MLambda;
+
 $ENTRY Register
-  t.Config (e.Directory) (e.Ext) =
+  t.Config (e.Directory) (e.Ext) e.Tunings =
     <Config::MConfig::RegisterBackEnd
       t.Config
       SRefal-BE
       & SRefal-BE.MCompiler.Generate
-      & SRefal-BE.MLinker.Link
+      <MLambda::BindLeft
+        & SRefal-BE.MLinker.Link
+        <MHelpers::InitConfig & Extent e.Tunings>
+      >
       (e.Directory) (e.Ext)
     >;
+
+$ENTRY Extent =
+  (Compiler ('compiler') 'call compile_sr.bat');
 
 $END SRefal-BE::MInit.

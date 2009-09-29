@@ -4,18 +4,20 @@ $IMPORT FileIO;
 $IMPORT MLambda;
 $IMPORT MOS;
 
+$IMPORT MHelpers = Config::MHelpers;
+
 /**
-  <Link (e.ProgName) (t.ModuleName e.PathToModule)*>
+  <Link t.L-Config (e.ProgName) (t.ModuleName e.PathToModule)*>
     == Success
     == Fails
 */
 $ENTRY Link
-  (e.ProgName) e.Modules =
+  t.Config (e.ProgName) e.Modules =
     Success
     <FileIO::Save
       ('call_srefc.tmp.bat')
       (
-        '@call compile_sr '
+        '@' <MHelpers::ConfigExtract t.Config Compiler> ' '
         <MLambda::Map & FilePath e.Modules>
         // '>nul'
       )

@@ -845,7 +845,7 @@ BackEndsTable =
     ((Relative) ('~SimRef'))
     ('sref')
     & SRefal-BE.MInit.Register
-    & ExtentNone
+    & SRefal-BE.MInit.Extent
   )
   (Cpp-SR-BE
     ('Cpp-SR-BE')

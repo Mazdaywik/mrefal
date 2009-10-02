@@ -1,0 +1,1015 @@
+$MODULE Config::MLoad2;
+
+$IMPORT CmdLine::MParser;
+$IMPORT MConfig = Config::MConfig;
+$IMPORT MError;
+$IMPORT MFileSystem;
+$IMPORT MLambda;
+$IMPORT MSrcPos;
+
+// Регистраторы
+
+$IMPORT Cpp-SR-BE::MInit;
+$IMPORT MRefal-FE::MInit;
+$IMPORT MSymModule;
+$IMPORT MXLinx;
+$IMPORT Refal5::MInit;
+$IMPORT SRefal-BE::MInit;
+
+/**
+  <Load t.hErrorList (e.Argument)>
+    == t.hErrorList Success t.Config (e.PtFileName)*
+    == t.hErrorList Fails
+*/
+$ENTRY Load
+  t.hErrorList e.CommandLine =
+    <Load-Aux
+      <CmdLine::MParser::Parse
+        t.hErrorList
+        & TopLevelDescription
+        e.CommandLine
+      >
+    >;
+
+Load-Aux {
+  t.hErrorList Success (Help e.Message) =
+    t.hErrorList Success (Help e.Message);
+
+  t.hErrorList Success (Config t.Config e.PtFiles) =
+    t.hErrorList Success t.Config e.PtFiles;
+
+  t.hErrorList Fails = t.hErrorList Fails;
+}
+
+TopLevelDescription =
+  (
+    & HelpConfig
+    ((Naked ('help') ('h') ('?') (EOG))
+      & HelpHandler
+      Required
+      Multiply
+    )
+    ((Naked (EOG))
+      & EOGHelpHandler
+      Required
+      OneTime
+    )
+  )
+  (
+    & RealConfig
+    ((Param (File))
+      & FileHandler
+      Required
+      Multiply
+      // Здесь возможно будет описание группы
+    )
+    ((Param ('MP'))
+      & ModulePathHandler
+      (Optional & DefaultModulePathHandler)
+      Multiply
+    )
+    ((Switch (('make')) (('build')) (('linkonly')))
+      & MakeModeHandler
+      Required
+      OneTime
+    )
+    ((Param ('be') ('profile'))
+      & BackEndSelectorHandler
+      Required
+      OneTime
+    )
+    ((Naked ('xlinx'))
+      & XLinxOnHandler
+      (Optional)
+      OneTime
+    )
+    ((Param ('tune-be'))
+      & TuneBEHandler
+      (Optional)
+      Multiply
+      Required & TuneBEGroup & TuneBEGroupEx
+    )
+    ((Param ('tune-fe'))
+      & TuneFEHandler
+      (Optional)
+      Multiply
+      Required & TuneFEGroup
+    )
+    ((Naked (EOG))
+      & EOGHandler
+      Required
+      OneTime
+    )
+  );
+
+HelpConfig =
+  (Help
+    ('Printing help for compiler')
+    ('use mrefal -foo -bar')
+  );
+
+HelpHandler
+  t.hErrorList t.Help t.SrcPos NoParam NoGroup =
+    t.hErrorList t.Help;
+
+EOGHelpHandler
+  t.hErrorList t.Help t.SrcPos NoParam NoGroup =
+    t.hErrorList Success t.Help;
+
+RealConfig = ();
+
+FileHandler {
+  t.hErrorList
+  (e.Config-B (Files e.Files) e.Config-E)
+  t.SrcPos (e.FileName) NoGroup =
+    t.hErrorList
+    (e.Config-B (Files e.Files (e.FileName)) e.Config-E);
+
+  t.hErrorList (e.Config) t.SrcPos (e.FileName) NoGroup =
+    t.hErrorList (e.Config (Files (e.FileName)));
+}
+
+ModulePathHandler
+  t.hErrorList (e.Config) t.SrcPos (e.StrPath) NoGroup =
+    <ModulePath-IsCorrectPath
+      t.hErrorList (e.Config) t.SrcPos (e.StrPath)
+      <MFileSystem::PathFromStr e.StrPath>
+    >;
+
+ModulePath-IsCorrectPath {
+  t.hErrorList
+  (e.Config-B (ModulePath e.Paths) e.Config-E)
+  t.SrcPos (e.StrPath)
+  Success e.PtPath =
+    t.hErrorList
+    (e.Config-B (ModulePath e.Paths (e.PtPath)) e.Config-E);
+
+  t.hErrorList (e.Config) t.SrcPos (e.SrcPath)
+  Success e.PtPath =
+    t.hErrorList
+    (e.Config (ModulePath (e.PtPath)));
+
+  t.hErrorList (e.Config) t.SrcPos (e.StrPath) Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Incorrect path \'' e.StrPath '\''
+    >
+    (e.Config);
+}
+
+DefaultModulePathHandler
+  t.hErrorList (e.Config) t.SrcPos NoParam NoGroup =
+    <ModulePathHandler
+      t.hErrorList (e.Config) t.SrcPos ('.') NoGroup
+    >;
+
+MakeModeHandler
+  t.hErrorList (e.Config) t.SrcPos (e.Mode) NoGroup =
+    t.hErrorList
+    (e.Config (Mode <MakeModeFromStr e.Mode>));
+
+MakeModeFromStr {
+  'make' = Make; 'build' = Build; 'linkonly' = LinkOnly;
+}
+
+BackEndSelectorHandler
+  t.hErrorList (e.Config) t.SrcPos (e.BackEnd) NoGroup =
+    <SwBackEndSelector
+      t.hErrorList (e.Config) t.SrcPos (e.BackEnd)
+      <ProfileBackEnd>
+    >;
+
+SwBackEndSelector {
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName)
+  e.BEProfiles-B
+  (s.ProfileName (e.Depended) e.Names-B (e.BackEndName) e.Names-E)
+  e.BEProfiles-E =
+    t.hErrorList
+    (<AddProfile s.ProfileName (e.Depended) e.Config>);
+
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) e.BEProfiles =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Unknown profile \"' e.BackEndName '\"'
+    >
+    (e.Config);
+}
+
+AddProfile {
+  s.Profile (e.Depended) e.Config-B XLinxOn e.Config-E =
+    e.Config-B e.Config-E (Profile s.Profile (e.Depended XLinx-BE));
+
+  s.Profile (e.Depended) e.Config =
+    e.Config (Profile s.Profile (e.Depended));
+}
+
+XLinxOnHandler {
+  t.hErrorList
+  (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E)
+  t.SrcPos NoParam NoGroup =
+    t.hErrorList
+    (e.Config-B (Profile s.Profile (e.Depended XLinx-BE)) e.Config-E);
+
+  t.hErrorList (e.Config) t.SrcPos NoParam NoGroup =
+    t.hErrorList (e.Config XLinxOn);
+}
+
+EOGHandler
+  t.hErrorList
+  (e.Config-B (Files e.Files) e.Config-E) t.SrcPos NoParam NoGroup =
+    <EOGHandler-Aux-MakeMode
+      t.hErrorList
+      (Files e.Files)
+      (e.Config-B e.Config-E)
+    >;
+
+EOGHandler-Aux-MakeMode
+  t.hErrorList (Files e.Files)
+  (e.Config-B (Mode s.Mode) e.Config-E) =
+    <EOGHandler-Aux-ModulePath
+      t.hErrorList
+      (Files e.Files)
+      (Mode s.Mode)
+      (e.Config-B e.Config-E)
+    >;
+
+EOGHandler-Aux-ModulePath
+  t.hErrorList (Files e.Files) (Mode s.Mode)
+  (e.Config-B (ModulePath e.ModulePath) e.Config-E) =
+    <EOGHandler-Aux-Profile
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (e.Config-B e.Config-E)
+    >;
+
+EOGHandler-Aux-Profile
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E) =
+    <EOGHandler-Aux-Depended
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile)
+      (e.Depended)
+      (e.Config-B e.Config-E)
+    >;
+
+EOGHandler-Aux-Depended
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile) (e.Depended) (e.Config) =
+    <EOGHandler-Aux-DoDepended
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile)
+      (/* scanned back-ends */)
+      (e.Config)
+      (e.Depended)
+    >;
+
+EOGHandler-Aux-DoDepended {
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath) (Profile s.Profile)
+  (e.ScannedBackEnds) (e.Config) () =
+    <EOGHandler-Aux-CheckDirExt
+      t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile) (BackEnds e.ScannedBackEnds) (e.Config)
+    >;
+
+  t.hErrorList
+  t.Files t.Mode t.ModulePath t.Profile
+  (e.ScannedBackEnds) (e.Config) (s.NextId e.Ids) =
+    <EOGHandler-Aux-DoDepended
+      t.hErrorList
+      t.Files t.Mode t.ModulePath t.Profile
+      <ScanDepended-Ext
+        (e.ScannedBackEnds) (e.Config) s.NextId
+      >
+      (e.Ids)
+    >;
+}
+
+ScanDepended-Ext {
+  (e.ScannedBackEnds)
+  (
+    e.Config-B
+    (BackEnd s.Id
+      e.Tweaks-B
+      (Ext (e.OptName) t.SrcPos e.Ext)
+      e.Tweaks-E
+    )
+    e.Config-E
+  )
+  s.Id =
+    <ScanDepended-Dir
+      (e.ScannedBackEnds)
+      s.Id (Ext t.SrcPos e.Ext)
+      (e.Config-B (BackEnd s.Id e.Tweaks-B e.Tweaks-E) e.Config-E)
+    >;
+
+  (e.ScannedBackEnds) (e.Config) s.Id =
+    <ScanDepended-Dir
+      (e.ScannedBackEnds)
+      s.Id (Ext Default <LookupDefault-BE-Ext s.Id>)
+      (e.Config)
+    >;
+}
+
+ScanDepended-Dir {
+  (e.ScannedBackEnds) s.Id t.ExtInfo
+  (
+    e.Config-B
+    (BackEnd s.Id
+      e.Tweaks-B
+      (Dir (e.OptName) t.SrcPos e.Dir)
+      e.Tweaks-E
+    )
+    e.Config-E
+  ) =
+    <ScanDepended-Additional
+      (e.ScannedBackEnds) s.Id t.ExtInfo
+      (Dir t.SrcPos e.Dir)
+      (e.Config-B (BackEnd s.Id e.Tweaks-B e.Tweaks-E) e.Config-E)
+    >;
+
+  (e.ScannedBackEnds) s.Id t.ExtInfo
+  (e.Config) =
+    <ScanDepended-Additional
+      (e.ScannedBackEnds) s.Id t.ExtInfo
+      (Dir Default <LookupDefault-BE-Dir s.Id>)
+      (e.Config)
+    >;
+}
+
+ScanDepended-Additional {
+  (e.ScannedBackEnds) s.Id t.ExtInfo t.DirInfo
+  (e.Config-B (BackEnd s.Id e.Tweaks) e.Config-E) =
+    (e.ScannedBackEnds (s.Id t.ExtInfo t.DirInfo e.Tweaks))
+    (e.Config-B e.Config-E);
+
+  (e.ScannedBackEnds) s.Id t.ExtInfo t.DirInfo
+  (e.Config) =
+    (e.ScannedBackEnds (s.Id t.ExtInfo t.DirInfo <LookupDefault-BE-Tweaks s.Id>))
+    (e.Config);
+}
+
+/*
+  Проверять конфликты между front-end'ом и back-end'ом не будем, хотя надо
+  (в случае, если для back-end'а в качестве директории установлена текущая).
+  Вообще, это надо исправить.
+*/
+
+EOGHandler-Aux-CheckDirExt
+  t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile)
+  (BackEnds e.BackEnds) (e.Config) =
+    <DoEOGHandler-Aux-CheckDirExt
+      Success t.hErrorList
+      (
+        (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+        (Profile s.Profile)
+      )
+      (BackEnds e.BackEnds) (e.Config)
+    >;
+
+DoEOGHandler-Aux-CheckDirExt {
+  s.Result t.hErrorList
+  (e.Options)
+  (BackEnds
+    e.BackEnds-B
+    (s.Id1 (Ext t.SrcPosExt1 e.Ext) (Dir t.SrcPosDir1 e.Dir) e.Tweaks1)
+    e.BackEnds-M
+    (s.Id2 (Ext t.SrcPosExt2 e.Ext) (Dir t.SrcPosDir2 e.Dir) e.Tweaks2)
+    e.BackEnds-E
+  )
+  (e.Config) =
+    <EOGHandler-Aux-CheckDirExt
+      Fails
+      <MError::AddCmdLineError
+        t.hErrorList
+        <SelectRealSrcPos t.SrcPosExt1 t.SrcPosDir1 t.SrcPosExt2 t.SrcPosDir2>
+        'Conflict between back-ends ' <BackEnd-NameFromId s.Id1> ' and '
+        <BackEnd-NameFromId s.Id2> ': back-ends have same output directory '
+        '(' e.Dir ', defined at ' <StrFromPos t.SrcPosDir1> ' and '
+        <StrFromPos t.SrcPosDir2> ') and same extension (' e.Ext ', '
+        'defined at ' <StrFromPos t.SrcPosExt1> ' and '
+        <StrFromPos t.SrcPosExt2> ')'
+      >
+      (e.Options)
+      (BackEnds
+        e.BackEnds-B
+        (s.Id1 (Ext t.SrcPosExt1 e.Ext) (Dir t.SrcPosDir1 e.Dir) e.Tweaks1)
+        e.BackEnds-M
+        e.BackEnds-E
+      )
+      (e.Config)
+    >;
+
+  s.Result t.hErrorList
+  (
+    (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+    (Profile s.Profile)
+  )
+  (BackEnds e.BackEnds) (e.Config) =
+    <EOGHandler-Aux-CollectFrontEnd
+      s.Result t.hErrorList
+      (
+        (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+        (Profile s.Profile) (BackEnds e.BackEnds)
+      )
+      (/* front ends */)
+      e.Config
+    >;
+}
+
+EOGHandler-Aux-CollectFrontEnd {
+  s.Result t.hErrorList (e.Options) (e.FrontEnds)
+  e.Config-B (FrontEnd s.FrontEndId e.Options) e.Config-E =
+    <EOGHandler-Aux-CollectFrontEnd
+      s.Result t.hErrorList (e.Options) (e.FrontEnds (s.FrontEndId e.Options))
+      e.Config-B e.Config-E
+    >;
+
+  s.Result t.hErrorList (e.Options) (e.FrontEnds) e.Config =
+    <EOGHandler-Aux-CheckExtFE
+      s.Result t.hErrorList (e.Options)
+      (FrontEnds <MergeDefaultFEsOptions e.FrontEnds>)
+      (e.Config)
+    >;
+}
+
+MergeDefaultFEsOptions
+  e.FrontEnds =
+    <DoMergeFEsOptions
+      (<GetDefaultFEOptions>) e.FrontEnds
+    >;
+
+DoMergeFEsOptions {
+  ((s.FrontEndId e.DefaultOptions) e.Defaults)
+  e.FrontEnds-B (s.FrontEndId e.UserOptions) e.FrontEnds-E =
+    (s.FrontEndId <MergeFEOptions (e.DefaultOptions) e.UserOptions>)
+    <DoMergeFEsOptions
+      (e.Defaults) e.FrontEnds-B e.FrontEnds-E
+    >;
+
+  ((s.FrontEndId e.DefaultOptions) e.Defaults) e.FrontEnds =
+    (s.FrontEndId <MergeFEOptions (e.DefaultOptions)>)
+    <DoMergeFEsOptions (e.Defaults) e.FrontEnds>;
+
+  (/* пусто */) /* пусто */ =
+    /* пусто */;
+
+  /*
+    Вариант () v.FrontEnds не рассматриваем, т.к. множество дефолтовых
+    front-end'ов должно охватывать множество front-end'ов с явно описанными
+    параметрами.
+  */
+}
+
+MergeFEOptions {
+  ((s.OptionName e.DefaultValue) e.Defaults)
+  e.UserOptions-B
+  (s.OptionName (e.Name) t.SrcPos e.UserValue)
+  e.UserOptions-E =
+    (s.OptionName t.SrcPos e.UserValue)
+    <MergeFEOptions
+      (e.Defaults) e.UserOptions-B e.UserOptions-E
+    >;
+
+  ((s.OptionName e.DefaultValue) e.Defaults) e.UserOptions =
+    (s.OptionName Default e.DefaultValue)
+    <MergeFEOptions
+      (e.Defaults) e.UserOptions
+    >;
+
+  () e.UserOptions =
+    <MLambda::Map & PrepareFEUserOption e.UserOptions>;
+}
+
+PrepareFEUserOption
+  (s.OptionName (e.Name) t.SrcPos e.Value) =
+    (s.OptionName t.SrcPos e.Value);
+
+SelectRealSrcPos {
+  Default e.Tail = <SelectRealSrcPos e.Tail>;
+
+  t.SrcPos e.Tail = t.SrcPos;
+
+  /*
+    Как минимум одна действительная позиция ошибки должна присутствовать
+    в аргументе функции.
+  */
+}
+
+StrFromPos {
+  Default = '<by default>';
+
+  t.SrcPos = <MSrcPos::ToString t.SrcPos>;
+}
+
+EOGHandler-Aux-CheckExtFE {
+  s.Result t.hErrorList (e.Options)
+  (FrontEnds
+    e.FrontEnds-B
+    (s.Id1 e.Tunes1-B (Ext t.SrcPos1 e.Ext) e.Tunes1-E)
+    e.FrontEnds-M
+    (s.Id2 e.Tunes2-B (Ext t.SrcPos2 e.Ext) e.Tunes2-E)
+    e.FrontEnds-E
+  )
+  (e.Config) =
+    <EOGHandler-Aux-CheckExtFE
+      Fails
+      <MError::AddCmdLineError
+        t.hErrorList <SelectRealSrcPos t.SrcPos1 t.SrcPos2>
+        'Conflict between front-ends ' <FrontEnd-NameFromId s.Id1> ' and '
+        <FrontEnd-NameFromId s.Id2> ': front-ends have same extension ('
+        e.Ext ', defined at ' <StrFromPos t.SrcPos1> ' and at '
+        <StrFromPos t.SrcPos2> ')'
+      >
+      (e.Options)
+      (FrontEnds
+        e.FrontEnds-B
+        (s.Id1 e.Tunes1-B (Ext t.SrcPos1 e.Ext) e.Tunes1-E)
+        e.FrontEnds-M
+        e.FrontEnds-E
+      )
+      (e.Config)
+    >;
+
+  s.Result t.hErrorList
+  (
+    (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+    (Profile s.Profile) (BackEnds e.BackEnds)
+  )
+  (FrontEnds e.FrontEnds)
+  (e.Config) =
+    <ConstructConfig
+      s.Result t.hErrorList
+      (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+      (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
+      (e.Config)
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+ConstructConfig {
+  Fails t.hErrorList e.Options
+  (/* опций остаться не должно */) =
+    t.hErrorList Fails;
+
+  Success t.hErrorList
+  (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
+  (/* опций остаться не должно */) =
+    t.hErrorList
+    (Config
+      <ConstructConfig-Aux
+        (Mode s.Mode) (ModulePath e.ModulePath)
+        (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
+      >
+      e.Files
+    );
+}
+
+ConstructConfig-Aux {
+  (Mode s.Mode) (ModulePath e.ModulePath)
+  (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds) =
+    <MLambda::Apply
+      <MLambda::Composite
+        <MLambda::BindRight & MConfig.SetMakeMode s.Mode>
+        <MLambda::Map
+          & CreateBackEndRegister e.BackEnds
+        >
+        <MLambda::Map
+          & CreateFrontEndRegister e.FrontEnds
+        >
+      >
+      <MConfig::Create e.ModulePath>
+    >;
+}
+
+CreateBackEndRegister
+  (s.BackEndId (Ext t.SrcPosExt e.Ext) (Dir t.SrcPosDir e.Dir) e.Tweaks) =
+    //<MLambda::BindRight
+    //  & MConfig.RegisterBackEnd
+    //  s.BackEndId
+    //  <BackEnd-GetFnGenerator s.BackEndId e.Tweaks>
+    //  <BackEnd-GetFnLinker s.BackEndId e.Tweaks>
+    //  (e.Dir) (e.Ext)
+    //>;
+    <MLambda::BindRight
+      <BackEnd-GetFnRegister s.BackEndId>
+      (e.Dir) (e.Ext) e.Tweaks
+    >;
+
+CreateFrontEndRegister
+  (s.FrontEndId e.Tuners-B (Ext t.SrcPos e.Ext) e.Tuners-E) =
+    //<MLambda::BindRight
+    //  & MConfig.RegisterFrontEnd
+    //  s.FrontEndId
+    //  <FrontEnd-GetFnParser s.FrontEndId e.Tuners-B e.Tuners-E>
+    //  (e.Ext)
+    //>;
+    <MLambda::BindRight
+      <FrontEnd-GetFnRegister s.FrontEndId> (e.Ext)
+    >;
+
+//------------------------------------------------------------------------------
+
+TuneBEGroup =
+  (
+    & TuneEndConfig
+    ((Param ('ext'))
+      & ExtHandler
+      (Optional)
+      OneTime
+    )
+    ((Param ('dir'))
+      & DirHandler
+      (Optional)
+      OneTime
+    )
+    ((Naked (EOG))
+      & TunerEOGHandler
+      Required
+      OneTime
+    )
+  );
+
+TuneEndConfig = ();
+
+ExtHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.Ext) NoGroup =
+    /*
+      Возможно, здесь следует встроить проверку на корректность расширения.
+    */
+    t.hErrorList
+    (e.TunerConfig (Ext ('ext') t.SrcPos e.Ext));
+
+DirHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.StrDirectory) NoGroup =
+    <DirHandler-SwCorrectDir
+      t.hErrorList (e.TunerConfig) t.SrcPos
+      (e.StrDirectory)
+      <MFileSystem::PathFromStr e.StrDirectory>
+    >;
+
+DirHandler-SwCorrectDir {
+  t.hErrorList (e.TunerConfig) t.SrcPos
+  (e.StrDirectory) Success e.PtDirectory =
+    t.hErrorList
+    (e.TunerConfig (Dir ('dir') t.SrcPos e.PtDirectory));
+
+  t.hErrorList (e.TunerConfig) t.SrcPos
+  (e.StrDirectory) Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Illegal folder path'
+    >
+    (e.TunerConfig);
+}
+
+TunerEOGHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos NoParam NoGroup =
+    t.hErrorList (e.TunerConfig);
+
+TuneBEHandler
+  t.hErrorList (e.Config) t.SrcPos (e.BackEndName) (e.Options) =
+    <SwTuneBEHandler
+      t.hErrorList (e.Config) t.SrcPos
+      <BackEnd-IdFromName e.BackEndName>
+      (e.Options)
+    >;
+
+SwTuneBEHandler {
+  t.hErrorList
+  (e.Config-B (BackEnd s.BackEndId e.Options) e.Config-E)
+  t.SrcPos Success s.BackEndId (e.NewOptions) =
+    <MergeOptions
+      t.hErrorList
+      (e.Config-B) (e.Config-E)
+      t.SrcPos
+      BackEnd
+      s.BackEndId
+      (/* merged options */)
+      (e.Options)
+      (e.NewOptions)
+    >;
+
+  t.hErrorList (e.Config) t.SrcPos Success s.BackEndId (e.Options) =
+    t.hErrorList (e.Config (BackEnd s.BackEndId e.Options));
+
+  t.hErrorList (e.Config) t.SrcPos Fails e.BackEndName (e.Options) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos
+      'Illegal name of back-end: \'' e.BackEndName '\''
+    >
+    (e.Config);
+}
+
+MergeOptions {
+  t.hErrorList (e.Config-B) (e.Config-E)
+  t.SrcPos s.EndType s.EndId
+  (e.Merged)
+  ((s.NextOption (e.Name) t.OldSrcPos e.OldValue) e.OldOptions)
+  (e.NewOptions-B (s.NextOption (e.Name) t.NewSrcPos e.NewValue) e.NewOptions-E) =
+    <MergeOptions
+      <MError::AddCmdLineError
+        t.hErrorList t.NewSrcPos 'Redefinition of option \'-' e.Name '\''
+      >
+      (e.Config-B) (e.Config-E)
+      t.SrcPos s.EndType s.EndId
+      (e.Merged
+        (s.NextOption (e.Name) t.OldSrcPos e.OldValue)
+      )
+      (e.OldOptions) (e.NewOptions-B e.NewOptions-E)
+    >;
+
+  t.hErrorList (e.Config-B) (e.Config-E)
+  t.SrcPos s.EndType s.EndId
+  (e.Merged)
+  ((s.NextOption (e.Name) t.SrcPos e.Value) e.OldOptions)
+  (e.NewOptions) =
+    <MergeOptions
+      t.hErrorList (e.Config-B) (e.Config-E)
+      t.SrcPos s.EndType s.EndId
+      (e.Merged
+        (s.NextOption (e.Name) t.SrcPos e.Value)
+      )
+      (e.OldOptions) (e.NewOptions)
+    >;
+
+  t.hErrorList (e.Config-B) (e.Config-E)
+  t.SrcPos s.EndType s.EndId
+  (e.Merged) (/* old options */)
+  (e.NewOptions) =
+    t.hErrorList
+    (
+      e.Config-B
+      (s.EndType s.EndId e.Merged e.NewOptions)
+      e.Config-E
+    );
+}
+
+TuneBEGroupEx
+  e.BackEndName =
+    <TuneBEGroupEx-SwName
+      <BackEnd-IdFromName e.BackEndName>
+    >;
+
+TuneBEGroupEx-SwName {
+  Success s.BackEndId =
+    <BackEnd-GetExtension s.BackEndId>;
+
+  Fails e.BackEndName = /* пусто */;
+}
+
+//------------------------------------------------------------------------------
+
+TuneFEGroup =
+  (
+    & TuneEndConfig
+    ((Param ('ext'))
+      & ExtHandler
+      (Optional)
+      OneTime
+    )
+    ((Naked (EOG))
+      & TunerEOGHandler
+      Required
+      OneTime
+    )
+  );
+
+TuneFEHandler
+  t.hErrorList (e.Config) t.SrcPos (e.FrontEndName) (e.Options) =
+    <SwTuneFEHandler
+      t.hErrorList (e.Config) t.SrcPos
+      <FrontEnd-IdFromName e.FrontEndName>
+      (e.Options)
+    >;
+
+SwTuneFEHandler {
+  t.hErrorList
+  (e.Config-B (FrontEnd s.FrontEndId e.Options) e.Config-E)
+  t.SrcPos Success s.FrontEndId (e.NewOptions) =
+    <MergeOptions
+      t.hErrorList
+      (e.Config-B) (e.Config-E)
+      t.SrcPos
+      FrontEnd
+      s.FrontEndId
+      (/* merged options */)
+      (e.Options)
+      (e.NewOptions)
+    >;
+
+  t.hErrorList (e.Config) t.SrcPos Success s.FrontEndId (e.Options) =
+    t.hErrorList (e.Config (FrontEnd s.FrontEndId e.Options));
+
+  t.hErrorList (e.Config) t.SrcPos Fails e.FrontEndName (e.Options) =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos
+      'Illegal name of front-end: \'' e.FrontEndName '\''
+    >
+    (e.Config);
+}
+
+
+//------------------------------------------------------------------------------
+
+BackEndsTable =
+  (Refal5-BE
+    ('Refal5')
+    ((Relative) ('~ROut'))
+    ('rout')
+    & Refal5.MInit.Register
+    & ExtentNone
+  )
+  (SymInfo
+    ('SymInfo')
+    ((Relative) ('~Defs'))
+    ('rsym')
+    & MSymModule.Register
+    & ExtentNone
+  )
+  (
+    XLinx-BE
+    ('XLinx')
+    ((Relative) ('~XLinx'))
+    ('xlinx')
+    & MXLinx.Register
+    & ExtentNone
+  )
+  (SRefal-BE
+    ('SRefal-BE')
+    ((Relative) ('~SimRef'))
+    ('sref')
+    & SRefal-BE.MInit.Register
+    & ExtentNone
+  )
+  (Cpp-SR-BE
+    ('Cpp-SR-BE')
+    ((Relative) ('~CppSR'))
+    ('cpp')
+    & Cpp-SR-BE.MInit.Register
+    & Extent-Cpp-SR-BE
+  );
+
+FrontEndsTable =
+  (MRefal-FE
+    ('MRefal')
+    ('mref')
+    & MRefal-FE.MInit.Register
+  );
+
+ExtentNone = ;
+
+Extent-Cpp-SR-BE =
+  (
+    & TuneEndConfig
+    ((Param ('compiler'))
+      & Cpp-SR-BE-Compiler-Handler
+      (Optional)
+      OneTime
+    )
+  );
+
+Cpp-SR-BE-Compiler-Handler
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
+    t.hErrorList
+    (e.TunerConfig (CCompiler ('compiler') t.SrcPos e.CompilerCmdLine));
+
+ProfileBackEnd =
+  (Refal5 (Refal5-BE SymInfo) ('Refal5') ('R5'))
+  (SimpleRefal (SRefal-BE SymInfo)
+    ('SRefal') ('Simple') ('SimpleRefal') ('SR')
+  )
+  (Cpp-SR (Cpp-SR-BE SymInfo) ('CPPSR'));
+
+LookupDefault-BE-Ext
+  s.BackEndId =
+    <LookupDefault-BE-Ext-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+SelectBEInfo
+  s.BackEndId =
+    <SelectBEInfo-Aux s.BackEndId <BackEndsTable>>;
+
+SelectBEInfo-Aux
+  s.BackEndId e.Infos-B (s.BackEndId e.Info) e.Infos-E =
+    s.BackEndId e.Info;
+
+LookupDefault-BE-Ext-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    e.Ext;
+
+LookupDefault-BE-Dir
+  s.BackEndId =
+    <LookupDefault-BE-Dir-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+LookupDefault-BE-Dir-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    e.Dir;
+
+LookupDefault-BE-Tweaks
+  s.BackEndId =
+    /* пусто */;
+
+BackEnd-NameFromId
+  s.BackEndId =
+    <BackEnd-NameFromId-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+BackEnd-NameFromId-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    e.Name;
+
+BackEnd-GetFnRegister
+  s.BackEndId =
+    <BackEnd-GetFnRegister-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+BackEnd-GetFnRegister-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    s.FnRegister;
+
+BackEnd-GetExtension
+  s.BackEndId =
+    <BackEnd-GetFnExtension-Aux
+      <SelectBEInfo s.BackEndId>
+    >;
+
+BackEnd-GetFnExtension-Aux
+  s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
+    s.FnExtent;
+
+BackEnd-IdFromName
+  e.BackEndName =
+    <BackEnd-SwIdFromName
+      (e.BackEndName) <BackEndsTable>
+    >;
+
+BackEnd-SwIdFromName {
+  (e.Name) e.Infos-B (s.Id (e.Name) e.Info) e.Infos-E =
+    Success s.Id;
+
+  (e.Name) e.Infos = Fails e.Name;
+}
+
+FrontEnd-NameFromId
+  s.FrontEndId =
+    <FrontEnd-NameFromId-Aux
+      <SelectFEInfo s.FrontEndId>
+    >;
+
+SelectFEInfo
+  s.FrontEndId =
+    <SelectFEInfo-Aux s.FrontEndId <FrontEndsTable>>;
+
+SelectFEInfo-Aux
+  s.FrontEndId e.Infos-B (s.FrontEndId e.Info) e.Infos-E =
+    s.FrontEndId e.Info;
+
+FrontEnd-NameFromId-Aux
+  s.FrontEndId (e.Name) (e.Ext) s.FnRegister =
+    e.Name;
+
+GetDefaultFEOptions =
+  <MLambda::Map
+    & GetDefaultFEOptions-Aux <FrontEndsTable>
+  >;
+
+GetDefaultFEOptions-Aux
+  (s.FrontEndId (e.Name) (e.Ext) s.FnRegister) =
+    (s.FrontEndId (Ext e.Ext));
+
+FrontEnd-GetFnRegister
+  s.FrontEndId =
+    <FrontEnd-GetFnRegister-Aux
+      <SelectFEInfo s.FrontEndId>
+    >;
+
+FrontEnd-GetFnRegister-Aux
+  s.FrontEndId (e.Name) (e.Ext) s.FnRegister =
+    s.FnRegister;
+
+FrontEnd-IdFromName
+  e.Name =
+    <FrontEnd-SwIdFromName
+      (e.Name) <FrontEndsTable>
+    >;
+
+FrontEnd-SwIdFromName {
+  (e.Name) e.Infos-B (s.Id (e.Name) e.Info) e.Infos-E =
+    Success s.Id;
+
+  (e.Name) e.Infos = Fails e.Name;
+}
+
+$END Config::MLoad2.

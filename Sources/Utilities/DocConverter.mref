@@ -124,7 +124,7 @@ ConvertParagraphs {
   (e.TagInfo) /* всё */ = /* пусто */;
 
   (e.TagInfo) ('`' e.BeginCode) e.Lines =
-    <CodePar (e.TagInfo) ('<tt><p>') (e.BeginCode) e.Lines>;
+    <CodePar (e.TagInfo) ('<code><p>') (e.BeginCode) e.Lines>;
 
   (e.TagInfo) ('====' e.Header '====') e.Lines =
     ('<h4>' e.Header '</h4>')
@@ -154,20 +154,20 @@ ConvertParagraphs {
 
 CodePar {
   (e.TagInfo) (e.Scanned) () (e.NextLine) e.Lines =
-    (e.Scanned '<br>')
+    (e.Scanned)
     <CodePar (e.TagInfo) () (e.NextLine) e.Lines>;
 
-  (e.TagInfo) (e.Scanned) () /* пусто */ = (e.Scanned '</tt></p>');
+  (e.TagInfo) (e.Scanned) () /* пусто */ = (e.Scanned '</code></p>');
 
   (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =
     <CodePar (e.TagInfo) (e.Scanned '`') (e.Rest) e.Lines>;
 
   (e.TagInfo) (e.Scanned) ('`') e.Lines =
-    (e.Scanned '</tt></p>')
+    (e.Scanned '</code></p>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
   (e.TagInfo) (e.Scanned) ('`' e.Rest) e.Lines =
-    (e.Scanned '</tt></p>')
+    (e.Scanned '</code></p>')
     <ConvertParagraphs (e.TagInfo) (e.Rest) e.Lines>;
 
   (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =
@@ -308,13 +308,13 @@ TextPar-Code {
   */
   (s.Bold s.Italic) (e.TagInfo)
   (e.Scanned) () (e.NextLine) e.Lines =
-    (e.Scanned '</tt>' <Open s.Bold s.Italic>)
+    (e.Scanned '</code>' <Open s.Bold s.Italic>)
     <TextPar
       (s.Bold s.Italic) (e.TagInfo) () (e.NextLine) e.Lines
     >;
 
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) () /* пусто */ =
-    (e.Scanned '</tt></p>');
+    (e.Scanned '</code></p>');
 
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =
     <TextPar-Code
@@ -324,7 +324,7 @@ TextPar-Code {
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('`' e.Rest) e.Lines =
     <TextPar
       (s.Bold s.Italic) (e.TagInfo)
-      (e.Scanned '</tt>' <Open s.Bold s.Italic>) (e.Rest) e.Lines
+      (e.Scanned '</code>' <Open s.Bold s.Italic>) (e.Rest) e.Lines
     >;
 
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =

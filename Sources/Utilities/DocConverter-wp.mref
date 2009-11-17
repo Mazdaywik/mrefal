@@ -1,0 +1,380 @@
+$PROGRAM DocConverter-wp;
+
+$IMPORT FileIO;
+$IMPORT InOut;
+$IMPORT Math;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MStrings;
+
+$IMPORT MUtilitiesBanner;
+
+$ENTRY Go =
+  <MUtilitiesBanner::Type 'DocConverter'>
+  <CheckArgs (<MOS::Arg 1>) (<MOS::Arg 2>)>;
+
+CheckArgs {
+  () () = <InOut::WriteLine 'command line error'>;
+
+  (e.TextName) () =
+    <Convert (e.TextName) (e.TextName '.html')>;
+
+  (e.TextName) (e.HTMLName) =
+    <Convert (e.TextName) (e.HTMLName)>;
+}
+
+Convert
+  (e.TextName) (e.HTMLName) =
+    <FileIO::Save
+      (e.HTMLName)
+      ('<HTML> <BODY>')
+      <ConvertLines
+        <FileIO::Load e.TextName>
+      >
+      ('</BODY></HTML>')
+    >;
+
+ConvertLines
+  e.Lines = <ConvertParagraphs <FindTags e.Lines>>;
+
+FindTags
+  e.Lines =
+    <MLambda::MapReduce
+      <MLambda::Composite
+        & MLambda.UnBracket-H
+        & FindTags-Line
+        & MLambda.Bracket-H
+      >
+      (
+        /* таблица тегов */
+        (StartNumList 1)
+      )
+      e.Lines
+    >;
+
+FindTags-Line
+  (e.TagInfo) e.Line =
+    <DoFindTags
+      (e.TagInfo) () e.Line
+    >;
+
+DoFindTags {
+  (e.TagInfo) (e.Scanned) '%%' e.Line =
+    <DoFindTags (e.TagInfo) (e.Scanned '%') e.Line>;
+
+  (e.TagInfo) (e.Scanned) '%' e.Line =
+    <DoFindTags-Analyze
+      (e.TagInfo) (e.Scanned) <FindTag () e.Line>
+    >;
+
+  (e.TagInfo) (e.Scanned) s.Next e.Line =
+    <DoFindTags (e.TagInfo) (e.Scanned s.Next) e.Line>;
+
+  (e.TagInfo) (e.Scanned) = (e.TagInfo) e.Scanned;
+}
+
+FindTag {
+  (e.Scanned) '%' e.Line = (Tag (e.Scanned)) e.Line;
+
+  (e.Scanned) ' ' e.Line = <FindTag-Parameter (e.Scanned) () e.Line>;
+
+  (e.Scanned) s.Next e.Line = <FindTag (e.Scanned s.Next) e.Line>;
+
+  // Ошибка пользователя
+  (e.Scanned) /* пусто */ = NoTag '%' e.Scanned;
+}
+
+FindTag-Parameter {
+  // Параметр тега -- весь текст до конца тега
+  (e.Tag) (e.Parameter) '%' e.Line =
+    (Tag (e.Tag) <MStrings::Trim e.Parameter>) e.Line;
+
+  (e.Tag) (e.Parameter) s.Next e.Line =
+    <FindTag-Parameter (e.Tag) (e.Parameter s.Next) e.Line>;
+
+  // Ошибка пользователя
+  (e.Tag) (e.Parameter) /* пусто */ = '%' e.Tag ' ' e.Parameter;
+}
+
+DoFindTags-Analyze {
+  (e.TagInfo-B (StartNumList s.Num) e.TagInfo-E)
+  (e.Scanned)
+  (Tag ('listdef') e.ListName) e.Line =
+    <DoFindTags
+      (e.TagInfo-B
+        (StartNumList <Math::Inc s.Num>)
+        e.TagInfo-E
+        (ListNo e.ListName s.Num)
+      )
+      (e.Scanned <MStrings::Symb s.Num>)
+      e.Line
+    >;
+
+  /* остальные теги пока игнорируем */
+  (e.TagInfo) (e.Scanned) (Tag (e.Tag) e.Parameter) e.Line =
+    <DoFindTags
+      (e.TagInfo) (e.Scanned (Tag (e.Tag) e.Parameter)) e.Line
+    >;
+}
+
+ConvertParagraphs {
+  // Пустые строки пропускаем
+  (e.TagInfo) () e.Lines = <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (e.TagInfo) /* всё */ = /* пусто */;
+
+  (e.TagInfo) ('`' e.BeginCode) e.Lines =
+    <CodePar (e.TagInfo) ('<code><p>') (e.BeginCode) e.Lines>;
+
+  (e.TagInfo) ('====' e.Header '====') e.Lines =
+    ('<h4>' e.Header '</h4>')
+    <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (e.TagInfo) ('===' e.Header '===') e.Lines =
+    ('<h3>' e.Header '</h3>')
+    <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (e.TagInfo) ('==' e.Header '==') e.Lines =
+    ('<h2>' e.Header '</h2>')
+    <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (e.TagInfo) ('=' e.Header '=') e.Lines =
+    ('<h1>' e.Header '</h1>')
+    <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (e.TagInfo) (e.BeginText) e.Lines =
+    <TextPar
+      (NoBold NoItalic)
+      (e.TagInfo)
+      ('<p>')
+      (e.BeginText)
+      e.Lines
+    >;
+}
+
+CodePar {
+  (e.TagInfo) (e.Scanned) () (e.NextLine) e.Lines =
+    (e.Scanned)
+    <CodePar (e.TagInfo) () (e.NextLine) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) () /* пусто */ = (e.Scanned '</code></p>');
+
+  (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =
+    <CodePar (e.TagInfo) (e.Scanned '`') (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) ('`') e.Lines =
+    (e.Scanned '</code></p>')
+    <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) ('`' e.Rest) e.Lines =
+    (e.Scanned '</code></p>')
+    <ConvertParagraphs (e.TagInfo) (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =
+    <CodePar (e.TagInfo) (e.Scanned '&lt;') (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) ('>' e.Rest) e.Lines =
+    <CodePar (e.TagInfo) (e.Scanned '&gt;') (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) ('&' e.Rest) e.Lines =
+    <CodePar (e.TagInfo) (e.Scanned '&amp;') (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) (' ' e.Rest) e.Lines =
+    <CodePar (e.TagInfo) (e.Scanned '&nbsp;') (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) (s.Other e.Rest) e.Lines =
+    <CodePar (e.TagInfo) (e.Scanned s.Other) (e.Rest) e.Lines>;
+
+  (e.TagInfo) (e.Scanned) ((Tag (e.Name) e.Parameter) e.Rest) e.Lines =
+    <CodePar
+      <AnalyzeTag-Par (e.TagInfo) (e.Scanned) (e.Name) (e.Parameter)>
+      (e.Rest) (e.Lines)
+    >;
+}
+
+AnalyzeTag-Par {
+  (e.TagInfo-B (ListNo e.Name s.Num) e.TagInfo-E) (e.Scanned)
+  ('listno') (e.Name) =
+    (e.TagInfo-B (ListNo e.Name s.Num) e.TagInfo-E)
+    (e.Scanned <MStrings::Symb s.Num>);
+
+  (e.TagInfo) (e.Scanned) (e.Name) (e.Parameter) =
+    (e.TagInfo)
+    (e.Scanned '<b>BAD TAG: ' e.Name ': ' e.Parameter '</b>');
+}
+
+TextPar {
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned)
+  (/* кончилась строка */) (/* следующая -- пустая */) e.Lines =
+    (e.Scanned <Close s.Bold s.Italic> '</p>')
+    <ConvertParagraphs (e.TagInfo) e.Lines>;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) () (e.NextLine) e.Lines =
+    (e.Scanned)
+    <TextPar (s.Bold s.Italic) (e.TagInfo) () (e.NextLine) e.Lines>;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) () /* всё */ =
+    (e.Scanned  <Close s.Bold s.Italic>'</p>');
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '`') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('`' e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo)
+      (e.Scanned <Close s.Bold s.Italic>) (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('__' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '_') (e.Rest) e.Lines
+    >;
+
+  (s.Bold NoItalic) (e.TagInfo) (e.Scanned) ('_' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold Italic) (e.TagInfo)
+      (e.Scanned <CloseBold s.Bold> '<i>' <OpenBold s.Bold>)
+      (e.Rest) e.Lines
+    >;
+
+  (s.Bold Italic) (e.TagInfo) (e.Scanned) ('_' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold NoItalic) (e.TagInfo)
+      (e.Scanned <CloseBold s.Bold> '</i>' <OpenBold s.Bold>)
+      (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('**' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '*') (e.Rest) e.Lines
+    >;
+
+  (NoBold s.Italic) (e.TagInfo) (e.Scanned) ('*' e.Rest) e.Lines =
+    <TextPar
+      (Bold s.Italic) (e.TagInfo) (e.Scanned '<b>') (e.Rest) e.Lines
+    >;
+
+  (Bold s.Italic) (e.TagInfo) (e.Scanned) ('*' e.Rest) e.Lines =
+    <TextPar
+      (NoBold s.Italic) (e.TagInfo) (e.Scanned '</b>') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&lt;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('>' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&gt;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('&' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&amp;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('---' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&mdash;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('--' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&ndash;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) (s.Other e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned s.Other) (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned)
+  ((Tag (e.Name) e.Parameter) e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic)
+      <AnalyzeTag-Par (e.TagInfo) (e.Scanned) (e.Name) (e.Parameter)>
+      (e.Rest) e.Lines
+    >;
+}
+
+
+TextPar-Code {
+  /*
+    Считаем, что фрагмент кода в тексте не может распространяться
+    на несколько строк.
+  */
+  (s.Bold s.Italic) (e.TagInfo)
+  (e.Scanned) () (e.NextLine) e.Lines =
+    (e.Scanned '</code>' <Open s.Bold s.Italic>)
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo) () (e.NextLine) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) () /* пусто */ =
+    (e.Scanned '</code></p>');
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '`') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('`' e.Rest) e.Lines =
+    <TextPar
+      (s.Bold s.Italic) (e.TagInfo)
+      (e.Scanned '</code>' <Open s.Bold s.Italic>) (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&lt;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('>' e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&gt;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&amp;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) (' ' e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned '&nbsp;') (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) (s.Other e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic) (e.TagInfo) (e.Scanned s.Other) (e.Rest) e.Lines
+    >;
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned)
+  ((Tag (e.Name) e.Parameter) e.Rest) e.Lines =
+    <TextPar-Code
+      (s.Bold s.Italic)
+      <AnalyzeTag-Par (e.TagInfo) (e.Scanned) (e.Name) (e.Parameter)>
+      (e.Rest) e.Lines
+    >;
+}
+
+Open {
+  s.Bold Italic = '<i>' <OpenBold s.Bold>;
+
+  s.Bold NoItalic = <OpenBold s.Bold>;
+}
+
+Close {
+  s.Bold Italic = <CloseBold s.Bold> '</i>';
+
+  s.Bold NoItalic = <CloseBold s.Bold>;
+}
+
+OpenBold { Bold = '<b>'; NoBold = ; }
+
+CloseBold { Bold = '</b>'; NoBold = ; }
+
+$END DocConverter-wp.

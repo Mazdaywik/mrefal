@@ -1,6 +1,7 @@
 @echo off
 set PROGRAMS=Grab_info Text-To-HTML TODO_list Recoder VersionUpdater
 set PROGRAMS=%PROGRAMS% MergeFindResults ErrorDecoder DocConverter
+set PROGRAMS=%PROGRAMS% DocConverter-wp
 
 refgo VersionUpdater /verfile:Utilities_version.txt /srcfile:mUtilitiesBanner.mref >nul
 

@@ -1,0 +1,1 @@
+@"..\..\Simple Refal\Compiler\srefc" -c "g++ -I\"../../Simple Refal/SRLib\"" -d ..\..\Simple" "Refal\SRLib %* refalrts Library WinLib

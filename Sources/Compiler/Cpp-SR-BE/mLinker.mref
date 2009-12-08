@@ -33,14 +33,27 @@ EliminateCollisions
   t.Config e.Modules =
     <DoEliminateCollisions
       () () <MLambda::Map & PrepareName e.Modules>
-      ('Library'
-        (<MHelpers::ConfigExtract t.Config RunTimeDir> '\\Library.cpp')
-      )
-      ('refalrts'
-        (<MHelpers::ConfigExtract t.Config RunTimeDir> '\\refalrts.cpp')
-      )
+      <MLambda::Map
+        <MLambda::BindLeft
+          & PrepareRtsName <MHelpers::ConfigExtract t.Config RunTimeDir>
+        >
+        <ParseRunTimeFiles
+          <MHelpers::ConfigExtract t.Config RunTimeFiles>
+        >
+      >
     >;
 
+ParseRunTimeFiles {
+  e.FileName ',' e.Tail =
+    (<MStrings::Trim e.FileName>)
+    <ParseRunTimeFiles e.Tail>;
+
+  e.FileName = (<MStrings::Trim e.FileName>);
+}
+
+PrepareRtsName
+  e.Directory (e.Name '.' e.Ext) =
+    (e.Name (e.Directory '\\' e.Name '.' e.Ext));
 
 PrepareName
   (t.ModuleName e.StrFileName) =
@@ -83,6 +96,7 @@ GenCommands {
       <CompilerCmdLine t.Config>
       '-o' e.ProgName '.cpp.exe '
       <MLambda::Map & GenFilename e.Commands>
+      <MHelpers::ConfigExtract t.Config ExtraOptions>
       // '>nul'
     )
     <MLambda::Map & GenRevRename e.Commands>;

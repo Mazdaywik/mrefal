@@ -22,8 +22,11 @@ $ENTRY Register
 
 $ENTRY Extent =
   (CCompiler ('compiler') 'call call-C++.bat')
-  (RunTimeDir ('runtime') '.')
+  (RunTimeDir ('runtime-dir') '.')
+  (RunTimeFiles ('runtime-files') 'Library.cpp,refalrts.cpp')
   (IncludeOpt ('include-opt') '-I')
-  (OutputOpt ('output-opt') /* пусто */);
+  (OutputOpt ('output-opt') /* пусто */)
+  (DefineOpt ('define') '-D')
+  (ExtraOptions ('extra') /* пусто */);
 
 $END Cpp-SR-BE::MInit.

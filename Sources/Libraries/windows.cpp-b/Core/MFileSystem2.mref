@@ -1,0 +1,9 @@
+$MODULE Core::MFileSystem2;
+
+$ENTRY MakeDir e.DirName = ;
+
+$ENTRY Remove e.FileName = ;
+
+$ENTRY RemoveDir e.FileName = ;
+
+$END Core::MFileSystem2.

@@ -3,6 +3,7 @@ $MODULE MFileSystem;
 $IMPORT MRefalRTS;
 
 $IMPORT Core::MFileSystem;
+$IMPORT Core::MFileSystem2;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MSelfDiag;

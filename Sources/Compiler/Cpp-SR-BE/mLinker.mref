@@ -115,14 +115,6 @@ GenFwdRename {
   (NoRename e.Path) = ;
 }
 
-FileName {
-  e.StrPath = <FileName-Aux <MFileSystem::PathFromStr e.StrPath>>;
-}
-
-FileName-Aux {
-  e.PtBegin (e.FileName) = e.FileName;
-}
-
 GenFilename {
   (Rename (e.Name) (e.NewName)) = '\"' e.NewName '\" ';
 

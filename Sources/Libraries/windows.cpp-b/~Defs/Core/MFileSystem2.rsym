@@ -1,0 +1,8 @@
+$module Core::MFileSystem2;
+
+
+$entry MakeDir;
+$entry Remove;
+$entry RemoveDir;
+
+$end Core::MFileSystem2.

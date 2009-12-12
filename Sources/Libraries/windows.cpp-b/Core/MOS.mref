@@ -1,0 +1,9 @@
+$MODULE Core::MOS;
+
+$ENTRY ArgList = ;
+
+$ENTRY EnvList = ;
+
+$ENTRY ForseExit s.Number = ;
+
+$END Core::MOS.

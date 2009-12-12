@@ -4,8 +4,6 @@ $IMPORT Core::MFileIO;
 $IMPORT MSwapSupport;
 $IMPORT MRefalRTS;
 
-$SWAP G_Handles;
-
 $ENTRY Open {
   'r' e.FileName = <Core::MFileIO::Open 'r' e.FileName>;
 

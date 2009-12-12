@@ -626,15 +626,6 @@ SwInfo {
 
 Info-Ident t.Name = ', & ' <QNameCode t.Name> 'L_<int>::name';
 
-PrintableName
-  t.Name = <PrintableName-Aux <MQualifiedName::ToPrintable-Dot t.Name>>;
-
-PrintableName-Aux {
-  e.Name-B Entry e.Name-E = e.Name-B '@' <PrintableName-Aux e.Name-E>;
-
-  e.Name = e.Name;
-}
-
 GenCloseBrackets {
   '    ' = ('  } while ( 0 );');
 

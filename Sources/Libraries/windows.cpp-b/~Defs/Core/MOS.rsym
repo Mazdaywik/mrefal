@@ -1,0 +1,8 @@
+$module Core::MOS;
+
+
+$entry ArgList;
+$entry EnvList;
+$entry ForseExit;
+
+$end Core::MOS.

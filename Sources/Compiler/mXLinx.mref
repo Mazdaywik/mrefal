@@ -680,7 +680,7 @@ FilterFunction {
   ) =
     <SwFilterFunction
       <IsFunctionScopeClass e.ScopeClass>
-      (e.Name) (e.SrcPos) e.SubEntities
+      (e.Name) (e.ScopeClass) (e.SrcPos) e.SubEntities
     >;
 
   (Parser) = ;
@@ -692,9 +692,9 @@ IsFunctionScopeClass {
 }
 
 SwFilterFunction {
-  Function (e.Name) (e.SrcPos) e.SubEntities =
+  Function (e.Name) (e.ScopeClass) (e.SrcPos) e.SubEntities =
     (
-      (e.Name) (e.SrcPos)
+      (e.Name) (e.ScopeClass) (e.SrcPos)
       <MLambda::Map
         & FilterFunction-SubEntity e.SubEntities
       >
@@ -715,7 +715,7 @@ FilterFunction-SubEntity {
 SeparateUseds {
   ((e.NextRequest) e.Requests) (e.SubRequests)
   e.Entities-B
-  ((e.NextRequest) (e.SrcPos) e.SubEntities)
+  ((e.NextRequest) (e.ScopeClass) (e.SrcPos) e.SubEntities)
   e.Entities-E =
     <SeparateUseds
       (e.Requests) (e.SubRequests e.SubEntities)
@@ -752,22 +752,25 @@ PrintNotLinked
     >;
 
 DeleteSubRequests {
-  ((e.Name) (e.SrcPos) e.SubRequests) =
-    ((e.Name) (e.SrcPos));
+  ((e.Name) (e.ScopeClass) (e.SrcPos) e.SubRequests) =
+    ((e.Name) (e.ScopeClass) (e.SrcPos));
 }
 
 CollectTree {
-  ((e.Qualifier '::' e.SubName1) (e.SrcPos1))
-  ((e.Qualifier '::' e.SubName2) (e.SrcPos2))
+  ((e.Qualifier '::' e.SubName1) (e.ScopeClass1) (e.SrcPos1))
+  ((e.Qualifier '::' e.SubName2) (e.ScopeClass2) (e.SrcPos2))
   e.Tail =
     <CollectTree-Aux
       (e.Qualifier)
-      (((e.SubName1) (e.SrcPos1)) ((e.SubName2) (e.SrcPos2)))
+      (
+        ((e.SubName1) (e.ScopeClass1) (e.SrcPos1))
+        ((e.SubName2) (e.ScopeClass2) (e.SrcPos2))
+      )
       e.Tail
     >;
 
-  ((e.Name) (e.SrcPos)) e.Tail =
-    (Leaf (e.Name) (e.SrcPos))
+  ((e.Name) (e.ScopeClass) (e.SrcPos)) e.Tail =
+    (Leaf (e.ScopeClass) (e.Name) (e.SrcPos))
     <CollectTree e.Tail>;
 
   = ;
@@ -775,10 +778,10 @@ CollectTree {
 
 CollectTree-Aux {
   (e.Qualifier) (e.SubNames)
-  ((e.Qualifier '::' e.SubName) (e.SrcPos)) e.Tail =
+  ((e.Qualifier '::' e.SubName) (e.ScopeClass) (e.SrcPos)) e.Tail =
     <CollectTree-Aux
       (e.Qualifier)
-      (e.SubNames ((e.SubName) (e.SrcPos))) e.Tail
+      (e.SubNames ((e.SubName) (e.ScopeClass) (e.SrcPos))) e.Tail
     >;
 
   (e.Qualifier) (e.SubNames) e.Tail =
@@ -798,15 +801,23 @@ PrintNotLinked-AsTree {
 }
 
 DoPrintNotLinked-AsTree {
+  () t.Node =
+    () <DoPrintNotLinked-AsTree-SwNode () t.Node>;
+
+  (e.Indent) t.Node =
+    <DoPrintNotLinked-AsTree-SwNode (e.Indent) t.Node>;
+}
+
+DoPrintNotLinked-AsTree-SwNode {
   (e.Indent) (Tree (e.Root) e.SubTrees) =
     (e.Indent e.Root '::')
     <MLambda::Map
       <MLambda::BindLeft & DoPrintNotLinked-AsTree (e.Indent '  ')>
-      e.SubTrees
+      <MOrder::Sort e.SubTrees>
     >;
 
-  (e.Indent) (Leaf (e.Name) (e.SrcPos)) =
-    (e.Indent e.Name ', (' e.SrcPos ')');
+  (e.Indent) (Leaf (e.ScopeClass) (e.Name) (e.SrcPos)) =
+    (e.Indent e.ScopeClass ': ' e.Name ', (' e.SrcPos ')');
 }
 
 $END MXLinx.

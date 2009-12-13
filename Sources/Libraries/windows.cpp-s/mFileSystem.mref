@@ -3,7 +3,6 @@ $MODULE MFileSystem;
 $IMPORT MRefalRTS;
 
 $IMPORT Core::MFileSystem;
-$IMPORT Core::MFileSystem2;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MSelfDiag;
@@ -259,7 +258,31 @@ $ENTRY BackSlash {
 */
 $ENTRY MakeDir
   e.Directory =
-    <MOS::System 'mkdir ' <Quoting e.Directory> ' 1>nul 2>nul'>;
+    <MLambda::Nil
+      <Core::MFileSystem::MakeDir e.Directory>
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveDir e.StrDirectory> == empty
+*/
+$ENTRY RemoveDir
+  e.Directory =
+    <MLambda::Nil
+      <Core::MFileSystem::RemoveDir e.Directory>
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveFile e.StrFileName> == empty
+*/
+$ENTRY RemoveFile
+  e.FileName =
+    <MLambda::Nil
+      <Core::MFileSystem::RemoveFile e.FileName>
+    >;
 
 //------------------------------------------------------------------------------
 

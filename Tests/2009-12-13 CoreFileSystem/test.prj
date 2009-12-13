@@ -1,0 +1,19 @@
++be:CPPSR
++MP:.
++MP:../../Sources/Libraries/all.all
++MP:../../Sources/Libraries/all.cpp-b
++MP:../../Sources/Libraries/all.cpp-s
++MP:../../Sources/Libraries/windows.all
++MP:../../Sources/Libraries/windows.cpp-b
++MP:../../Sources/Libraries/windows.cpp-s
++MP:../../Sources/Compiler
+-tune-be:Cpp-SR-BE
+(
+  -dir:~Cpp-test
+  -compiler:g++
+  -runtime-dir:..\..\Sources\Runtime\windows.cpp
+)
+# +xlinx
++make
+Test.mref
+

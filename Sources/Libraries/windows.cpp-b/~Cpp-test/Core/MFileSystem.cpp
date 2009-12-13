@@ -435,3 +435,79 @@ refalrts::FnResult CoreP_MFileSystemP_DirList(refalrts::Iter arg_begin, refalrts
     return refalrts::cSuccess;
   }
 }
+
+namespace {
+
+extern "C" {
+
+typedef BOOL (WINAPI *FileOperation)(LPCSTR filename);
+
+}
+
+refalrts::FnResult perform_file_operation(
+  FileOperation operation,
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  refalrts::Iter eName_b = arg_begin;
+  refalrts::Iter eName_e = arg_end;
+
+  refalrts::move_left( eName_b, eName_e );
+  refalrts::move_left( eName_b, eName_e );
+  refalrts::move_right( eName_b, eName_e );
+
+  std::vector<char> filename;
+
+  refalrts::FnResult res =
+    string_from_seq( filename, eName_b, eName_e );
+
+  if( res != refalrts::cSuccess ) {
+    return res;
+  }
+
+  BOOL op_result = (*operation)( & filename[0] );
+
+  refalrts::reset_allocator();
+
+  refalrts::Iter nSF = 0;
+
+  refalrts::RefalIdentifier ident =
+    (op_result ? & SuccessL_<int>::name : & FailsL_<int>::name );
+
+  if( ! refalrts::alloc_ident( nSF, ident ) )
+    return refalrts::cNoMemory;
+
+  refalrts::splice_elem( arg_begin, nSF );
+
+  refalrts::splice_to_freelist( arg_begin, arg_end );
+
+  return refalrts::cSuccess;
+}
+
+} // безымянное namespace
+
+refalrts::FnResult CoreP_MFileSystemP_RemoveDir(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return perform_file_operation( & RemoveDirectory, arg_begin, arg_end );
+}
+
+refalrts::FnResult CoreP_MFileSystemP_RemoveFile(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return perform_file_operation( DeleteFile, arg_begin, arg_end );
+}
+
+namespace {
+
+extern "C" BOOL WINAPI my_create_directory(LPCTSTR lpPathName) {
+  return CreateDirectory(lpPathName, NULL);
+}
+
+} // безымянное namespace
+
+refalrts::FnResult CoreP_MFileSystemP_MakeDir(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return perform_file_operation( my_create_directory, arg_begin, arg_end );
+}
+

@@ -1,0 +1,28 @@
+$PROGRAM Test;
+
+$IMPORT InOut;
+
+$IMPORT FS = Core::MFileSystem;
+
+Test s.Func e.Arg =
+  <InOut::WriteLine '<' s.Func e.Arg '> =='>
+  <InOut::WriteLine '  ' <s.Func e.Arg>>
+  <InOut::WriteLine>;
+
+$ENTRY Go =
+  <Test FS.RemoveDir 'EmptyDir'>
+  <Test FS.RemoveDir 'NoExistDir'>
+  <Test FS.RemoveDir 'NotEmptyDir'>
+  <Test FS.RemoveDir 'testfile.txt'>
+
+  <Test FS.RemoveFile 'EmptyDir2'>
+  <Test FS.RemoveFile 'no_exist_file.txt'>
+  <Test FS.RemoveFile 'NotEmptyDir'>
+  <Test FS.RemoveFile 'testfile.txt'>
+
+  <Test FS.MakeDir 'EmptyDir3'>
+  <Test FS.MakeDir 'NotEmptyDir'>
+  <Test FS.MakeDir 'testfile2.txt'>
+  <Test FS.MakeDir 'NewDir'>;
+
+$END Test.

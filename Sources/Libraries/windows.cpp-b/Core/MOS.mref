@@ -6,4 +6,10 @@ $ENTRY EnvList = ;
 
 $ENTRY ForseExit s.Number = ;
 
+$ENTRY CreateProcess {
+  Wait (e.Program) (e.CommandLine) = Success;
+
+  NoWait (e.Program) (e.CommandLine) = Fails;
+}
+
 $END Core::MOS.

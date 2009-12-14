@@ -449,7 +449,7 @@ $ENTRY PrintErrors {
 
 DelErrorFile-SwExist {
   True e.ErrorFile =
-    <MOS::System 'del ' e.ErrorFile ' 1>nul 2>nul'>;
+    <MFileSystem::RemoveFile e.ErrorFile>;
 
   False e.ErrorFile = ;
 }

@@ -1,8 +1,0 @@
-((!(Module)(Core::MFileSystem2)('..\\Libraries\\windows.cpp-b\\
-Core\\MFileSystem2.mref',\d0321)))((!(Entry)(RunTime)(Runtime\d
-032call)))((!(Entry)(Core::MFileSystem2::RemoveDir)('..\\Librar
-ies\\windows.cpp-b\\Core\\MFileSystem2.mref',\d0327)))((!(Entry
-)(Core::MFileSystem2::Remove)('..\\Libraries\\windows.cpp-b\\Co
-re\\MFileSystem2.mref',\d0325)))((!(Entry)(Core::MFileSystem2::
-MakeDir)('..\\Libraries\\windows.cpp-b\\Core\\MFileSystem2.mref
-',\d0323)))

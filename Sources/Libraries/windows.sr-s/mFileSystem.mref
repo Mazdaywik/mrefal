@@ -261,6 +261,24 @@ $ENTRY MakeDir
 //------------------------------------------------------------------------------
 
 /**
+  <RemoveDir e.StrDirectory> == empty
+*/
+$ENTRY RemoveDir
+  e.Directory =
+    <MOS::System 'rmdir ' <Quoting e.Directory> ' 1>nul 2>nul'>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveFile e.StrFileName> == empty
+*/
+$ENTRY RemoveFile
+  e.FileName =
+    <MOS::System 'del ' <Quoting e.FileName> ' 1>nul 2>nul'>;
+
+//------------------------------------------------------------------------------
+
+/**
   <FileAttribute s.Attribute e.StrFileName>
     == FileNotFound
     == (e.Value)

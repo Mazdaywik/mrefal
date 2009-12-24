@@ -55,9 +55,18 @@ GenerateFunction-Aux {
     t.hIModule
     (Define Function t.AbsolutName (& Generator.GenSwap t.AbsolutName));
 
+  t.hIModule Found s.ScopeClass Found () t.AbsolutName =
+    t.hIModule
+    (Define Function t.AbsolutName (<SwitchEnum s.ScopeClass> t.AbsolutName));
+
   t.hIModule Found s.ScopeClass Found (e.Sentences) t.AbsolutName =
     t.hIModule
     <GenFunction t.AbsolutName s.ScopeClass e.Sentences>;
+}
+
+SwitchEnum {
+  Entry = & Generator.GenEEnum;
+  Local = & Generator.GenEnum;
 }
 
 Generate-EntryCode

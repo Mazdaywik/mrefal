@@ -94,7 +94,8 @@ GenCommands {
     <MLambda::Map & GenFwdRename e.Commands>
     (
       <CompilerCmdLine t.Config>
-      '-o' e.ProgName '.cpp.exe '
+      <MHelpers::ConfigExtract t.Config ExecutableFile>
+      e.ProgName '.cpp.exe '
       <MLambda::Map & GenFilename e.Commands>
       <MHelpers::ConfigExtract t.Config ExtraOptions>
       // '>nul'

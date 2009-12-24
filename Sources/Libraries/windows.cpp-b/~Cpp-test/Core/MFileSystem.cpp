@@ -379,9 +379,7 @@ refalrts::FnResult CoreP_MFileSystemP_DirList(refalrts::Iter arg_begin, refalrts
   find_str.push_back('\0');
 
   WIN32_FIND_DATA find_file_data;
-  HANDLE hFind = INVALID_HANDLE_VALUE;
-
-  hFind = FindFirstFile( & find_str[0], & find_file_data );
+  HANDLE hFind = FindFirstFile( & find_str[0], & find_file_data );
 
   if( hFind == INVALID_HANDLE_VALUE ) {
     refalrts::reset_allocator();
@@ -428,7 +426,7 @@ refalrts::FnResult CoreP_MFileSystemP_DirList(refalrts::Iter arg_begin, refalrts
     for( unsigned i = 0; i < brackets.size(); ++i ) {
       res = refalrts::splice_evar( res, brackets[i].first, brackets[i].second );
     }
-    res = refalrts::splice_elem( res, nSF );
+    refalrts::splice_elem( res, nSF );
 
     refalrts::splice_to_freelist( arg_begin, arg_end );
 

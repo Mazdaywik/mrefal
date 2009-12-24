@@ -27,6 +27,7 @@ $ENTRY Extent =
   (IncludeOpt ('include-opt') '-I')
   (OutputOpt ('output-opt') /* пусто */)
   (DefineOpt ('define') '-D')
-  (ExtraOptions ('extra') /* пусто */);
+  (ExtraOptions ('extra') /* пусто */)
+  (ExecutableFile ('exec') '-o');
 
 $END Cpp-SR-BE::MInit.

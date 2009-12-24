@@ -397,7 +397,7 @@ ResolvingChain {
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Qualified t.SrcPos t.QualifiedName )
-  e.Argument e.Tail =
+  e.Tail =
     <ResolvingChain
       <ResolvingQualified
         t.ErrorList t.ResolveTable

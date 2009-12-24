@@ -1,6 +1,6 @@
 $MODULE Core::MOS;
 
-$ENTRY ArgList = ;
+$ENTRY CommandLine = ;
 
 $ENTRY EnvList = ;
 

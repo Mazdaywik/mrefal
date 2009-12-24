@@ -12,6 +12,7 @@ $ENTRY Error
     <MRefalRTS::Exit 1>;
 
 $ENTRY FailDown { }
+LocalFailDown { }
 
 //------------------------------------------------------------------------------
 

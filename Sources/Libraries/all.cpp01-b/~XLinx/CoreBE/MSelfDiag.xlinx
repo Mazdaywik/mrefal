@@ -1,0 +1,11 @@
+((!(Module)(CoreBE::MSelfDiag)('..\\Libraries\\all.cpp01-b\\Cor
+eBE\\MSelfDiag.mref',\d0321)))((!(Entry)(RunTime)(Runtime\d032c
+all)))((!(Entry)(CoreBE::MSelfDiag::CloseLog)('..\\Libraries\\a
+ll.cpp01-b\\CoreBE\\MSelfDiag.mref',\d0329)))((!(Entry)(CoreBE:
+:MSelfDiag::ExitFailure)('..\\Libraries\\all.cpp01-b\\CoreBE\\M
+SelfDiag.mref',\d0327)))((!(Entry)(CoreBE::MSelfDiag::Log-T)('.
+.\\Libraries\\all.cpp01-b\\CoreBE\\MSelfDiag.mref',\d0325)))((!
+(Entry)(CoreBE::MSelfDiag::Log)('..\\Libraries\\all.cpp01-b\\Co
+reBE\\MSelfDiag.mref',\d0324)))((!(Entry)(CoreBE::MSelfDiag::Pr
+intMessage)('..\\Libraries\\all.cpp01-b\\CoreBE\\MSelfDiag.mref
+',\d0323)))

@@ -1,0 +1,17 @@
+$MODULE CoreBE::MOrder;
+
+/**
+  Сравнение по типам:
+  Macro > Character > Other
+  Макроцифры сравниваются по арифметическим правилам.
+  Characters сравниваются по ASCII-значениям.
+  Остальные символы считаются равными.
+*/
+
+/**
+  <SymbCompare s.Left s.Right> == '<' | '=' | '>'
+*/
+$ENTRY SymbCompare
+  s.Left s.Right = '=';
+
+$END CoreBE::MOrder.

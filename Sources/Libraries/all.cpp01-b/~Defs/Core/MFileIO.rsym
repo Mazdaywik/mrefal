@@ -1,0 +1,11 @@
+$module Core::MFileIO;
+
+
+$entry Close;
+$entry Open;
+$entry ReadLine;
+$entry StdIn;
+$entry StdOut;
+$entry Write;
+
+$end Core::MFileIO.

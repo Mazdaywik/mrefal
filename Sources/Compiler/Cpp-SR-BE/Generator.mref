@@ -158,11 +158,11 @@ $ENTRY GenCommonHeaders {
 $ENTRY GenSentence {
   e.Algorithm =
     ('  do {')
-    ('    refalrts::Iter ' <BracketsVar_B 0> ' = arg_begin;')
-    ('    refalrts::Iter ' <BracketsVar_E 0> ' = arg_end;')
-    ('    refalrts::move_left( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
-    ('    refalrts::move_left( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
-    ('    refalrts::move_right( ' <BracketsVar_B 0> ', ' <BracketsVar_E 0> ' );')
+    ('    refalrts::Iter ' <BracketsVar-B 0 0> ' = arg_begin;')
+    ('    refalrts::Iter ' <BracketsVar-E 0 0> ' = arg_end;')
+    ('    refalrts::move_left( ' <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );')
+    ('    refalrts::move_left( ' <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );')
+    ('    refalrts::move_right( ' <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );')
     <GenSentence_Aux
       <MLambda::MapReduce
         & GenCommand
@@ -177,17 +177,20 @@ GenSentence_Aux {
     e.Generated <GenCloseBrackets e.Indent> ();
 }
 
-BracketsVar_B {
-  s.BracketNumber = 'bb_' <MStrings::Symb s.BracketNumber>;
+BracketsVar-B {
+  s.BracketNum s.Nested =
+    'bb_' <MStrings::Symb s.BracketNum> '_' <MStrings::Symb s.Nested>;
 }
 
-BracketsVar_E {
-  s.BracketNumber = 'be_' <MStrings::Symb s.BracketNumber>;
+BracketsVar-E {
+  s.BracketNum s.Nested =
+    'be_' <MStrings::Symb s.BracketNum> '_' <MStrings::Symb s.Nested>;
 }
 
-//BracketsVar-OE {
-//  s.BracketNumber = 'boe_' <StrFromInt s.BracketNumber>;
-//}
+BracketsVar-OE {
+  s.BracketNum s.Nested =
+    'boe_' <MStrings::Symb s.BracketNum> '_' <MStrings::Symb s.Nested>;
+}
 
 /*
   Величина отступа также определяет режим работы. Отступ в 4 пробела --
@@ -195,142 +198,132 @@ BracketsVar_E {
 */
 
 PrintStkBracket {
-  e.Indent s.StkBracket =
+  e.Indent (s.StkBracket s.Nested) =
     (e.Indent
-      'refalrts::Iter ' <BracketsVar_B s.StkBracket> '_stk = '
-        <BracketsVar_B s.StkBracket> ';'
+      'refalrts::Iter '
+      <BracketsVar-B s.StkBracket <Math::Inc s.Nested>> ' = '
+      <BracketsVar-B s.StkBracket s.Nested> ';'
     )
     (e.Indent
-      'refalrts::Iter ' <BracketsVar_E s.StkBracket> '_stk = '
-        <BracketsVar_E s.StkBracket> ';'
-    );
-}
-
-PrintRecoverStackBracket {
-  e.Indent s.StkBracket =
-    (e.Indent
-      <BracketsVar_B s.StkBracket> ' = ' <BracketsVar_B s.StkBracket> '_stk,'
-    )
-    (e.Indent
-      <BracketsVar_E s.StkBracket> ' = ' <BracketsVar_E s.StkBracket> '_stk,'
+      'refalrts::Iter '
+      <BracketsVar-E s.StkBracket <Math::Inc s.Nested>> ' = '
+      <BracketsVar-E s.StkBracket s.Nested> ';'
     );
 }
 
 GenCommand {
-  (e.Indent) (CmdComment e.Text) = (e.Indent) (e.Indent '//' e.Text);
+  (e.Indent) (CmdComment e.Text) =
+    (e.Indent) (e.Indent '//' e.Text);
 
   (e.Indent) (CmdDeclareEVar e.VarInfo) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <PrintEVar_B e.VarInfo> ';')
-    (e.Indent 'refalrts::Iter ' <PrintEVar_E e.VarInfo> ';');
+    (e.Indent 'refalrts::Iter ' <PrintEVar-B e.VarInfo> ';')
+    (e.Indent 'refalrts::Iter ' <PrintEVar-E e.VarInfo> ';');
 
   (e.Indent) (CmdDeclareVar e.VarInfo) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <PrintVar e.VarInfo> ';');
 
-  (e.Indent) (CmdChar s.Direction s.BracketNumber s.Char) =
+  (e.Indent) (CmdChar s.Direction s.BracketNum s.Nested s.Char) =
     (e.Indent)
-    <PrintMatchChar (e.Indent) s.Direction s.BracketNumber s.Char>;
+    <PrintMatchChar (e.Indent) s.Direction s.BracketNum s.Nested s.Char>;
 
-  (e.Indent) (CmdNumber s.Direction s.BracketNumber s.Number) =
+  (e.Indent) (CmdNumber s.Direction s.BracketNum s.Nested s.Number) =
     (e.Indent)
-    <PrintMatchNumber (e.Indent) s.Direction s.BracketNumber s.Number>;
+    <PrintMatchNumber (e.Indent) s.Direction s.BracketNum s.Nested s.Number>;
 
-  (e.Indent) (CmdName s.Direction s.BracketNumber t.Name) =
+  (e.Indent) (CmdName s.Direction s.BracketNum s.Nested t.Name) =
     (e.Indent)
-    <PrintMatchName (e.Indent) s.Direction s.BracketNumber t.Name>;
+    <PrintMatchName (e.Indent) s.Direction s.BracketNum s.Nested t.Name>;
 
-  (e.Indent) (CmdIdent s.Direction s.BracketNumber t.Name) =
+  (e.Indent) (CmdIdent s.Direction s.BracketNum s.Nested t.Name) =
     (e.Indent)
-    <PrintMatchIdent (e.Indent) s.Direction s.BracketNumber t.Name>;
+    <PrintMatchIdent (e.Indent) s.Direction s.BracketNum s.Nested t.Name>;
 
-  (e.Indent) (CmdBrackets s.Direction s.BracketNumber s.InnerBrackets) =
+  (e.Indent) (CmdBrackets s.Direction s.BracketNum s.Nested s.InnerBrackets) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <BracketsVar_B s.InnerBrackets> ' = 0;')
-    (e.Indent 'refalrts::Iter ' <BracketsVar_E s.InnerBrackets> ' = 0;')
-    <PrintMatchBrackets (e.Indent) s.Direction s.BracketNumber s.InnerBrackets>;
-
-  (e.Indent) (CmdADT s.Direction s.BracketNumber s.InnerBrackets e.Name) =
-    (e.Indent)
-    (e.Indent 'refalrts::Iter ' <BracketsVar_B s.InnerBrackets> ' = 0;')
-    (e.Indent 'refalrts::Iter ' <BracketsVar_E s.InnerBrackets> ' = 0;')
-    <PrintMatchADT
-      (e.Indent) s.Direction s.BracketNumber s.InnerBrackets e.Name
+    (e.Indent 'refalrts::Iter ' <BracketsVar-B s.InnerBrackets 0> ' = 0;')
+    (e.Indent 'refalrts::Iter ' <BracketsVar-E s.InnerBrackets 0> ' = 0;')
+    <PrintMatchBrackets
+      (e.Indent) s.Direction s.BracketNum s.Nested s.InnerBrackets
     >;
 
-  (e.Indent) (CmdEmpty s.BracketNumber) =
+  (e.Indent) (CmdADT s.Direction s.BracketNum s.Nested s.InnerBrackets e.Name) =
     (e.Indent)
-    <PrintMatchEmpty (e.Indent) s.BracketNumber>;
+    (e.Indent 'refalrts::Iter ' <BracketsVar-B s.InnerBrackets 0> ' = 0;')
+    (e.Indent 'refalrts::Iter ' <BracketsVar-E s.InnerBrackets 0> ' = 0;')
+    <PrintMatchADT
+      (e.Indent) s.Direction s.BracketNum s.Nested s.InnerBrackets e.Name
+    >;
 
-  (e.Indent) (CmdVar s.Direction s.BracketNumber s.Mode e.Info) =
+  (e.Indent) (CmdEmpty s.BracketNum s.Nested) =
     (e.Indent)
-    <PrintMatchSTVar (e.Indent) s.Direction s.BracketNumber s.Mode e.Info>;
+    <PrintMatchEmpty (e.Indent) s.BracketNum s.Nested>;
 
-  (e.Indent) (CmdRepeated s.Direction s.BracketNumber e.VarInfo) =
+  (e.Indent) (CmdVar s.Direction s.BracketNum s.Nested s.Mode e.Info) =
     (e.Indent)
-    <PrintMatchRepeated (e.Indent) s.Direction s.BracketNumber e.VarInfo>;
+    <PrintMatchSTVar (e.Indent) s.Direction s.BracketNum s.Nested s.Mode e.Info>;
 
-  (e.Indent) (CmdClosedE AlgLeft s.BracketNumber 'e' e.Index) =
+  (e.Indent) (CmdRepeated s.Direction s.BracketNum s.Nested e.VarInfo) =
+    (e.Indent)
+    <PrintMatchRepeated (e.Indent) s.Direction s.BracketNum s.Nested e.VarInfo>;
+
+  (e.Indent) (CmdClosedE AlgLeft s.BracketNum s.Nested 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      <PrintEVar_B 1 'e' e.Index> ' = ' <BracketsVar_B s.BracketNumber> ';'
+      <PrintEVar-B 1 'e' e.Index> ' = ' <BracketsVar-B s.BracketNum s.Nested> ';'
     )
-    (e.Indent 'refalrts::use( ' <PrintEVar_B 1 'e' e.Index> ' );')
+    (e.Indent 'refalrts::use( ' <PrintEVar-B 1 'e' e.Index> ' );')
     (e.Indent
-      <PrintEVar_E 1 'e' e.Index> ' = ' <BracketsVar_E s.BracketNumber> ';'
+      <PrintEVar-E 1 'e' e.Index> ' = ' <BracketsVar-E s.BracketNum s.Nested> ';'
     )
-    (e.Indent 'refalrts::use( ' <PrintEVar_E 1 'e' e.Index> ' );');
+    (e.Indent 'refalrts::use( ' <PrintEVar-E 1 'e' e.Index> ' );');
 
   (e.Indent)
-  (CmdOpenedE AlgLeft s.BracketNumber 'e' e.Index (e.BracketsForSave)) =
+  (CmdOpenedE AlgLeft s.BracketNum s.Nested 'e' e.Index (e.BracketsForSave)) =
     (e.Indent '  ')
-    <MLambda::Map
-      <MLambda::BindLeft & PrintStkBracket e.Indent>
-      e.BracketsForSave
-    >
     (e.Indent 'for( ')
-    (e.Indent '  refalrts::Iter')
     (e.Indent
-      '    ' <PrintEVar_B 1 'e' e.Index> ' = '
-        <BracketsVar_B s.BracketNumber> '_stk,'
-    )
-    (e.Indent
-      '    ' <PrintEVar_OE 1 'e' e.Index> ' = '
-        <BracketsVar_B s.BracketNumber> '_stk,'
-    )
-    (e.Indent
-      '    ' <BracketsVar_B s.BracketNumber> ' = '
-        <BracketsVar_B s.BracketNumber> '_stk,'
-    )
-    (e.Indent
-      '    ' <BracketsVar_E s.BracketNumber> ' = '
-        <BracketsVar_E s.BracketNumber> '_stk;'
+      '  refalrts::Iter ' <BracketsVar-OE s.BracketNum s.Nested>
+      ' = ' <BracketsVar-B s.BracketNum s.Nested> ';'
     )
     (e.Indent '  '
-      '! empty_seq( ' <PrintEVar_OE 1 'e' e.Index> ', '
-      <BracketsVar_E s.BracketNumber> ' );'
+      '! empty_seq( ' <BracketsVar-OE s.BracketNum s.Nested> ', '
+      <BracketsVar-E s.BracketNum s.Nested> ' );'
     )
-    <MLambda::Map
-      <MLambda::BindLeft & PrintRecoverStackBracket e.Indent '  '>
-      e.BracketsForSave
-    >
     (e.Indent '  '
-      'refalrts::next_term( ' <PrintEVar_OE 1 'e' e.Index> ', '
-      <BracketsVar_E s.BracketNumber> ' )'
+      'refalrts::next_term( ' <BracketsVar-OE s.BracketNum s.Nested> ', '
+      <BracketsVar-E s.BracketNum s.Nested> ' )'
     )
     (e.Indent ') {')
+    /*
+      Объявление и инициализация "внутренних" переменных для цикла.
+      Эти переменные (с индексом вложенности на единицу бОльшим) используются
+      внутри цикла как границы распознавания подвыражений.
+      Поскольку при неудачном сопоставлении в рамках заданной итерации нужно
+      попробовать следующий вариант сопоставления, т.е. необходимо
+      восстановить предыдущее до сопоставления, мы создаём копию состояния,
+      с которой и работаем в рамках итерации.
+    */
+    <MLambda::Map
+      <MLambda::BindLeft & PrintStkBracket e.Indent '  '>
+      e.BracketsForSave
+    >
     (e.Indent '  '
-      <BracketsVar_B s.BracketNumber> ' = ' <PrintEVar_OE 1 'e' e.Index> ';'
+      <BracketsVar-B s.BracketNum <Math::Inc s.Nested>>
+      ' = ' <BracketsVar-OE s.BracketNum s.Nested> ';'
     )
     (e.Indent '  '
-      <PrintEVar_B 1 'e' e.Index> ' = ' <BracketsVar_B s.BracketNumber> '_stk;'
+      <PrintEVar-B 1 'e' e.Index> ' = '
+      <BracketsVar-B s.BracketNum s.Nested> ';'
     )
     (e.Indent '  '
-      <PrintEVar_E 1 'e' e.Index> ' = ' <PrintEVar_OE 1 'e' e.Index> ';'
+      <PrintEVar-E 1 'e' e.Index> ' = '
+      <BracketsVar-OE s.BracketNum s.Nested> ';'
     )
     (e.Indent
-      '  refalrts::move_right( ' <PrintEVar_B 1 'e' e.Index> ', '
-      <PrintEVar_E 1 'e' e.Index> ' );'
+      '  refalrts::move_right( ' <PrintEVar-B 1 'e' e.Index> ', '
+      <PrintEVar-E 1 'e' e.Index> ' );'
     );
 
   (e.Indent) (CmdEmptyResult) =
@@ -342,10 +335,10 @@ GenCommand {
   (e.Indent) (CmdCopyEVar s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      'if( ! refalrts::copy_evar( ' <PrintEVar_B s.Usings 'e' e.Index> ', '
-      <PrintEVar_E s.Usings 'e' e.Index> ', '
-      <PrintEVar_B <Math::Dec s.Usings> 'e' e.Index> ', '
-      <PrintEVar_E <Math::Dec s.Usings> 'e' e.Index>
+      'if( ! refalrts::copy_evar( ' <PrintEVar-B s.Usings 'e' e.Index> ', '
+      <PrintEVar-E s.Usings 'e' e.Index> ', '
+      <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar-E <Math::Dec s.Usings> 'e' e.Index>
       ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
@@ -409,8 +402,8 @@ GenCommand {
     (e.Indent)
     (e.Indent
       'res = refalrts::splice_evar( res, '
-      <PrintEVar_B s.Usings 'e' e.Index> ', '
-      <PrintEVar_E s.Usings 'e' e.Index> ' );'
+      <PrintEVar-B s.Usings 'e' e.Index> ', '
+      <PrintEVar-E s.Usings 'e' e.Index> ' );'
     );
 
   (e.Indent) (CmdReturnResult) =
@@ -438,19 +431,14 @@ PrintVar {
     s.Mode <NameCode e.Index> '_' <MStrings::Symb s.Usings>;
 }
 
-PrintEVar_B {
+PrintEVar-B {
   s.Usings s.Mode e.Index =
     s.Mode <NameCode e.Index> '_b_' <MStrings::Symb s.Usings>;
 }
 
-PrintEVar_E {
+PrintEVar-E {
   s.Usings s.Mode e.Index =
     s.Mode <NameCode e.Index> '_e_' <MStrings::Symb s.Usings>;
-}
-
-PrintEVar_OE {
-  s.Usings s.Mode e.Index =
-    s.Mode <NameCode e.Index> '_oe_' <MStrings::Symb s.Usings>;
 }
 
 Escape {
@@ -464,53 +452,53 @@ Escape {
 }
 
 PrintMatchChar {
-  (e.Indent) s.Direction s.BracketNumber s.Char =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.Char =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('char') '\'' <Escape s.Char> '\''
     >;
 }
 
 PrintMatchNumber {
-  (e.Indent) s.Direction s.BracketNumber s.Number =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.Number =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('number') <MStrings::Symb s.Number> 'UL'
     >;
 }
 
 PrintMatchName {
-  (e.Indent) s.Direction s.BracketNumber t.Name =
+  (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('function') '& ' <QNameCode t.Name>
     >;
 }
 
 PrintMatchIdent {
-  (e.Indent) s.Direction s.BracketNumber t.Name =
+  (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('ident') ' & ' <QNameCode t.Name> 'L_<int>::name'
     >;
 }
 
 PrintMatchBrackets {
-  (e.Indent) s.Direction s.BracketNumber s.InnerNum =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.InnerNum =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('brackets')
-      <BracketsVar_B s.InnerNum> ', ' <BracketsVar_E s.InnerNum>
+      <BracketsVar-B s.InnerNum 0> ', ' <BracketsVar-E s.InnerNum 0>
     >;
 }
 
 PrintMatchADT {
-  (e.Indent) s.Direction s.BracketNumber s.InnerNum t.Name =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.InnerNum t.Name =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('adt')
-      <BracketsVar_B s.InnerNum> ', '
-      <BracketsVar_E s.InnerNum> ', '
+      <BracketsVar-B s.InnerNum 0> ', '
+      <BracketsVar-E s.InnerNum 0> ', '
       '& ' <QNameCode t.Name>
     >;
 }
@@ -522,10 +510,10 @@ BreakerFromIndent {
 }
 
 PrintMatchEmpty {
-  (e.Indent) s.BracketNumber =
+  (e.Indent) s.BracketNum s.Nested =
     (e.Indent
-      'if( ! empty_seq( ' <BracketsVar_B s.BracketNumber> ', '
-      <BracketsVar_E s.BracketNumber> ' ) )'
+      'if( ! empty_seq( ' <BracketsVar-B s.BracketNum s.Nested> ', '
+      <BracketsVar-E s.BracketNum s.Nested> ' ) )'
     )
     (e.Indent '  ' <BreakerFromIndent e.Indent>);
 }
@@ -537,38 +525,38 @@ StrFromDirection {
 VarMatchFunction { 's' = 'svar'; 't' = 'tvar'; }
 
 PrintMatchSTVar {
-  (e.Indent) s.Direction s.BracketNumber s.Mode e.Index =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.Mode e.Index =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       (<VarMatchFunction s.Mode>) <PrintVar 1 s.Mode e.Index>
     >;
 }
 
 PrintMatchRepeated {
-  (e.Indent) s.Direction s.BracketNumber s.Usings 'e' e.Index =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.Usings 'e' e.Index =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('repeated_evar')
-      <PrintEVar_B s.Usings 'e' e.Index> ', '
-      <PrintEVar_E s.Usings 'e' e.Index> ', '
-      <PrintEVar_B <Math::Dec s.Usings> 'e' e.Index> ', '
-      <PrintEVar_E <Math::Dec s.Usings> 'e' e.Index>
+      <PrintEVar-B s.Usings 'e' e.Index> ', '
+      <PrintEVar-E s.Usings 'e' e.Index> ', '
+      <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar-E <Math::Dec s.Usings> 'e' e.Index>
     >;
 
-  (e.Indent) s.Direction s.BracketNumber s.Usings s.Mode e.Index =
+  (e.Indent) s.Direction s.BracketNum s.Nested s.Usings s.Mode e.Index =
     <PrintMatch
-      (e.Indent) s.Direction s.BracketNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested
       ('repeated_stvar') <PrintVar s.Usings s.Mode e.Index>
       ', ' <PrintVar <Math::Dec s.Usings> s.Mode e.Index>
     >;
 }
 
 PrintMatch {
-  (e.Indent) s.Direction s.BracketNumber (e.Function) e.TextRep =
+  (e.Indent) s.Direction s.BracketNum s.Nested (e.Function) e.TextRep =
     (e.Indent
       'if( ! refalrts::' e.Function '_' <StrFromDirection s.Direction>
-      '( ' e.TextRep ', ' <BracketsVar_B s.BracketNumber> ', '
-      <BracketsVar_E s.BracketNumber> ' ) ) '
+      '( ' e.TextRep ', ' <BracketsVar-B s.BracketNum s.Nested> ', '
+      <BracketsVar-E s.BracketNum s.Nested> ' ) ) '
     )
     (e.Indent '  ' <BreakerFromIndent e.Indent>);
 }

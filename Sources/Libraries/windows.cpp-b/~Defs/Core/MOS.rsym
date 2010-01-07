@@ -1,7 +1,7 @@
 $module Core::MOS;
 
 
-$entry ArgList;
+$entry CommandLine;
 $entry CreateProcess;
 $entry EnvList;
 $entry ForseExit;

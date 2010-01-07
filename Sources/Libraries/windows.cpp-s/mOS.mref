@@ -4,8 +4,6 @@ $IMPORT MRefalRTS;
 $IMPORT FileIO;
 $IMPORT Math;
 
-$IMPORT Core::MOS;
-
 /**
   <System e.Command>
     == empty

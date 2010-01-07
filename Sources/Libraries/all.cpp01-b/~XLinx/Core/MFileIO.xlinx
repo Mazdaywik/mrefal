@@ -1,0 +1,11 @@
+((!(Module)(Core::MFileIO)('..\\Libraries\\all.cpp01-b\\Core\\M
+FileIO.mref',\d0321)))((!(Entry)(RunTime)(Runtime\d032call)))((
+!(Entry)(Core::MFileIO::StdOut)('..\\Libraries\\all.cpp01-b\\Co
+re\\MFileIO.mref',\d0328)))((!(Entry)(Core::MFileIO::StdIn)('..
+\\Libraries\\all.cpp01-b\\Core\\MFileIO.mref',\d0327)))((!(Entr
+y)(Core::MFileIO::ReadLine)('..\\Libraries\\all.cpp01-b\\Core\\
+MFileIO.mref',\d0326)))((!(Entry)(Core::MFileIO::Write)('..\\Li
+braries\\all.cpp01-b\\Core\\MFileIO.mref',\d0325)))((!(Entry)(C
+ore::MFileIO::Close)('..\\Libraries\\all.cpp01-b\\Core\\MFileIO
+.mref',\d0324)))((!(Entry)(Core::MFileIO::Open)('..\\Libraries\
+\all.cpp01-b\\Core\\MFileIO.mref',\d0323)))

@@ -1,0 +1,91 @@
+$MODULE CoreBE::MFileSystem;
+
+$IMPORT Core::MFileSystem;
+$IMPORT MLambda;
+$IMPORT MRefalRTS;
+
+//------------------------------------------------------------------------------
+
+/**
+  <ExistFile e.StrFileName> == True | False
+*/
+$ENTRY ExistFile e.StrFileName = <MRefalRTS::ExistFile e.StrFileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <MakeDir e.StrDirectory> == empty
+*/
+$ENTRY MakeDir
+  e.Directory =
+    <MLambda::Nil
+      <Core::MFileSystem::MakeDir e.Directory>
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveDir e.StrDirectory> == empty
+*/
+$ENTRY RemoveDir
+  e.Directory =
+    <MLambda::Nil
+      <Core::MFileSystem::RemoveDir e.Directory>
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveFile e.StrFileName> == empty
+*/
+$ENTRY RemoveFile
+  e.FileName =
+    <MLambda::Nil
+      <Core::MFileSystem::RemoveFile e.FileName>
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <FileAttribute s.Attribute e.StrFileName>
+    == FileNotFound
+    == (e.Value)
+
+  s.Attribute ::= DateTime | Size | LongName
+*/
+$ENTRY FileAttribute
+  s.Attribute e.FileName =
+    <SwFileAttribute
+      s.Attribute
+      <Core::MFileSystem::GetFileAttributes e.FileName>
+    >;
+
+SwFileAttribute {
+  s.Attribute Fails = FileNotFound;
+
+  DateTime Success
+  e.Attribs-B (DateTime e.Value) e.Attribs-E = (e.Value);
+
+  Size Success
+  e.Attribs-B (Size e.Value) e.Attribs-E = (e.Value);
+
+  LongName Success
+  e.Attribs-B (LongName e.Value) e.Attribs-E = (e.Value);
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <DirList e.StrDirectoryName>
+    == Success (e.StrFileName)*
+    == Fails
+*/
+$ENTRY DirList
+  e.DirectoryName =
+    /*
+      Пути возвращаются относительно папки e.DirectoryName.
+      Надо переписать.
+    */
+    <Core::MFileSystem::DirList e.DirectoryName>;
+
+$END CoreBE::MFileSystem.

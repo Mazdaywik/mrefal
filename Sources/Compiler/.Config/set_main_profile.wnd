@@ -12,6 +12,10 @@ C:  Back-end Си++/Простой Рефал
     set PROFILE=mp-work-CPPSR
     set PROFILE-SHORT=Си++/SR
     .Config\change_window default
+1:  Back-end Си++/Простой Рефал 01
+    set PROFILE=mp-work-CPPSR-01
+    set PROFILE-SHORT=Си++/SR 01
+    .Config\change_window default
 -:  
 D:  Оставить по умолчанию (%PROFILE-SHORT%)
     .Config\change_window default

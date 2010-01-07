@@ -1,0 +1,9 @@
+$module CoreBE::MStrings;
+
+
+$entry Chr;
+$entry Numb;
+$entry Ord;
+$entry Symb;
+
+$end CoreBE::MStrings.

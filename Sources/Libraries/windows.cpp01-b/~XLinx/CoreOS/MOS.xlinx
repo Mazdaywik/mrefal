@@ -1,0 +1,14 @@
+((!(Module)(CoreOS::MOS)('..\\Libraries\\windows.cpp01-b\\CoreO
+S\\MOS.mref',\d0321)))((!(Entry)(RunTime)(Runtime\d032call)))((
+!(Entry)(CoreOS::MOS::CreateProcess)('..\\Libraries\\windows.cp
+p01-b\\CoreOS\\MOS.mref',\d0329))(?(Identifier)(Wait)('..\\Libr
+aries\\windows.cpp01-b\\CoreOS\\MOS.mref',\d03210))(?(Identifie
+r)(Success)('..\\Libraries\\windows.cpp01-b\\CoreOS\\MOS.mref',
+\d03210))(?(Identifier)(NoWait)('..\\Libraries\\windows.cpp01-b
+\\CoreOS\\MOS.mref',\d03212))(?(Identifier)(Fails)('..\\Librari
+es\\windows.cpp01-b\\CoreOS\\MOS.mref',\d03212)))((!(Entry)(Cor
+eOS::MOS::ForseExit)('..\\Libraries\\windows.cpp01-b\\CoreOS\\M
+OS.mref',\d0327)))((!(Entry)(CoreOS::MOS::EnvList)('..\\Librari
+es\\windows.cpp01-b\\CoreOS\\MOS.mref',\d0325)))((!(Entry)(Core
+OS::MOS::CommandLine)('..\\Libraries\\windows.cpp01-b\\CoreOS\\
+MOS.mref',\d0323)))

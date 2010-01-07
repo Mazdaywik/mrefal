@@ -23,7 +23,7 @@ $ENTRY Register
 $ENTRY Extent =
   (CCompiler ('compiler') 'call call-C++.bat')
   (RunTimeDir ('runtime-dir') '.')
-  (RunTimeFiles ('runtime-files') 'Library.cpp,refalrts.cpp')
+  (RunTimeFiles ('runtime-files') 'refalrts.cpp')
   (IncludeOpt ('include-opt') '-I')
   (OutputOpt ('output-opt') /* пусто */)
   (DefineOpt ('define') '-D')

@@ -226,13 +226,26 @@ GenPattern {
 }
 
 SaveBrackets {
-  e.Commands = <DoSaveBrackets () e.Commands>;
+  e.Commands =
+    <Renumerate-Comment
+      <MLambda::MapReduce
+        & RenumerateSavedBrackets
+        ((0 0))
+        <DoSaveBrackets () e.Commands>
+      >
+    >;
+}
+
+Renumerate-Comment {
+  (e.RenumerateMap) e.Commands =
+    (CmdComment e.RenumerateMap)
+    e.Commands;
 }
 
 DoSaveBrackets {
   (e.Scanned)
   e.Commands_B (CmdOpenedE AlgLeft s.Num 'e' e.Index) e.Commands_E =
-    <DoSaveBrackets_Aux
+    <DoSaveBrackets-Aux
       (e.Scanned
         e.Commands_B
         (CmdOpenedE AlgLeft s.Num 'e' e.Index)
@@ -243,7 +256,7 @@ DoSaveBrackets {
   (e.Scanned) e.Commands = e.Scanned e.Commands;
 }
 
-DoSaveBrackets_Aux {
+DoSaveBrackets-Aux {
   (e.Scanned (CmdOpenedE AlgLeft s.Num 'e' e.Index )) e.Commands =
     <DoSaveBrackets
       (e.Scanned
@@ -267,6 +280,63 @@ CalcSavedBrackets {
       ( <Brackets_Set <MLambda::Map & ExtractBrackets e.Scanned>> )
       ( <Brackets_Set <MLambda::Map & ExtractBrackets e.Commands>> )
     >;
+}
+
+RenumerateSavedBrackets {
+  (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+  (CmdOpenedE AlgLeft s.Bracket s.Mode e.Index (e.Saved)) =
+    (
+      <MLambda::Map
+        <MLambda::BindLeft & IncrementBySaved e.Saved>
+        e.Brackets-B (s.Bracket s.Nested) e.Brackets-E
+      >
+    )
+    (CmdComment 'Открытая e-переменная ' s.Mode '.' e.Index)
+    (CmdOpenedE
+      AlgLeft s.Bracket s.Nested s.Mode e.Index
+      (
+        <MLambda::Map
+          <MLambda::BindLeft & IncrementSaved
+            e.Brackets-B (s.Bracket s.Nested) e.Brackets-E
+          >
+          e.Saved
+        >
+      )
+    );
+
+  (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+  (CmdEmpty s.Bracket) =
+    (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+    (CmdEmpty s.Bracket s.Nested);
+
+  (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+  (CmdBrackets s.Direction s.Bracket s.Inner) =
+    (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E (s.Inner 0))
+    (CmdBrackets s.Direction s.Bracket s.Nested s.Inner);
+
+  (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+  (CmdADT s.Direction s.Bracket s.Inner e.Name) =
+    (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E (s.Inner 0))
+    (CmdADT s.Direction s.Bracket s.Nested s.Inner e.Name);
+
+  (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+  (s.Command s.Direction s.Bracket e.Info) =
+    (e.Brackets-B (s.Bracket s.Nested) e.Brackets-E)
+    (s.Command s.Direction s.Bracket s.Nested e.Info);
+}
+
+IncrementBySaved {
+  e.Saved-B s.Bracket e.Saved-E (s.Bracket s.Nested) =
+    (s.Bracket <Math::Inc s.Nested>);
+
+  e.Saved (s.Bracket s.Nested) = (s.Bracket s.Nested);
+}
+
+IncrementSaved {
+  e.Numerated-B (s.Bracket s.Nested) e.Numerated-E s.Bracket =
+    (s.Bracket s.Nested);
+
+  // Все скобки должны быть учтены
 }
 
 ExtractBrackets {

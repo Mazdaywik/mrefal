@@ -9,5 +9,5 @@ er)(NoWait)('..\\Libraries\\windows.cpp-b\\Core\\MOS.mref',\d03
 \MOS.mref',\d03212)))((!(Entry)(Core::MOS::ForseExit)('..\\Libr
 aries\\windows.cpp-b\\Core\\MOS.mref',\d0327)))((!(Entry)(Core:
 :MOS::EnvList)('..\\Libraries\\windows.cpp-b\\Core\\MOS.mref',\
-d0325)))((!(Entry)(Core::MOS::ArgList)('..\\Libraries\\windows.
-cpp-b\\Core\\MOS.mref',\d0323)))
+d0325)))((!(Entry)(Core::MOS::CommandLine)('..\\Libraries\\wind
+ows.cpp-b\\Core\\MOS.mref',\d0323)))

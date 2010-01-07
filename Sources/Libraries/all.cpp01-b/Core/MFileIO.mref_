@@ -1,0 +1,10 @@
+$MODULE Core::MFileIO;
+
+$ENTRY Open s.Mode e.FileName = s.Mode;
+$ENTRY Close s.Handle = ;
+$ENTRY Write s.Handle e.Line = ;
+$ENTRY ReadLine s.Handle = ;
+$ENTRY StdIn = 0;
+$ENTRY StdOut = 0;
+
+$END Core::MFileIO.

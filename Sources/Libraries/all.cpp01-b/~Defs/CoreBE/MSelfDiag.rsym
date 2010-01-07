@@ -1,0 +1,10 @@
+$module CoreBE::MSelfDiag;
+
+
+$entry CloseLog;
+$entry ExitFailure;
+$entry Log;
+$entry Log-T;
+$entry PrintMessage;
+
+$end CoreBE::MSelfDiag.

@@ -291,7 +291,7 @@ refalrts::FnResult CoreP_MFileSystemP_GetFileAttributes(refalrts::Iter arg_begin
         if( ! refalrts::alloc_ident( n12, & DirL_<int>::name ) )
           return refalrts::cNoMemory;
       } else {
-        if( ! refalrts::alloc_number( n12, 1000UL ) )
+        if( ! refalrts::alloc_number( n12, find_file_data.nFileSizeLow ) )
           return refalrts::cNoMemory;
       }
 

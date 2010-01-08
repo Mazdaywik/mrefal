@@ -450,16 +450,25 @@ AddInvertedInfo {
     (e.InvertedInfo) t.OtherEntity;
 }
 
+XLinx-FileName
+  e.OutName = <MCreateDirIfNeed::InfoDir> '\\' e.OutName;
+
 Link-Aux-2
   (e.OutName) (e.Inverted) e.Results =
     <FileIO::Save
-      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.tree.txt')
+      (<XLinx-FileName e.OutName '.module_list.txt'>)
+      <PrintModuleList
+        <RemoveParsers e.Results>
+      >
+    >
+    <FileIO::Save
+      (<XLinx-FileName e.OutName '.tree.txt'>)
       <PrintTree
         <MLambda::Map & FilterModules e.Results>
       >
     >
     <FileIO::Save
-      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.xlinx.txt')
+      (<XLinx-FileName e.OutName '.xlinx.txt'>)
       <MLambda::Map
         & PrintResult
         <SkipParser e.Results>
@@ -468,9 +477,72 @@ Link-Aux-2
       >
     >
     <FileIO::Save
-      (<MCreateDirIfNeed::InfoDir> '\\' e.OutName '.not linked.txt')
+      (<XLinx-FileName e.OutName '.not linked.txt'>)
       <FindNotUsed e.Results>
     >;
+
+RemoveParsers {
+  e.Entities-B (Parser) e.Entities-E =
+    e.Entities-B <RemoveParsers e.Entities-E>;
+
+  e.Entities = e.Entities;
+}
+
+//------------------------------------------------------------------------------
+// Вывод простого списка модулей
+
+PrintModuleList
+  e.Entities =
+    <PrintModuleList-Aux
+      <MLambda::Map & PrintModuleList-FilterModule e.Entities>
+    >;
+
+PrintModuleList-FilterModule {
+  (('!' ('Module') (e.EntityName) (e.SrcPos)) e.ResultInfo) =
+    ((<Dot e.EntityName>) e.SrcPos);
+
+  t.Other = /* пусто */;
+}
+
+Dot {
+  e.Begin '::' e.End = e.Begin '.' <Dot e.End>;
+  e.Line = e.Line;
+}
+
+PrintModuleList-Aux {
+  e.Modules =
+    <MLambda::Map
+      <MLambda::BindLeft
+        & Padding <CalcPadding e.Modules>
+      >
+      <MOrder::Sort e.Modules>
+    >;
+}
+
+CalcPadding {
+  e.Modules =
+    <MOrder::Max
+      <MLambda::Map & ModuleNameLen e.Modules>
+    >;
+}
+
+ModuleNameLen
+  ((e.ModuleName) e.SrcPos) = <MStrings::Length e.ModuleName>;
+
+//Last
+//  s.N e.Line =
+//    <MStrings::Reverse
+//      <MStrings::First s.N <MStrings::Reverse e.Line>>
+//    >;
+
+Padding
+  s.PadLen ((e.ModuleName) e.SrcPos) =
+    (
+      <MStrings::First
+        s.PadLen e.ModuleName <MStrings::Repeat s.PadLen '.'>
+      >
+      '.|.' e.SrcPos
+    );
 
 //------------------------------------------------------------------------------
 // Печать таблицы перекрёстных связей.
@@ -504,11 +576,6 @@ PrintResult-Aux {
 
   ('>' (e.ScopeClass) (e.EntityName) (e.SrcPos) ) =
     ('  used in ' e.ScopeClass ' [' e.EntityName '] (' e.SrcPos')');
-}
-
-Dot {
-  e.Begin '::' e.End = e.Begin '.' <Dot e.End>;
-  e.Line = e.Line;
 }
 
 //------------------------------------------------------------------------------

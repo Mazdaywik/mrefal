@@ -347,7 +347,7 @@ CharRep-Aux
   s.Other s.AsciiCode =
     <SwCharRep
       s.Other s.AsciiCode
-      <Math::Compare 32 s.AsciiCode> <Math::Compare s.AsciiCode 127>
+      <Math::Compare 31 s.AsciiCode> <Math::Compare s.AsciiCode 127>
     >;
 
 SwCharRep {

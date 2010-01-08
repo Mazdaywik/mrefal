@@ -1,13 +1,1 @@
-((!(Module)(CoreOS::MFileSystem)('..\\Libraries\\windows.cpp01-
-b\\CoreOS\\MFileSystem.mref',\d0321)))((!(Entry)(RunTime)(Runti
-me\d032call)))((!(Entry)(CoreOS::MFileSystem::RemoveFile)('..\\
-Libraries\\windows.cpp01-b\\CoreOS\\MFileSystem.mref',\d03238))
-)((!(Entry)(CoreOS::MFileSystem::RemoveDir)('..\\Libraries\\win
-dows.cpp01-b\\CoreOS\\MFileSystem.mref',\d03237)))((!(Entry)(Co
-reOS::MFileSystem::MakeDir)('..\\Libraries\\windows.cpp01-b\\Co
-reOS\\MFileSystem.mref',\d03236)))((!(Entry)(CoreOS::MFileSyste
-m::FullName)('..\\Libraries\\windows.cpp01-b\\CoreOS\\MFileSyst
-em.mref',\d03230)))((!(Entry)(CoreOS::MFileSystem::FileAttribut
-es)('..\\Libraries\\windows.cpp01-b\\CoreOS\\MFileSystem.mref',
-\d03223)))((!(Entry)(CoreOS::MFileSystem::FindFiles)('..\\Libra
-ries\\windows.cpp01-b\\CoreOS\\MFileSystem.mref',\d0329)))
+((!(Module)(CoreOS::MFileSystem)(*unknown*)))

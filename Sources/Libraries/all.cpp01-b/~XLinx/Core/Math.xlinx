@@ -1,5 +1,1 @@
-((!(Module)(Core::Math)('..\\Libraries\\all.cpp01-b\\Core\\Math
-.mref',\d0321)))((!(Entry)(RunTime)(Runtime\d032call)))((!(Entr
-y)(Core::Math::NumberCompare)('..\\Libraries\\all.cpp01-b\\Core
-\\Math.mref',\d0326)))((!(Entry)(Core::Math::Binary)('..\\Libra
-ries\\all.cpp01-b\\Core\\Math.mref',\d0323)))
+((!(Module)(Core::Math)(*unknown*)))

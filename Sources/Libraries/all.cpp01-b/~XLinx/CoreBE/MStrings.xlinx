@@ -1,9 +1,1 @@
-((!(Module)(CoreBE::MStrings)('..\\Libraries\\all.cpp01-b\\Core
-BE\\MStrings.mref',\d0321)))((!(Entry)(RunTime)(Runtime\d032cal
-l)))((!(Entry)(CoreBE::MStrings::Chr)('..\\Libraries\\all.cpp01
--b\\CoreBE\\MStrings.mref',\d0329)))((!(Entry)(CoreBE::MStrings
-::Ord)('..\\Libraries\\all.cpp01-b\\CoreBE\\MStrings.mref',\d03
-27)))((!(Entry)(CoreBE::MStrings::Symb)('..\\Libraries\\all.cpp
-01-b\\CoreBE\\MStrings.mref',\d0325)))((!(Entry)(CoreBE::MStrin
-gs::Numb)('..\\Libraries\\all.cpp01-b\\CoreBE\\MStrings.mref',\
-d0323)))
+((!(Module)(CoreBE::MStrings)(*unknown*)))

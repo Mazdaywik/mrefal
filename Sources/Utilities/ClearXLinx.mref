@@ -1,0 +1,36 @@
+/*
+  Эта программа предназначена для "очистки" сгенерированных xlinx-файлов
+  для библиотечных модулей.
+*/
+$PROGRAM ClearXLinx;
+
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MXXIO;
+
+$ENTRY Go = <Main <MOS::ArgList>>;
+
+Main
+  (e.ProgName) e.Files =
+    <MLambda::Map & ProcessFile e.Files>;
+
+ProcessFile
+  (e.FileName) =
+    <Clear (e.FileName) <MXXIO::Load e.FileName>>;
+
+Clear {
+  (e.FileName) Success
+  (('!' ('Module') (e.ModuleName) (e.SrcPos)) e.OtherInfo-1)
+  e.OtherInfo-2 =
+    <MLambda::Nil
+      <MXXIO::Save
+        (e.FileName) (('!' ('Module') (e.ModuleName) ('*unknown*')))
+      >
+    >;
+
+  (e.FileName) Success e.Other = /* ничего не делаем */;
+
+  (e.FileName) Fails = /* ничего не делаем */;
+}
+
+$END ClearXLinx.

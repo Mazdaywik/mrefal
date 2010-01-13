@@ -1,0 +1,41 @@
+
+$EXTERN MR-Strings-Chr;
+$EXTERN MR-Strings-Numb;
+$EXTERN MR-Strings-Ord;
+$EXTERN MR-Strings-Symb;
+
+$ENTRY CoreBEP_MStringsP_Chr {
+  e.X = <MR-Strings-Chr e.X>;
+}
+
+$ENTRY CoreBEP_MStringsP_Ord {
+  e.X = <MR-Strings-Ord e.X>;
+}
+
+$ENTRY CoreBEP_MStringsP_Symb {
+  e.X = <MR-Strings-Symb e.X>;
+}
+
+$ENTRY CoreBEP_MStringsP_Numb {
+  e.X = <MR-Strings-Numb e.X>;
+}
+
+
+$EXTERN RegisterE_;
+$FORWARD CoreBEP_MStringsP_InitializeE_;
+$FORWARD CoreBEP_MStringsP_FinalizeE_;
+
+
+$ENTRY CoreBEP_MStringsP_InitE_ { =
+  <RegisterE_
+    CoreBEP_MStringsP_InitializeE_
+    CoreBEP_MStringsP_FinalizeE_
+  >;
+}
+
+CoreBEP_MStringsP_InitializeE_ {
+  = /* empty */;
+}
+CoreBEP_MStringsP_FinalizeE_ {
+  = /* empty */;
+}

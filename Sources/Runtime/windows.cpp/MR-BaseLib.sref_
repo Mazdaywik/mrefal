@@ -1,0 +1,34 @@
+$ENTRY MR-Math-Binary { }
+$ENTRY MR-Math-Compare { }
+
+$ENTRY MR-IO-Open { }
+$ENTRY MR-IO-Close { }
+$ENTRY MR-IO-ReadLine { }
+$ENTRY MR-IO-Write { }
+
+$ENTRY MR-IO-StdIn { }
+$ENTRY MR-IO-StdOut { }
+
+$ENTRY MR-Strings-Chr { }
+$ENTRY MR-Strings-Ord { }
+$ENTRY MR-Strings-Symb { }
+$ENTRY MR-Strings-Numb { }
+
+$ENTRY MR-OS-CommandLine { }
+$ENTRY MR-OS-EnvList { }
+$ENTRY MR-OS-CreateProcess { }
+
+$ENTRY MR-FS-FindFiles { }
+$ENTRY MR-FS-FileAttributes { }
+$ENTRY MR-FS-FullName { }
+$ENTRY MR-FS-MakeDir { }
+$ENTRY MR-FS-RemoveDir { }
+$ENTRY MR-FS-RemoveFile { }
+
+$ENTRY MR-Order-SymbCompare { }
+
+$ENTRY MR-SelfDiag-Log { }
+$ENTRY MR-SelfDiag-Log-T { }
+$ENTRY MR-SelfDiag-PrintMessage { }
+$ENTRY MR-SelfDiag-ExitFailure { }
+$ENTRY MR-SelfDiag-CloseLog { }

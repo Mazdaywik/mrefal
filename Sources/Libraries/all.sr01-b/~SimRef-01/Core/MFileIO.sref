@@ -1,0 +1,53 @@
+// FROM MR-BaseLib
+$EXTERN MR-IO-Close;
+$EXTERN MR-IO-Open;
+$EXTERN MR-IO-ReadLine;
+$EXTERN MR-IO-Write;
+$EXTERN MR-IO-StdIn;
+$EXTERN MR-IO-StdOut;
+
+$ENTRY CoreP_MFileIOP_StdOut {
+  = <MR-IO-StdOut>;
+}
+
+$ENTRY CoreP_MFileIOP_StdIn {
+  = <MR-IO-StdIn>;
+}
+
+$ENTRY CoreP_MFileIOP_ReadLine {
+  s.Handle = <MR-IO-ReadLine s.Handle>;
+}
+
+$ENTRY CoreP_MFileIOP_Write {
+  s.Handle e.Line = <MR-IO-Write s.Handle e.Line>;
+}
+
+$ENTRY CoreP_MFileIOP_Close {
+  s.Handle = <MR-IO-Close s.Handle >;
+}
+
+$ENTRY CoreP_MFileIOP_Open {
+  'r' e.FileName = <MR-IO-Open 'r' e.FileName>;
+  'w' e.FileName = <MR-IO-Open 'w' e.FileName>;
+  'a' e.FileName = <MR-IO-Open 'a' e.FileName>;
+}
+
+
+$EXTERN RegisterE_;
+$FORWARD CoreP_MFileIOP_InitializeE_;
+$FORWARD CoreP_MFileIOP_FinalizeE_;
+
+
+$ENTRY CoreP_MFileIOP_InitE_ { =
+  <RegisterE_
+    CoreP_MFileIOP_InitializeE_
+    CoreP_MFileIOP_FinalizeE_
+  >;
+}
+
+CoreP_MFileIOP_InitializeE_ {
+  = /* empty */;
+}
+CoreP_MFileIOP_FinalizeE_ {
+  = /* empty */;
+}

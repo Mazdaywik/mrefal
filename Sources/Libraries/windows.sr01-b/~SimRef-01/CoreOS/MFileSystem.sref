@@ -1,0 +1,53 @@
+
+//FROM MR-BaseLib
+$EXTERN
+  MR-FS-FindFiles,
+  MR-FS-FileAttributes,
+  MR-FS-FullName,
+  MR-FS-MakeDir,
+  MR-FS-RemoveDir,
+  MR-FS-RemoveFile;
+
+$ENTRY CoreOSP_MFileSystemP_RemoveFile {
+  e.FileName = <MR-FS-RemoveFile e.FileName>;
+}
+
+$ENTRY CoreOSP_MFileSystemP_RemoveDir {
+  e.DirName = <MR-FS-RemoveDir e.DirName>;
+}
+
+$ENTRY CoreOSP_MFileSystemP_MakeDir {
+  e.DirName = <MR-FS-MakeDir e.DirName>;
+}
+
+$ENTRY CoreOSP_MFileSystemP_FullName {
+  e.FileName = <MR-FS-FullName e.FileName>;
+}
+
+$ENTRY CoreOSP_MFileSystemP_FileAttributes {
+  e.FileName = <MR-FS-FileAttributes e.FileName>;
+}
+
+$ENTRY CoreOSP_MFileSystemP_FindFiles {
+  e.FileMask = <MR-FS-FindFiles e.FileMask>;
+}
+
+
+$EXTERN RegisterE_;
+$FORWARD CoreOSP_MFileSystemP_InitializeE_;
+$FORWARD CoreOSP_MFileSystemP_FinalizeE_;
+
+
+$ENTRY CoreOSP_MFileSystemP_InitE_ { =
+  <RegisterE_
+    CoreOSP_MFileSystemP_InitializeE_
+    CoreOSP_MFileSystemP_FinalizeE_
+  >;
+}
+
+CoreOSP_MFileSystemP_InitializeE_ {
+  = /* empty */;
+}
+CoreOSP_MFileSystemP_FinalizeE_ {
+  = /* empty */;
+}

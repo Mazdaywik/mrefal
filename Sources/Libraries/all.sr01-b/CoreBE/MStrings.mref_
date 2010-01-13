@@ -1,0 +1,11 @@
+$MODULE CoreBE::MStrings;
+
+$ENTRY Numb e.X = <Numb e.X>;
+
+$ENTRY Symb e.X = <Symb e.X>;
+
+$ENTRY Ord e.X = <Ord e.X>;
+
+$ENTRY Chr e.X = <Chr e.X>;
+
+$END CoreBE::MStrings.

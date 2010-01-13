@@ -1,0 +1,15 @@
+$MODULE Core::Math;
+
+$ENTRY NumberCompare {
+  s.Left s.Right = <NumberCompare s.Left s.Right>;
+}
+
+$ENTRY Binary {
+  '+' s.X s.Y = <Binary '+' s.X s.Y>;
+  '-' s.X s.Y = <Binary '-' s.X s.Y>;
+  '*' s.X s.Y = <Binary '*' s.X s.Y>;
+  '/' s.X s.Y = <Binary '/' s.X s.Y>;
+  '%' s.X s.Y = <Binary '%' s.X s.Y>;
+}
+
+$END Core::Math.

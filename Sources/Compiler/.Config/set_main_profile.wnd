@@ -8,6 +8,10 @@ S:  Простой Рефал
     set PROFILE=mp-work-SR
     set PROFILE-SHORT=SR
     .Config\change_window default
+2:  Простой Рефал 01
+    set PROFILE=mp-work-SR-01
+    set PROFILE-SHORT=SR 01
+    .Config\change_window default
 C:  Back-end Си++/Простой Рефал
     set PROFILE=mp-work-CPPSR
     set PROFILE-SHORT=Си++/SR

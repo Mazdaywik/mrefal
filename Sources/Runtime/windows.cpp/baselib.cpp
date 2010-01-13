@@ -522,7 +522,11 @@ REFAL_FUNC(implement_fileio::write) {
         continue;
 
       case cDataFunction:
+#ifdef MODULE_REFAL
         printf_res = fprintf(f, "%s ", (ptr->function_info.name)());
+#else
+        printf_res = fprintf(f, "%s ", ptr->function_info.name);
+#endif
         continue;
 
       case cDataIdentifier:
@@ -1626,7 +1630,11 @@ REFAL_FUNC(implement_selfdiag::exit_failure) {
 
   // Переинициализация имени функции
   func_name->function_info.ptr = ExitE_;
+#ifdef MODULE_REFAL
   func_name->function_info.name = REFAL_IDENT(Exit);
+#else
+  func_name->function_info.name = "Exit";
+#endif
 
   // Вставка кода возврата после имени функции
   splice_elem( close_call, sRetValue );

@@ -107,7 +107,8 @@ CompilerCmdLine
   t.Config =
     <MHelpers::ConfigExtract t.Config CCompiler>
     ' ' <MHelpers::ConfigExtract t.Config IncludeOpt>
-    '\"' <MHelpers::ConfigExtract t.Config RunTimeDir> '\" ';
+    '\"' <MHelpers::ConfigExtract t.Config RunTimeDir> '\" '
+    <MHelpers::ConfigExtract t.Config DefineOpt> 'MODULE_REFAL ';
 
 GenFwdRename {
   (Rename (e.Name) (e.NewName)) =

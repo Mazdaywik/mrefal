@@ -1,0 +1,46 @@
+
+$EXTERN MR-SelfDiag-CloseLog;
+$EXTERN MR-SelfDiag-ExitFailure;
+$EXTERN MR-SelfDiag-Log;
+$EXTERN MR-SelfDiag-Log-T;
+$EXTERN MR-SelfDiag-PrintMessage;
+
+$ENTRY CoreBEP_MSelfDiagP_CloseLog {
+  = <MR-SelfDiag-CloseLog>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_ExitFailure {
+  = <MR-SelfDiag-ExitFailure>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_LogD_T {
+  e.Text = <MR-SelfDiag-Log-T e.Text>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_Log {
+  e.Text = <MR-SelfDiag-Log e.Text>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_PrintMessage {
+  e.Message = <MR-SelfDiag-PrintMessage e.Message>;
+}
+
+
+$EXTERN RegisterE_;
+$FORWARD CoreBEP_MSelfDiagP_InitializeE_;
+$FORWARD CoreBEP_MSelfDiagP_FinalizeE_;
+
+
+$ENTRY CoreBEP_MSelfDiagP_InitE_ { =
+  <RegisterE_
+    CoreBEP_MSelfDiagP_InitializeE_
+    CoreBEP_MSelfDiagP_FinalizeE_
+  >;
+}
+
+CoreBEP_MSelfDiagP_InitializeE_ {
+  = /* empty */;
+}
+CoreBEP_MSelfDiagP_FinalizeE_ {
+  = /* empty */;
+}

@@ -1,0 +1,35 @@
+
+$EXTERN MR-Math-Binary;
+$EXTERN MR-Math-Compare;
+
+$ENTRY CoreP_MathP_Binary {
+  '+' s.X s.Y = <MR-Math-Binary '+' s.X s.Y >;
+  '-' s.X s.Y = <MR-Math-Binary '-' s.X s.Y >;
+  '*' s.X s.Y = <MR-Math-Binary '*' s.X s.Y >;
+  '/' s.X s.Y = <MR-Math-Binary '/' s.X s.Y >;
+  '%' s.X s.Y = <MR-Math-Binary '%' s.X s.Y >;
+}
+
+$ENTRY CoreP_MathP_NumberCompare {
+  s.Left s.Right = <MR-Math-Compare s.Left s.Right >;
+}
+
+
+$EXTERN RegisterE_;
+$FORWARD CoreP_MathP_InitializeE_;
+$FORWARD CoreP_MathP_FinalizeE_;
+
+
+$ENTRY CoreP_MathP_InitE_ { =
+  <RegisterE_
+    CoreP_MathP_InitializeE_
+    CoreP_MathP_FinalizeE_
+  >;
+}
+
+CoreP_MathP_InitializeE_ {
+  = /* empty */;
+}
+CoreP_MathP_FinalizeE_ {
+  = /* empty */;
+}

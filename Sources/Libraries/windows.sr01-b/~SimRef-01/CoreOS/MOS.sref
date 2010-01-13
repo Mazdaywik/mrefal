@@ -1,0 +1,97 @@
+$LABEL Wait;
+$LABEL NoWait;
+
+// Просто вызов функций из MR-BaseLib
+
+//FROM MR-BaseLib
+$EXTERN MR-OS-CreateProcess;
+
+$ENTRY CoreOSP_MOSP_CreateProcess {
+  #Wait (e.Program) (e.CommandLine) =
+    <MR-OS-CreateProcess #Wait (e.Program) (e.CommandLine)>;
+
+  #NoWait (e.Program) (e.CommandLine) =
+    <MR-OS-CreateProcess #NoWait (e.Program) (e.CommandLine)>;
+}
+
+//FROM MR-BaseLib
+$EXTERN MR-OS-EnvList;
+
+$ENTRY CoreOSP_MOSP_EnvList {
+  = <MR-OS-EnvList>;
+}
+
+//FROM MR-BaseLib
+$EXTERN MR-OS-CommandLine;
+
+$ENTRY CoreOSP_MOSP_CommandLine {
+  = <MR-OS-CommandLine>;
+}
+
+// Функции инициализации и финализации
+
+$SWAP G_Finalizers;
+
+$EXTERN ExitE_;
+$FORWARD DoExit;
+
+$ENTRY CoreOSP_MOSP_ForseExit {
+  s.RetCode = <ExitE_ s.RetCode>;
+}
+
+$ENTRY ExitE_ {
+  s.RetCode =
+    <DoExit s.RetCode <G_Finalizers>>;
+}
+
+//FROM MR-BaseLib
+$EXTERN Exit;
+
+DoExit {
+  s.RetCode = <Exit s.RetCode>;
+
+  s.RetCode s.FnFinal e.Finalizers =
+    <G_Finalizers e.Finalizers>
+    <s.FnFinal>
+    <ExitE_ s.RetCode>;
+}
+
+$FORWARD SwRegistered;
+
+$ENTRY RegisterE_ {
+  s.FnInit s.FnFinal =
+    <SwRegistered
+      s.FnInit s.FnFinal <G_Finalizers>
+    >;
+}
+
+SwRegistered {
+  s.FnInit s.FnFinal
+  e.Finalizers-B s.FnFinal e.Finalizers-E =
+    <G_Finalizers
+      e.Finalizers-B s.FnFinal e.Finalizers-E
+    >;
+
+  s.FnInit s.FnFinal e.Finalizers =
+    <s.FnInit>
+    <G_Finalizers s.FnFinal e.Finalizers>;
+}
+
+// Инициализаторы и финализаторы модуля
+
+$FORWARD CoreOSP_MOSP_InitializeE_;
+$FORWARD CoreOSP_MOSP_FinalizeE_;
+
+$ENTRY CoreOSP_MOSP_InitE_ { =
+  <RegisterE_
+    CoreOSP_MOSP_InitializeE_
+    CoreOSP_MOSP_FinalizeE_
+  >;
+}
+
+CoreOSP_MOSP_InitializeE_ {
+  = /* empty */;
+}
+CoreOSP_MOSP_FinalizeE_ {
+  = /* empty */;
+}

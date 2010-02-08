@@ -1,0 +1,183 @@
+$MODULE MSwapSupport;
+
+/**=============================================================================
+  Модуль предоставляет функции для наиболее распространённых функций с
+  динамическими ящиками: чтение, запись, добавление терма в начало/конец,
+  чтение терма с начала/конца, операции с копилкой.
+==============================================================================*/
+
+/**
+  <Read s.FnSwap>
+    == e.Content
+  Содержимое ящика не изменяется.
+*/
+$ENTRY Read
+  s.FnSwap =
+    <ReadAndReturn s.FnSwap <s.FnSwap>>;
+
+ReadAndReturn
+  s.FnSwap e.Content =
+    <s.FnSwap e.Content> e.Content;
+
+/**
+  <Write s.FnSwap e.NewContent>
+    == empty
+  Ящик получает значение e.NewContent
+*/
+$ENTRY Write
+  s.FnSwap e.NewContent =
+    <Nil <s.FnSwap e.NewContent>>;
+
+Nil e.AnyValue = ;
+
+/**
+  <PushFront s.FnSwap t.Info>
+    == empty
+  Эквивалентно <s.FnSwap t.Info <s.FnSwap>>
+*/
+$ENTRY PushFront
+  s.FnSwap t.Info =
+    <s.FnSwap t.Info <s.FnSwap>>;
+
+/**
+  <PushBack s.FnSwap t.Info>
+    == empty
+  Эквивалентно <s.FnSwap <s.FnSwap> t.Info>
+*/
+$ENTRY PushBack
+  s.FnSwap t.Info =
+    <s.FnSwap <s.FnSwap> t.Info>;
+
+/**
+  <PopFront s.FnSwap>
+    == Success t.Value
+    == Fails
+  Если <s.FnSwap> :: t.Value e.Content То
+    <s.FnSwap e.Content>
+    Success t.Value
+  Иначе
+    Fails
+*/
+$ENTRY PopFront
+  s.FnSwap =
+    <ReturnPopFront s.FnSwap <s.FnSwap>>;
+
+ReturnPopFront {
+  s.FnSwap t.Value e.Tail =
+    <s.FnSwap e.Tail> Success t.Value;
+
+  s.FnSwap = Fails;
+}
+
+/**
+  <PopBack s.FnSwap>
+    == Success t.Value
+    == Fails
+  См. описание функции PopFront.
+*/
+$ENTRY PopBack
+  s.FnSwap = <ReturnPopBack s.FnSwap <s.FnSwap>>;
+
+ReturnPopBack {
+  s.FnSwap e.Start t.Last =
+    <s.FnSwap e.Start> Success t.Last;
+
+  s.FnSwap = Fails;
+}
+
+//----------- Операции с копилкой ----------------------------------------------
+
+/**
+  <Br s.FnSwap e.Key '=' e.Value> == empty
+*/
+$ENTRY Br
+  s.FnSwap e.Key '=' e.Value = <Bury s.FnSwap (e.Key) e.Value>;
+
+/**
+  <Bury s.FnSwap (e.Key) e.Value> == empty
+*/
+$ENTRY Bury
+  s.FnSwap (e.Key) e.Value = <PushFront s.FnSwap ((e.Key) e.Value)>;
+
+/**
+  <Dg s.FnSwap e.Key> == e.Value
+*/
+$ENTRY Dg
+  s.FnSwap e.Key = <Dg-Aux s.FnSwap (e.Key) <s.FnSwap>>;
+
+Dg-Aux {
+  s.FnSwap (e.Key) e.Heap-B ((e.Key) e.Value) e.Heap-E =
+    e.Value <s.FnSwap e.Heap-B e.Heap-E>;
+
+  s.FnSwap (e.Key) e.Heap =
+    <s.FnSwap e.Heap>;
+}
+
+/**
+  <Cp s.FnSwap e.Key> == e.Value
+*/
+$ENTRY Cp
+  s.FnSwap e.Key = <Cp-Aux (e.Key) <Read s.FnSwap>>;
+
+Cp-Aux {
+  (e.Key) e.Heap-B ((e.Key) e.Value) e.Heap-E = e.Value;
+
+  (e.Key) e.Heap = /* empty */;
+}
+
+/**
+  <Rp s.FnSwap e.Key '=' e.Value> == empty
+*/
+$ENTRY Rp
+  s.FnSwap e.Key '=' e.Value = <Replace s.FnSwap (e.Key) e.Value>;
+
+/**
+  <Replace s.FnSwap (e.Key) e.Value> == empty
+*/
+$ENTRY Replace
+  s.FnSwap (e.Key) e.Value =
+    <Rp-Aux
+      s.FnSwap (e.Key) (e.Value) <s.FnSwap>
+    >;
+
+Rp-Aux {
+  s.FnSwap (e.Key) (e.NewValue)
+  e.Heap-B ((e.Key) e.OldValue) e.Heap-E =
+    <s.FnSwap e.Heap-B ((e.Key) e.NewValue) e.Heap-E>;
+
+  s.FnSwap (e.Key) (e.NewValue) e.Heap =
+    <s.FnSwap ((e.Key) e.NewValue) e.Heap>;
+}
+
+/**
+  <Dgall s.FnSwap> == (e.Key '=' e.Value)*
+*/
+$ENTRY Dgall
+  s.FnSwap = <Heap-Convert <DigAll s.FnSwap>>;
+
+/**
+  <DigAll s.FnSwap> == ((e.Key) e.Value)*
+*/
+$ENTRY DigAll
+  s.FnSwap = <s.FnSwap>;
+
+/**
+  <Cpall s.FnSwap> == (e.Key '=' e.Value)*
+*/
+$ENTRY Cpall
+  s.FnSwap = <Heap-Convert <CopyAll s.FnSwap>>;
+
+/**
+  <CopyAll s.FnSwap> == ((e.Key) e.Value)*
+*/
+$ENTRY CopyAll
+  s.FnSwap = <Read s.FnSwap>;
+
+Heap-Convert {
+  ((e.Key) e.Value) e.Tail =
+    (e.Key '=' e.Value) <Heap-Convert e.Tail>;
+
+  = ;
+}
+
+$END MSwapSupport.

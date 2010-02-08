@@ -1,0 +1,10 @@
+$module Core::MFileSystem;
+
+
+$entry DirList;
+$entry GetFileAttributes;
+$entry MakeDir;
+$entry RemoveFile;
+$entry RemoveDir;
+
+$end Core::MFileSystem.

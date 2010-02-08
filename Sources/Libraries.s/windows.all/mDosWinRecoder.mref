@@ -1,0 +1,57 @@
+$MODULE MDosWinRecoder;
+
+Table =
+	('€ΐ')('Α')('‚Β')('ƒΓ')('„Δ')('…Ε')
+	('π¨')('†Ζ')('‡Η')('Θ')('‰Ι')('Κ')
+	('‹Λ')('Μ')('Ν')('Ξ')('Ο')('Π')
+	('‘Ρ')('’Ò')('“Σ')('”Τ')('•Υ')('–Φ')
+	('—Χ')('Ψ')('™Ω')('Ϊ')('›Ϋ')('ά')
+	('έ')('ή')('ί')(' ΰ')('΅α')('Άβ')
+	('£γ')('¤δ')('¥ε')('ρΈ')('¦ζ')('§η')
+	('¨θ')('©ι')('ªκ')('«λ')('¬μ')('­ν')
+	('®ξ')('―ο')('ΰπ')('αρ')('βς')('γσ')
+	('δτ')('ευ')('ζφ')('ηχ')('θψ')('ιω')
+	('κϊ')('λϋ')('μό')('νύ')('ξώ')('οÿ');
+
+$ENTRY WinToDos
+	e.Line = <DoWinToDos (<Table>) e.Line>;
+
+DoWinToDos {
+	(e.Table-B (s.Dos s.Win) e.Table-E) s.Win e.Tail =
+		s.Dos
+		<DoWinToDos
+			(e.Table-B (s.Dos s.Win) e.Table-E)
+			e.Tail
+		>;
+
+	(e.Table) s.Next e.Tail =
+		s.Next <DoWinToDos (e.Table) e.Tail>;
+
+	(e.Table) (e.Nested) e.Tail =
+		(<DoWinToDos (e.Table) e.Nested>)
+		<DoWinToDos (e.Table) e.Tail>;
+
+	(e.Table) = ;
+}
+
+$ENTRY DosToWin
+	e.Line = <DoDosToWin (<Table>) e.Line>;
+
+DoDosToWin {
+	(e.Table-B (s.Dos s.Win) e.Table-E) s.Dos e.Tail =
+		s.Win
+		<DoDosToWin
+			(e.Table-B (s.Dos s.Win) e.Table-E) e.Tail
+		>;
+
+	(e.Table) s.Next e.Tail =
+		s.Next <DoDosToWin (e.Table) e.Tail>;
+
+	(e.Table) (e.Nested) e.Tail =
+		( <DoDosToWin (e.Table) e.Nested> )
+		<DoDosToWin (e.Table) e.Tail>;
+
+	(e.Table) = ;
+}
+
+$END MDosWinRecoder. 

@@ -1,0 +1,9 @@
+$MODULE MRefalRTS;
+
+$ENTRY Exit {
+  s.RetCode = <ExitE_ s.RetCode>;
+}
+
+$ENTRY ExitE_ { }
+
+$END MRefalRTS.

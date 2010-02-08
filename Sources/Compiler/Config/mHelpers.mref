@@ -5,18 +5,18 @@ $IMPORT MLambda;
 $ENTRY TuneEndConfig = ();
 
 /**
-  <GenExtent s.FnExtentDescription>
-    == s.FnExtent
+  <GenExtent e.ExtentDescription>
+    == t.FnExtent
 
-  <s.FnExtentDescription>
-    == (s.OptionId (e.OptionName) e.DefaultValue)
+  e.ExtentDescription ::=
+    (s.OptionId (e.OptionName) e.DefaultValue)*
 */
 $ENTRY GenExtent
-  s.FnExtentDescription =
+  e.ExtentDescription =
     (
       & TuneEndConfig
       <MLambda::Map
-        & GenExtentEntry <s.FnExtentDescription>
+        & GenExtentEntry e.ExtentDescription
       >
     );
 
@@ -37,6 +37,9 @@ Handler
 /**
   <InitConfig s.FnExtentDescription e.Tunings>
     == (e.Config)
+
+  <s.FnExtentDescription>
+    == e.ExtentDescription
 */
 $ENTRY InitConfig
   s.FnDescription e.Tunings =

@@ -15,12 +15,14 @@ $ENTRY Register
       & SRefal-BE.MCompiler.Generate
       <MLambda::BindLeft
         & SRefal-BE.MLinker.Link
-        <MHelpers::InitConfig & Extent e.Tunings>
+        <MHelpers::InitConfig & Tunings e.Tunings>
       >
       (e.Directory) (e.Ext)
     >;
 
-$ENTRY Extent =
+$ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
+
+Tunings =
   (Compiler ('compiler') 'call compile_sr.bat');
 
 $END SRefal-BE::MInit.

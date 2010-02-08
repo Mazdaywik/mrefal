@@ -592,13 +592,6 @@ ConstructConfig-Aux {
 
 CreateBackEndRegister
   (s.BackEndId (Ext t.SrcPosExt e.Ext) (Dir t.SrcPosDir e.Dir) e.Tweaks) =
-    //<MLambda::BindRight
-    //  & MConfig.RegisterBackEnd
-    //  s.BackEndId
-    //  <BackEnd-GetFnGenerator s.BackEndId e.Tweaks>
-    //  <BackEnd-GetFnLinker s.BackEndId e.Tweaks>
-    //  (e.Dir) (e.Ext)
-    //>;
     <MLambda::BindRight
       <BackEnd-GetFnRegister s.BackEndId>
       (e.Dir) (e.Ext) e.Tweaks
@@ -606,12 +599,6 @@ CreateBackEndRegister
 
 CreateFrontEndRegister
   (s.FrontEndId e.Tuners-B (Ext t.SrcPos e.Ext) e.Tuners-E) =
-    //<MLambda::BindRight
-    //  & MConfig.RegisterFrontEnd
-    //  s.FrontEndId
-    //  <FrontEnd-GetFnParser s.FrontEndId e.Tuners-B e.Tuners-E>
-    //  (e.Ext)
-    //>;
     <MLambda::BindRight
       <FrontEnd-GetFnRegister s.FrontEndId> (e.Ext)
     >;
@@ -862,7 +849,7 @@ FrontEndsTable =
     & MRefal-FE.MInit.Register
   );
 
-ExtentNone = ;
+ExtentNone = <MHelpers::GenExtent /* пусто */>;
 
 ProfileBackEnd =
   (Refal5 (Refal5-BE SymInfo) ('Refal5') ('R5'))
@@ -931,7 +918,7 @@ BackEnd-GetExtension
 
 BackEnd-GetFnExtension-Aux
   s.BackEndId (e.Name) (e.Dir) (e.Ext) s.FnRegister s.FnExtent =
-    <MLambda::BindLeft & MHelpers.GenExtent s.FnExtent>;
+    s.FnExtent;
 
 BackEnd-IdFromName
   e.BackEndName =

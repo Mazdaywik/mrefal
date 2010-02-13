@@ -124,22 +124,22 @@ ConvertParagraphs {
   (e.TagInfo) /* всё */ = /* пусто */;
 
   (e.TagInfo) ('`' e.BeginCode) e.Lines =
-    <CodePar (e.TagInfo) ('<code><p>') (e.BeginCode) e.Lines>;
+    <CodePar (e.TagInfo) ('<pre><p>') (e.BeginCode) e.Lines>;
 
   (e.TagInfo) ('====' e.Header '====') e.Lines =
-    ('<h4>' e.Header '</h4>')
+    ('<h5>' e.Header '</h5>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
   (e.TagInfo) ('===' e.Header '===') e.Lines =
-    ('<h3>' e.Header '</h3>')
+    ('<h4>' e.Header '</h4>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
   (e.TagInfo) ('==' e.Header '==') e.Lines =
-    ('<h2>' e.Header '</h2>')
+    ('<h3>' e.Header '</h3>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
   (e.TagInfo) ('=' e.Header '=') e.Lines =
-    ('<h1>' e.Header '</h1>')
+    ('<h2><span style="color: #000000;">' e.Header '</span></h2>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
   (e.TagInfo) (e.BeginText) e.Lines =
@@ -157,17 +157,17 @@ CodePar {
     (e.Scanned)
     <CodePar (e.TagInfo) () (e.NextLine) e.Lines>;
 
-  (e.TagInfo) (e.Scanned) () /* пусто */ = (e.Scanned '</code></p>');
+  (e.TagInfo) (e.Scanned) () /* пусто */ = (e.Scanned '</pre></p>');
 
   (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =
     <CodePar (e.TagInfo) (e.Scanned '`') (e.Rest) e.Lines>;
 
   (e.TagInfo) (e.Scanned) ('`') e.Lines =
-    (e.Scanned '</code></p>')
+    (e.Scanned '</pre></p>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
   (e.TagInfo) (e.Scanned) ('`' e.Rest) e.Lines =
-    (e.Scanned '</code></p>')
+    (e.Scanned '</pre></p>')
     <ConvertParagraphs (e.TagInfo) (e.Rest) e.Lines>;
 
   (e.TagInfo) (e.Scanned) ('<' e.Rest) e.Lines =
@@ -188,8 +188,11 @@ CodePar {
   (e.TagInfo) (e.Scanned) ((Tag (e.Name) e.Parameter) e.Rest) e.Lines =
     <CodePar
       <AnalyzeTag-Par (e.TagInfo) (e.Scanned) (e.Name) (e.Parameter)>
-      (e.Rest) (e.Lines)
+      (e.Rest) e.Lines
     >;
+
+  (e.TagInfo) (e.Scanned) /* кончились строчки */ =
+    (e.Scanned);
 }
 
 AnalyzeTag-Par {
@@ -209,11 +212,17 @@ TextPar {
     (e.Scanned <Close s.Bold s.Italic> '</p>')
     <ConvertParagraphs (e.TagInfo) e.Lines>;
 
+  //(s.Bold s.Italic) (e.TagInfo) (e.Scanned) () (e.NextLine) e.Lines =
+  //  (e.Scanned)
+  //  <TextPar (s.Bold s.Italic) (e.TagInfo) () (e.NextLine) e.Lines>;
+
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) () (e.NextLine) e.Lines =
-    (e.Scanned)
-    <TextPar (s.Bold s.Italic) (e.TagInfo) () (e.NextLine) e.Lines>;
+    <TextPar (s.Bold s.Italic) (e.TagInfo) (e.Scanned ' ') (e.NextLine) e.Lines>;
 
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) () /* всё */ =
+    (e.Scanned  <Close s.Bold s.Italic>'</p>');
+
+  (s.Bold s.Italic) (e.TagInfo) (e.Scanned) /* всё */ =
     (e.Scanned  <Close s.Bold s.Italic>'</p>');
 
   (s.Bold s.Italic) (e.TagInfo) (e.Scanned) ('``' e.Rest) e.Lines =

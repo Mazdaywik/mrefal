@@ -2,11 +2,11 @@
     .Config\change_window default
 -:  
 5:  Рефал 5
-    set COMP=refgo -c200 -l50 MRefal
+    set COMP=refgo -c200 -l80 MRefal
     set COMP-SHORT=R5
     .Config\change_window default
 T:  Рефал 5 с замером времени
-    set COMP=refgo -c200 -l50 -t MRefal
+    set COMP=refgo -c200 -l80 -t MRefal
     set COMP-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал

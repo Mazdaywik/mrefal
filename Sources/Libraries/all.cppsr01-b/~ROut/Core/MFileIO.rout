@@ -1,0 +1,51 @@
+v ROUT3 Module Refal 0.1                      
+                                              
+b Entry::Core::MFileIO::Open
+c $Entry::Core::MFileIO::Open$ {
+c  s.Mode e.FileName
+c    , 'rwa' : e.X s.Mode e.Y
+c    , <Dg FreeHandles > :
+c    {
+r      //Найден свободный дескриптор
+c      Handles s.FreeHandle e.Handles
+c        = <Open s.FreeHandle s.Mode e.FileName >
+c        <Br FreeHandles '=' Handles e.Handles >
+c        s.FreeHandle
+
+r      //Свободные дескрипторы не инициализированы
+c      = <Br FreeHandles '=' Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 >;
+
+r      //Свободных дескрипторов не осталось --- функция должна падать
+c    }
+c}
+
+b Entry::Core::MFileIO::Close
+c $Entry::Core::MFileIO::Close$ {
+c  s.Handle =
+c    <Close s.Handle >
+c    <Br FreeHandles '=' <Dg FreeHandles> s.Handle >;
+c}
+
+b Entry::Core::MFileIO::ReadLine
+c $Entry::Core::MFileIO::ReadLine$ {
+c  StdIn = <Card >;
+c  s.Handle = <Get s.Handle >;
+c}
+
+b Entry::Core::MFileIO::StdIn
+c $Entry::Core::MFileIO::StdIn$ {
+c  = StdIn ;
+c}
+
+b Entry::Core::MFileIO::StdOut
+c $Entry::Core::MFileIO::StdOut$ {
+c  = StdOut ;
+c}
+
+b Entry::Core::MFileIO::Write
+c $Entry::Core::MFileIO::Write$ {
+c  StdOut e.Text '\n' = <Prout <Dg CachedLine > e.Text >;
+c  StdOut e.Text = <Br CachedLine '=' <Dg CachedLine > e.Text >;
+c  s.Handle e.Text = <Write s.Handle e.Text >;
+c}
+

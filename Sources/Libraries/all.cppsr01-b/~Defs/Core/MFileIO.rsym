@@ -7,5 +7,6 @@ $entry ReadLine;
 $entry StdIn;
 $entry StdOut;
 $entry Write;
+$entry FlushIO;
 
 $end Core::MFileIO.

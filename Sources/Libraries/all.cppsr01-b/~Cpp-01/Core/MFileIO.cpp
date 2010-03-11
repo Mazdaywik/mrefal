@@ -95,3 +95,9 @@ refalrts::FnResult CoreP_MFileIOP_Open(
   return implement_fileio::open(arg_begin, arg_end);
 }
 
+refalrts::FnResult CoreP_MFileIOP_FlushIO(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  refalrts::splice_to_freelist(arg_begin, arg_end);
+  return refalrts::cSuccess;
+}

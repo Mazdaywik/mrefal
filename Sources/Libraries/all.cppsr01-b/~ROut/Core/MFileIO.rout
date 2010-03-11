@@ -59,3 +59,8 @@ c   s.Handle e.Text '\n' = <Putout s.Handle e.Text >;
 c   s.Handle e.Text  = <Write s.Handle e.Text >;
 c }
 
+b Entry::Core::MFileIO::FlushIO
+c $Entry::Core::MFileIO::FlushIO$ {
+c   = <Prout <Dg CachedLine > >;
+c }
+

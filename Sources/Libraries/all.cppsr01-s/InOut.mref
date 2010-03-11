@@ -65,4 +65,6 @@ $ENTRY WriteText-T {
   = ;
 }
 
+$ENTRY Final = <Core::FlushIO>;
+
 $END InOut.

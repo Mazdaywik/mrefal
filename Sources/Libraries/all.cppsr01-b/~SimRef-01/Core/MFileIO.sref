@@ -51,3 +51,7 @@ CoreP_MFileIOP_InitializeE_ {
 CoreP_MFileIOP_FinalizeE_ {
   = /* empty */;
 }
+
+$ENTRY CoreP_MFileIOP_FlushIO {
+  e.Arg = /* empty */;
+}

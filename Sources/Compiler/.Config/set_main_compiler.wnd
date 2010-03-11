@@ -4,16 +4,24 @@
 5:  Рефал 5
     set COMP=refgo -c200 -l80 MRefal
     set COMP-SHORT=R5
+    set SPROFILE=mp-stable-R5
+    set SPROFILE-SHORT=R5
     .Config\change_window default
 T:  Рефал 5 с замером времени
     set COMP=refgo -c200 -l80 -t MRefal
     set COMP-SHORT=R5
+    set SPROFILE=mp-stable-R5
+    set SPROFILE-SHORT=R5
     .Config\change_window default
 S:  Простой Рефал
     set COMP=start-sr
     set COMP-SHORT=SR
+    set SPROFILE=mp-stable-SR
+    set SPROFILE-SHORT=SR
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
+    set SPROFILE=mp-stable-CPPSR
+    set SPROFILE-SHORT=Си++/SR
     set COMP=start-cpp
     set COMP-SHORT=C++/SR
     .Config\change_window default

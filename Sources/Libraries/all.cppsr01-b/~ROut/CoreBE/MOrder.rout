@@ -1,0 +1,36 @@
+v ROUT3 Module Refal 0.1
+
+b Entry::CoreBE::MOrder::SymbCompare
+c $Entry::CoreBE::MOrder::SymbCompare$ {
+c   s.Left s.Right
+c     , <$Local::CoreBE::MOrder::GetType$ s.Left >
+c       <$Local::CoreBE::MOrder::GetType$ s.Right >:
+c     {
+c       s.Type s.LeftVal s.Type s.RightVal
+c         , <Compare s.LeftVal s.RightVal >:
+c         {
+c           '-' = '<';
+c           '0' = '=';
+c           '+' = '>';
+c         };
+
+c       Number s.LeftVal s.Type s.RightVal = '>';
+c       s.Type s.LeftVal Number s.RightVal = '<';
+c       Char s.LeftVal s.Type s.RightVal = '>';
+c       s.Type s.LeftVal Char s.RightVal = '<';
+c       s.L-Type s.L-Val s.R-Type s.R-Val = '=';
+c     }
+c }
+
+b Local::CoreBE::MOrder::GetType
+c $Local::CoreBE::MOrder::GetType$ {
+c   s.Atom, <Type s.Atom >:
+c     {
+c       'N' e.1 = Number s.Atom;
+c       'L' e.1 = Char <Ord s.Atom >;
+c       'O' e.1 = Char <Ord s.Atom >;
+c       'P' e.1 = Char <Ord s.Atom >;
+c       'D' e.1 = Char <Ord s.Atom >;
+c       e.1     = Other 0;
+c     }
+c }

@@ -13,4 +13,3 @@ b Entry::CoreBE::MStrings::Symb
 c $Entry::CoreBE::MStrings::Symb$ {
 c   s.Num = <Symb s.Num >;
 c }
-

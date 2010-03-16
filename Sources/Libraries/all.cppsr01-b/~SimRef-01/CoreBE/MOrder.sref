@@ -5,22 +5,7 @@ $ENTRY CoreBEP_MOrderP_SymbCompare {
   s.Left s.Right = <MR-Order-SymbCompare s.Left s.Right>;
 }
 
-
-$EXTERN RegisterE_;
-$FORWARD CoreBEP_MOrderP_InitializeE_;
-$FORWARD CoreBEP_MOrderP_FinalizeE_;
-
-
-$ENTRY CoreBEP_MOrderP_InitE_ { =
-  <RegisterE_
-    CoreBEP_MOrderP_InitializeE_
-    CoreBEP_MOrderP_FinalizeE_
-  >;
+$ENTRY CoreBEP_MOrderP_EntryPointE_ {
+  = /* пусто */;
 }
 
-CoreBEP_MOrderP_InitializeE_ {
-  = /* empty */;
-}
-CoreBEP_MOrderP_FinalizeE_ {
-  = /* empty */;
-}

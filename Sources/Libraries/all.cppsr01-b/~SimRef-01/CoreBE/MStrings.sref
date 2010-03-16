@@ -20,22 +20,7 @@ $ENTRY CoreBEP_MStringsP_Numb {
   e.X = <MR-Strings-Numb e.X>;
 }
 
-
-$EXTERN RegisterE_;
-$FORWARD CoreBEP_MStringsP_InitializeE_;
-$FORWARD CoreBEP_MStringsP_FinalizeE_;
-
-
-$ENTRY CoreBEP_MStringsP_InitE_ { =
-  <RegisterE_
-    CoreBEP_MStringsP_InitializeE_
-    CoreBEP_MStringsP_FinalizeE_
-  >;
+$ENTRY CoreBEP_MStringsP_EntryPointE_ {
+  = /* пусто */;
 }
 
-CoreBEP_MStringsP_InitializeE_ {
-  = /* empty */;
-}
-CoreBEP_MStringsP_FinalizeE_ {
-  = /* empty */;
-}

@@ -277,12 +277,9 @@ GenEntries {
       (
         (<Definition-Result e.Result>)
         (
-          ()
-          <MLambda::Map & Decl-ExternInit e.Imports>
           ('$EXTERN ExitE_;')
           ()
-          ('$ENTRY Go { =')
-          <MLambda::Map & Call-ExternInit e.Imports>
+          ('$ENTRY ' <QNameCode t.ModuleName> 'P_EntryPointE_ { =')
           ('  ' <Gen-Result e.Result>)
           ('  <ExitE_ 0>;')
           ('}')
@@ -297,25 +294,15 @@ GenEntries {
         (<Definition-Entry t.InitSeq> <Definition-Entry t.FinalSeq>)
         (
           ()
+          (<QNameCode t.ModuleName> 'P_FinalizeE_ { =')
+          ('  ' <GenEntry t.FinalSeq> ';')
+          ('}')
+          ()
           ('$EXTERN RegisterE_;')
-          ('$FORWARD ' <QNameCode t.ModuleName> 'P_InitializeE_;')
-          ('$FORWARD ' <QNameCode t.ModuleName> 'P_FinalizeE_;')
           ()
-          <MLambda::Map & Decl-ExternInit e.Imports>
-          ()
-          ('$ENTRY ' <QNameCode t.ModuleName> 'P_InitE_ { =')
-          <MLambda::Map & Call-ExternInit e.Imports>
-          ('  <RegisterE_')
-          ('    ' <QNameCode t.ModuleName> 'P_InitializeE_')
-          ('    ' <QNameCode t.ModuleName> 'P_FinalizeE_')
-          ('  >;')
-          ('}')
-          ()
-          (<QNameCode t.ModuleName> 'P_InitializeE_ {')
-          <GenEntry t.InitSeq>
-          ('}')
-          (<QNameCode t.ModuleName> 'P_FinalizeE_ {')
-          <GenEntry t.FinalSeq>
+          ('$ENTRY ' <QNameCode t.ModuleName> 'P_EntryPointE_ { =')
+          ('  ' <GenEntry t.InitSeq>)
+          ('  <RegisterE_ ' <QNameCode t.ModuleName> 'P_FinalizeE_>;')
           ('}')
         )
       )
@@ -336,8 +323,8 @@ Definition-Entry {
 }
 
 GenEntry {
-  None = ('  = /* empty */;');
-  (Result e.Result) = ('  = ' <Gen-Result e.Result> ';');
+  None = '/* empty */';
+  (Result e.Result) = <Gen-Result e.Result>;
 }
 
 Generate-Aux2 {

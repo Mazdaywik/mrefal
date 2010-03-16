@@ -1,0 +1,11 @@
+$MODULE Test-Inc;
+
+$IMPORT InOut;
+
+$ENTRY Init = <InOut::WriteLine 'INIT'>;
+
+$ENTRY Say = <InOut::WriteLine 'Preved'>;
+
+$ENTRY Final = <InOut::WriteLine 'FINAL'>;
+
+$END Test-Inc.

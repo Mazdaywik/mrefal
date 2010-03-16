@@ -2,7 +2,9 @@ $MODULE SRefal-BE::MLinker;
 
 $IMPORT FileIO;
 $IMPORT MLambda;
+$IMPORT MStrings;
 $IMPORT MOS;
+$IMPORT MQualifiedName;
 
 $IMPORT MHelpers = Config::MHelpers;
 
@@ -14,10 +16,50 @@ $IMPORT MHelpers = Config::MHelpers;
 $ENTRY Link
   t.Config (e.ProgName) e.Modules =
     Success
+    // Генерация файла со стартовой функцией
+    <FileIO::Save
+      (e.ProgName '.main.sref')
+      ()
+      ()
+      ('$SWAP G_Finalizers;')
+      ()
+      ('$ENTRY RegisterE_ {')
+      ('  s.Finalizer =')
+      ('    <G_Finalizers s.Finalizer <G_Finalizers>>;')
+      ('}')
+      ()
+      <MLambda::Map & ModuleInitDeclarator e.Modules>
+      ()
+      ('$ENTRY Go { =')
+      <MLambda::Map
+        & ModuleInitCaller <MStrings::Reverse e.Modules>
+      >
+      ('  ;')
+      ('}')
+      ()
+      ('$EXTERN Exit;')
+      ()
+      ('$ENTRY ExitE_ {')
+      ('  s.Code =')
+      ('    <')
+      ('      {')
+      ('        s.NextFinalizer e.Finalizers =')
+      ('          <G_Finalizers e.Finalizers>')
+      ('          <s.NextFinalizer>')
+      ('          <ExitE_ s.Code>;')
+      ()
+      ('        /* пусто */ = <Exit s.Code>;')
+      ('      }')
+      ('      <G_Finalizers>')
+      ('    >;')
+      ('}')
+    >
+    // Генерация сценария запуска компилятора
     <FileIO::Save
       ('call_srefc.tmp.bat')
       (
         '@' <MHelpers::ConfigExtract t.Config Compiler> ' '
+        '"' e.ProgName '.main.sref" '
         <MLambda::Map & FilePath e.Modules>
         // '>nul'
       )
@@ -28,6 +70,38 @@ $ENTRY Link
 
 FilePath {
   (t.ModuleName e.Path) = '"' e.Path '" ';
+}
+
+ModuleInitDeclarator {
+  (t.ModuleName e.Path) =
+    ('$EXTERN ' <QNameCode t.ModuleName> 'P_EntryPointE_;');
+}
+
+ModuleInitCaller {
+  (t.ModuleName e.Path) =
+    ('  <' <QNameCode t.ModuleName> 'P_EntryPointE_>');
+}
+
+QNameCode {
+  t.Name = <DoQNameCode <MQualifiedName::Parse t.Name>>;
+}
+
+DoQNameCode {
+  (e.First) = <NameCode e.First>;
+
+  (e.First) (e.Second) =
+    <NameCode e.First> 'P_' <NameCode e.Second>;
+
+  (e.First) (e.Second) e.Tail =
+    <NameCode e.First> 'P_' <DoQNameCode (e.Second) e.Tail>;
+}
+
+NameCode {
+  e.Name = <MLambda::Map & NameCodeChar e.Name>;
+}
+
+NameCodeChar {
+  '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; s.Other = s.Other;
 }
 
 $END SRefal-BE::MLinker.

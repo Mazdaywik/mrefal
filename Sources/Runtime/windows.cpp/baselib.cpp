@@ -1584,7 +1584,7 @@ refalrts::FnResult implement_selfdiag::log(
   move_right( arg_begin, arg_end );
 
   // Вывод дампа:
-  if( 0 == flog ) {
+  if( (0 == flog) || (stderr == flog) ) {
     fprintf(stderr, "<Log>: ");
     flog = stderr;
   }
@@ -1633,7 +1633,7 @@ REFAL_FUNC(implement_selfdiag::exit_failure) {
 #ifdef MODULE_REFAL
   func_name->function_info.name = REFAL_IDENT(Exit);
 #else
-  func_name->function_info.name = "Exit";
+  func_name->function_info.name = "@Exit";
 #endif
 
   // Вставка кода возврата после имени функции

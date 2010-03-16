@@ -33,23 +33,8 @@ $ENTRY CoreP_MFileIOP_Open {
 }
 
 
-$EXTERN RegisterE_;
-$FORWARD CoreP_MFileIOP_InitializeE_;
-$FORWARD CoreP_MFileIOP_FinalizeE_;
-
-
-$ENTRY CoreP_MFileIOP_InitE_ { =
-  <RegisterE_
-    CoreP_MFileIOP_InitializeE_
-    CoreP_MFileIOP_FinalizeE_
-  >;
-}
-
-CoreP_MFileIOP_InitializeE_ {
-  = /* empty */;
-}
-CoreP_MFileIOP_FinalizeE_ {
-  = /* empty */;
+$ENTRY CoreP_MFileIOP_EntryPointE_ {
+  = /* пусто */;
 }
 
 $ENTRY CoreP_MFileIOP_FlushIO {

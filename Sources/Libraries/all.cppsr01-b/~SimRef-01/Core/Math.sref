@@ -14,22 +14,7 @@ $ENTRY CoreP_MathP_NumberCompare {
   s.Left s.Right = <MR-Math-Compare s.Left s.Right >;
 }
 
-
-$EXTERN RegisterE_;
-$FORWARD CoreP_MathP_InitializeE_;
-$FORWARD CoreP_MathP_FinalizeE_;
-
-
-$ENTRY CoreP_MathP_InitE_ { =
-  <RegisterE_
-    CoreP_MathP_InitializeE_
-    CoreP_MathP_FinalizeE_
-  >;
+$ENTRY CoreP_MathP_EntryPointE_ {
+  = /* пусто */;
 }
 
-CoreP_MathP_InitializeE_ {
-  = /* empty */;
-}
-CoreP_MathP_FinalizeE_ {
-  = /* empty */;
-}

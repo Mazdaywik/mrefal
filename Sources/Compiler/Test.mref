@@ -1,0 +1,10 @@
+$PROGRAM Test;
+
+$IMPORT InOut;
+$IMPORT Test-Inc;
+
+$ENTRY Go =
+  <Test-Inc::Say>
+  <InOut::WriteLine 'Test'>;
+
+$END Test.

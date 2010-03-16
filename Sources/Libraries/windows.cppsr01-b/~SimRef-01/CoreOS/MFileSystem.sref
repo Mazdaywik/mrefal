@@ -32,22 +32,7 @@ $ENTRY CoreOSP_MFileSystemP_FindFiles {
   e.FileMask = <MR-FS-FindFiles e.FileMask>;
 }
 
-
-$EXTERN RegisterE_;
-$FORWARD CoreOSP_MFileSystemP_InitializeE_;
-$FORWARD CoreOSP_MFileSystemP_FinalizeE_;
-
-
-$ENTRY CoreOSP_MFileSystemP_InitE_ { =
-  <RegisterE_
-    CoreOSP_MFileSystemP_InitializeE_
-    CoreOSP_MFileSystemP_FinalizeE_
-  >;
+$ENTRY CoreOSP_MFileSystemP_EntryPointE_ {
+  = /* пусто */;
 }
 
-CoreOSP_MFileSystemP_InitializeE_ {
-  = /* empty */;
-}
-CoreOSP_MFileSystemP_FinalizeE_ {
-  = /* empty */;
-}

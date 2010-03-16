@@ -25,22 +25,7 @@ $ENTRY CoreBEP_MSelfDiagP_PrintMessage {
   e.Message = <MR-SelfDiag-PrintMessage e.Message>;
 }
 
-
-$EXTERN RegisterE_;
-$FORWARD CoreBEP_MSelfDiagP_InitializeE_;
-$FORWARD CoreBEP_MSelfDiagP_FinalizeE_;
-
-
-$ENTRY CoreBEP_MSelfDiagP_InitE_ { =
-  <RegisterE_
-    CoreBEP_MSelfDiagP_InitializeE_
-    CoreBEP_MSelfDiagP_FinalizeE_
-  >;
+$ENTRY CoreBEP_MSelfDiagP_EntryPointE_ {
+  = /* пусто */;
 }
 
-CoreBEP_MSelfDiagP_InitializeE_ {
-  = /* empty */;
-}
-CoreBEP_MSelfDiagP_FinalizeE_ {
-  = /* empty */;
-}

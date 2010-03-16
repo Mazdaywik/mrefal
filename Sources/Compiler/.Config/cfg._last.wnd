@@ -1,13 +1,13 @@
 L:  Загрузить _last
-    set COMP-SHORT=R5
-    set COMP=refgo -c200 -l80 MRefal
-    set PROFILE-SHORT=R5
-    set PROFILE=mp-work-R5
+    set COMP-SHORT=SR
+    set COMP=start-sr
+    set PROFILE-SHORT=SR
+    set PROFILE=mp-work-SR
     set SCOMP-SHORT=C++/SR
     set SCOMP=mrefal.s.cpp.exe
-    set SPROFILE-SHORT=R5
-    set SPROFILE=mp-stable-R5
-    set MODE=+make
+    set SPROFILE-SHORT=SR
+    set SPROFILE=mp-stable-SR
+    set MODE=+build
     .Config\change_window default
 X:  Возврат без загрузки
     .Config\change_window default

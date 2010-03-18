@@ -79,8 +79,9 @@ StartLinkLoop-Aux {
           'Starter'
         >
         (('Starter')
-          ('$$ENTRY Go { = ' e.InitCode '<$Entry::MRefalRTS::Exit$ 0 >; }')
+          ('$$ENTRY Go { = ' e.InitCode '<$Entry::__Exit$ 0 >; }')
         )
+        <ExitFunctionCode>
         e.Units
       >
       <MLambda::Reduce
@@ -89,6 +90,21 @@ StartLinkLoop-Aux {
       t.hExeTyper
     >;
 }
+
+ExitFunctionCode =
+  (
+    // Баннер
+    ('Entry::__Exit')
+    // Код
+    ('$$ENTRY $Entry::__Exit$ {')
+    ('  s.$Index::RetCode$ , <Dg Finalizers >: {')
+    ('    s.$Index::NextFinalizer$ =')
+    ('      <Mu s.$Index::NextFinalizer$ >')
+    ('      <$Entry::__Exit$ s.$Index::RetCode$ >;')
+    ('    = <Exit s.$Index::RetCode$ >;')
+    ('  };')
+    ('}')
+  );
 
 AddLinkedBuiltIn {
   t.UnitStorage (RealName (e.MR-Name) e.R5-Name) =

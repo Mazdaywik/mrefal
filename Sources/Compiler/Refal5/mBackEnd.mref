@@ -68,7 +68,7 @@ GenFinalizer-Aux {
     <GenFinalizer-Function
       (e.FinalizerName) e.FinalCode
     >
-    ('e <Br \'Finalizers=\'$' e.FinalizerName '$ >');
+    ('e <Br Finalizers \'=\' $' e.FinalizerName '$ >');
 
   (e.FinalizerName) (Result e.InitCode) e.FinalCode =
     <GenFinalizer-Function
@@ -76,7 +76,7 @@ GenFinalizer-Aux {
     >
     ('e '
       <GenerateExpression e.InitCode>
-      ' <Br \'Finalizers=\'$' e.FinalizerName '$ >'
+      ' <Br Finalizers \'=\' $' e.FinalizerName '$ >'
     );
 }
 

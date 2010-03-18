@@ -25,8 +25,7 @@ p Arg
 
 b Entry::MRefalRTS::Exit
 c $Entry::MRefalRTS::Exit$ {
-c   s.$Index::RetCode$ =
-c     <$Local::MRefalRTS::Exit-Aux$ s.$Index::RetCode$ <Dg 'Finalizers' > > ;
+c   s.$Index::RetCode$ = <$Entry::__Exit$ s.$Index::RetCode$ >;
 c }
 
 b Local::MRefalRTS::Exit-Aux

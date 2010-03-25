@@ -1,0 +1,89 @@
+v ROUT3 Module Refal 0.1
+
+b Entry::CoreOS::MOS::CommandLine
+c $Entry::CoreOS::MOS::CommandLine$ {
+c   =
+c     <$Local::CoreOS::MOS::Load$ 1 <Arg 0 > >;
+c }
+
+b Local::CoreOS::MOS::Load
+c $Local::CoreOS::MOS::Load$ {
+c   s.$Index::Next$ = ;
+c   s.$Index::Next$ e.$Index::Arg$ =
+c     '\"' <$Local::CoreOS::MOS::Quote-Slash$ e.$Index::Arg$> '\" '
+c     <$Local::CoreOS::MOS::Load$
+c       <Add s.$Index::Next$ 1 >
+c       <Arg s.$Index::Next$ >
+c     >;
+c }
+
+b Local::CoreOS::MOS::Quote
+c $Local::CoreOS::MOS::Quote$ {
+c   e.$Index::Arg$ '\"' =
+c     <$Local::CoreOS::MOS::Quote-Slash$ e.$Index::Arg$ >
+c     '\\\"';
+r 
+c   e.$Index::Arg$ s.$Index::Other$ =
+c     <$Local::CoreOS::MOS::Quote$ e.$Index::Arg$ >
+c     s.$Index::Other$ ;
+r 
+c   = ;
+c }
+
+b Local::CoreOS::MOS::Quote-Slash
+c $Local::CoreOS::MOS::Quote-Slash$ {
+c   e.$Index::Arg$ '\\' =
+c     <$Local::CoreOS::MOS::Quote-Slash$ e.$Index::Arg$ >
+c     '\\\\';
+r 
+c   e.$Index::Arg$ =
+c     <$Local::CoreOS::MOS::Quote$ e.$Index::Arg$ > ;
+c }
+
+b Entry::CoreOS::MOS::CreateProcess
+c $Entry::CoreOS::MOS::CreateProcess$ {
+c   $Ident::Wait$
+c   ($ADT::__StructureBrackets$ e.ExeModule)
+c   ($ADT::__StructureBrackets$ e.CommandLine) =
+r     // Кривое решение --- игнорировать параметр e.ExeModule,
+r     // но любые другие пути будут костылявее.
+c     <System e.CommandLine >;
+r 
+c   $Ident::NoWait$
+c   ($ADT::__StructureBrackets$ e.ExeModule)
+c   ($ADT::__StructureBrackets$ e.CommandLine) =
+c     <System 'start ' e.CommandLine >;
+c }
+
+b Entry::CoreOS::MOS::EnvList
+c $Entry::CoreOS::MOS::EnvList$ {
+c   , <Cp EnvList > :
+c   {
+c     Loaded e.List = e.List;
+r 
+c     , <System 'set>~envlist.tmp' > : s.$Index::Ret1$
+c     , <Open 'r' 20 '~envlist.tmp' > : e.$Index::Empty1$
+c     , <$Local::CoreOS::MOS::LoadEnvs$ <Get 20 > > : e.$Index::Result$
+c     , <System 'del ~envlist.tmp' > : s.$Index::Ret2$
+c     = e.$Index::Result$ ;
+c   };
+c }
+
+b Local::CoreOS::MOS::LoadEnvs
+c $Local::CoreOS::MOS::LoadEnvs$ {
+c   0 = <Close 20 >;
+r 
+c   e.$Index::Line$ 0 =
+c     ($ADT::__StructureBrackets$ e.$Index::Line$)
+c     <Close 20 >;
+r 
+c   e.$Index::Line$ =
+c     ($ADT::__StructureBrackets$ e.$Index::Line$)
+c     <$Local::CoreOS::MOS::LoadEnvs$ <Get 20 > >;
+c }
+
+b Entry::CoreOS::MOS::ForseExit
+c $Entry::CoreOS::MOS::ForseExit$ {
+c   s.$Index::RetCode$ = <$Entry::__Exit$ s.$Index::RetCode$ >;
+c }
+

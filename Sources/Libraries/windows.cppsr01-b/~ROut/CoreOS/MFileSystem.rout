@@ -65,21 +65,27 @@ c           e.$Index::SerializedArgument$ ' ~$fs_extent.tmp >NUL 2>NUL'
 c         >
 c       : s.$Index::RetCode1$
 
-c       , <Open 'r' 18 '~$fs_extent.tmp' >
-c       :
-
-c       , <Get 18 > <Close 18 >
-c       : e.$Index::LoadedLine$
-
-c       , <System 'del ~$fs_extent.tmp' >
-c       : s.$Index::RetCode2$
-
-c       , <$Local::CoreOS::MFileSystem::UnSerialize$ e.$Index::LoadedLine$ > :
+c       , <ExistFile '~$fs_extent.tmp' > :
 c       {
-c         s.$Index::ConvertResult$ = $Ident::Fails$ ;
+c         True
+c           , <Open 'r' 18 '~$fs_extent.tmp' >
+c           :
 
-c         Success e.$Index::FunctionResult$ =
-c           e.$Index::FunctionResult$ ;
+c           , <Get 18 > <Close 18 >
+c           : e.$Index::LoadedLine$
+
+c          , <System 'del ~$fs_extent.tmp' >
+c          : s.$Index::RetCode2$
+
+c           , <$Local::CoreOS::MFileSystem::UnSerialize$ e.$Index::LoadedLine$ > :
+c           {
+c             s.$Index::ConvertResult$ = $Ident::Fails$ ;
+
+c             Success e.$Index::FunctionResult$ =
+c               e.$Index::FunctionResult$ ;
+c           };
+
+c         False = $Ident::Fails$;
 c       };
 c }
 

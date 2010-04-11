@@ -24,7 +24,7 @@ c $Local::Core::MFileIO::Open-CheckHandles$ {
 c   , <Cp FreeHandles > :
 c   {
 c     Handles e.Handles = ;
-c     = <Br FreeHandles '=' Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 >;
+c     = <Br FreeHandles '=' Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 >;
 c   }
 c }
 

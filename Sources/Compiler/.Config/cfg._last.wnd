@@ -1,6 +1,6 @@
 L:  Загрузить _last
     set COMP-SHORT=R5
-    set COMP=refgo -c200 -l80 MRefal
+    set COMP=refgo -c200 -l80 -t MRefal
     set PROFILE-SHORT=R5
     set PROFILE=mp-work-R5
     set SCOMP-SHORT=C++/SR

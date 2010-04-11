@@ -1,0 +1,276 @@
+$PROGRAM FS-Extent;
+
+$IMPORT FileIO;
+$IMPORT FS = CoreOS::MFileSystem;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MStrings;
+
+$ENTRY Go =
+  <Main <MOS::ArgList>>;
+
+Main {
+  (e.ProgName) (e.FunctionName) (e.Argument) (e.OutputFile) =
+    <FileIO::Save
+      (e.OutputFile)
+      <CallFunction
+        (e.FunctionName)
+        <Unserialize e.Argument>
+      >
+    >;
+
+  (e.ProgName) e.AnyArguments = /* ничего не делаем */;
+}
+
+//------------------------------------------------------------------------------
+// Примитивная сериализация
+//------------------------------------------------------------------------------
+
+/*
+  <Unserialize e.String>
+    == Success e.Expression
+    == Fails
+*/
+Unserialize
+  e.String = <DoUnserialize '$' (/* scanned */) e.String>;
+
+DoUnserialize {
+  t.MultiBracket (e.Scanned) '#' e.Tail =
+    <Escaped t.MultiBracket (e.Scanned) e.Tail>;
+
+  t.MultiBracket (e.Scanned) '(' e.Tail =
+    <DoUnserialize
+      (t.MultiBracket (e.Scanned)) () e.Tail
+    >;
+
+  (t.MultiBracket (e.Scanned)) (e.Inner) ')' e.Tail =
+    <DoUnserialize
+      t.MultiBracket (e.Scanned (e.Inner)) e.Tail
+    >;
+
+  // Нормальное завершение
+  '$' (e.Scanned) /* пусто */ = Success e.Scanned;
+
+  // Ненормальное завершение
+  '$' (e.Scanned) ')' e.Tail = Fails;
+
+  (t.MultiBracket (e.Scanned)) (e.Inner) /* пусто */ = Fails;
+
+  t.MultiBracket (e.Scanned) s.Char e.Tail =
+    <DoUnserialize
+      t.MultiBracket (e.Scanned s.Char) e.Tail
+    >;
+}
+
+Escaped {
+  t.MultiBracket (e.Scanned) 'c' e.Tail =
+    <Escaped-Seq & CharCode t.MultiBracket (e.Scanned) e.Tail>;
+
+  t.MultiBracket (e.Scanned) 'n' e.Tail =
+    <Escaped-Seq & Number t.MultiBracket (e.Scanned) e.Tail>;
+
+  t.MultiBracket (e.Scanned) 'i' e.Tail =
+    <Escaped-Seq & Identifier t.MultiBracket (e.Scanned) e.Tail>;
+
+  t.MultiBracket (e.Scanned) '_' e.Tail =
+    <DoUnserialize
+      t.MultiBracket (e.Scanned ' ') e.Tail
+    >;
+
+  t.MultiBracket (e.Scanned) s.Escaped e.Tail =
+    <DoUnserialize
+      t.MultiBracket (e.Scanned s.Escaped) e.Tail
+    >;
+
+  t.MultiBracket (e.Scanned) = Fails;
+}
+
+Escaped-Seq
+  s.FnMode t.MultiBracket (e.Scanned) e.Tail =
+    <DoEscaped-Seq
+      <s.FnMode Finalizer>
+      ( <s.FnMode Set> )
+      t.MultiBracket (e.Scanned) () e.Tail
+    >;
+
+DoEscaped-Seq {
+  s.FnFinalizer (e.Set)
+  t.MultiBracket (e.Scanned) (e.Seq) '+' e.Tail =
+    <CheckFinalize
+      t.MultiBracket (e.Scanned) <s.FnFinalizer e.Seq> e.Tail
+    >;
+
+  s.FnFinalizer (e.Set)
+  t.MultiBracket (e.Scanned) (e.Seq) ' ' e.Tail =
+    <CheckFinalize
+      t.MultiBracket (e.Scanned) <s.FnFinalizer e.Seq> e.Tail
+    >;
+
+  s.FnFinalizer (e.Set-B s.Next e.Set-E)
+  t.MultiBracket (e.Scanned) (e.Seq) s.Next e.Tail =
+    <DoEscaped-Seq
+      s.FnFinalizer (e.Set-B s.Next e.Set-E)
+      t.MultiBracket (e.Scanned) (e.Seq s.Next) e.Tail
+    >;
+
+  s.FnFinalizer (e.Set)
+  t.MultiBracket (e.Scanned) () e.Tail =
+    Fails;
+}
+
+CheckFinalize {
+  t.MultiBracket (e.Scanned) & Error e.Tail = Fails;
+
+  t.MultiBracket (e.Scanned) s.Atom e.Tail = 
+    <DoUnserialize
+      t.MultiBracket (e.Scanned s.Atom) e.Tail
+    >;
+}
+
+CharCode {
+  Finalizer = & MakeChar;
+  Set = '0123456789';
+}
+
+MakeChar e.StrCode = <MStrings.Chr <MStrings.Numb e.StrCode>>;
+
+Number {
+  Finalizer = & MStrings.Numb;
+  Set = '0123456789';
+}
+
+Identifier {
+  Finalizer = & SelectIdentifier;
+  Set =
+    '01234567890'
+    'abcdefghijklmnopqrstuvwxyz'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    '-_';
+}
+
+SelectIdentifier {
+  'Success' = Success;
+  'Fails' = Fails;
+  'A-DateTime' = A-DateTime;
+  'C-DateTime' = C-DateTime;
+  'M-DateTime' = M-DateTime;
+  'Size' = Size;
+  'Dir' = Dir;
+  e.Other = & Error;
+}
+
+Error { }
+
+//------------------------------------------------------------------------------
+// Обработка вызовов функций
+//------------------------------------------------------------------------------
+
+/*
+  Ошибки форматов не проверяем --- если программа упадёт, то и фиг с ней.
+  Она тупо ничего не запишет в файл.
+*/
+
+CallFunction {
+  (e.FuncName) Success e.Argument =
+    ( <SwCallFunction (e.FuncName) e.Argument> );
+
+  (e.FuncName) Fails = ;
+}
+
+SwCallFunction {
+  ('FileAttributes') e.FileName =
+    <Result-FileAttributes <FS::FileAttributes e.FileName>>;
+
+  ('FindFiles') e.Mask = 
+    <Result-FindFiles <FS::FindFiles e.Mask>>;
+
+  ('FullName') e.FileName =
+    <Result-FullName <FS::FullName e.FileName>>;
+
+  ('MakeDir') e.DirName =
+    <Result-Simple <FS::MakeDir e.DirName>>;
+
+  ('RemoveDir') e.DirName =
+    <Result-Simple <FS::RemoveDir e.DirName>>;
+
+  ('RemoveFile') e.FileName =
+    <Result-Simple <FS::RemoveFile e.FileName>>;
+}
+
+Result-FileAttributes {
+  Success e.Attributes = '#iSuccess ' <FA-Attributes e.Attributes>;
+
+  Fails = '#iFails ';
+}
+
+FA-Attributes
+  e.Attributes = <MLambda::Map & FA-OneAttrib e.Attributes>;
+
+FA-OneAttrib {
+  (A-DateTime e.Value) = <PrintDate 'A' e.Value>;
+  (C-DateTime e.Value) = <PrintDate 'C' e.Value>;
+  (M-DateTime e.Value) = <PrintDate 'M' e.Value>;
+
+  (Size Dir) = '(#iSize #iDir )';
+  (Size s.Size) = '(#iSize ' <DumpNumber s.Size> ')';
+}
+
+PrintDate {
+  s.Letter e.Numbers =
+    '(#i' s.Letter '-DateTime ' <MLambda::Map & DumpNumber e.Numbers> ')';
+}
+
+Result-FindFiles {
+  Success e.Files =
+    '#iSuccess ' <MLambda::Map & FF-Entry e.Files>;
+
+  Fails = '#iFails ';
+}
+
+FF-Entry {
+  ((e.FileName) e.Attribs) =
+    '((' <DumpString e.FileName> ')' <FA-Attributes e.Attribs> ')';
+}
+
+Result-FullName {
+  Success e.Name = '#iSuccess ' <DumpString e.Name>;
+
+  Fails = '#iFails ';
+}
+
+Result-Simple {
+  Success = '#iSuccess ';
+  Fails = '#iFails ';
+}
+
+//------------------------------------------------------------------------------
+// Функции сериализации отдельных элементов
+//------------------------------------------------------------------------------
+
+DumpString
+  e.String =
+    <DoDumpString
+      (
+        '01234567890'
+        'abcdefghijklmnopqrstuvwxyz'
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        '-_'
+      )
+      e.String
+    >;
+
+DoDumpString {
+  (e.Valids-B s.Next e.Valids-E) s.Next e.String =
+    s.Next <DoDumpString (e.Valids-B s.Next e.Valids-E) e.String>;
+
+  (e.Valids) s.Next e.String =
+    '#c' <MStrings::Symb <MStrings::Ord s.Next>> ' '
+    <DoDumpString (e.Valids) e.String>;
+
+  (e.Valids) /* всё */ = /* пусто */;
+}
+
+DumpNumber
+  s.Number = '#n' <MStrings::Symb s.Number> ' ';
+
+$END FS-Extent.

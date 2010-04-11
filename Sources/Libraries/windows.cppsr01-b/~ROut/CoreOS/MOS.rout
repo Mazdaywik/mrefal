@@ -9,6 +9,12 @@ c }
 b Local::CoreOS::MOS::Load
 c $Local::CoreOS::MOS::Load$ {
 c   s.$Index::Next$ = ;
+r   // Пропуск "особых" параметров
+c   s.$Index::Next$ '++' e.$Index::Arg$ =
+c     <$Local::CoreOS::MOS::Load$
+c       <Add s.$Index::Next$ 1 >
+c       <Arg s.$Index::Next$ >
+c     >;
 c   s.$Index::Next$ e.$Index::Arg$ =
 c     '\"' <$Local::CoreOS::MOS::Quote-Slash$ e.$Index::Arg$> '\" '
 c     <$Local::CoreOS::MOS::Load$

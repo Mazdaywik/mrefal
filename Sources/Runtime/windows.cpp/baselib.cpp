@@ -1119,7 +1119,7 @@ REFAL_FUNC(implement_fs::find_files) {
     DWORD dwError = GetLastError();
     FindClose(hFind);
 
-    if( ERROR_NO_MORE_FILES != dwError ) {
+    if( ERROR_NO_MORE_FILES == dwError ) {
       // Переинициализируем open_call,
       // результат вставляем перед именем функции.
       open_call->link_info = 0;

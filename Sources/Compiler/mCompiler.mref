@@ -22,7 +22,6 @@ $ENTRY Make
     <Make-SwResult
       t.Config t.RootModuleName
       <Compile
-        //& MClusters.CheckNeedCompile-Make
         <SelectMaker t.Config>
         () t.Config (t.hContext t.hErrorList) t.RootModuleName
       >
@@ -222,11 +221,9 @@ Compile-Recompile-UpdateContext-Aux
       >
     >;
 
-//STARTCUT
 Compile-AfterUpdateContext
   t.hErrorList t.hIModule s.ModuleType t.hContext Success =
     (t.hContext t.hErrorList) Success t.hIModule s.ModuleType;
-//ENDCUT
 
 Compile-Recompile-SwParse {
   s.FnAnalyzer (e.Stack) t.Config t.ModuleName

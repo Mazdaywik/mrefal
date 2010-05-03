@@ -309,14 +309,6 @@ GenEntries {
     );
 }
 
-Decl-ExternInit {
-  t.ImportName = ('$EXTERN ' <QNameCode t.ImportName> 'P_InitE_;');
-}
-
-Call-ExternInit {
-  t.ImportName = ('  <' <QNameCode t.ImportName> 'P_InitE_>');
-}
-
 Definition-Entry {
   None = ;
   (Result e.Result) = <Definition-Result e.Result>;

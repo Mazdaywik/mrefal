@@ -1,2 +1,2 @@
-copy mrefal.exe mrefal_.exe
-mrefal_.exe %*
+@copy mrefal.exe mrefal_.exe
+@mrefal_.exe %*

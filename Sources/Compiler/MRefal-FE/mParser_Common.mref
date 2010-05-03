@@ -270,12 +270,12 @@ AddNewFunctionAndADT-SwRedeclaration {
 
 $ENTRY AddNewImport
   t.hIModule t.SrcPos t.NewName (RealName t.RealName) t.hErrorList =
-    <AddNewImport-SwRedeclaration
+    <AddNewImport-SwRedeclaration-Alias
       t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
       <MIModule::GetKind t.hIModule t.NewName>
     >;
 
-AddNewImport-SwRedeclaration {
+AddNewImport-SwRedeclaration-Alias {
   t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
   t.hIModule Success s.Kind =
     t.hIModule
@@ -285,6 +285,29 @@ AddNewImport-SwRedeclaration {
 
   t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
   t.hIModule NoName =
+    <AddNewImport-SwRedeclaration-RealName
+      t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+      <MIModule::GetKind t.hIModule t.RealName>
+    >;
+}
+
+AddNewImport-SwRedeclaration-RealName {
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule Success ModuleName =
+    t.hIModule
+    <MError::AddRecursiveLink
+      t.hErrorList t.SrcPos t.RealName
+    >;
+
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule Success ImportName =
+    t.hIModule
+    <MError::AddRedeclaredIdentifier
+      t.hErrorList t.SrcPos t.RealName
+    >;
+
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule e.OtherResult =
     <UpdateEntity-GuardInvariant
       t.hErrorList
       <MIModule::UpdateImport-X

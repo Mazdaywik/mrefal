@@ -1,0 +1,50 @@
+$MODULE Std::Heap;
+
+/**=============================================================================
+  Данный модуль предоставляет программисту копилку в её классическом виде.
+  Имеется как традиционный интерфейс (с функциями Br, Dg, Rp, Cp с известным
+  форматом), так и более эффективный (не требующий сканирования по открытой
+  e-переменной) интерфейс, обеспечиваемый функциями Bury и Replace.
+==============================================================================*/
+
+$IMPORT Swaps = Std::Swaps;
+
+$SWAP G_Heap;
+
+/**
+  <Br e.Key '=' e.Value> == empty
+*/
+$ENTRY Br
+  e.Key '=' e.Value = <Swaps::Bury & G_Heap (e.Key) e.Value>;
+
+/**
+  <Bury (e.Key) e.Value> == empty
+*/
+$ENTRY Bury
+  (e.Key) e.Value = <Swaps::Bury (e.Key) e.Value>;
+
+/**
+  <Dg e.Key> == e.Value
+*/
+$ENTRY Dg
+  e.Key = <Swaps::Dg & G_Heap e.Key>;
+
+/**
+  <Cp e.Key> == e.Value
+*/
+$ENTRY Cp
+  e.Key = <Swaps::Cp & G_Heap e.Key>;
+
+/**
+  <Rp e,Key '=' e.Value> == empty
+*/
+$ENTRY Rp
+  e.Key '=' e.Value = <Swaps::Replace & G_Heap (e.Key) e.Value>;
+
+/**
+  <Replace (e.Key) e.Value> == empty
+*/
+$ENTRY Replace
+  (e.Key) e.Value = <Swaps::Replace & G_Heap (e.Key) e.Value>;
+
+$END Std::Heap.

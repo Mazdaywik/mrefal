@@ -15,8 +15,6 @@ $IMPORT MOS;
 $IMPORT MQualifiedName;
 $IMPORT MVersion;
 
-$IMPORT Ch = Check::TheCheck;
-
 $ENTRY Go =
   <MVersion::Show>
   <CompileList

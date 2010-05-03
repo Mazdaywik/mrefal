@@ -1,0 +1,369 @@
+$MODULE Std::XXIO;
+
+$IMPORT FileIO = Std::FileIO;
+$IMPORT Math = Std::Math;
+$IMPORT MLambda = Std::Lambda;
+//$IMPORT Str = Std::Chains;
+
+@@@ Syntax error @@@
+
+/**
+  <Load e.FileName>
+    == Success e.LoadedExpr
+    == Fails
+*/
+$ENTRY Load
+  e.FileName =
+    <SwLoad
+      <FileIO::Load e.FileName>
+    >;
+
+SwLoad {
+  Success e.Content
+    <ParseXXIO
+      <MLambda::Map
+        & UnBracket e.Content
+      >
+    >;
+
+  Fails = Fails;
+}
+
+UnBracket ( e.Expr ) = e.Expr;
+
+ParseXXIO
+  e.Text =
+    <DoParse '$' ( ) e.Text>;
+
+/*
+  При разборе моделируем с помощью функций состояния распознающего
+  автомата.
+*/
+
+DoParse {
+  t.MultiBracket ( e.Scanned ) '#(' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned '(' ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) '#)' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned ')' ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) '##' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned '#' ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) '#' e.Text =
+    <ParseNumber
+      t.MultiBracket ( e.Scanned ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) '(' e.Text =
+    <DoParse
+      (t.MultiBracket e.Scanned) () e.Text
+    >;
+
+  (t.MultiBracket e.Scanned) (e.InBrackets) ')' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned (e.InBrackets) ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) '\\' e.Text =
+    <Escape
+      t.MultiBracket ( e.Scanned ) e.Text
+    >;
+
+  '$' ( e.Scanned ) ')' e.Text = Fails;
+
+  t.MutliBracket ( e.Scanned ) s.Ordinary e.Text =
+    <DoParse
+      t.MutliBracket ( e.Scanned s.Ordinary ) e.Text
+    >;
+
+  // Завершение рекурсии
+  '$' ( e.Scanned ) = Success e.Scanned;
+
+  // Ошибочное завершение
+  t.MultiBracket ( e.Scanned ) = Fails;
+}
+
+ParseNumber
+  t.MultiBracket ( e.Scanned ) e.Text =
+    <ParseNumber-FirstDigit
+      ('0123456789')
+      t.MultiBracket ( e.Scanned ) e.Text
+    >;
+
+ParseNumber-FirstDigit {
+  (e.Num-B s.Num e.Num-E)
+  t.MultiBracket ( e.Scanned ) s.Num e.Text =
+    <DoParseNumber
+      (e.Num-B s.Num e.Num-E)
+      t.MultiBracket ( e.Scanned ) (s.Num) e.Text
+    >;
+
+  (e.Num) t.MultiBracket ( e.Scanned ) e.Text =
+    Fails;
+}
+
+DoParseNumber {
+  (e.Num-B s.Num e.Num-E)
+  t.MultiBracket ( e.Scanned ) ( e.Digits ) s.Num e.Text =
+    <DoParseNumber
+      (e.Num-B s.Num e.Num-E)
+      t.MultiBracket ( e.Scanned ) ( e.Digits s.Num ) e.Text
+    >;
+
+  (e.Num) t.MultiBracket ( e.Scanned ) (e.Digits) ' ' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned <Str::Numb e.Digits> ) e.Text
+    >;
+
+  // Разрешим в некоторых случаях после числа не ставить пробела
+  (e.Num) t.MultiBracket ( e.Scanned ) (e.Digits) e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned <Str::Numb e.Digits> ) e.Text
+    >;
+}
+
+Escape {
+  t.MultiBracket ( e.Scanned ) 'n' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned '\n' ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) 't' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned '\t' ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) '\\' e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned '\\' ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) 'd' e.Text =
+    <ParseASCIICode
+      t.MultiBracket ( e.Scanned ) e.Text
+    >;
+
+  // В остальных случаях ошибка
+  t.MultiBracket ( e.Scanned ) e.Text =
+    Fails;
+}
+
+ParseASCIICode {
+  t.MultiBracket ( e.Scanned ) s.Hi s.Mid s.Lo e.Text =
+    <SwParseASCIICode
+      t.MultiBracket ( e.Scanned )
+      <IsDigit s.Hi> <IsDigit s.Mid> <IsDigit s.Lo> e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) e.Text =
+    Fails;
+}
+
+SwParseASCIICode {
+  t.MultiBracket ( e.Scanned ) (True s.Hi) (True s.Mid) (True s.Lo) e.Text =
+    <DoParse
+      t.MultiBracket ( e.Scanned <Str::Chr <Str::Numb s.Hi s.Mid s.Lo>> ) e.Text
+    >;
+
+  t.MultiBracket ( e.Scanned ) t.Other1 t.Other2 t.Other3 e.Text =
+    Fails;
+}
+
+IsDigit
+  s.Char = <SwIsDigit s.Char '0123456789'>;
+
+SwIsDigit {
+  s.Dig e.Dig-B s.Dig e.Dig-E = (True s.Dig);
+
+  s.Char e.Dig = (False);
+}
+
+//------------------------------------------------------------------------------
+
+AtomType
+  s.Atom =
+    <SwAtomType
+      s.Atom
+      <Str::Chr s.Atom>
+      <Str::Ord s.Atom>
+    >;
+
+SwAtomType {
+  s.Atom s.Atom s.Atom =
+    // Атом не является ни макроцифрой, ни символом -- это идентификатор
+    Ident s.Atom;
+
+  s.Num s.Char s.Num =
+    // Это число
+    Number s.Num;
+
+  s.Char s.Char s.Num =
+    // Это символ
+    Char s.Char;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Save (e.FileName) e.Expr>
+    == Success
+    == Fails
+*/
+$ENTRY Save
+  (e.FileName) e.ForSave =
+    <SwSave
+      (e.FileName)
+      <Serialize e.ForSave>
+    >;
+
+SwSave {
+  (e.FileName) Success e.Serialized =
+    Success <FileIO::Save (e.FileName) <Cut e.Serialized>>;
+
+  (e.FileName) Fails =
+    Fails;
+}
+
+Cut {
+  = ;
+
+  e.LongLine =
+    <Cut-Aux <Str::First-Parse <StrLen> e.LongLine>>;
+}
+
+StrLen = 63;
+
+Cut-Aux
+  (e.Cutted) e.Rest =
+    (e.Cutted)
+    <Cut e.Rest>;
+
+Serialize
+  e.ForSave = <DoSerialize ( ) e.ForSave '$'>;
+
+DoSerialize {
+  ( e.Scanned ) '(' e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '#(' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) ')' e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '#)' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) s.Other e.ForSave t.MultiBracket =
+    <SerializeAtom
+      ( e.Scanned ) s.Other e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) ( e.InBracket ) e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '(' ) e.InBracket ( e.ForSave t.MultiBracket )
+    >;
+
+  ( e.Scanned ) ( e.ForSave t.MultiBracket ) =
+    <DoSerialize
+      ( e.Scanned ')' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) '$' =
+    Success e.Scanned;
+
+  // Здесь нам попался АТД
+  ( e.Scanned ) t.OtherTerm e.ForSave t.MultiBracket =
+    Fails;
+}
+
+SerializeAtom
+  ( e.Scanned ) s.Atom e.ForSave t.MultiBracket =
+    <SwSerializeAtom
+      ( e.Scanned ) <AtomType s.Atom> e.ForSave t.MultiBracket
+    >;
+
+SwSerializeAtom {
+  ( e.Scanned ) Number s.Number e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '#' <Str::Symb s.Number> ' ' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) Char s.Char e.ForSave t.MultiBracket =
+    <SerializeChar
+      ( e.Scanned ) s.Char e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) Ident s.Char e.ForSave t.MultiBracket =
+    Fails;
+}
+
+SerializeChar
+  ( e.Scanned ) s.Char e.ForSave t.MultiBracket =
+    <SwSerializeChar
+      ( e.Scanned ) <CharRep s.Char> e.ForSave t.MultiBracket
+    >;
+
+SwSerializeChar {
+  ( e.Scanned ) ( Normal s.Char ) e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned s.Char ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) ( NewLine ) e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '\\n' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) ( Tab ) e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '\\t' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) ( BS ) e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '\\\\' ) e.ForSave t.MultiBracket
+    >;
+
+  ( e.Scanned ) ( ForCoding s.AsciiCode ) e.ForSave t.MultiBracket =
+    <DoSerialize
+      ( e.Scanned '\\d' <Numb3 s.AsciiCode> ) e.ForSave t.MultiBracket
+    >;
+}
+
+Numb3
+  s.AsciiCode = <Numb3-Aux <Str::Symb s.AsciiCode>>;
+
+Numb3-Aux {
+  s.1 = '00' s.1;
+  s.1 s.2 = '0' s.1 s.2;
+  s.1 s.2 s.3 e.NeVlezlo = s.1 s.2 s.3;
+}
+
+CharRep {
+  '\n' = ( NewLine );
+  '\t' = ( Tab );
+  '\\' = ( BS );
+  s.Other =
+    <CharRep-Aux s.Other <Str::Ord s.Other>>;
+}
+
+CharRep-Aux
+  s.Other s.AsciiCode =
+    <SwCharRep
+      s.Other s.AsciiCode
+      <Math::Compare 32 s.AsciiCode> <Math::Compare s.AsciiCode 127>
+    >;
+
+SwCharRep {
+  s.Char s.AsciiCode '<' '<' = ( Normal s.Char );
+
+  s.Char s.AsciiCode s.Other1 s.Other2 = ( ForCoding s.AsciiCode );
+}
+
+$END Std::MXXIO.

@@ -1,5 +1,0 @@
-$MODULE Check::TheCheck;
-
-$IMPORT C = Check::TheCheck;
-
-$END Check::TheCheck;

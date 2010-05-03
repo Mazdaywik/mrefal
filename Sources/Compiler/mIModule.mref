@@ -240,11 +240,42 @@ $ENTRY UpdateFunction
 $ENTRY UpdateImport-X
   t.hIModule
   (Position t.Position) (RealName t.RealName) (AliasName t.AliasName) =
+    <UpdateImport-X-CheckDefined
+      (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
+      <CheckDefinedImport
+        <MLambda::Apply
+          <MLambda::Parallel-H
+            <MLambda::BindLeft-H & GetKind t.RealName>
+            <MLambda::BindLeft-H & GetKind t.AliasName>
+          >
+          t.hIModule
+        >
+      >
+    >;
+
+CheckDefinedImport {
+  t.hIModule NoName NoName =
+    t.hIModule Success;
+
+  t.hIModule Success ImportName Success ImportAlias =
+    t.hIModule Success;
+
+  t.hIModule e.Other = t.hIModule Fails;
+}
+
+UpdateImport-X-CheckDefined {
+  (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
+  t.hIModule Success =
     <UpdateImport-X-Aux
       t.hIModule (Position t.Position)
       (RealName <MQualifiedName::Parse-T t.RealName>)
       (AliasName <MQualifiedName::Parse t.AliasName>)
     >;
+
+  (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
+  t.hIModule Fails =
+    t.hIModule InvalidKind;
+}
 
 UpdateImport-X-Aux
   [IModule (Name e.ModName) t.EntryPoint t.SymTable]

@@ -571,6 +571,10 @@ ConstructConfig {
       >
       e.Files
     );
+
+  s.Result t.hErrorList e.Options
+  (e.Config) =
+    t.hErrorList Fails;
 }
 
 ConstructConfig-Aux {
@@ -642,15 +646,15 @@ DirHandler
     >;
 
 DirHandler-SwCorrectDir {
-  t.hErrorList (e.TunerConfig) t.SrcPos
-  (e.StrDirectory) Success e.PtDirectory =
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.StrDirectory)
+  Success e.PtDirectory =
     t.hErrorList
     (e.TunerConfig (Dir ('dir') t.SrcPos e.PtDirectory));
 
-  t.hErrorList (e.TunerConfig) t.SrcPos
-  (e.StrDirectory) Fails =
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.StrDirectory)
+  Fails =
     <MError::AddCmdLineError
-      t.hErrorList t.SrcPos 'Illegal folder path'
+      t.hErrorList t.SrcPos 'Illegal folder path ' e.StrDirectory
     >
     (e.TunerConfig);
 }

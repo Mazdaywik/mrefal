@@ -492,13 +492,13 @@ static refalrts::FnResult CloseFiles(refalrts::Iter arg_begin, refalrts::Iter ar
     // (~1 s.Num )~1 e.Tail
     refalrts::Iter bb_1 = 0;
     refalrts::Iter be_1 = 0;
-    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) ) 
+    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) )
       break;
     eTail_b_1 = bb_0;
     refalrts::use( eTail_b_1 );
     eTail_e_1 = be_0;
     refalrts::use( eTail_e_1 );
-    if( ! refalrts::svar_left( sNum_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_1, be_1 ) )
       break;
     if( ! empty_seq( bb_1, be_1 ) )
       break;
@@ -555,15 +555,15 @@ static refalrts::FnResult CloseFiles(refalrts::Iter arg_begin, refalrts::Iter ar
     // (~1 s.Num s.Handle )~1 e.Tail
     refalrts::Iter bb_1 = 0;
     refalrts::Iter be_1 = 0;
-    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) ) 
+    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) )
       break;
     eTail_b_1 = bb_0;
     refalrts::use( eTail_b_1 );
     eTail_e_1 = be_0;
     refalrts::use( eTail_e_1 );
-    if( ! refalrts::svar_left( sNum_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_1, be_1 ) )
       break;
-    if( ! refalrts::svar_left( sHandle_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sHandle_1, bb_1, be_1 ) )
       break;
     if( ! empty_seq( bb_1, be_1 ) )
       break;
@@ -726,9 +726,9 @@ refalrts::FnResult RegisterE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) 
     static refalrts::Iter sFnFinal_1;
     refalrts::use( sFnFinal_1 );
     // s.FnInit s.FnFinal
-    if( ! refalrts::svar_left( sFnInit_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnInit_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -813,13 +813,13 @@ static refalrts::FnResult SwRegistered(refalrts::Iter arg_begin, refalrts::Iter 
     static refalrts::Iter sFnFinal_2;
     refalrts::use( sFnFinal_2 );
     // s.FnInit s.FnFinal e.Finalizers_B s.FnFinal e.Finalizers_E
-    if( ! refalrts::svar_left( sFnInit_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnInit_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) )
       break;
     refalrts::Iter bb_0_stk = bb_0;
     refalrts::Iter be_0_stk = be_0;
-    for( 
+    for(
       refalrts::Iter
         eFinalizers_B_b_1 = bb_0_stk,
         eFinalizers_B_oe_1 = bb_0_stk,
@@ -834,7 +834,7 @@ static refalrts::FnResult SwRegistered(refalrts::Iter arg_begin, refalrts::Iter 
       eFinalizers_B_b_1 = bb_0_stk;
       eFinalizers_B_e_1 = eFinalizers_B_oe_1;
       refalrts::move_right( eFinalizers_B_b_1, eFinalizers_B_e_1 );
-      if( ! refalrts::repeated_stvar_left( sFnFinal_2, sFnFinal_1, bb_0, be_0 ) ) 
+      if( ! refalrts::repeated_stvar_left( sFnFinal_2, sFnFinal_1, bb_0, be_0 ) )
         continue;
       eFinalizers_E_b_1 = bb_0;
       refalrts::use( eFinalizers_E_b_1 );
@@ -896,9 +896,9 @@ static refalrts::FnResult SwRegistered(refalrts::Iter arg_begin, refalrts::Iter 
     static refalrts::Iter eFinalizers_e_1;
     refalrts::use( eFinalizers_e_1 );
     // s.FnInit s.FnFinal e.Finalizers
-    if( ! refalrts::svar_left( sFnInit_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnInit_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) )
       break;
     eFinalizers_b_1 = bb_0;
     refalrts::use( eFinalizers_b_1 );
@@ -1095,9 +1095,9 @@ refalrts::FnResult MRefalRTSP_Open(refalrts::Iter arg_begin, refalrts::Iter arg_
     static refalrts::Iter eFileName_e_1;
     refalrts::use( eFileName_e_1 );
     // s.Mode s.Handle e.FileName
-    if( ! refalrts::svar_left( sMode_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sMode_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) )
       break;
     eFileName_b_1 = bb_0;
     refalrts::use( eFileName_b_1 );
@@ -1203,11 +1203,11 @@ static refalrts::FnResult SwOpen(refalrts::Iter arg_begin, refalrts::Iter arg_en
     // (~1 s.Mode s.NumHandle e.FileName )~1 e.Handles_B (~2 s.NumHandle )~2 e.Handles_E
     refalrts::Iter bb_1 = 0;
     refalrts::Iter be_1 = 0;
-    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) ) 
+    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sMode_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sMode_1, bb_1, be_1 ) )
       break;
-    if( ! refalrts::svar_left( sNumHandle_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sNumHandle_1, bb_1, be_1 ) )
       break;
     eFileName_b_1 = bb_1;
     refalrts::use( eFileName_b_1 );
@@ -1215,7 +1215,7 @@ static refalrts::FnResult SwOpen(refalrts::Iter arg_begin, refalrts::Iter arg_en
     refalrts::use( eFileName_e_1 );
     refalrts::Iter bb_0_stk = bb_0;
     refalrts::Iter be_0_stk = be_0;
-    for( 
+    for(
       refalrts::Iter
         eHandles_B_b_1 = bb_0_stk,
         eHandles_B_oe_1 = bb_0_stk,
@@ -1232,9 +1232,9 @@ static refalrts::FnResult SwOpen(refalrts::Iter arg_begin, refalrts::Iter arg_en
       refalrts::move_right( eHandles_B_b_1, eHandles_B_e_1 );
       refalrts::Iter bb_2 = 0;
       refalrts::Iter be_2 = 0;
-      if( ! refalrts::brackets_left( bb_2, be_2, bb_0, be_0 ) ) 
+      if( ! refalrts::brackets_left( bb_2, be_2, bb_0, be_0 ) )
         continue;
-      if( ! refalrts::repeated_stvar_left( sNumHandle_2, sNumHandle_1, bb_2, be_2 ) ) 
+      if( ! refalrts::repeated_stvar_left( sNumHandle_2, sNumHandle_1, bb_2, be_2 ) )
         continue;
       if( ! empty_seq( bb_2, be_2 ) )
         continue;
@@ -1344,11 +1344,11 @@ static refalrts::FnResult SwOpen(refalrts::Iter arg_begin, refalrts::Iter arg_en
     // (~1 s.Mode s.NumHandle e.FileName )~1 e.Handles_B (~2 s.NumHandle s.Handle )~2 e.Handles_E
     refalrts::Iter bb_1 = 0;
     refalrts::Iter be_1 = 0;
-    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) ) 
+    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sMode_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sMode_1, bb_1, be_1 ) )
       break;
-    if( ! refalrts::svar_left( sNumHandle_1, bb_1, be_1 ) ) 
+    if( ! refalrts::svar_left( sNumHandle_1, bb_1, be_1 ) )
       break;
     eFileName_b_1 = bb_1;
     refalrts::use( eFileName_b_1 );
@@ -1356,7 +1356,7 @@ static refalrts::FnResult SwOpen(refalrts::Iter arg_begin, refalrts::Iter arg_en
     refalrts::use( eFileName_e_1 );
     refalrts::Iter bb_0_stk = bb_0;
     refalrts::Iter be_0_stk = be_0;
-    for( 
+    for(
       refalrts::Iter
         eHandles_B_b_1 = bb_0_stk,
         eHandles_B_oe_1 = bb_0_stk,
@@ -1373,15 +1373,15 @@ static refalrts::FnResult SwOpen(refalrts::Iter arg_begin, refalrts::Iter arg_en
       refalrts::move_right( eHandles_B_b_1, eHandles_B_e_1 );
       refalrts::Iter bb_2 = 0;
       refalrts::Iter be_2 = 0;
-      if( ! refalrts::brackets_left( bb_2, be_2, bb_0, be_0 ) ) 
+      if( ! refalrts::brackets_left( bb_2, be_2, bb_0, be_0 ) )
         continue;
-      if( ! refalrts::repeated_stvar_left( sNumHandle_2, sNumHandle_1, bb_2, be_2 ) ) 
+      if( ! refalrts::repeated_stvar_left( sNumHandle_2, sNumHandle_1, bb_2, be_2 ) )
         continue;
       eHandles_E_b_1 = bb_0;
       refalrts::use( eHandles_E_b_1 );
       eHandles_E_e_1 = be_0;
       refalrts::use( eHandles_E_e_1 );
-      if( ! refalrts::svar_left( sHandle_1, bb_2, be_2 ) ) 
+      if( ! refalrts::svar_left( sHandle_1, bb_2, be_2 ) )
         continue;
       if( ! empty_seq( bb_2, be_2 ) )
         continue;
@@ -1505,11 +1505,11 @@ static refalrts::FnResult HandleFromNum_Aux(refalrts::Iter arg_begin, refalrts::
     static refalrts::Iter sHandle_2;
     refalrts::use( sHandle_2 );
     // s.Num e.Handles_B (~1 s.Num s.Handle )~1 e.Handles_E
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     refalrts::Iter bb_0_stk = bb_0;
     refalrts::Iter be_0_stk = be_0;
-    for( 
+    for(
       refalrts::Iter
         eHandles_B_b_1 = bb_0_stk,
         eHandles_B_oe_1 = bb_0_stk,
@@ -1526,15 +1526,15 @@ static refalrts::FnResult HandleFromNum_Aux(refalrts::Iter arg_begin, refalrts::
       refalrts::move_right( eHandles_B_b_1, eHandles_B_e_1 );
       refalrts::Iter bb_1 = 0;
       refalrts::Iter be_1 = 0;
-      if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) ) 
+      if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) )
         continue;
-      if( ! refalrts::repeated_stvar_left( sNum_2, sNum_1, bb_1, be_1 ) ) 
+      if( ! refalrts::repeated_stvar_left( sNum_2, sNum_1, bb_1, be_1 ) )
         continue;
       eHandles_E_b_1 = bb_0;
       refalrts::use( eHandles_E_b_1 );
       eHandles_E_e_1 = be_0;
       refalrts::use( eHandles_E_e_1 );
-      if( ! refalrts::svar_left( sHandle_1, bb_1, be_1 ) ) 
+      if( ! refalrts::svar_left( sHandle_1, bb_1, be_1 ) )
         continue;
       if( ! empty_seq( bb_1, be_1 ) )
         continue;
@@ -1609,7 +1609,7 @@ static refalrts::FnResult HandleFromNum_Aux(refalrts::Iter arg_begin, refalrts::
     static refalrts::Iter eHandles_e_1;
     refalrts::use( eHandles_e_1 );
     // s.Num e.Handles
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     eHandles_b_1 = bb_0;
     refalrts::use( eHandles_b_1 );
@@ -1765,7 +1765,7 @@ static refalrts::FnResult HandleFromNum(refalrts::Iter arg_begin, refalrts::Iter
     static refalrts::Iter sNum_1;
     refalrts::use( sNum_1 );
     // s.Num
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -1842,7 +1842,7 @@ refalrts::FnResult MRefalRTSP_Get(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sNum_1;
     refalrts::use( sNum_1 );
     // s.Num
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -1934,7 +1934,7 @@ static refalrts::FnResult Get_Aux(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sHandle_1;
     refalrts::use( sHandle_1 );
     // s.Handle e.Line
-    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) )
       break;
     eLine_b_1 = bb_0;
     refalrts::use( eLine_b_1 );
@@ -2014,7 +2014,7 @@ refalrts::FnResult MRefalRTSP_Putout(refalrts::Iter arg_begin, refalrts::Iter ar
     static refalrts::Iter eText_e_1;
     refalrts::use( eText_e_1 );
     // s.Num e.Text
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     eText_b_1 = bb_0;
     refalrts::use( eText_b_1 );
@@ -2114,7 +2114,7 @@ refalrts::FnResult MRefalRTSP_Put(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter eText_e_2;
     refalrts::use( eText_e_2 );
     // s.Num e.Text
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     eText_b_1 = bb_0;
     refalrts::use( eText_b_1 );
@@ -2178,7 +2178,7 @@ refalrts::FnResult MRefalRTSP_Arg(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sNum_1;
     refalrts::use( sNum_1 );
     // s.Num
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -2234,7 +2234,7 @@ refalrts::FnResult ExitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
     static refalrts::Iter sRetCode_1;
     refalrts::use( sRetCode_1 );
     // s.RetCode
-    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -2305,7 +2305,7 @@ refalrts::FnResult MRefalRTSP_Exit(refalrts::Iter arg_begin, refalrts::Iter arg_
     static refalrts::Iter sRetCode_1;
     refalrts::use( sRetCode_1 );
     // s.RetCode
-    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -2361,7 +2361,7 @@ static refalrts::FnResult DoExit(refalrts::Iter arg_begin, refalrts::Iter arg_en
     static refalrts::Iter sRetCode_1;
     refalrts::use( sRetCode_1 );
     // s.RetCode
-    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -2416,9 +2416,9 @@ static refalrts::FnResult DoExit(refalrts::Iter arg_begin, refalrts::Iter arg_en
     static refalrts::Iter eFinalizers_e_1;
     refalrts::use( eFinalizers_e_1 );
     // s.RetCode s.FnFinal e.Finalizers
-    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRetCode_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnFinal_1, bb_0, be_0 ) )
       break;
     eFinalizers_b_1 = bb_0;
     refalrts::use( eFinalizers_b_1 );
@@ -2602,7 +2602,7 @@ static refalrts::FnResult SwExist(refalrts::Iter arg_begin, refalrts::Iter arg_e
     refalrts::move_left( bb_0, be_0 );
     refalrts::move_right( bb_0, be_0 );
     // & True
-    if( ! refalrts::function_left( & True, bb_0, be_0 ) ) 
+    if( ! refalrts::function_left( & True, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -2635,7 +2635,7 @@ static refalrts::FnResult SwExist(refalrts::Iter arg_begin, refalrts::Iter arg_e
     refalrts::move_left( bb_0, be_0 );
     refalrts::move_right( bb_0, be_0 );
     // & False
-    if( ! refalrts::function_left( & False, bb_0, be_0 ) ) 
+    if( ! refalrts::function_left( & False, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -2876,9 +2876,9 @@ static refalrts::FnResult SwNumb(refalrts::Iter arg_begin, refalrts::Iter arg_en
     static refalrts::Iter eTail_e_1;
     refalrts::use( eTail_e_1 );
     // & Success s.Num e.Tail
-    if( ! refalrts::function_left( & Success, bb_0, be_0 ) ) 
+    if( ! refalrts::function_left( & Success, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNum_1, bb_0, be_0 ) )
       break;
     eTail_b_1 = bb_0;
     refalrts::use( eTail_b_1 );
@@ -2916,7 +2916,7 @@ static refalrts::FnResult SwNumb(refalrts::Iter arg_begin, refalrts::Iter arg_en
     static refalrts::Iter eTail_e_1;
     refalrts::use( eTail_e_1 );
     // & Fails e.Tail
-    if( ! refalrts::function_left( & Fails, bb_0, be_0 ) ) 
+    if( ! refalrts::function_left( & Fails, bb_0, be_0 ) )
       break;
     eTail_b_1 = bb_0;
     refalrts::use( eTail_b_1 );
@@ -3139,7 +3139,7 @@ refalrts::FnResult MRefalRTSP_Symb(refalrts::Iter arg_begin, refalrts::Iter arg_
     static refalrts::Iter sNumber_1;
     refalrts::use( sNumber_1 );
     // s.Number
-    if( ! refalrts::svar_left( sNumber_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sNumber_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -3367,13 +3367,13 @@ static refalrts::FnResult Convert(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter eInBracket_e_2;
     refalrts::use( eInBracket_e_2 );
     // s.FnConv s.Type (~1 e.InBracket )~1 e.String
-    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) )
       break;
     refalrts::Iter bb_1 = 0;
     refalrts::Iter be_1 = 0;
-    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) ) 
+    if( ! refalrts::brackets_left( bb_1, be_1, bb_0, be_0 ) )
       break;
     eInBracket_b_1 = bb_1;
     refalrts::use( eInBracket_b_1 );
@@ -3486,11 +3486,11 @@ static refalrts::FnResult Convert(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sSymbol_2;
     refalrts::use( sSymbol_2 );
     // s.FnConv s.Type s.Symbol e.Tail
-    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sSymbol_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sSymbol_1, bb_0, be_0 ) )
       break;
     eTail_b_1 = bb_0;
     refalrts::use( eTail_b_1 );
@@ -3601,11 +3601,11 @@ static refalrts::FnResult Convert(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter eTail_e_1;
     refalrts::use( eTail_e_1 );
     // s.FnConv s.Type t.ADT e.Tail
-    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::tvar_left( tADT_1, bb_0, be_0 ) ) 
+    if( ! refalrts::tvar_left( tADT_1, bb_0, be_0 ) )
       break;
     eTail_b_1 = bb_0;
     refalrts::use( eTail_b_1 );
@@ -3664,9 +3664,9 @@ static refalrts::FnResult Convert(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sType_1;
     refalrts::use( sType_1 );
     // s.FnConv s.Type
-    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -3707,13 +3707,13 @@ static refalrts::FnResult Convert_Symb(refalrts::Iter arg_begin, refalrts::Iter 
     static refalrts::Iter sType_2;
     refalrts::use( sType_2 );
     // s.FnConv s.Type s.Type s.Symbol
-    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::repeated_stvar_left( sType_2, sType_1, bb_0, be_0 ) ) 
+    if( ! refalrts::repeated_stvar_left( sType_2, sType_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sSymbol_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sSymbol_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -3765,13 +3765,13 @@ static refalrts::FnResult Convert_Symb(refalrts::Iter arg_begin, refalrts::Iter 
     static refalrts::Iter sType2_1;
     refalrts::use( sType2_1 );
     // s.FnConv s.Type1 s.Type2 s.Symbol
-    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sFnConv_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType1_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType1_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sType2_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sType2_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sSymbol_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sSymbol_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -3816,9 +3816,9 @@ refalrts::FnResult MRefalRTSP_Add(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sRight_1;
     refalrts::use( sRight_1 );
     // s.Left s.Right
-    if( ! refalrts::svar_left( sLeft_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sLeft_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sRight_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRight_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -3876,9 +3876,9 @@ refalrts::FnResult MRefalRTSP_Sub(refalrts::Iter arg_begin, refalrts::Iter arg_e
     static refalrts::Iter sRight_1;
     refalrts::use( sRight_1 );
     // s.Left s.Right
-    if( ! refalrts::svar_left( sLeft_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sLeft_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sRight_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRight_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -3936,9 +3936,9 @@ refalrts::FnResult MRefalRTSP_Compare(refalrts::Iter arg_begin, refalrts::Iter a
     static refalrts::Iter sRight_1;
     refalrts::use( sRight_1 );
     // s.Left s.Right
-    if( ! refalrts::svar_left( sLeft_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sLeft_1, bb_0, be_0 ) )
       break;
-    if( ! refalrts::svar_left( sRight_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sRight_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;

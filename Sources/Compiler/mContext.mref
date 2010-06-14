@@ -332,37 +332,37 @@ ExtractOption-FindName {
 
 //------------------------------------------------------------------------------
 
-/**
-  <GetRealName t.hContext t.ModuleName>
-    == t.hContext Success t.RealName
-    == t.hContext Fails ModuleNotFound
-    == t.hContext Fails UnknownRealName
-*/
-$ENTRY GetRealName
-  t.hContext t.ModuleName =
-    <GetRealName-Aux
-      t.hContext
-      <MStrings::Lower <MQualifiedName::Parse t.ModuleName>>
-    >;
-
-GetRealName-Aux {
-  [Context
-    e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
-  ] e.Name =
-    [Context
-      e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
-    ] Fails UnknownRealName;
-
-  [Context
-    e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
-  ] e.Name =
-    [Context
-      e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
-    ] Success t.RealName;
-
-  [Context e.Info] e.Name =
-    [Context e.Info] Fails ModuleNotFound;
-}
+///*
+//  <GetRealName t.hContext t.ModuleName>
+//    == t.hContext Success t.RealName
+//    == t.hContext Fails ModuleNotFound
+//    == t.hContext Fails UnknownRealName
+//*/
+//$ENTRY GetRealName
+//  t.hContext t.ModuleName =
+//    <GetRealName-Aux
+//      t.hContext
+//      <MStrings::Lower <MQualifiedName::Parse t.ModuleName>>
+//    >;
+//
+//GetRealName-Aux {
+//  [Context
+//    e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
+//  ] e.Name =
+//    [Context
+//      e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
+//    ] Fails UnknownRealName;
+//
+//  [Context
+//    e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
+//  ] e.Name =
+//    [Context
+//      e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
+//    ] Success t.RealName;
+//
+//  [Context e.Info] e.Name =
+//    [Context e.Info] Fails ModuleNotFound;
+//}
 
 //------------------------------------------------------------------------------
 

@@ -107,7 +107,7 @@ PathFromStr-Slash {
 
   '/' e.Tail = <PathFromStr-Net e.Tail>;
 
-  e.Tail = <PathFromStr-Tail e.Tail>;
+  e.Tail = <PathFromStr-Tail (Absolut) e.Tail>;
 }
 
 PathFromStr-Net {
@@ -307,7 +307,7 @@ $ENTRY DirList
     == (e.StrDirectory) e.FileNameNoExt (e.Ext)
   Пример:
   <ParseFileName 'c:\\Directory\\Document.doc'>
-    == ('c;\\Directory\\') 'Document' ('doc')
+    == ('c:\\Directory\\') 'Document' ('doc')
 */
 $ENTRY ParseFileName
   e.FileName =

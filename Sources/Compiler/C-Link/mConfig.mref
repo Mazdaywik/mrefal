@@ -11,13 +11,28 @@ $ENTRY GenExtent
   e.ExtentDescription =
     (
       & TuneEndConfig
-      /*
-        Здесь должны быть описания опций линковщика
-      */
+      <MLambda::Map
+        & GenExtentEntry <DefaultDescription>
+      >
+      <MLambda::Map
+        & GenExtentEntry-FileList <DefaultDescription-FileList>
+      >
       <MLambda::Map
         & GenExtentEntry e.ExtentDescription
       >
     );
+
+TuneEndConfig = ();
+
+DefaultDescription
+  =
+    (Compiler ('compiler') 'g++')
+    (Prologue ('prologue'))
+    (Epilogue ('epilogue'))
+    (Include ('include') '-I')
+    (Output ('output') '-o')
+    (DefaultExt ('defaultext') '.cpp')
+    (Define ('define') '-D');
 
 GenExtentEntry
   (s.OptionId (e.OptionName) e.DefaultValue) =
@@ -29,9 +44,22 @@ GenExtentEntry
 
 Handler
   s.OptionName (e.OptionText)
-  t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.Value) NoGroup =
     t.hErrorList
-    (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.CompilerCmdLine));
+    (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.Value));
+
+DefaultDescription-FileList
+  =
+    (RTFiles ('rtfiles') ('baselib.cpp') ('refalrts.cpp'))
+    (RTDirs ('rtdirs'));
+
+GenExtentEntry-FileList
+  (s.OptionId
+
+RTFilesHandler
+  t.hErrorList (e.TunerConfig) t.SrcPos NoParam (e.FileList) =
+    t.hErrorList
+    (e.TunerConfig (RTFiles ('rtfiles') t.SrcPos e.Value));
 
 
 $END C-Link::MConfig.

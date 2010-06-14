@@ -86,13 +86,13 @@ SwOut {
 }
 
 StatusStr {
-  Updated =    'Updated ';
-  Compiling =  'Compiling ';
-  Compiled =   'Compiled ';
-  Recompiled = 'Recompiled ';
-  Library =    'Load library ';
-  Linking =    'Linking ';
-  Fails =      '  FAILS ';
+  Updated =    ' Updated ';
+  Compiling =  '-Compiling ';
+  Compiled =   '-Compiled ';
+  Recompiled = '=Recompiled ';
+  Library =    '+Load library ';
+  Linking =    '*Linking ';
+  Fails =      '  !FAILS ';
 }
 
 MaxLength = 77;

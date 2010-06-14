@@ -23,13 +23,13 @@ $ENTRY Register
 $ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
 
 Tunings =
-  (CCompiler ('compiler') 'call call-C++.bat')
-  (RunTimeDir ('runtime-dir') '.')
-  (RunTimeFiles ('runtime-files') 'refalrts.cpp')
-  (IncludeOpt ('include-opt') '-I')
-  (OutputOpt ('output-opt') /* пусто */)
-  (DefineOpt ('define') '-D')
-  (ExtraOptions ('extra') /* пусто */)
-  (ExecutableFile ('exec') '-o');
+  (Single CCompiler ('compiler') 'call call-C++.bat')
+  (FileList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
+  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
+  (Single IncludeOpt ('include-opt') '-I')
+  (Single DefineOpt ('define') '-D')
+  (Single Prologue ('prologue') /* пусто */)
+  (Single Epilogue ('epilogue') /* пусто */)
+  (Single ExecutableFile ('exec') '-o');
 
 $END Cpp-SR-BE::MInit.

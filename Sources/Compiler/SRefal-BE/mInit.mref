@@ -23,6 +23,13 @@ $ENTRY Register
 $ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
 
 Tunings =
-  (Compiler ('compiler') 'call compile_sr.bat');
+  (Single Compiler ('compiler') 'call compile_sr.bat')
+  (Single CCompiler ('ccomp') 'call call-C++.bat')
+  (FileList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
+  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
+  (Single IncludeOpt ('include-opt') '-I')
+  (Single DefineOpt ('define') '-D')
+  (Single ExtraOptions ('extra') /* пусто */)
+  (Single ExecutableFile ('exec') '-o');
 
 $END SRefal-BE::MInit.

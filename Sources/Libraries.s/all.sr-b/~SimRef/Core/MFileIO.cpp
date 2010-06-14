@@ -25,7 +25,7 @@ refalrts::FnResult CoreP_MFileIOP_Open(refalrts::Iter arg_begin, refalrts::Iter 
     static refalrts::Iter eFileName_e_1;
     refalrts::use( eFileName_e_1 );
     // s.Mode e.FileName
-    if( ! refalrts::svar_left( sMode_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sMode_1, bb_0, be_0 ) )
       break;
     eFileName_b_1 = bb_0;
     refalrts::use( eFileName_b_1 );
@@ -83,7 +83,7 @@ refalrts::FnResult CoreP_MFileIOP_Close(refalrts::Iter arg_begin, refalrts::Iter
     static refalrts::Iter sHandle_1;
     refalrts::use( sHandle_1 );
     // s.Handle
-    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -137,7 +137,7 @@ refalrts::FnResult CoreP_MFileIOP_ReadLine(refalrts::Iter arg_begin, refalrts::I
     static refalrts::Iter sHandle_1;
     refalrts::use( sHandle_1 );
     // s.Handle
-    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) )
       break;
     if( ! empty_seq( bb_0, be_0 ) )
       break;
@@ -195,7 +195,7 @@ refalrts::FnResult CoreP_MFileIOP_WriteLine(refalrts::Iter arg_begin, refalrts::
     static refalrts::Iter eText_e_1;
     refalrts::use( eText_e_1 );
     // s.Handle e.Text
-    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) ) 
+    if( ! refalrts::svar_left( sHandle_1, bb_0, be_0 ) )
       break;
     eText_b_1 = bb_0;
     refalrts::use( eText_b_1 );

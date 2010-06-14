@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "refalrts.h"
 #include "baselib.h"
 

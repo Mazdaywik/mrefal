@@ -1,3 +1,221 @@
 $MODULE C-Link::MLinker;
 
+$IMPORT FileIO;
+$IMPORT Math;
+$IMPORT MFileSystem;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MStrings;
+
+/**
+  <C-Link
+    (Compiler
+      (ProgName e.ProgName)
+      (Prologue e.Prologue)
+      (Epilogue e.Epilogue)
+    )
+    (Include (Option e.Option) (e.StrIncludeFolder)*)
+    (Define  (Option e.Option) (e.Definition)*)
+    (Output  (Option e.Option) e.OutputFile)
+    (e.StrFileName)*
+  >
+    == пусто
+
+  e.Option = char* | NotSupport
+*/
+$ENTRY C-Link {
+  (Compiler (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue))
+  (Include e.IncludeInfo) (Define e.DefineInfo) (Output e.OutputInfo)
+  e.FileNames =
+    <C-Link-Aux
+      (Prologue
+        e.ProgName ' ' e.Prologue ' '
+        <ProcessListOption &IncludeName e.IncludeInfo>
+        <ProcessListOption &AppendOption e.DefineInfo>
+        <ProcessOption e.OutputInfo>
+      )
+      (Epilogue e.Epilogue)
+      <EliminateCollisions e.FileNames>
+    >;
+}
+
+ProcessListOption {
+  s.FnName (Option NotSupport) e.List = ;
+
+  s.FnName (Option e.Option) e.List =
+    <MLambda::Map
+      <MLambda::BindLeft s.FnName e.Option> e.List
+    >;
+}
+
+IncludeName
+  e.Option (e.Include) = e.Option '\"' e.Include '\" ';
+
+AppendOption
+  e.Option (e.Value) = e.Option e.Value ' ';
+
+ProcessOption {
+  (Option NotSupport) e.Value = ;
+
+  (Option e.Option) e.Value = <AppendOption e.Option (e.Value)>;
+}
+
+C-Link-Aux
+  (Prologue e.Prologue) (Epilogue e.Epilogue) e.Renames =
+    <MOS::System
+      e.Prologue <MLambda::Map & InputName e.Renames> e.Epilogue
+    >
+    <MLambda::Map & DeleteFile e.Renames>;
+
+InputName
+  (s.Type e.FileName) = e.FileName ' ';
+
+DeleteFile {
+  (Origin e.FileName) = ;
+  (Copy e.FileName) = <MFileSystem::RemoveFile e.FileName>;
+}
+
+/*
+  <EliminateCollisions (e.StrFileName)*>
+    == (s.Type e.FileName)*
+
+  s.Type ::= Origin | Copy
+*/
+EliminateCollisions
+  e.FileNames =
+    <DoEliminateCollisions
+      (/* таблица имён */)
+      <MLambda::Map
+        <MLambda::Composite
+          <MLambda::Parallel
+            & MLambda.Identity
+            <MLambda::Composite
+              & MLambda.UnBracket
+              & MFileSystem.ParseFileName
+            >
+          >
+          & MLambda.Bracket
+        >
+        e.FileNames
+      >
+      (/* scanned */)
+    >;
+
+DoEliminateCollisions {
+  (e.Known-B (s.Number e.FileName) e.Known-E)
+  e.NotScanned
+  ((e.FullPath) (e.Directory) e.FileName (e.Ext))
+  (e.Scanned) =
+    <DoEliminateCollisions
+      (e.Known-B (<Math::Inc s.Number> e.FileName) e.Known-E)
+      e.NotScanned
+      (<Copy-T (e.FullPath) s.Number (e.FileName) e.Ext> e.Scanned)
+    >;
+
+  (e.Known)
+  e.NotScanned
+  ((e.FullPath) (e.Directory) e.FileName (e.Ext))
+  (e.Scanned) =
+    <DoEliminateCollisions
+      (e.Known (1 e.FileName))
+      e.NotScanned
+      ((Origin e.FullPath) e.Scanned)
+    >;
+
+  (e.Known) (e.Scanned) = e.Scanned;
+}
+
+Copy-T
+  (e.FullPath) s.Number (e.FileName) e.Ext =
+    <Copy-T-Aux
+      (e.FullPath) (e.FileName '@' <MStrings::Symb s.Number> '.' e.Ext)
+    >;
+
+Copy-T-Aux
+  (e.Source) (e.Destination) =
+    (Copy e.Destination)
+    <FileIO::Save (e.Destination) <FileIO::Load e.Source>>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <LookupRuntimeFiles
+    ( (e.Ext)* ) ( (e.PtFolder)* ) (e.PtFileName)*
+  >
+    = t.FileResult*
+
+  t.FileResult ::= (Found (e.Ext) e.PtFullPath) | (NotFound e.PtFileName)
+*/
+$ENTRY LookupRuntimeFiles
+  (e.Exts) (e.PtFolders) e.PtFileNames =
+    <MLambda::Map
+      <MLambda::BindLeft & LookupRuntime-OneFile (e.Exts) e.PtFolders>
+      e.PtFileNames
+    >;
+
+LookupRuntime-OneFile
+  (e.Exts) e.PtFolders (e.PtFileName) =
+    <MLambda::Reduce
+      <MLambda::BindRight & CheckExistFile e.Exts>
+      (NotFound e.PtFileName)
+      (Absolut) e.PtFolders
+    >;
+
+CheckExistFile {
+  (Found (e.Ext) e.PtFullPath) (e.PtFolder) e.Exts =
+    (Found (e.Ext) e.PtFullPath);
+
+  (NotFound e.PtFileName) (e.PtFolder) e.Exts =
+    <MLambda::Reduce
+      <MLambda::BindRight & CheckExistFile-Ext e.PtFolder>
+      (NotFound e.PtFileName)
+      e.Exts
+    >;
+}
+
+CheckExistFile-Ext {
+  (Found (e.FoundExt) e.PtFullPath) (e.NextExt) e.PtFolder =
+    (Found (e.FoundExt) e.PtFullPath);
+
+  (NotFound e.PtFileName) (e.NextExt) Absolut =
+    <CheckExist-Pt
+      (e.PtFileName) (e.NextExt)
+      Success <AppendExt e.PtFileName (e.NextExt)>
+    >;
+
+  (NotFound e.PtFileName) (e.NextExt) e.PtFolder =
+    <CheckExist-Pt
+      (e.PtFileName) (e.NextExt)
+      <MFileSystem::ConcatPath
+        (e.PtFolder)
+        <AppendExt e.PtFileName (e.NextExt)>
+      >
+    >;
+}
+
+AppendExt {
+  t.Root e.BeginSegments (e.LastSegment '.' e.Ext) (e.Ext) =
+    t.Root e.BeginSegments (e.LastSegment '.' e.Ext);
+
+  t.Root e.BeginSegments (e.LastSegment) (e.Ext) =
+    t.Root e.BeginSegments (e.LastSegment '.' e.Ext);
+}
+
+CheckExist-Pt {
+  (e.PtFileName) (e.Ext) Fails = (NotFound e.PtFileName);
+
+  (e.PtFileName) (e.Ext) Success e.PtFullPath =
+    <SwCheckExist-Pt
+      (e.PtFileName) (e.Ext)
+      <MFileSystem::ExistFile <MFileSystem::StrFromPath e.PtFullPath>>
+      e.PtFullPath
+    >;
+}
+
+SwCheckExist-Pt {
+  (e.PtFileName) (e.Ext) True e.PtFullPath = (Found (e.Ext) e.PtFullPath);
+
+  (e.PtFileName) (e.Ext) False e.PtFullPath = (NotFound e.PtFileName);
+}
+
 $END C-Link::MLinker.

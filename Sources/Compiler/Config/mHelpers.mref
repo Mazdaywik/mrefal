@@ -1,5 +1,7 @@
 $MODULE Config::MHelpers;
 
+$IMPORT MError;
+$IMPORT MFileSystem;
 $IMPORT MLambda;
 
 $ENTRY TuneEndConfig = ();
@@ -20,19 +22,60 @@ $ENTRY GenExtent
       >
     );
 
-GenExtentEntry
-  (s.OptionId (e.OptionName) e.DefaultValue) =
+GenExtentEntry {
+  (Single s.OptionId (e.OptionName) e.DefaultValue) =
     ((Param (e.OptionName))
-      <MLambda::BindLeft & Handler s.OptionId (e.OptionName)>
+      <MLambda::BindLeft & Handler-Single s.OptionId (e.OptionName)>
       (Optional)
       OneTime
     );
 
-Handler
+  (FileList s.OptionId (e.OptionName) e.DefaultValue) =
+    ((Naked (e.OptionName))
+      <MLambda::BindLeft & Handler-FileList s.OptionId (e.OptionName)>
+      (Optional)
+      OneTime
+      Required & FileList-GroupHandler
+    );
+}
+
+Handler-Single
   s.OptionName (e.OptionText)
   t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
     t.hErrorList
     (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.CompilerCmdLine));
+
+Handler-FileList
+  s.OptionName (e.OptionText)
+  t.hErrorList (e.TunerConfig) t.SrcPos NoParam (e.FileList) =
+    t.hErrorList
+    (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.FileList));
+
+FileList-GroupHandler
+  =
+    (
+      & FileList-Config
+      ((Param (File))
+        & FileList-FileHandler
+        (Optional)
+        Multiply
+      )
+      ((Naked (EOG))
+        & FileList-EOGHandler
+        (Required)
+        OneTime
+      )
+    );
+
+FileList-Config = ();
+
+FileList-FileHandler
+  t.hErrorList (e.FileList) t.SrcPos (e.PtFileName) NoGroup =
+    t.hErrorList (e.FileList (e.PtFileName));
+
+FileList-EOGHandler
+  t.hErrorList (e.FileList) t.SrcPos NoParam NoGroup =
+    t.hErrorList (e.FileList);
 
 /**
   <InitConfig s.FnExtentDescription e.Tunings>
@@ -51,7 +94,7 @@ $ENTRY InitConfig
     );
 
 InitTuning
-  e.Tunings (s.OptionId (e.OptionName) e.Default) =
+  e.Tunings (s.OptionType s.OptionId (e.OptionName) e.Default) =
     (<GetTuning s.OptionId e.Tunings (e.Default)>);
     
 /*

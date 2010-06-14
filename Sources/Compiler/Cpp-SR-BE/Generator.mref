@@ -282,7 +282,7 @@ GenCommand {
   (e.Indent)
   (CmdOpenedE AlgLeft s.BracketNum s.Nested 'e' e.Index (e.BracketsForSave)) =
     (e.Indent '  ')
-    (e.Indent 'for( ')
+    (e.Indent 'for(')
     (e.Indent
       '  refalrts::Iter ' <BracketsVar-OE s.BracketNum s.Nested>
       ' = ' <BracketsVar-B s.BracketNum s.Nested> ';'
@@ -556,7 +556,7 @@ PrintMatch {
     (e.Indent
       'if( ! refalrts::' e.Function '_' <StrFromDirection s.Direction>
       '( ' e.TextRep ', ' <BracketsVar-B s.BracketNum s.Nested> ', '
-      <BracketsVar-E s.BracketNum s.Nested> ' ) ) '
+      <BracketsVar-E s.BracketNum s.Nested> ' ) )'
     )
     (e.Indent '  ' <BreakerFromIndent e.Indent>);
 }

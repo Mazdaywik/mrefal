@@ -912,7 +912,7 @@ NResultExpr {
     t.VarTable ( (e.ResultExpr) e.ParentStack )
     <MError::AddUnexpected
       t.ErrorList t.Unexpected
-      'result expression or \';\'.'
+      'result expression or \';\''
     >
     t.Lexer t.Unexpected;
 }

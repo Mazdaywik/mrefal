@@ -19,8 +19,8 @@ S:  Перекомпилировать/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%)
     %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
     if exist __errors view:__errors
 -:  
-M:  Собрать
-    make
+M:  Пересборка
+    build.bat
 -:  
 K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin

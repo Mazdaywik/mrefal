@@ -404,7 +404,7 @@ NModuleHeader-Directive {
     t.ErrorList <MLexer::NextToken t.Lexer>;
 
   t.ErrorList t.Lexer (Directive t.SrcPos ClearModule) =
-    Clear
+    Regular
     t.ErrorList <MLexer::NextToken t.Lexer>;
 
   /* Обработка ошибок в данном случае -- добавляем в список ошибок неожиданный

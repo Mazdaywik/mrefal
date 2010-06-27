@@ -5,7 +5,7 @@ Module = ModuleHeader ModuleBody ModuleTailer .
 ModuleHeader = ModuleType ModuleName ';' .
 ModuleType = '$module' | '$program' | '$clearmodule' .
 ModuleTailer = '$end' ModuleName '.' .
-ModuleName = QuadQualifiedName .
+ModuleName = QuadQualified .
 ModuleBody = ModuleElement* .
 
 QualifiedName = IDENTIFIER | QuadQualified | DotQualified .
@@ -40,9 +40,8 @@ PatternTerm =
   CommonTerm | '(' PatternExpr ')' | '[' ADTName PatternExpr ']' .
 ResultExpr = ResultTerm* .
 ResultTerm =
-  CommonTerm | '(' ResultExpr ')' | '[' ADTName ResultTerm ']'
-  | FunctionCall .
-FunctionCall = '<' Callable ResultExpr '>' .
+  CommonTerm | '(' ResultExpr ')' | '[' ADTName ResultExpr ']'
+  |  '<' Callable ResultExpr '>' .
 Callable = QualifiedName | SwapName | S-VARIABLE | FnPtr .
 FnPtr = '&' IDENTIFIER | ['&'] DotQualified .
 
@@ -50,7 +49,7 @@ ADTDefinition = '$data' ADTList .
 ADTList = ADTName | ADTName ',' ADTList .
 ADTName = INENTIFIER .
 
-.msym:
+.rsym:
 
 SymModule = ModuleHeader SymModuleBody ModuleTailer .
 SymModuleBody = SymModuleElement* .

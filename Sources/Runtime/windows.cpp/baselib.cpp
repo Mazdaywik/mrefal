@@ -949,6 +949,9 @@ REFAL_FUNC(implement_os::create_process) {
   si.cb = sizeof(si);
   ZeroMemory( &pi, sizeof(pi) );
 
+  fflush(stdout);
+  fflush(stderr);
+
   bool process_started = CreateProcess(
     str_program, // Имя исполняемого модуля программы.
     str_cmdline, // Командная строка программы.

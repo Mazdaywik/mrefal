@@ -548,17 +548,25 @@ EOGHandler-Aux-CheckExtFE {
       s.Result t.hErrorList
       (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
       (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
-      (e.Config)
+      (<MLambda::Map & DelUnusedConfigOptions e.Config>)
     >;
+}
+
+DelUnusedConfigOptions {
+  /*
+    Могут остаться неиспользованными только опции настройки
+    back-end'ов, не применённых в профиле.
+  */
+  (BackEnd s.Id e.Tweaks) = /* пусто */;
+
+  /*
+    Других опций остаться не должно.
+  */
 }
 
 //------------------------------------------------------------------------------
 
 ConstructConfig {
-  Fails t.hErrorList e.Options
-  (/* опций остаться не должно */) =
-    t.hErrorList Fails;
-
   Success t.hErrorList
   (Files e.Files) (Mode s.Mode) (ModulePath e.ModulePath)
   (Profile s.Profile) (BackEnds e.BackEnds) (FrontEnds e.FrontEnds)
@@ -573,7 +581,7 @@ ConstructConfig {
     );
 
   s.Result t.hErrorList e.Options
-  (e.Config) =
+  (/* опций остаться не должно */) =
     t.hErrorList Fails;
 }
 

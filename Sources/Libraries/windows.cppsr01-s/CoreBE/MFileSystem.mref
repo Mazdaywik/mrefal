@@ -2,6 +2,7 @@ $MODULE CoreBE::MFileSystem;
 
 $IMPORT Core = CoreOS::MFileSystem;
 $IMPORT MLambda;
+$IMPORT MExistFile = CoreBE::MExistFile;
 
 //------------------------------------------------------------------------------
 
@@ -9,12 +10,7 @@ $IMPORT MLambda;
   <ExistFile e.StrFileName> == True | False
 */
 $ENTRY ExistFile
-  e.FileName = <SwExistFile <Core::FileAttributes e.FileName>>;
-
-SwExistFile {
-  Success e.Attributes = True;
-  Fails = False;
-}
+  e.FileName = <MExistFile::ExistFile e.FileName>;
 
 //------------------------------------------------------------------------------
 

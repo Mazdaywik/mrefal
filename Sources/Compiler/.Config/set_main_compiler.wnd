@@ -2,13 +2,13 @@
     .Config\change_window default
 -:  
 5:  Рефал 5
-    set COMP=refgo -c200 -l80 MRefal
+    set COMP=start-r5-no-t.bat
     set COMP-SHORT=R5
     set SPROFILE=mp-stable-R5
     set SPROFILE-SHORT=R5
     .Config\change_window default
 T:  Рефал 5 с замером времени
-    set COMP=refgo -c200 -l80 -t MRefal
+    set COMP=start-r5.bat
     set COMP-SHORT=R5
     set SPROFILE=mp-stable-R5
     set SPROFILE-SHORT=R5

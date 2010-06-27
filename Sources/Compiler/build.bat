@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 set PATH=%PATH%;..\MR-Extent;..\..\Bin
 
 set VERFILE=..\..\Version.txt
@@ -18,7 +18,7 @@ call :SUB_CALL_COMPILER cpp CPPSR %LOGFILE%
 if errorlevel 1 goto ERRORS
 call :SUB_CALL_COMPILER sr  SR    %LOGFILE%
 if errorlevel 1 goto ERRORS
-rem call :SUB_CALL_COMPILER r5  R5    %LOGFILE%
+call :SUB_CALL_COMPILER r5  R5    %LOGFILE%
 if errorlevel 1 goto ERRORS
 
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
@@ -28,9 +28,6 @@ echo.>>%LOGFILE%
 
 copy %VERFILE% %VERFILE%.new
 copy %VERSRC% %VERSRC%.bak
-
-goto :EOF
-
 refgo ../../Bin/VersionUpdater /verfile:%VERFILE%.new /srcfile:%VERSRC% > nul
 
 call :SUB_DUAL_PRINT "==========================================" %LOGFILE%

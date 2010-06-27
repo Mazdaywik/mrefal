@@ -1,0 +1,7 @@
+$module CoreBE::MExistFile;
+
+$import Core = CoreOS::MFileSystem;
+
+$entry ExistFile;
+
+$end CoreBE::MExistFile.

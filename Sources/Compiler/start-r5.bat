@@ -1,2 +1,2 @@
 @echo [Profile: Refal 5]
-@refgo -c200 -l100 -t mrefal %*
+@refgo -c300 -l200 -t mrefal %*

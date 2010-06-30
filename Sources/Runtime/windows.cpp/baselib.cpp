@@ -323,7 +323,7 @@ DECL_REFAL_IDENT(Fails, "Fails");
 REFAL_FUNC(implement_fileio::open) {
   using namespace refalrts;
 
-  // Образец: <Open s.Mode e.FileName>
+  // Образец: <Open ['b'] s.Mode e.FileName>
 
   // Левая и правая скобки, имя функции
   Iter left_call = arg_begin;
@@ -336,16 +336,28 @@ REFAL_FUNC(implement_fileio::open) {
   move_left(arg_begin, arg_end);
 
   Iter sMode = 0;
+
   bool mode_parsed =
     svar_left( sMode, arg_begin, arg_end ) && ( cDataChar == sMode->tag );
 
   if( mode_parsed == false ) return cRecognitionImpossible;
 
-  const char ch_mode = sMode->char_info;
+  char ch_mode = sMode->char_info;
+  bool binary = ('b' == ch_mode);
+
+  if( binary )
+  {
+    mode_parsed =
+      svar_left( sMode, arg_begin, arg_end ) && ( cDataChar == sMode->tag );
+
+    if( mode_parsed == false ) return cRecognitionImpossible;
+  }
+
+  ch_mode = sMode->char_info;
   const char *str_mode =
-    (ch_mode == 'r') ? "rt" :
-    (ch_mode == 'w') ? "wt" :
-    (ch_mode == 'a') ? "at" : 0;
+    ('r' == ch_mode) ? (binary ? "rb" : "rt") :
+    ('w' == ch_mode) ? (binary ? "wb" : "wt") :
+    ('a' == ch_mode) ? (binary ? "ab" : "at") : 0;
 
   if( str_mode == 0 ) return cRecognitionImpossible;
 

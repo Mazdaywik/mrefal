@@ -1,0 +1,29 @@
+$MODULE Binary;
+
+$IMPORT FIO = Core::MFileIO;
+
+$ENTRY Load
+  e.FileName =
+    <DoLoad <FIO::Open 'br' e.FileName>>;
+
+DoLoad
+  s.Handle = <SwDoLoad s.Handle <FIO::ReadLine s.Handle>>;
+
+SwDoLoad {
+  s.Handle e.Line 0 = e.Line <FIO::Close s.Handle>;
+
+  s.Handle e.Line = e.Line '\n' <DoLoad s.Handle>; 
+}
+
+$ENTRY Save
+  (e.FileName) e.Data =
+    <SaveAux
+      <FIO::Open 'bw' e.FileName> e.Data
+    >;
+
+SaveAux
+  s.Handle e.Data =
+    <FIO::Write s.Handle e.Data>
+    <FIO::Close s.Handle>;
+
+$END Binary.

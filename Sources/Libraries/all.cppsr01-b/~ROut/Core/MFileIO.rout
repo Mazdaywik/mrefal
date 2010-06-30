@@ -2,6 +2,22 @@ v ROUT3 Module Refal 0.1
 
 b Entry::Core::MFileIO::Open
 c $Entry::Core::MFileIO::Open$ {
+c   'b' s.Mode e.FileName
+c     , 'rwa'
+c       : e.X s.Mode e.Y
+c     , <$Local::Core::MFileIO::Open-CheckHandles$ >
+c       :
+c     , <Dg FreeHandles > :
+c     {
+r       //Найден свободный дескриптор
+c       Handles s.FreeHandle e.Handles
+c         = <Open <Implode s.Mode 'b'> s.FreeHandle e.FileName >
+c         <Br FreeHandles '=' Handles e.Handles >
+c         s.FreeHandle;
+r 
+r       //Свободных дескрипторов не осталось --- функция должна падать
+c     };
+r 
 c   s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
@@ -16,7 +32,7 @@ c         <Br FreeHandles '=' Handles e.Handles >
 c         s.FreeHandle;
 r 
 r       //Свободных дескрипторов не осталось --- функция должна падать
-c     }
+c     };
 c }
 
 b Local::Core::MFileIO::Open-CheckHandles

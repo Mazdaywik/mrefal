@@ -15,6 +15,9 @@ $ENTRY Open {
   'r' e.FileName = <Open-Aux 'r' e.FileName>;
   'w' e.FileName = <Open-Aux 'w' e.FileName>;
   'a' e.FileName = <Open-Aux 'a' e.FileName>;
+  'br' e.FileName = <Open-Aux 'br' e.FileName>;
+  'bw' e.FileName = <Open-Aux 'bw' e.FileName>;
+  'ba' e.FileName = <Open-Aux 'ba' e.FileName>;
 }
 
 Open-Aux

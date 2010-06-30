@@ -1,0 +1,36 @@
++MP:.
++MP:../../Sources/Libraries/all.all
++MP:../../Sources/Libraries/all.cppsr01-b
++MP:../../Sources/Libraries/all.cppsr01-s
++MP:../../Sources/Libraries/windows.all
++MP:../../Sources/Libraries/windows.cppsr01-b
++MP:../../Sources/Libraries/windows.cppsr01-s
++MP:../../Sources/Compiler
+
+-tune-be:SRefal-BE
+(
+  -dir:~SimRef-01
+  -compiler:call compile_sr_cl.bat
+)
+
+-tune-be:Cpp-SR-BE
+(
+  -dir:~Cpp-01
+  -compiler:compile_bcc -DSHOW_DEBUG=0
+  -exec:-e
+  -runtime-dirs
+  (
+    ..\..\Sources\Runtime\windows.cpp
+  )
+  -runtime-files
+  (
+    refalrts.cpp
+    baselib.cpp
+  )
+)
+
++xlinx
++make
++be:CPPSR
+Test.mref
+

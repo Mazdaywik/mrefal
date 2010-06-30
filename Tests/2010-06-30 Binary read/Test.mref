@@ -1,0 +1,8 @@
+$PROGRAM Test;
+
+$IMPORT InOut;
+$IMPORT Binary;
+
+$ENTRY Go = <Binary::Save ('copy.exe') <Binary::Load 'Origin.exe'>>;
+
+$END Test.

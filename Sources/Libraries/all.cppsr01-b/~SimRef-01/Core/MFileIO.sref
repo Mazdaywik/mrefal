@@ -30,6 +30,9 @@ $ENTRY CoreP_MFileIOP_Open {
   'r' e.FileName = <MR-IO-Open 'r' e.FileName>;
   'w' e.FileName = <MR-IO-Open 'w' e.FileName>;
   'a' e.FileName = <MR-IO-Open 'a' e.FileName>;
+  'br' e.FileName = <MR-IO-Open 'br' e.FileName>;
+  'bw' e.FileName = <MR-IO-Open 'bw' e.FileName>;
+  'ba' e.FileName = <MR-IO-Open 'ba' e.FileName>;
 }
 
 

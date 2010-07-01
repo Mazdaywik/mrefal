@@ -64,10 +64,10 @@ A:  Псевдонимы (Рефал 5)
 I:  Интерфейсы
     view:interfaces.txt
 U:  Обновить интерфейсы
-    subst U: ..
-    dir /b /s U:\*.mref>mrefs.tmp
+    subst V: ..
+    dir /b /s V:\*.mref>mrefs.tmp
     refgo ..\..\Bin\Grab_info @mrefs.tmp
-    subst U: /D
+    subst V: /D
     del mrefs.tmp
     view:interfaces.txt
 -:  

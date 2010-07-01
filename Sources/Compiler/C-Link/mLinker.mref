@@ -68,7 +68,7 @@ C-Link-Aux
     <MLambda::Map & DeleteFile e.Renames>;
 
 InputName
-  (s.Type e.FileName) = e.FileName ' ';
+  (s.Type e.FileName) = '"' e.FileName '" ';
 
 DeleteFile {
   (Origin e.FileName) = ;

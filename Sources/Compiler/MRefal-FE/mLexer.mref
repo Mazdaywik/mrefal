@@ -1,7 +1,10 @@
 $MODULE MRefal-FE::MLexer;
 
+$IMPORT Math;
+$IMPORT MEscape;
+$IMPORT MLambda;
 $IMPORT MOrder;
-$IMPORT MSymStream;
+$IMPORT MSymStream = MRefal-FE::MSymStream;
 $IMPORT MStrings;
 $IMPORT Types;
 
@@ -302,6 +305,24 @@ Escaped {
       <MSymStream::NextChar t.SymStream>
     >;
 
+  s.Quote (e.Scanned) t.SymStream 'a' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x07')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'b' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x08')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'f' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x0C')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
   s.Quote (e.Scanned) t.SymStream 'n' =
     <DoQuoted
       s.Quote (e.Scanned '\n')
@@ -317,6 +338,12 @@ Escaped {
   s.Quote (e.Scanned) t.SymStream 't' =
     <DoQuoted
       s.Quote (e.Scanned '\t')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'v' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x0B')
       <MSymStream::NextChar t.SymStream>
     >;
 
@@ -338,11 +365,88 @@ Escaped {
       <MSymStream::NextChar t.SymStream>
     >;
 
-  s.Quote (e.Scanned) t.SymStream s.Other =
-    t.SymStream (Error 'Unknown excaped symbol <' s.Other '>');
+  s.Quote (e.Scanned) t.SymStream 'x' =
+    <DoQuoted-Hex
+      s.Quote (e.Scanned)
+      <MSymStream::ExtractsFromSet
+        t.SymStream
+        ('0123456789ABCDEFabcdef')
+      >
+    >;
 
-  s.Quote (e.Scanned) t.SymStream CrLf =
-    t.SymStream (Error 'Unexpected end of file in quoted line');
+  s.Quote (e.Scanned) t.SymStream s.Other =
+    <DoQuoted-TestOct
+      s.Quote (e.Scanned) t.SymStream s.Other ('01234567')
+    >;
+}
+
+DoQuoted-TestOct {
+  s.Quote (e.Scanned) t.SymStream s.Oct (e.Octs-B s.Oct e.Octs-E) =
+    <DoQuoted-Oct
+      s.Quote (e.Scanned)
+      s.Oct
+      <MSymStream::ExtractsFromSet-N
+        t.SymStream ('01234567') 2
+      >
+    >;
+
+  s.Quote (e.Scanned) t.SymStream s.Other (e.Octs) =
+    t.SymStream (Error 'Unknown excaped symbol <' s.Other '>');
+}
+
+DoQuoted-Hex {
+  s.Quote (e.Scanned) t.SymStream /* не найдено */ =
+    t.SymStream (Error 'Expected hex number after \\x');
+
+  s.Quote (e.Scanned) t.SymStream e.HexRep =
+    <DoQuoted
+      s.Quote (e.Scanned <CharFromHex e.HexRep>)
+      <MSymStream::NextChar t.SymStream>
+    >;
+}
+
+DoQuoted-Oct {
+  s.Quote (e.Scanned) s.FirstOct t.SymStream e.LastOcts =
+    <DoQuoted
+      s.Quote (e.Scanned <CharFromOct s.FirstOct e.LastOcts>)
+      <MSymStream::NextChar t.SymStream>
+    >;
+}
+
+DigitFromChar {
+  s.Char =
+    <DigitFromChar-Aux
+      s.Char ('0123456789ABCDEF') ('0123456789abcdef')
+    >;
+}
+
+DigitFromChar-Aux {
+  s.Char e.Sets-B (e.Before s.Char e.After) e.Sets-E =
+    <MStrings::Length e.Before>;
+}
+
+CharFromHex {
+  e.CharLine = <CharFromBase e.CharLine 16>;
+}
+
+CharFromOct {
+  e.CharLine = <CharFromBase e.CharLine 8>;
+}
+
+CharFromBase {
+  e.CharLine s.Base =
+    <MStrings::Chr
+      <MLambda::Reduce
+        <MLambda::BindLeft & AppendDigit s.Base>
+        0
+        <MLambda::Map & DigitFromChar e.CharLine>
+      >
+    >;
+}
+
+AppendDigit {
+  s.L-Base s.Accum s.Digit =
+    <Math::Add <Math::Mul s.L-Base s.Accum> s.Digit>;
 }
 
 Directive t.SymStream =
@@ -523,7 +627,9 @@ EscapeText {
   '\\' e.Tail = '\\\\' <EscapeText e.Tail>;
   '\'' e.Tail = '\\\'' <EscapeText e.Tail>;
   '\"' e.Tail = '\\\"' <EscapeText e.Tail>;
-  s.Other e.Tail = s.Other <EscapeText e.Tail>;
+  s.Other e.Tail =
+    <MEscape::EscapeChar s.Other>
+    <EscapeText e.Tail>;
   = ;
 }
 

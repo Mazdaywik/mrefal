@@ -157,7 +157,21 @@ $ENTRY TypeQuoted {
 }
 
 DoTypeQuoted {
-  /* Не рассматриваем символ за бэкслешем, а сразу же его переносим */
+  /*
+    Не рассматриваем символ за бэкслешем, а сразу же его переносим,
+    за исключением случая символа x, т.к. нельзя разрывать
+    шестнадцатиричный символ.
+  */
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '\\x' s.Num1 s.Num2 e.Tail =
+    <DoTypeQuoted
+      [ExeTyper
+        s.Limit
+        <Dec2 s.Free>
+        t.FOut e.Converted '\\x' s.Num1 s.Num2
+      ]
+      s.Quote e.Tail
+    >;
+
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '\\' s.Escaped e.Tail =
     <DoTypeQuoted
       [ExeTyper

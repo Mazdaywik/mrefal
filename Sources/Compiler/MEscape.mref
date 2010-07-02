@@ -1,0 +1,46 @@
+$MODULE MEscape;
+
+$IMPORT Math;
+$IMPORT MStrings;
+
+$ENTRY EscapeChar {
+  //'\a' = '\x07';
+  //'\b' = '\x08';
+  //'\f' = '\x0C';
+  '\n' = '\\n';
+  '\r' = '\\r';
+  '\t' = '\\t';
+  //'\v' = '\x0B';
+
+  '\\' = '\\\\';
+  '\'' = '\\\'';
+  '\"' = '\\\"';
+
+  s.Other =
+    <EscapeChar-Aux
+      s.Other <MStrings::Ord s.Other>
+    >;
+}
+
+EscapeChar-Aux {
+  s.Char s.Code =
+    <EscapeChar-SwCode
+      s.Char <Math::Compare-T s.Code 32>
+    >;
+}
+
+EscapeChar-SwCode {
+  s.Char '<' s.Code 32 =
+    '\\x' <HexTxt <Math::Div s.Code 16>> <HexTxt <Math::Mod s.Code 16>>;
+
+  s.Char s.Compare s.Code 32 = s.Char;
+}
+
+HexTxt {
+  0 = '0'; 1 = '1'; 2 = '2'; 3 = '3'; 4 = '4';
+  5 = '5'; 6 = '6'; 7 = '7'; 8 = '8'; 9 = '9';
+  10 = 'A'; 11 = 'B'; 12 = 'C';
+  13 = 'D'; 14 = 'E'; 15 = 'F';
+}
+
+$END MEscape.

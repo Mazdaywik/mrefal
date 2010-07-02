@@ -53,12 +53,24 @@ c   ($ADT::__StructureBrackets$ e.ExeModule)
 c   ($ADT::__StructureBrackets$ e.CommandLine) =
 r     // Кривое решение --- игнорировать параметр e.ExeModule,
 r     // но любые другие пути будут костылявее.
-c     <System e.CommandLine >;
+c     <$Local::CoreOS::MOS::PerformSystem$ e.CommandLine >;
 r 
 c   $Ident::NoWait$
 c   ($ADT::__StructureBrackets$ e.ExeModule)
 c   ($ADT::__StructureBrackets$ e.CommandLine) =
-c     <System 'start ' e.CommandLine >;
+c     <$Local::CoreOS::MOS::PerformSystem$ 'start ' e.CommandLine >;
+c }
+
+b Local::CoreOS::MOS::PerformSystem
+c $Local::CoreOS::MOS::PerformSystem$ {
+c   e.CommandLine
+c   , '~' <Symb <Random 1 > > '.tmp.bat' : e.TempBat
+c   , <Open 'w' 20 e.TempBat > :
+c   , <Write 20 '@' e.CommandLine > :
+c   , <Close 20 > :
+c   , <System e.TempBat > : s.RetCode
+c   , <RemoveFile e.TempBat > : e.RemoveResult
+c   = s.RetCode ;
 c }
 
 b Entry::CoreOS::MOS::EnvList

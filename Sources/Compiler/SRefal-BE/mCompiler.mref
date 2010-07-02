@@ -1,6 +1,7 @@
 $MODULE SRefal-BE::MCompiler;
 
 $IMPORT FileIO;
+$IMPORT MEscape;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
@@ -211,16 +212,7 @@ Gen-Common-Term {
 }
 
 Escape {
-  e.Text = <MLambda::Map & Escape-Char e.Text>;
-}
-
-Escape-Char {
-  '\n' = '\\n';
-  '\r' = '\\r';
-  '\t' = '\\t';
-  '\\' = '\\\\';
-  '\'' = '\\\'';
-  s.Other = s.Other;
+  e.Text = <MLambda::Map & MEscape.EscapeChar e.Text>;
 }
 
 Gen-Callable {

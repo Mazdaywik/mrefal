@@ -229,8 +229,8 @@ ScanForEndTag {
 Generate
   s.Major s.Minor s.BuildNumber =
     ()
-    ('VerNumber = \''
-      <ToString s.Major s.Minor s.BuildNumber> '\';'
+    ('VerNumber { = \''
+      <ToString s.Major s.Minor s.BuildNumber> '\'; }'
     )
     ();
 

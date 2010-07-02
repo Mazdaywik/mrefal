@@ -1,6 +1,7 @@
 $MODULE Refal5::MBackEnd;
 
 $IMPORT FileIO;
+$IMPORT MEscape;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
@@ -266,14 +267,8 @@ EscapeText {
 }
 
 EscapeChar {
-  '\t' = '\\t';
-  '\n' = '\\n';
-  '\r' = '\\r';
-  '\\' = '\\\\';
-  '\"' = '\\\"';
-  '\'' = '\\\'';
   '$' = '$$';
-  s.X = s.X;
+  s.Char = <MEscape::EscapeChar s.Char>;
 }
 
 GenerateCallable

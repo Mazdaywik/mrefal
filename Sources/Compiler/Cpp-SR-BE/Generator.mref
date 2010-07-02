@@ -2,6 +2,7 @@ $MODULE Cpp-SR-BE::Generator;
 
 $IMPORT Cpp-SR-BE::Algorithm;
 $IMPORT Math;
+$IMPORT MEscape;
 $IMPORT MLambda;
 $IMPORT MStrings;
 $IMPORT MQualifiedName;
@@ -362,7 +363,7 @@ GenCommand {
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.EndNumber> ' = 0;')
     (e.Indent 'if( ! refalrts::alloc_chars( '
       <PrintElemVar s.BeginNumber> ', ' <PrintElemVar s.EndNumber> ', '
-      '\"' <MLambda::Map & Escape e.String> '\", ' <MStrings::Symb s.Len> ' ) )'
+      '\"' <MLambda::Map & MEscape.EscapeChar e.String> '\", ' <MStrings::Symb s.Len> ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
@@ -441,21 +442,11 @@ PrintEVar-E {
     s.Mode <NameCode e.Index> '_e_' <MStrings::Symb s.Usings>;
 }
 
-Escape {
-  '\n' = '\\n';
-  '\t' = '\\t';
-  '\r' = '\\r';
-  '\\' = '\\\\';
-  '\'' = '\\' '\'';
-  '\"' = '\\' '\"';
-  s.Other = s.Other;
-}
-
 PrintMatchChar {
   (e.Indent) s.Direction s.BracketNum s.Nested s.Char =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('char') '\'' <Escape s.Char> '\''
+      ('char') '\'' <MEscape::EscapeChar s.Char> '\''
     >;
 }
 
@@ -600,7 +591,7 @@ SwAllocator {
 }
 
 SwInfo {
-  ElChar s.Char = ', ' '\'' <Escape s.Char> '\'';
+  ElChar s.Char = ', ' '\'' <MEscape::EscapeChar s.Char> '\'';
 
   ElName t.Name = ', & ' <QNameCode t.Name> <Info-Ident t.Name>;
 

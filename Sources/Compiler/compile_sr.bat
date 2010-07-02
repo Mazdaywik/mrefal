@@ -1,1 +1,2 @@
-@"..\..\Simple Refal\Compiler\srefc" -c "call compile_bcc -I\"../../Simple Refal/SRLib\"" -d ..\..\Simple" "Refal\SRLib %* refalrts Library WinLib
+@echo off
+"..\Compiler.sr\srefc" -c "call compile_bcc -I\"../Libraries.sr\"" -d ..\Libraries.sr %* refalrts Library WinLib

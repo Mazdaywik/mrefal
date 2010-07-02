@@ -159,7 +159,7 @@ MakeInputFileNames {
 GetRunTimeFiles {
   t.Config =
     <C-Link::LookupRuntimeFiles
-      (('sref') ('cpp'))
+      (('sref') (<MHelpers::ConfigExtract t.Config CExt>))
       (<MHelpers::ConfigExtract t.Config RunTimeDirs>)
       <MHelpers::ConfigExtract t.Config RunTimeFiles>
     >;

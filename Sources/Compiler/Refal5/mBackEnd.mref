@@ -268,7 +268,7 @@ EscapeText {
 
 EscapeChar {
   '$' = '$$';
-  s.Char = <MEscape::EscapeChar s.Char>;
+  s.Char = <MEscape::EscapeChar-Hex s.Char>;
 }
 
 GenerateCallable

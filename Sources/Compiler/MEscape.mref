@@ -3,7 +3,7 @@ $MODULE MEscape;
 $IMPORT Math;
 $IMPORT MStrings;
 
-$ENTRY EscapeChar {
+$ENTRY EscapeChar-Oct {
   //'\a' = '\x07';
   //'\b' = '\x08';
   //'\f' = '\x0C';
@@ -18,29 +18,61 @@ $ENTRY EscapeChar {
 
   s.Other =
     <EscapeChar-Aux
-      s.Other <MStrings::Ord s.Other>
+      Oct s.Other <MStrings::Ord s.Other>
+    >;
+}
+
+$ENTRY EscapeChar-Hex {
+  //'\a' = '\x07';
+  //'\b' = '\x08';
+  //'\f' = '\x0C';
+  '\n' = '\\n';
+  '\r' = '\\r';
+  '\t' = '\\t';
+  //'\v' = '\x0B';
+
+  '\\' = '\\\\';
+  '\'' = '\\\'';
+  '\"' = '\\\"';
+
+  s.Other =
+    <EscapeChar-Aux
+      Hex s.Other <MStrings::Ord s.Other>
     >;
 }
 
 EscapeChar-Aux {
-  s.Char s.Code =
+  s.Base s.Char s.Code =
     <EscapeChar-SwCode
-      s.Char <Math::Compare-T s.Code 32>
+      s.Base s.Char <Math::Compare-T s.Code 32>
     >;
 }
 
 EscapeChar-SwCode {
-  s.Char '<' s.Code 32 =
-    '\\x' <HexTxt <Math::Div s.Code 16>> <HexTxt <Math::Mod s.Code 16>>;
+  Oct s.Char '<' s.Code 32 =
+    '\\'
+    <OctTxt <Math::Div s.Code 64>>
+    <OctTxt <Math::Mod <Math::Div s.Code 8> 8>>
+    <OctTxt <Math::Mod s.Code 8>>;
 
-  s.Char s.Compare s.Code 32 = s.Char;
+  Hex s.Char '<' s.Code 32 =
+    '\\x'
+    <HexTxt <Math::Div s.Code 16>>
+    <HexTxt <Math::Mod s.Code 16>>;
+
+  s.Base s.Char s.Compare s.Code 32 = s.Char;
+}
+
+OctTxt {
+  0 = '0'; 1 = '1'; 2 = '2'; 3 = '3';
+  4 = '4'; 5 = '5'; 6 = '6'; 7 = '7';
 }
 
 HexTxt {
-  0 = '0'; 1 = '1'; 2 = '2'; 3 = '3'; 4 = '4';
-  5 = '5'; 6 = '6'; 7 = '7'; 8 = '8'; 9 = '9';
-  10 = 'A'; 11 = 'B'; 12 = 'C';
-  13 = 'D'; 14 = 'E'; 15 = 'F';
+  0  = '0'; 1  = '1'; 2  = '2'; 3  = '3';
+  4  = '4'; 5  = '5'; 6  = '6'; 7  = '7';
+  8  = '8'; 9  = '9'; 10 = 'A'; 11 = 'B';
+  12 = 'C'; 13 = 'D'; 14 = 'E'; 15 = 'F';
 }
 
 $END MEscape.

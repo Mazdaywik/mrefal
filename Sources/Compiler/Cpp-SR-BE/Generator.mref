@@ -363,7 +363,7 @@ GenCommand {
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.EndNumber> ' = 0;')
     (e.Indent 'if( ! refalrts::alloc_chars( '
       <PrintElemVar s.BeginNumber> ', ' <PrintElemVar s.EndNumber> ', '
-      '\"' <MLambda::Map & MEscape.EscapeChar e.String> '\", ' <MStrings::Symb s.Len> ' ) )'
+      '\"' <MLambda::Map & MEscape.EscapeChar-Oct e.String> '\", ' <MStrings::Symb s.Len> ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
@@ -446,7 +446,7 @@ PrintMatchChar {
   (e.Indent) s.Direction s.BracketNum s.Nested s.Char =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('char') '\'' <MEscape::EscapeChar s.Char> '\''
+      ('char') '\'' <MEscape::EscapeChar-Hex s.Char> '\''
     >;
 }
 
@@ -591,7 +591,7 @@ SwAllocator {
 }
 
 SwInfo {
-  ElChar s.Char = ', ' '\'' <MEscape::EscapeChar s.Char> '\'';
+  ElChar s.Char = ', ' '\'' <MEscape::EscapeChar-Hex s.Char> '\'';
 
   ElName t.Name = ', & ' <QNameCode t.Name> <Info-Ident t.Name>;
 

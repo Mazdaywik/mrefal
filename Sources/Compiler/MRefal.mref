@@ -1,7 +1,5 @@
 $PROGRAM MRefal;
 
-// Эти модули используются
-
 $IMPORT MCompiler;
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;

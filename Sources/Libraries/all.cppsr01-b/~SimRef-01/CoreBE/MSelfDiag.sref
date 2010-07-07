@@ -28,4 +28,3 @@ $ENTRY CoreBEP_MSelfDiagP_PrintMessage {
 $ENTRY CoreBEP_MSelfDiagP_EntryPointE_ {
   = /* пусто */;
 }
-

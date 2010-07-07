@@ -628,7 +628,7 @@ EscapeText {
   '\'' e.Tail = '\\\'' <EscapeText e.Tail>;
   '\"' e.Tail = '\\\"' <EscapeText e.Tail>;
   s.Other e.Tail =
-    <MEscape::EscapeChar s.Other>
+    <MEscape::EscapeChar-Hex s.Other>
     <EscapeText e.Tail>;
   = ;
 }

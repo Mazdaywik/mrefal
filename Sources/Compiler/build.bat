@@ -14,11 +14,11 @@ call :SUB_DUAL_PRINT "============ Test for errors. ============" %LOGFILE%
 call :SUB_DUAL_PRINT "==========================================" %LOGFILE%
 echo.>>%LOGFILE%
 
-call :SUB_CALL_COMPILER cpp CPPSR %LOGFILE%
+call :SUB_CALL_COMPILER cpp  CPPSR %LOGFILE%
 if errorlevel 1 goto ERRORS
-call :SUB_CALL_COMPILER sr  SR    %LOGFILE%
+call :SUB_CALL_COMPILER sr   SR    %LOGFILE%
 if errorlevel 1 goto ERRORS
-call :SUB_CALL_COMPILER r5  R5    %LOGFILE%
+call :SUB_CALL_COMPILER r5-t R5    %LOGFILE%
 if errorlevel 1 goto ERRORS
 
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
@@ -35,7 +35,7 @@ call :SUB_DUAL_PRINT "=========== Final recompiling. ===========" %LOGFILE%
 call :SUB_DUAL_PRINT "==========================================" %LOGFILE%
 echo.>>%LOGFILE%
 
-for %%c in (cpp sr r5) do (
+for %%c in (cpp sr r5-t) do (
   for %%p in (CPPSR SR R5) do (
     call :SUB_CALL_COMPILER %%c %%p %LOGFILE%
     if errorlevel 1 goto UNEXPECTED_ERROR

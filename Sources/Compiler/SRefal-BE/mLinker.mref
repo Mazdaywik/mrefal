@@ -24,7 +24,7 @@ $ENTRY Link {
       (<HeadFileName e.ProgName> '.sref')
       <MLambda::Map & ModuleName e.Modules>
     >
-    <C-Link::C-Link
+    <PerformCLink
       (Compiler
         (ProgName <MHelpers::ConfigExtract t.L-Config CCompiler>)
         (Prologue <MHelpers::ConfigExtract t.L-Config Prologue>)
@@ -58,6 +58,16 @@ ModuleName {
   (t.ModuleName e.Path) = t.ModuleName;
 }
 
+PerformCLink {
+  t.Compiler t.Include t.Define t.Output Success e.Sources =
+    <C-Link::C-Link
+      t.Compiler t.Include t.Define t.Output e.Sources
+    >;
+
+  t.Compiler t.Include t.Define t.Output Fails =
+    <MError::LinkError 'Errors while compilation with Simple Refal.'>;
+}
+
 C-LinkOption
   t.Config s.OptName =
     <SwC-LinkOption
@@ -71,19 +81,34 @@ SwC-LinkOption {
 
 /**
   <GetSourceList t.Config e.Modules>
-    == (e.StrCppFile)*
+    == Success (e.StrCppFile)*
+    == Fails
 */
 GetSourceList {
   (e.ProgName) t.Config e.Modules =
-    <SrefToCpp
-      t.Config
-      ( <MHelpers::ConfigExtract t.Config CExt> )
-      <GetRunTimeFiles t.Config>
-      (
-        <MLambda::Map & GetModulePath e.Modules>
-        (<HeadFileName e.ProgName>)
-      )
+    <MFileSystem::RemoveFile <ErrorFlagFile e.ProgName>>
+    <SRefal-SwCompiled
+      <SrefToCpp
+        t.Config (<ErrorFlagFile e.ProgName>)
+        ( <MHelpers::ConfigExtract t.Config CExt> )
+        <GetRunTimeFiles t.Config>
+        (
+          <MLambda::Map & GetModulePath e.Modules>
+          (<HeadFileName e.ProgName>)
+        )
+      >
+      <MFileSystem::ExistFile <ErrorFlagFile e.ProgName>>
     >;
+}
+
+ErrorFlagFile {
+  e.ProgName = '___' e.ProgName '_error_flag___';
+}
+
+SRefal-SwCompiled {
+  e.SourceList True = Fails;
+
+  e.SourceList False = Success e.SourceList;
 }
 
 GetModulePath {
@@ -91,7 +116,7 @@ GetModulePath {
 }
 
 SrefToCpp {
-  t.Config (e.CExt)
+  t.Config (e.ErrorFlag) (e.CExt)
   e.RunTimeSrc-B (NotFound e.PtFileName) e.RunTimeSrc-E
   (e.Modules) =
     <MError::LinkError
@@ -100,9 +125,9 @@ SrefToCpp {
       ' not found'
     >;
 
-  t.Config (e.CExt) e.RunTimeSrc (e.Modules) =
+  t.Config (e.ErrorFlag) (e.CExt) e.RunTimeSrc (e.Modules) =
     <CallSRefC
-      t.Config
+      t.Config (e.ErrorFlag)
       <MLambda::Map
         <MLambda::BindLeft & AppendExt 'sref'>
         e.Modules
@@ -145,9 +170,10 @@ MakeCppRunTime-Sref {
 }
 
 CallSRefC {
-  t.Config e.InputFileNames =
+  t.Config (e.ErrorFlag) e.InputFileNames =
     <MOS::System
       '"' <MHelpers::ConfigExtract t.Config SRCompiler> '"'
+      ' -e "' e.ErrorFlag '"'
       <MLambda::Map & MakeInputFileNames e.InputFileNames>
     >;
 }

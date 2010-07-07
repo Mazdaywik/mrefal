@@ -212,7 +212,7 @@ Gen-Common-Term {
 }
 
 Escape {
-  e.Text = <MLambda::Map & MEscape.EscapeChar e.Text>;
+  e.Text = <MLambda::Map & MEscape.EscapeChar-Oct e.Text>;
 }
 
 Gen-Callable {

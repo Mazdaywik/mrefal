@@ -1,0 +1,19 @@
+
+$EXTERN MR-Math-Binary;
+$EXTERN MR-Math-Compare;
+
+$ENTRY CoreBEP_MathP_Binary {
+  '+' s.X s.Y = <MR-Math-Binary '+' s.X s.Y >;
+  '-' s.X s.Y = <MR-Math-Binary '-' s.X s.Y >;
+  '*' s.X s.Y = <MR-Math-Binary '*' s.X s.Y >;
+  '/' s.X s.Y = <MR-Math-Binary '/' s.X s.Y >;
+  '%' s.X s.Y = <MR-Math-Binary '%' s.X s.Y >;
+}
+
+$ENTRY CoreBEP_MathP_NumberCompare {
+  s.Left s.Right = <MR-Math-Compare s.Left s.Right >;
+}
+
+$ENTRY CoreBEP_MathP_EntryPointE_ {
+  = /* пусто */;
+}

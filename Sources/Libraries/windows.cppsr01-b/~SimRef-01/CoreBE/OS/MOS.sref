@@ -1,0 +1,48 @@
+$LABEL Wait;
+$LABEL NoWait;
+
+// Просто вызов функций из MR-BaseLib
+
+//FROM MR-BaseLib
+$EXTERN MR-OS-CreateProcess;
+
+$ENTRY CoreBEP_OSP_MOSP_CreateProcess {
+  #Wait (e.Program) (e.CommandLine) =
+    <MR-OS-CreateProcess #Wait (e.Program) (e.CommandLine)>;
+
+  #NoWait (e.Program) (e.CommandLine) =
+    <MR-OS-CreateProcess #NoWait (e.Program) (e.CommandLine)>;
+}
+
+//FROM MR-BaseLib
+$EXTERN MR-OS-EnvList;
+
+$ENTRY CoreBEP_OSP_MOSP_EnvList {
+  = <MR-OS-EnvList>;
+}
+
+//FROM MR-BaseLib
+$EXTERN MR-OS-CommandLine;
+
+$ENTRY CoreBEP_OSP_MOSP_CommandLine {
+  = <MR-OS-CommandLine>;
+}
+
+// Функции инициализации и финализации
+
+$SWAP G_Finalizers;
+
+$EXTERN ExitE_;
+//$FORWARD DoExit;
+
+$ENTRY CoreBEP_OSP_MOSP_ForseExit {
+  s.RetCode = <ExitE_ s.RetCode>;
+}
+
+$EXTERN RegisterE_;
+
+// Инициализаторы и финализаторы модуля
+
+$ENTRY CoreBEP_OSP_MOSP_EntryPointE_ {
+  = /* пусто */;
+}

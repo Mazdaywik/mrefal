@@ -1,0 +1,110 @@
+$MODULE CoreBE::MFileSystem;
+
+$IMPORT Core = CoreOS::MFileSystem;
+$IMPORT MLambda;
+$IMPORT MExistFile = CoreBE::MExistFile;
+
+//------------------------------------------------------------------------------
+
+/**
+  <ExistFile e.StrFileName> == True | False
+*/
+$ENTRY ExistFile
+  e.FileName = <MExistFile::ExistFile e.FileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <MakeDir e.DirName> == empty
+*/
+$ENTRY MakeDir
+  e.DirName = <MLambda::Nil <Core::MakeDir e.DirName>>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveDir e.DirName> == empty
+*/
+$ENTRY RemoveDir
+  e.DirName = <MLambda::Nil <Core::RemoveDir e.DirName>>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveFile e.FileName> == empty
+*/
+$ENTRY RemoveFile
+  e.FileName = <MLambda::Nil <Core::RemoveFile e.FileName>>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <FileAttribute e.FileName>
+    == FileNotFound
+    == (e.Attribute)
+*/
+$ENTRY FileAttribute {
+  LongName e.FileName =
+    <CheckFullName <Core::FullName e.FileName>>;
+
+  DateTime e.FileName =
+    <LookupAttribute M-DateTime <Core::FileAttributes e.FileName>>;
+
+  Size e.FileName =
+    <LookupAttribute Size <Core::FileAttributes e.FileName>>;
+}
+
+CheckFullName {
+  Success e.FullName =
+    <CheckFullName-SwExist
+      <ExistFile e.FullName> e.FullName
+    >;
+
+  Fails = FileNotFound;
+}
+
+CheckFullName-SwExist {
+  True e.FullName = (e.FullName);
+  False e.FullName = FileNotFound;
+}
+
+LookupAttribute {
+  s.Attribute Fails = FileNotFound;
+
+  s.Attribute e.Attr-B (s.Attribute e.Value) e.Attr-E = (e.Value);
+
+  // Атрибут должен быть --- иначе --- ошибка внутри библиотечной функции.
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <DirList e.Directory>
+    == Success (e.FileName)*
+    == Fails
+*/
+$ENTRY DirList {
+  e.DirName-B '*' e.DirName-E = Fails;
+  e.DirName-B '?' e.DirName-E = Fails;
+
+  e.DirName = <SwDirList <Core::FindFiles <AddAsterisk e.DirName>>>;
+}
+
+AddAsterisk {
+  e.DirName '\\' = e.DirName '\\*';
+  e.DirName '/' = e.DirName '\\*';
+  e.DirName = e.DirName '\\*';
+}
+
+SwDirList {
+  Success e.Records =
+    Success <MLambda::Map & NameFromRecord e.Records>;
+
+  Fails = Fails;
+}
+
+NameFromRecord {
+  ((e.FileName) e.Attributes) = (e.FileName);
+}
+
+$END CoreBE::MFileSystem.

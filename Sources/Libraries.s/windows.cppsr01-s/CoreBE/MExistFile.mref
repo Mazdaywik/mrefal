@@ -1,0 +1,18 @@
+$MODULE CoreBE::MExistFile;
+
+$IMPORT Core = CoreOS::MFileSystem;
+
+//------------------------------------------------------------------------------
+
+/**
+  <ExistFile e.StrFileName> == True | False
+*/
+$ENTRY ExistFile
+  e.FileName = <SwExistFile <Core::FileAttributes e.FileName>>;
+
+SwExistFile {
+  Success e.Attributes = True;
+  Fails = False;
+}
+
+$END CoreBE::MExistFile.

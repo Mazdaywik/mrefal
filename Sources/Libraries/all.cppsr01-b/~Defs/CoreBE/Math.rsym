@@ -1,0 +1,7 @@
+$module CoreBE::Math;
+
+
+$entry Binary;
+$entry NumberCompare;
+
+$end CoreBE::Math.

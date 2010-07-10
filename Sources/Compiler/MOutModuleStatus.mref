@@ -1,0 +1,168 @@
+$MODULE MOutModuleStatus;
+
+$IMPORT InOut;
+$IMPORT Math;
+$IMPORT MLambda;
+$IMPORT MSwapSupport;
+$IMPORT MQualifiedName;
+
+$ENTRY Updated-Q
+  t.QualifiedName =
+    <FlushCompilingRecompiled>
+    <Out-Q Updated t.QualifiedName>;
+
+$ENTRY Compiling-Q
+  t.ModuleName =
+    <MSwapSupport::PushBack & G_Compiling (Compiling t.ModuleName)>;
+
+$ENTRY Compiled-Q
+  t.ModuleName =
+    <Compiled-Aux
+      ( <MSwapSupport::Read & G_Compiling> ) t.ModuleName
+    >;
+
+Compiled-Aux {
+  ( e.Compiling (Compiling t.ModuleName) ) t.ModuleName =
+    <MSwapSupport::Write & G_Compiling e.Compiling>
+    <MSwapSupport::PushBack & G_Recompiled (Recompiled t.ModuleName)>;
+
+  ( e.Compiling ) t.ModuleName =
+    <FlushCompilingRecompiled>
+    <Out-Q Compiled t.ModuleName>;
+}
+
+$ENTRY Library-Q
+  t.QualifiedName =
+    <FlushCompilingRecompiled>
+    <Out-Q Library t.QualifiedName>;
+
+$ENTRY Fails-Q
+  t.QualifiedName =
+    <FlushCompilingRecompiled>
+    <Out-Q Fails t.QualifiedName>;
+
+$ENTRY Linking
+  e.ProgName =
+    <FlushCompilingRecompiled>
+    <Out Linking e.ProgName>;
+
+$SWAP G_Compiling, G_Recompiled;
+
+FlushCompilingRecompiled =
+  <MLambda::Map
+    <MLambda::Composite
+      & MLambda.UnBracket
+      & Out-Q
+    >
+    <G_Compiling> <G_Recompiled>
+  >;
+
+//------------------------------------------------------------------------------
+
+$SWAP G_OldStatus, G_Buffer;
+
+Out-Q
+ s.NewStatus t.QualifiedName =
+   <Out s.NewStatus <MQualifiedName::ToPrintable-Quad t.QualifiedName>>;
+
+Out
+  s.NewStatus e.ModuleName =
+    <SwOut
+      s.NewStatus <G_OldStatus>
+      '`' e.ModuleName '\''
+    >;
+
+SwOut {
+  s.NewStatus Startup e.ModuleName =
+    <WriteLine s.NewStatus e.ModuleName>;
+
+  s.OldStatus s.OldStatus e.ModuleName =
+    <G_OldStatus s.OldStatus>
+    <Write e.ModuleName>;
+
+  s.NewStatus s.OldStatus e.ModuleName =
+    <NewLine>
+    <WriteLine s.NewStatus e.ModuleName>;
+}
+
+StatusStr {
+  Updated =    ' Updated ';
+  Compiling =  '-Compiling ';
+  Compiled =   '-Compiled ';
+  Recompiled = '=Recompiled ';
+  Library =    '+Load library ';
+  Linking =    '*Linking ';
+  Fails =      '>  FAILS ';
+}
+
+MaxLength = 77;
+
+CheckLength
+  e.Line = <DoCheckLength <MaxLength> e.Line>;
+
+Dec {
+  1 = Limit;
+  Limit = Limit;
+  s.Other = <Math::Dec s.Other>;
+}
+
+DoCheckLength {
+  Limit e.Line = Long;
+  s.Other = Short;
+  s.Other s.Char e.Line =
+    <DoCheckLength
+      <Dec s.Other> e.Line
+    >;
+}
+
+WriteLine {
+  s.Status e.Name =
+    <NewLine>
+    <MSwapSupport::Write & G_OldStatus s.Status>
+    <MSwapSupport::Write
+      & G_Buffer
+      <StatusStr s.Status> e.Name
+    >;
+}
+
+NewLine = <SwNewLine <G_Buffer>>;
+
+SwNewLine {
+  = /* <InOut::WriteLine> */;
+  e.Line = <InOut::WriteLine e.Line '.'>;
+}
+
+Write
+  e.Name =
+    <Write-CheckLength (<G_Buffer>) e.Name>;
+
+Write-CheckLength {
+  () e.Name = <WriteLine <G_OldStatus> e.Name>;
+  (e.Buffer) e.Line =
+    <SwWrite-CheckLength
+      <CheckLength e.Buffer e.Line>
+      <G_OldStatus> (e.Buffer) e.Line
+    >;
+}
+
+SwWrite-CheckLength {
+  Short s.Status (e.Buffer) e.Name =
+    <G_OldStatus s.Status> <G_Buffer e.Buffer ', ' e.Name>;
+
+  Long s.Status (e.Buffer) e.Name =
+    <G_Buffer e.Buffer>
+    <WriteLine s.Status e.Name>;
+}
+
+$ENTRY Flush = <SwFlush <G_Buffer>>;
+
+SwFlush {
+  = ;
+  e.Line = <InOut::WriteLine e.Line '.'>;
+}
+
+
+$ENTRY Init = <G_OldStatus Starting>;
+$ENTRY Final = <Flush>;
+
+$END MOutModuleStatus.

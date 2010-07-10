@@ -1,0 +1,15 @@
+v ROUT3 Module Refal 0.1
+
+b Entry::CoreBE::MStrings::Chr
+p Chr
+
+b Entry::CoreBE::MStrings::Ord
+p Ord
+
+b Entry::CoreBE::MStrings::Numb
+p Numb
+
+b Entry::CoreBE::MStrings::Symb
+c $Entry::CoreBE::MStrings::Symb$ {
+c   s.Num = <Symb s.Num >;
+c }

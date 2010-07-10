@@ -1,0 +1,30 @@
+
+$EXTERN MR-SelfDiag-CloseLog;
+$EXTERN MR-SelfDiag-ExitFailure;
+$EXTERN MR-SelfDiag-Log;
+$EXTERN MR-SelfDiag-Log-T;
+$EXTERN MR-SelfDiag-PrintMessage;
+
+$ENTRY CoreBEP_MSelfDiagP_CloseLog {
+  = <MR-SelfDiag-CloseLog>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_ExitFailure {
+  = <MR-SelfDiag-ExitFailure>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_LogD_T {
+  e.Text = <MR-SelfDiag-Log-T e.Text>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_Log {
+  e.Text = <MR-SelfDiag-Log e.Text>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_PrintMessage {
+  e.Message = <MR-SelfDiag-PrintMessage e.Message>;
+}
+
+$ENTRY CoreBEP_MSelfDiagP_EntryPointE_ {
+  = /* пусто */;
+}

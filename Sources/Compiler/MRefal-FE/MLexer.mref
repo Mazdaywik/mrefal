@@ -1,0 +1,650 @@
+$MODULE MRefal-FE::MLexer;
+
+$IMPORT Math;
+$IMPORT MEscape;
+$IMPORT MLambda;
+$IMPORT MOrder;
+$IMPORT MSymStream = MRefal-FE::MSymStream;
+$IMPORT MStrings;
+
+/*
+  Внутреннее устройство:
+  [Lexer t.SymStream t.NextToken*]
+  Лексемы t.NextToken* следуют слева направо в том порядке, в котором они
+будут затем извлекаться.
+*/
+
+$DATA Lexer;
+
+$ENTRY Create
+  e.FileName = [Lexer <MSymStream::Create e.FileName>];
+
+$ENTRY Destroy
+  [Lexer t.SymStream e.Returned] =
+    <MSymStream::Destroy t.SymStream>;
+
+$ENTRY NextToken {
+  [Lexer t.SymStream t.NextToken e.ReturnedTokens] =
+    [Lexer t.SymStream e.ReturnedTokens] t.NextToken;
+
+  [Lexer t.SymStream] =
+    <MakeLexer
+      <UnBlank-Chain t.SymStream>
+    >;
+}
+
+MakeLexer
+  t.SymStream t.NextToken = [Lexer t.SymStream] t.NextToken;
+
+/*
+  UnBlank-Chain удаляет пробельные символы и комментарии. Дополнительная
+сложность обуславливается тем, что используется комментарий старого стиля
+(начинающийся со * в отдельной строке), который удобен при построчном
+синтаксическом анализе и неудобен при использовании свободного стиля
+(когда перевод строки считается пробельным символом).
+  При успешном завершении разбора вызывает ExtractToken, предусловием
+которой является отсутствие пробелов и комментариев перед лексемой,
+при неуспехе генерируется ошибочная лексема.
+*/
+
+UnBlank-Chain
+  t.SymStream =
+    <DoUnBlank <MSymStream::ExtractsFromSet t.SymStream (' \t')> >;
+
+DoUnBlank
+  t.SymStream e.Blanks =
+    <SwDoUnBlank <MSymStream::NextChar t.SymStream>>;
+
+SwDoUnBlank {
+  // Просмотр следующей строки на предмет наличия Рефал-комментария
+  t.SymStream CrLf =
+    <UnBlankNewLine t.SymStream>;
+
+  // Вероятно, далее следует C- или C++-комментарий
+  t.SymStream '/' =
+    <SwC-CPP-Comment <MSymStream::NextChar t.SymStream>>;
+
+  // Далее уже не комментарий -- действительная лексема
+  t.SymStream s.Other =
+    <ExtractToken
+      <MSymStream::ReturnChar t.SymStream s.Other>
+    >;
+}
+
+SwC-CPP-Comment {
+  t.SymStream '/' =
+    <EatCPP-Comment t.SymStream>;
+
+  t.SymStream '*' =
+    <EatC-Comment t.SymStream>;
+
+  t.SymStream s.Other =
+    <MakeError
+      <MSymStream::ReturnChar t.SymStream s.Other>
+      'unexpected \"/\"'
+    >;
+}
+
+EatCPP-Comment
+  t.SymStream =
+    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
+
+/* Комментарии C++ и Рефал продлеваются до конца строки, поэтому они
+обрабатываются одинаково */
+DoEatCPP-Refal-Comment {
+  // За комментарием может следовать другой комментарий
+  t.SymStream CrLf =
+    <UnBlank-Chain
+      <MSymStream::ReturnChar t.SymStream CrLf>
+    >;
+
+  // C++- и Рефал-комментарии могут находиться в конце файла
+  // -- в этом нет никакого криминала.
+  t.SymStream EOF =
+    <ExtractToken
+      <MSymStream::ReturnChar t.SymStream EOF>
+    >;
+
+  t.SymStream s.Other =
+    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
+}
+
+/* С-комментарии, так же как и в языке C не могут быть вложенными */
+EatC-Comment
+  t.SymStream = <DoEatC-Comment <MSymStream::NextChar t.SymStream>>;
+
+DoEatC-Comment {
+  t.SymStream '*' =
+    <SwDoEatC-Comment <MSymStream::NextChar t.SymStream>>;
+
+  t.SymStream EOF =
+    <MakeError
+      <MSymStream::ReturnChar t.SymStream EOF>
+      'unclosed c-comment'
+    >;
+
+  t.SymStream s.Other =
+    <DoEatC-Comment <MSymStream::NextChar t.SymStream>>;
+}
+
+SwDoEatC-Comment {
+  // После комментария могут быть другие комментарии
+  // и символы свободного пространства
+  t.SymStream '/' =
+    <UnBlank-Chain t.SymStream>;
+
+  t.SymStream EOF =
+    <MakeError
+      <MSymStream::ReturnChar t.SymStream EOF>
+      'unclosed c-comment'
+    >;
+
+  // Здесь также проверяется случай типа '****/'
+  t.SymStream s.Other =
+    <DoEatC-Comment t.SymStream s.Other>;
+}
+
+UnBlankNewLine
+  t.SymStream =
+    <DeleteStartSpaces
+      <MSymStream::ExtractsFromSet t.SymStream (' \t\r')>
+    >;
+
+DeleteStartSpaces
+  t.SymStream e.StartSpaces =
+    <SwRefalComment <MSymStream::NextChar t.SymStream>>;
+
+SwRefalComment {
+  t.SymStream '*' =
+    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
+
+  /* В новой строке после нескольких пробелов не обязательно должен
+  находиться Рефал-комментарий, там могут быть и другие комментарии,
+  и другие переводы строки */
+  t.SymStream s.Other =
+    <UnBlank-Chain
+      <MSymStream::ReturnChar t.SymStream s.Other>
+    >;
+}
+
+ExtractToken
+  t.SymStream =
+    <RealExtractAndPutPosition
+      <MSymStream::GetSrcPos t.SymStream>
+    >;
+
+RealExtractAndPutPosition
+  t.SymStream t.SrcPos =
+    <PutPosition
+      t.SrcPos <RealExtract t.SymStream>
+    >;
+
+MakeError
+  t.SymStream e.Message =
+    <RealMakeErrorAndPutPosition
+      <MSymStream::GetSrcPos t.SymStream>
+      e.Message
+    >;
+
+RealMakeErrorAndPutPosition
+  t.SymStream t.SrcPos e.Message =
+    <PutPosition
+      t.SrcPos t.SymStream (Error e.Message)
+    >;
+
+PutPosition
+  t.SrcPos t.SymStream (s.Type e.Info) =
+    t.SymStream
+    (s.Type t.SrcPos e.Info);
+
+RealExtract
+  t.SymStream =
+    <RealExtract-SwFirst <MSymStream::NextChar t.SymStream>>;
+
+RealExtract-SwFirst {
+  t.SymStream EOF = t.SymStream (EndOfText);
+
+  t.SymStream '{' = t.SymStream (OpenBlock);
+  t.SymStream '}' = t.SymStream (CloseBlock);
+
+  t.SymStream '<' = t.SymStream (OpenFnCall);
+  t.SymStream '>' = t.SymStream (CloseFnCall);
+
+  t.SymStream '(' = t.SymStream (OpenBrac);
+  t.SymStream ')' = t.SymStream (CloseBrac);
+
+  t.SymStream '[' = t.SymStream (OpenSquare);
+  t.SymStream ']' = t.SymStream (CloseSquare);
+
+  t.SymStream '&' = t.SymStream (Ampersand);
+  t.SymStream '*' = t.SymStream (Asterisk);
+  t.SymStream ':' = <Colon <MSymStream::NextChar t.SymStream>>;
+  t.SymStream ',' = t.SymStream (Comma);
+  t.SymStream '.' = t.SymStream (Dot);
+  t.SymStream ';' = t.SymStream (EndSent);
+  t.SymStream '=' = t.SymStream (Replaces);
+
+  t.SymStream '\'' = <Quoted t.SymStream '\''>;
+  //t.SymStream '\"' = <Quoted t.SymStream '\"'>;
+
+  t.SymStream '$' = <Directive t.SymStream>;
+
+  t.SymStream 'e' = <Variable EVar t.SymStream>;
+  t.SymStream 's' = <Variable SVar t.SymStream>;
+  t.SymStream 't' = <Variable TVar t.SymStream>;
+
+  // Разрешим идентификаторы начинать с '?' и '!'
+  t.SymStream '?' = <Identifier t.SymStream '?'>;
+  t.SymStream '!' = <Identifier t.SymStream '!'>;
+
+  t.SymStream s.First =
+    <SwFirstChar t.SymStream <MStrings::CharType s.First>>;
+}
+
+Colon {
+  t.SymStream ':' = t.SymStream (DoubleColon);
+  t.SymStream s.Other =
+    <MSymStream::ReturnChar t.SymStream s.Other> (Colon);
+}
+
+SwFirstChar {
+  t.SymStream UpAlph s.First =
+    <Identifier t.SymStream s.First>;
+
+  t.SymStream Digit s.First =
+    <Macro t.SymStream s.First>;
+
+  t.SymStream s.Other s.First =
+    <CreateUndefined s.First t.SymStream>;
+}
+
+Identifier
+  t.SymStream s.FirstChar =
+    <Identifier-Tail
+      s.FirstChar
+      <MSymStream::ExtractsFromSet
+        t.SymStream (<ValidIdentSymbols>)
+      >
+    >;
+
+Identifier-Tail
+  s.First t.SymStream e.Tail =
+    t.SymStream (Identifier s.First e.Tail);
+
+ValidIdentSymbols =
+  <MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '?!-_';
+
+Quoted
+  t.SymStream s.Quote =
+    <DoQuoted s.Quote () <MSymStream::NextChar t.SymStream>>;
+
+DoQuoted {
+  s.Quote (e.Scanned) t.SymStream s.Quote =
+    t.SymStream (<QType s.Quote> e.Scanned);
+
+  s.Quote (e.Scanned) t.SymStream '\\' =
+    <Escaped s.Quote (e.Scanned) <MSymStream::NextChar t.SymStream>>;
+
+  s.Quote (e.Scanned) t.SymStream CrLf =
+    t.SymStream (Error 'Unclosed quote');
+
+  s.Quote (e.Scanned) t.SymStream s.Next =
+    <DoQuoted
+      s.Quote (e.Scanned s.Next)
+      <MSymStream::NextChar t.SymStream>
+    >;
+}
+
+QType { '\'' = Literal; '\"' = DQWord; }
+
+Escaped {
+  // Разрешим разрывать закавыченную строку при помощи бэкслеша
+  s.Quote (e.Scanned) t.SymStream CrLf =
+    <DoQuoted
+      s.Quote (e.Scanned)
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'a' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x07')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'b' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x08')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'f' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x0C')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'n' =
+    <DoQuoted
+      s.Quote (e.Scanned '\n')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'r' =
+    <DoQuoted
+      s.Quote (e.Scanned '\r')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 't' =
+    <DoQuoted
+      s.Quote (e.Scanned '\t')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'v' =
+    <DoQuoted
+      s.Quote (e.Scanned '\x0B')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream '\'' =
+    <DoQuoted
+      s.Quote (e.Scanned '\'')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream '\"' =
+    <DoQuoted
+      s.Quote (e.Scanned '\"')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream '\\' =
+    <DoQuoted
+      s.Quote (e.Scanned '\\')
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  s.Quote (e.Scanned) t.SymStream 'x' =
+    <DoQuoted-Hex
+      s.Quote (e.Scanned)
+      <MSymStream::ExtractsFromSet
+        t.SymStream
+        ('0123456789ABCDEFabcdef')
+      >
+    >;
+
+  s.Quote (e.Scanned) t.SymStream s.Other =
+    <DoQuoted-TestOct
+      s.Quote (e.Scanned) t.SymStream s.Other ('01234567')
+    >;
+}
+
+DoQuoted-TestOct {
+  s.Quote (e.Scanned) t.SymStream s.Oct (e.Octs-B s.Oct e.Octs-E) =
+    <DoQuoted-Oct
+      s.Quote (e.Scanned)
+      s.Oct
+      <MSymStream::ExtractsFromSet-N
+        t.SymStream ('01234567') 2
+      >
+    >;
+
+  s.Quote (e.Scanned) t.SymStream s.Other (e.Octs) =
+    t.SymStream (Error 'Unknown excaped symbol <' s.Other '>');
+}
+
+DoQuoted-Hex {
+  s.Quote (e.Scanned) t.SymStream /* не найдено */ =
+    t.SymStream (Error 'Expected hex number after \\x');
+
+  s.Quote (e.Scanned) t.SymStream e.HexRep =
+    <DoQuoted
+      s.Quote (e.Scanned <CharFromHex e.HexRep>)
+      <MSymStream::NextChar t.SymStream>
+    >;
+}
+
+DoQuoted-Oct {
+  s.Quote (e.Scanned) s.FirstOct t.SymStream e.LastOcts =
+    <DoQuoted
+      s.Quote (e.Scanned <CharFromOct s.FirstOct e.LastOcts>)
+      <MSymStream::NextChar t.SymStream>
+    >;
+}
+
+DigitFromChar {
+  s.Char =
+    <DigitFromChar-Aux
+      s.Char ('0123456789ABCDEF') ('0123456789abcdef')
+    >;
+}
+
+DigitFromChar-Aux {
+  s.Char e.Sets-B (e.Before s.Char e.After) e.Sets-E =
+    <MStrings::Length e.Before>;
+}
+
+CharFromHex {
+  e.CharLine = <CharFromBase e.CharLine 16>;
+}
+
+CharFromOct {
+  e.CharLine = <CharFromBase e.CharLine 8>;
+}
+
+CharFromBase {
+  e.CharLine s.Base =
+    <MStrings::Chr
+      <MLambda::Reduce
+        <MLambda::BindLeft & AppendDigit s.Base>
+        0
+        <MLambda::Map & DigitFromChar e.CharLine>
+      >
+    >;
+}
+
+AppendDigit {
+  s.L-Base s.Accum s.Digit =
+    <Math::Add <Math::Mul s.L-Base s.Accum> s.Digit>;
+}
+
+Directive t.SymStream =
+  <SwDirective
+    <MSymStream::ExtractsFromSet
+      t.SymStream (<MStrings::UpAlph> <MStrings::LoAlph>)
+    >
+  >;
+
+SwDirective {
+  t.SymStream 'CLEARMODULE' = t.SymStream (Directive ClearModule);
+  t.SymStream 'clearmodule' = t.SymStream (Directive ClearModule);
+
+  t.SymStream 'DATA' = t.SymStream (Directive Data);
+  t.SymStream 'data' = t.SymStream (Directive Data);
+
+  t.SymStream 'END' = t.SymStream (Directive End);
+  t.SymStream 'end' = t.SymStream (Directive End);
+
+  t.SymStream 'ENTRY' = t.SymStream (Directive Entry);
+  t.SymStream 'entry' = t.SymStream (Directive Entry);
+
+  t.SymStream 'IMPORT' = t.SymStream (Directive Import);
+  t.SymStream 'import' = t.SymStream (Directive Import);
+
+  t.SymStream 'MODULE' = t.SymStream (Directive Module);
+  t.SymStream 'module' = t.SymStream (Directive Module);
+
+  t.SymStream 'PROGRAM' = t.SymStream (Directive Program);
+  t.SymStream 'program' = t.SymStream (Directive Program);
+
+  t.SymStream 'SWAP' = t.SymStream (Directive Swap);
+  t.SymStream 'swap' = t.SymStream (Directive Swap);
+
+  t.SymStream e.Other =
+    t.SymStream (Error 'unknown directive \'' e.Other '\'');
+}
+
+Variable
+  s.VarType t.SymStream =
+    <SwVarIndex
+      s.VarType
+      <MSymStream::ExtractFromSet
+        t.SymStream
+	(<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '.')
+      >
+    >;
+
+SwVarIndex {
+  s.VarType t.SymStream '.' =
+    <LongIndex
+      s.VarType
+      <MSymStream::ExtractsFromSet
+        t.SymStream
+	(<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '-_?!')
+      >
+    >;
+
+  s.VarType t.SymStream s.ShortIndex =
+    t.SymStream (Var s.VarType s.ShortIndex);
+
+  s.VarType t.SymStream =
+    t.SymStream (Error 'index of variable not found');
+}
+
+LongIndex
+  s.VarType t.SymStream e.LongIndex =
+    t.SymStream (Var s.VarType e.LongIndex);
+
+// Максимальное значение макрочисла -- 4 294 968 295
+Macro
+  t.SymStream s.First =
+    <SwMacro
+      s.First
+      <MSymStream::ExtractsFromSet-N
+        t.SymStream (<MStrings::Digits>) 9
+      >
+    >;
+
+SwMacro
+  s.First t.SymStream e.Tail =
+    <Macro-CheckLength
+      t.SymStream <MStrings::Length-T s.First e.Tail>
+    >;
+
+Macro-CheckLength {
+  t.SymStream 10 e.Line = <Macro-CheckLimit t.SymStream e.Line>;
+
+  t.SymStream s.Other e.Line =
+    t.SymStream (Macro <MStrings::Numb e.Line>);
+}
+
+Macro-CheckLimit
+  t.SymStream e.Digits =
+    <SwMacro-CheckLimit
+      t.SymStream
+      <MOrder::Compare (e.Digits) ('4294967295')>
+      e.Digits
+    >;
+
+SwMacro-CheckLimit {
+  t.SymStream '>' e.Digits s.Last =
+    <MSymStream::ReturnChar t.SymStream s.Last>
+    (Macro <MStrings::Numb e.Digits>);
+
+  t.SymStream s.Other e.Digits =
+    t.SymStream
+    (Macro <MStrings::Numb e.Digits>);
+}
+
+CreateUndefined
+  s.First t.SymStream =
+    <DoCreateUndefined (s.First) <MSymStream::NextChar t.SymStream>>;
+
+DoCreateUndefined
+  (e.BadSeq) t.SymStream s.Next =
+    <SwDoCreateUndefined
+      (e.BadSeq) t.SymStream <CheckValid-T s.Next>
+    >;
+
+SwDoCreateUndefined {
+  (e.BadSeq) t.SymStream F s.Next =
+    <DoCreateUndefined
+      (e.BadSeq s.Next)
+      <MSymStream::NextChar t.SymStream>
+    >;
+
+  (e.BadSeq) t.SymStream T s.Next =
+    <MSymStream::ReturnChar t.SymStream s.Next>
+    (Undefined <EscapeText e.BadSeq>);
+}
+
+CheckValid-T
+  s.Char =
+    <MStrings::OneOf
+      s.Char
+      (
+        ' \t' CrLf '[]{}<>()&:,.;=$\"\'est'
+        <MStrings::UpAlph> <MStrings::Digits>
+      )
+    > s.Char;
+
+$ENTRY TokenToString {
+  (OpenBlock) = <Q '{'>;
+  (CloseBlock) = <Q '}'>;
+
+  (OpenFnCall) = <Q '<'>;
+  (CloseFnCall) = <Q '>'>;
+
+  (OpenBrac) = <Q '('>;
+  (CloseBrac) = <Q ')'>;
+
+  (OpenSquare) = <Q '['>;
+  (CloseSquare) = <Q ']'>;
+
+  (Ampersand) = <Q '&'>;
+  (Colon) = <Q ':'>;
+  (Comma) = <Q ','>;
+  (Dot) = <Q '.'>;
+  (DoubleColon) = <Q '::'>;
+  (EndSent) = <Q ';'>;
+  (Replaces) = <Q '='>;
+  (Asterisk) = <Q '*'>;
+
+  (Directive s.Direc) = '$' <DirectiveToString s.Direc>;
+
+  (DQWord e.Text) = '\\\"' <EscapeText e.Text> '\\\"';
+  (Literal e.Text) = '\\\'' <EscapeText e.Text> '\\\'';
+  (Identifier e.Ident) = 'identifier ' e.Ident;
+  (Macro s.Value) = 'macronumber ' <MStrings::Symb s.Value>;
+
+  (Var s.VarType e.Index) = <VarTypeToChar s.VarType> e.Index;
+
+  (EndOfText) = 'end of file';
+}
+
+Q e.Text = '\'' e.Text '\'';
+
+DirectiveToString {
+  End = 'END';
+  Entry = 'ENTRY';
+  Import = 'IMPORT';
+  Module = 'MODULE';
+  Swap = 'SWAP';
+}
+
+VarTypeToChar { EVar = 'e'; SVar = 's'; TVar = 't'; }
+
+EscapeText {
+  '\t' e.Tail = '\\t' <EscapeText e.Tail>;
+  '\n' e.Tail = '\\n' <EscapeText e.Tail>;
+  '\\' e.Tail = '\\\\' <EscapeText e.Tail>;
+  '\'' e.Tail = '\\\'' <EscapeText e.Tail>;
+  '\"' e.Tail = '\\\"' <EscapeText e.Tail>;
+  s.Other e.Tail =
+    <MEscape::EscapeChar-Hex s.Other>
+    <EscapeText e.Tail>;
+  = ;
+}
+
+$END MRefal-FE::MLexer.

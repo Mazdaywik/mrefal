@@ -16,10 +16,13 @@ echo.>>%LOGFILE%
 
 call :SUB_CALL_COMPILER cpp  CPPSR %LOGFILE%
 if errorlevel 1 goto ERRORS
+if exist __errors goto ERRORS
 call :SUB_CALL_COMPILER sr   SR    %LOGFILE%
 if errorlevel 1 goto ERRORS
+if exist __errors goto ERRORS
 call :SUB_CALL_COMPILER r5-t R5    %LOGFILE%
 if errorlevel 1 goto ERRORS
+if exist __errors goto ERRORS
 
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
 call :SUB_DUAL_PRINT "== Checking successed. Update version. ==" %LOGFILE%
@@ -39,6 +42,7 @@ for %%c in (cpp sr r5-t) do (
   for %%p in (CPPSR SR R5) do (
     call :SUB_CALL_COMPILER %%c %%p %LOGFILE%
     if errorlevel 1 goto UNEXPECTED_ERROR
+    if exist __errors goto UNEXPECTED_ERROR
   )
 )
 

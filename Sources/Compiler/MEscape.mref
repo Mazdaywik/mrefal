@@ -1,6 +1,6 @@
 $MODULE MEscape;
 
-$IMPORT Math;
+$IMPORT Math = MMath;
 $IMPORT MStrings;
 
 $ENTRY EscapeChar-Oct {

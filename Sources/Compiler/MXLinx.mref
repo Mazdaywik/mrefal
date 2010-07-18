@@ -1,6 +1,6 @@
 $MODULE MXLinx;
 
-$IMPORT FileIO;
+$IMPORT FileIO = MFileIO;
 $IMPORT Config::MConfig;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MIModule;

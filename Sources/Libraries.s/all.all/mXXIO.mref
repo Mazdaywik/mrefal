@@ -1,8 +1,8 @@
 $MODULE MXXIO;
 
-$IMPORT FileIO;
-$IMPORT Math;
+$IMPORT MFileIO;
 $IMPORT MLambda;
+$IMPORT MMath;
 $IMPORT Str = MStrings;
 
 /**
@@ -15,7 +15,7 @@ $ENTRY Load
     <ParseXXIO
       <MLambda::Map
         & UnBracket
-        <FileIO::Load e.FileName>
+        <MFileIO::Load e.FileName>
       >
     >;
 
@@ -215,7 +215,7 @@ $ENTRY Save
 
 SwSave {
   (e.FileName) Success e.Serialized =
-    Success <FileIO::Save (e.FileName) <Cut e.Serialized>>;
+    Success <MFileIO::Save (e.FileName) <Cut e.Serialized>>;
 
   (e.FileName) Fails =
     Fails;
@@ -347,7 +347,7 @@ CharRep-Aux
   s.Other s.AsciiCode =
     <SwCharRep
       s.Other s.AsciiCode
-      <Math::Compare 31 s.AsciiCode> <Math::Compare s.AsciiCode 127>
+      <MMath::Compare 31 s.AsciiCode> <MMath::Compare s.AsciiCode 127>
     >;
 
 SwCharRep {

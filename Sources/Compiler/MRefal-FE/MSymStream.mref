@@ -42,8 +42,8 @@ $MODULE MRefal-FE::MSymStream;
   Символы e.BufferedChars в порядке чтения располагаются слева направо.
 */
 
-$IMPORT FileIO;
-$IMPORT Math;
+$IMPORT FileIO = MFileIO;
+$IMPORT Math = MMath;
 $IMPORT MSelfDiag;
 $IMPORT MSrcPos;
 $IMPORT MStrings;

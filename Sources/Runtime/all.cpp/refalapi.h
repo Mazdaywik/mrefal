@@ -19,7 +19,7 @@
 */
 #define DECL_REFAL_IDENT(ident_name, textual) \
   template <typename T> \
-  struct ident_name ## L_ { \
+  struct ident_name { \
     static const char *name() { \
       return textual; \
     } \
@@ -28,7 +28,7 @@
 /*
   Макрос для использования идентификаторов.
 */
-#define REFAL_IDENT(ident_name) ident_name ## L_<int>::name
+#define REFAL_IDENT(ident_name) ident_name <int>::name
 
 /*===========================================================================
   Утилитарные функции для работы с промежуточным представлением поля зрения.
@@ -178,18 +178,6 @@ private:
   typedef std::deque<IterPair> Fragments;
   Fragments m_fragments;
 };
-
-refalrts::Iter AllocArray::build(refalrts::Iter res) {
-  Fragments::iterator begin = m_fragments.begin();
-  Fragments::iterator end = m_fragments.end();
-
-  while( begin != end ) {
-    res = refalrts::splice_evar( res, begin->first, begin->second );
-    ++begin;
-  }
-
-  return res;
-}
 
 /*
   Константа используется для утверждений после метки default внутри switch.

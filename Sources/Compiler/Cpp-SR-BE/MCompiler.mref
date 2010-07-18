@@ -1,9 +1,9 @@
 $MODULE Cpp-SR-BE::MCompiler;
 
 $IMPORT Algorithm = Cpp-SR-BE::Algorithm;
-$IMPORT FileIO;
+$IMPORT FileIO = MFileIO;
 $IMPORT Generator = Cpp-SR-BE::Generator;
-$IMPORT Math;
+$IMPORT Math = MMath;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MStrings;
@@ -189,7 +189,7 @@ Declarations-Callable {
   (s.CallType t.SrcPos t.QualifiedName) =
     (Declare
       Identifier t.QualifiedName
-      (& Generator.GenIdent t.QualifiedName)
+      (& Generator.GenIdent-FuncName t.QualifiedName)
     )
     (Declare
       Function

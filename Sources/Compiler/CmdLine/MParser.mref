@@ -5,8 +5,8 @@ $MODULE CmdLine::MParser;
   "DSL описания командной строки.01.txt"
 =============================================================================*/
 
-$IMPORT FileIO;
-$IMPORT Math;
+$IMPORT FileIO = MFileIO;
+$IMPORT Math = MMath;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MLambda;

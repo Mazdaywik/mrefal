@@ -1,8 +1,8 @@
 $MODULE MStrings;
 
 $IMPORT Core = CoreBE::MStrings;
-$IMPORT Math;
 $IMPORT MLambda;
+$IMPORT MMath;
 
 //------------------------------------------------------------------------------
 
@@ -124,7 +124,7 @@ $ENTRY Length-T
 DoLength-T {
   s.Length (e.Scanned) t.Next e.Tail =
     <DoLength-T
-      <Math::Inc s.Length>
+      <MMath::Inc s.Length>
       (e.Scanned t.Next) e.Tail
     >;
 
@@ -144,7 +144,7 @@ DoFirst {
   0 (e.First) e.Last = (e.First) e.Last;
   s.Num (e.First) = (e.First);
   s.Num (e.First) t.Next e.Last =
-    <DoFirst <Math::Dec s.Num> (e.First t.Next) e.Last>;
+    <DoFirst <MMath::Dec s.Num> (e.First t.Next) e.Last>;
 }
 
 //------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ $ENTRY Skip {
   0 e.Expr = e.Expr;
 
   s.Num t.First e.Expr =
-    <Skip <Math::Dec s.Num> e.Expr>;
+    <Skip <MMath::Dec s.Num> e.Expr>;
 
   s.Num = ;
 }
@@ -183,7 +183,7 @@ $ENTRY At {
   0 t.ElemAt e.Tail = t.ElemAt;
 
   s.Index t.Next e.Tail =
-    <At <Math::Dec s.Index> e.Tail>;
+    <At <MMath::Dec s.Index> e.Tail>;
 }
 
 //------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ $ENTRY At {
 $ENTRY Seq {
   s.Last s.Last = s.Last;
   s.First s.Last =
-    s.First <Seq <Math::Inc s.First> s.Last>;
+    s.First <Seq <MMath::Inc s.First> s.Last>;
 }
 
 //------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ $ENTRY Repeat {
   1 e.Expr = e.Expr;
 
   s.Num e.Expr =
-    e.Expr <Repeat <Math::Dec s.Num> e.Expr>;
+    e.Expr <Repeat <MMath::Dec s.Num> e.Expr>;
 }
 
 //------------------------------------------------------------------------------

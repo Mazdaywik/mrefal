@@ -1,6 +1,6 @@
 $MODULE MRefal-FE::MLexer;
 
-$IMPORT Math;
+$IMPORT Math = MMath;
 $IMPORT MEscape;
 $IMPORT MLambda;
 $IMPORT MOrder;

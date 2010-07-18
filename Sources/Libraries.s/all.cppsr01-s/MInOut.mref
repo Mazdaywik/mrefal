@@ -1,4 +1,4 @@
-$MODULE InOut;
+$MODULE MInOut;
 
 $IMPORT Core = Core::MFileIO;
 $IMPORT MDosWinRecoder;
@@ -67,4 +67,4 @@ $ENTRY WriteText-T {
 
 $ENTRY Final = <Core::FlushIO>;
 
-$END InOut.
+$END MInOut.

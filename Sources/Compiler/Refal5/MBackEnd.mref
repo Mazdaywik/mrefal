@@ -1,7 +1,7 @@
 $MODULE Refal5::MBackEnd;
 
-$IMPORT FileIO;
 $IMPORT MEscape;
+$IMPORT MFileIO;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
@@ -27,7 +27,7 @@ ModuleToBack
 
 SaveModule
   (e.OutName) e.Lines t.IModule =
-    <FileIO::Save (e.OutName) e.Lines>
+    <MFileIO::Save (e.OutName) e.Lines>
     t.IModule;
 
 GenerateContent

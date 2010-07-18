@@ -741,7 +741,7 @@ refalrts::FnResult implement_selfdiag::log(
   return cSuccess;
 }
 
-DECL_REFAL_IDENT(Exit, "@Exit");
+DECL_REFAL_IDENT(Exit_FuncNameE_, "@Exit");
 
 REFAL_FUNC(implement_selfdiag::exit_failure) {
   /*
@@ -768,7 +768,7 @@ REFAL_FUNC(implement_selfdiag::exit_failure) {
   // Переинициализация имени функции
   func_name->function_info.ptr = ExitE_;
 #ifdef MODULE_REFAL
-  func_name->function_info.name = REFAL_IDENT(Exit);
+  func_name->function_info.name = REFAL_IDENT(Exit_FuncNameE_);
 #else
   func_name->function_info.name = "@Exit";
 #endif

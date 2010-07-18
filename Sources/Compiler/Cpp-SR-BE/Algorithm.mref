@@ -1,6 +1,6 @@
 $MODULE Cpp-SR-BE::Algorithm;
 
-$IMPORT Math;
+$IMPORT Math = MMath;
 $IMPORT MLambda;
 $IMPORT MStrings;
 $IMPORT MQualifiedName;

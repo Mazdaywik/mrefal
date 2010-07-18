@@ -4,7 +4,7 @@
 
 //$LABEL Init
 template <typename T>
-struct InitL_ {
+struct Init {
   static const char *name() {
     return "Init";
   }
@@ -12,7 +12,7 @@ struct InitL_ {
 
 //$LABEL Final
 template <typename T>
-struct FinalL_ {
+struct Final {
   static const char *name() {
     return "Final";
   }
@@ -28,7 +28,7 @@ refalrts::FnResult CoreBEP_MFileIOP_InitE_(refalrts::Iter arg_begin, refalrts::I
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Init
     //(0 0 )
-    if( ! refalrts::ident_left(  & InitL_<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) ) 
       break;
     if( ! empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -46,7 +46,7 @@ refalrts::FnResult CoreBEP_MFileIOP_InitE_(refalrts::Iter arg_begin, refalrts::I
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Final
     //(0 0 )
-    if( ! refalrts::ident_left(  & FinalL_<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) ) 
       break;
     if( ! empty_seq( bb_0_0, be_0_0 ) )
       break;

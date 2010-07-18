@@ -1,4 +1,4 @@
-$MODULE InOut;
+$MODULE MInOut;
 
 $IMPORT Core = CoreBE::MFileIO;
 
@@ -62,4 +62,4 @@ $ENTRY WriteText-T {
 
 $ENTRY Final = <Core::FlushIO>;
 
-$END InOut.
+$END MInOut.

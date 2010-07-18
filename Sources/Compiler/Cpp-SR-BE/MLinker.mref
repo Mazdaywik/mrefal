@@ -1,13 +1,9 @@
 $MODULE Cpp-SR-BE::MLinker;
 
-$IMPORT FileIO;
-$IMPORT Math;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
-$IMPORT MOS;
-$IMPORT MStrings;
 
 $IMPORT C-Link = C-Link::MLinker;
 

@@ -1,7 +1,7 @@
 $MODULE SRefal-BE::MCompiler;
 
-$IMPORT FileIO;
 $IMPORT MEscape;
+$IMPORT MFileIO;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
@@ -314,7 +314,7 @@ GenEntry {
 Generate-Aux2 {
   (e.OutName) t.hIModule (e.Entries) e.Functions =
     t.hIModule
-    <FileIO::Save
+    <MFileIO::Save
       (e.OutName)
       <ScanDefinitionsAndBodies
         <MLambda::MapReduce & FilterDefinitions () e.Functions e.Entries>

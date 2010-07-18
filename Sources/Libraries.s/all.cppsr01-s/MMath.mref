@@ -1,6 +1,6 @@
-$MODULE Math;
+$MODULE MMath;
 
-$IMPORT Core = CoreBE::Math;
+$IMPORT Core = Core::Math;
 
 /**
   <Add s.X s.Y>, <Sub s.X s.Y>, <Mul s.X s.Y>
@@ -46,4 +46,4 @@ $ENTRY Compare
 $ENTRY Compare-T
   s.Left s.Rigth = <Compare s.Left s.Rigth> s.Left s.Rigth;
 
-$END Math.
+$END MMath.

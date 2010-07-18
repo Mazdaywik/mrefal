@@ -6,6 +6,14 @@ set VERSRC=mVersion.mref
 set /P CURVER=<%VERFILE%
 set LOGFILE=~rebuild.log
 
+rem ===========================================================================
+rem Сборка Модульного Рефала
+rem ===========================================================================
+
+pushd Compiler
+setlocal
+set LOGFILE=..\%LOGFILE%
+
 echo Rebuilding Module Refal (start version %CURVER%)>%LOGFILE%
 echo.>>%LOGFILE%
 
@@ -64,6 +72,9 @@ call :SUB_DUAL_PRINT "========== Rebuilding successed. ==========" %LOGFILE%
 call :SUB_DUAL_PRINT "===========================================" %LOGFILE%
 echo.>>%LOGFILE%
 
+endlocal
+popd
+
 goto :EOF
 
 :ERRORS
@@ -72,6 +83,9 @@ call :SUB_DUAL_PRINT "===========================================" %LOGFILE%
 call :SUB_DUAL_PRINT "=== FOUND ERRORS! CAN'T UPDATE VERSION! ===" %LOGFILE%
 call :SUB_DUAL_PRINT "===========================================" %LOGFILE%
 echo.>>%LOGFILE%
+
+endlocal
+popd
 
 goto :EOF
 
@@ -86,9 +100,14 @@ call :SUB_DUAL_PRINT "== INTERNAL ERROR WHILE RECOMPILING! EXITING! ==" %LOGFILE
 call :SUB_DUAL_PRINT "================================================" %LOGFILE%
 echo.>>%LOGFILE%
 
+endlocal
+popd
+
 goto :EOF
 
+rem ===========================================================================
 rem Подпрограмма для сохранения вывода команды и записи в лог.
+rem ===========================================================================
 :SUB_CALL_AND_SAVE_OUTPUT
 setlocal
   rem %1 --- команда
@@ -109,7 +128,9 @@ endlocal
 goto :EOF
 
 
+rem ===========================================================================
 rem Подпрограмма запуска перекомпиляции заданным компилятором с заданным профилем
+rem ===========================================================================
 :SUB_CALL_COMPILER
 setlocal
   rem %1 --- компилятор
@@ -123,7 +144,9 @@ setlocal
 endlocal
 goto :EOF
 
+rem ===========================================================================
 rem Подпрограмма одновременного вывода в лог и на экран
+rem ===========================================================================
 :SUB_DUAL_PRINT
 setlocal
   echo %~1

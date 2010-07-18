@@ -2,7 +2,6 @@ $MODULE MOS;
 
 $IMPORT Core = CoreBE::MOS;
 $IMPORT MStrings;
-$IMPORT Math;
 
 /**
   <System e.Command>

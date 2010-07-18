@@ -1,6 +1,6 @@
 $MODULE SRefal-BE::MLinker;
 
-$IMPORT FileIO;
+$IMPORT MFileIO;
 $IMPORT MError;
 $IMPORT MLambda;
 $IMPORT MStrings;
@@ -198,7 +198,7 @@ GetRunTimeFiles {
 MakeHeadFile
   (e.HeadName) e.ModuleNames =
     // Генерация файла со стартовой функцией
-    <FileIO::Save
+    <MFileIO::Save
       (e.HeadName)
       ()
       ()

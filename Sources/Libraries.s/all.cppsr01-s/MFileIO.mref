@@ -1,4 +1,4 @@
-$MODULE FileIO;
+$MODULE MFileIO;
 
 $IMPORT Core::MFileIO;
 
@@ -129,4 +129,4 @@ DoSave {
   t.File = <NulClose t.File>;
 }
 
-$END FileIO.
+$END MFileIO.

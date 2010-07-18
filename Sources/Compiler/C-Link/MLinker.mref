@@ -1,7 +1,7 @@
 $MODULE C-Link::MLinker;
 
-$IMPORT FileIO;
-$IMPORT Math;
+$IMPORT FileIO = MFileIO;
+$IMPORT Math = MMath;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MOS;

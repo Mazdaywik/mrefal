@@ -1,7 +1,7 @@
 $MODULE Refal5::MExeTyper;
 
-$IMPORT FileIO;
-$IMPORT Math;
+$IMPORT FileIO = MFileIO;
+$IMPORT Math = MMath;
 $IMPORT MError;
 
 /*------------------------------------------------------------------------------

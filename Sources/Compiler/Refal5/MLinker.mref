@@ -1,9 +1,9 @@
 $MODULE Refal5::MLinker;
 
-$IMPORT FileIO;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
 $IMPORT MExeTyper = Refal5::MExeTyper;
+$IMPORT MFileIO;
 $IMPORT MLambda;
 $IMPORT MLinkerAliasTable = Refal5::MLinkerAliasTable;
 $IMPORT MOrder;
@@ -165,7 +165,7 @@ PrintUnresolvedUnits
 CreateNotLinkedFile
   t.UnitStorage e.UnitNames =
     <DestroyUnitStorage t.UnitStorage>
-    <FileIO::Save
+    <MFileIO::Save
       (<MCreateDirIfNeed::InfoDir> '/Not linked.txt')
       ('Not linked units')
       <ListNames e.UnitNames>
@@ -346,7 +346,7 @@ LoadUnits
       (e.FileName)
       (<MVersion::ROut>)
       <DoLoadUnits
-        <FileIO::Load e.FileName>
+        <MFileIO::Load e.FileName>
       >
     >;
 

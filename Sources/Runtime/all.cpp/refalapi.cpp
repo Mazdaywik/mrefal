@@ -39,3 +39,14 @@ refalrts::FnResult refalapi::CharArray::from_sequence(
   }
 }
 
+refalrts::Iter refalapi::AllocArray::build(refalrts::Iter res) {
+  Fragments::iterator begin = m_fragments.begin();
+  Fragments::iterator end = m_fragments.end();
+
+  while( begin != end ) {
+    res = refalrts::splice_evar( res, begin->first, begin->second );
+    ++begin;
+  }
+
+  return res;
+}

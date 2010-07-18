@@ -5,7 +5,7 @@ $MODULE MSymModule;
 на диск, кеширование внутри контекста.
 */
 
-$IMPORT FileIO;
+$IMPORT FileIO = MFileIO;
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MError;

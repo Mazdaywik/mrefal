@@ -1,7 +1,7 @@
 $MODULE Cpp-SR-BE::Generator;
 
 $IMPORT Cpp-SR-BE::Algorithm;
-$IMPORT Math;
+$IMPORT Math = MMath;
 $IMPORT MEscape;
 $IMPORT MLambda;
 $IMPORT MStrings;
@@ -31,6 +31,7 @@ NameCodeChar {
   '_' = 'U_';
   '-' = 'D_';
   Entry = 'E_';
+  FuncName = 'N_';
   s.Other = s.Other;
 }
 
@@ -140,11 +141,27 @@ GenSwap_Aux {
 
 $ENTRY GenIdent {
   t.Name =
-    ('//$LABEL ' <MQualifiedName::ToPrintable-Dot t.Name>)
+    <GenIdent-Aux
+      (<MQualifiedName::ToPrintable-Dot t.Name>)
+      <QNameCode t.Name>
+    >;
+}
+
+$ENTRY GenIdent-FuncName {
+  t.Name =
+    <GenIdent-Aux
+      (<MQualifiedName::ToPrintable-Dot t.Name>)
+      <QNameCode t.Name> 'N_'
+    >;
+}
+
+GenIdent-Aux {
+  (e.ExternalName) e.InternalName =
+    ('//$LABEL ' e.ExternalName)
     ('template <typename T>')
-    ('struct ' <QNameCode t.Name> 'L_ {')
+    ('struct ' e.InternalName ' {')
     ('  static const char *name() {')
-    ('    return "' <MQualifiedName::ToPrintable-Dot t.Name> '";')
+    ('    return "' e.ExternalName '";')
     ('  }')
     ('};')
     ();
@@ -470,7 +487,7 @@ PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('ident') ' & ' <QNameCode t.Name> 'L_<int>::name'
+      ('ident') ' & ' <QNameCode t.Name> '<int>::name'
     >;
 }
 
@@ -593,17 +610,17 @@ SwAllocator {
 SwInfo {
   ElChar s.Char = ', ' '\'' <MEscape::EscapeChar-Hex s.Char> '\'';
 
-  ElName t.Name = ', & ' <QNameCode t.Name> <Info-Ident t.Name>;
+  ElName t.Name =
+    ', & ' <QNameCode t.Name>
+    ', & ' <QNameCode t.Name> 'N_<int>::name';
 
   ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 
-  ElIdent t.Name = <Info-Ident t.Name>;
+  ElIdent t.Name = ', & ' <QNameCode t.Name> '<int>::name';
 
   // Остальное -- скобки
   s.Other = ;
 }
-
-Info-Ident t.Name = ', & ' <QNameCode t.Name> 'L_<int>::name';
 
 GenCloseBrackets {
   '    ' = ('  } while ( 0 );');

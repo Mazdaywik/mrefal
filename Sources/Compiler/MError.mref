@@ -1,7 +1,7 @@
 $MODULE MError;
 
-$IMPORT FileIO;
-$IMPORT InOut;
+$IMPORT FileIO = MFileIO;
+$IMPORT InOut = MInOut;
 $IMPORT MFileSystem;
 $IMPORT MOS;
 $IMPORT MLambda;

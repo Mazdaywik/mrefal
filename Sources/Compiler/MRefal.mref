@@ -5,9 +5,9 @@ $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MError;
 $IMPORT MFileSystem;
-$IMPORT MLoadConfig = Config::MLoad;
-$IMPORT InOut;
+$IMPORT MInOut;
 $IMPORT MLambda;
+$IMPORT MLoadConfig = Config::MLoad;
 $IMPORT MModules;
 $IMPORT MOS;
 $IMPORT MQualifiedName;
@@ -27,7 +27,7 @@ CompileList {
   t.hContext t.hErrorList Success (Help e.Message) =
     <MContext::Destroy t.hContext>
     <MError::DestroyErrList t.hErrorList>
-    <InOut::WriteText e.Message>;
+    <MInOut::WriteText e.Message>;
 
   t.hContext t.hErrorList Success t.Config e.PtModules =
     <CompileList-Aux
@@ -84,7 +84,7 @@ CheckFoundResult {
 
 PrintNotFound {
   ( (e.PtModule) NotFound ) =
-    <InOut::WriteLine
+    <MInOut::WriteLine
       'CMDLINE ERROR: module '
       <MFileSystem::StrFromPath e.PtModule>
       ' not found'

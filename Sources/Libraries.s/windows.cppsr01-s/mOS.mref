@@ -1,8 +1,8 @@
 $MODULE MOS;
 
 $IMPORT Core = CoreOS::MOS;
+$IMPORT MMath;
 $IMPORT MStrings;
-$IMPORT Math;
 
 /**
   <System e.Command>
@@ -76,7 +76,7 @@ FindArg {
   0 (e.Arg) e.Tail = e.Arg;
 
   s.Num (e.Arg) e.Tail =
-    <FindArg <Math::Dec s.Num> e.Tail>;
+    <FindArg <MMath::Dec s.Num> e.Tail>;
 
   s.Num /* нету аргументов */ = /* пусто */;
 }

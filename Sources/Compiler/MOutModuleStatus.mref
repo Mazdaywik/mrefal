@@ -1,7 +1,7 @@
 $MODULE MOutModuleStatus;
 
-$IMPORT InOut;
-$IMPORT Math;
+$IMPORT InOut = MInOut;
+$IMPORT Math = MMath;
 $IMPORT MLambda;
 $IMPORT MSwapSupport;
 $IMPORT MQualifiedName;

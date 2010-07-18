@@ -1,11 +1,11 @@
 $MODULE MVersion;
 
-$IMPORT InOut;
+$IMPORT MInOut;
 
 $ENTRY ROut = 'ROUT3 Module Refal 0.1';
 
 $ENTRY Show =
-  <InOut::WriteLine 'Module Refal ' <VerNumber> ' (c) Mazdaywik 2007-2010'>;
+  <MInOut::WriteLine 'Module Refal ' <VerNumber> ' (c) Mazdaywik 2007-2010'>;
 
 //{{GEN:VERSION
 

@@ -1,7 +1,7 @@
 $MODULE Refal5::MLinkerAliasTable;
 
-$IMPORT FileIO;
 $IMPORT MCreateDirIfNeed;
+$IMPORT MFileIO;
 $IMPORT MStrings;
 $IMPORT MOrder;
 
@@ -112,7 +112,7 @@ $ENTRY OutAliases {
   [AliasTable t.Num e.Aliases ] =
     [AliasTable t.Num e.Aliases ]
     <UserTypeAliases
-      <FileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
+      <MFileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
       <SortAliases e.Aliases>
     >;
 }
@@ -152,12 +152,12 @@ UserTypeAliases {
 
   t.FAli (e.Categ '::' e.Name (e.Alias)) e.Tail =
     <UserTypeAliases
-      <FileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
+      <MFileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
       e.Tail
     >;
 
   t.FAli =
-    <FileIO::Close t.FAli>;
+    <MFileIO::Close t.FAli>;
 }
 
 $ENTRY Destroy {

@@ -1,9 +1,9 @@
-$MODULE UnStructure;
+$PROGRAM UnStructure;
 
-$IMPORT InOut, MUtilitiesBanner;
+$IMPORT InOut = MInOut, MUtilitiesBanner;
 
 $ENTRY Go =
-	<MUtilitiesBanner::Type 'UnStructure'>;
+	<MUtilitiesBanner::Type 'UnStructure'>
 	<Loop <InOut::ReadLine>>;
 
 Loop {

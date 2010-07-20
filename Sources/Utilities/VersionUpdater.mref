@@ -1,6 +1,6 @@
 $PROGRAM VersionUpdater;
 
-$IMPORT InOut;
+$IMPORT InOut = MInOut;
 $IMPORT MLoadSaveVersion;
 $IMPORT MOS;
 $IMPORT MStrings;

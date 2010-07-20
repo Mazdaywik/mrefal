@@ -1,7 +1,7 @@
 $PROGRAM TODO_list;
 
-$IMPORT FileIO;
-$IMPORT InOut;
+$IMPORT FileIO = MFileIO;
+$IMPORT InOut = MInOut;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MStrings;

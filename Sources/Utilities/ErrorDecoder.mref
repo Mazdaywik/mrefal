@@ -1,7 +1,7 @@
 $PROGRAM ErrorDecoder;
 
-$IMPORT FileIO;
-$IMPORT InOut;
+$IMPORT FileIO = MFileIO;
+$IMPORT InOut = MInOut;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MUtilitiesBanner;

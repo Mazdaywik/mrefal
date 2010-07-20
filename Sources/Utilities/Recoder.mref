@@ -1,6 +1,6 @@
 $PROGRAM Recoder;
 
-$IMPORT MOS, FileIO, MUtilitiesBanner;
+$IMPORT MOS, FileIO = MFileIO, MUtilitiesBanner;
 
 Table =
   ('Ä¿')('Å¡')('Ç¬')('É√')('Ñƒ')('Ö≈')

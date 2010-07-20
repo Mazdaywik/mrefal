@@ -1,8 +1,8 @@
 $PROGRAM DocConverter-wp;
 
-$IMPORT FileIO;
-$IMPORT InOut;
-$IMPORT Math;
+$IMPORT FileIO = MFileIO;
+$IMPORT InOut = MInOut;
+$IMPORT Math = MMath;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MStrings;

@@ -1,7 +1,7 @@
 $MODULE MLoadSaveVersion;
 
-$IMPORT FileIO;
-$IMPORT Math;
+$IMPORT FileIO = MFileIO;
+$IMPORT Math = MMath;
 $IMPORT MFileSystem;
 $IMPORT MStrings;
 

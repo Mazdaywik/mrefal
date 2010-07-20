@@ -1,6 +1,6 @@
 $PROGRAM Text-To-HTML;
 
-$IMPORT FileIO, MOS, InOut, MUtilitiesBanner;
+$IMPORT FileIO = MFileIO, MOS, InOut = MInOut, MUtilitiesBanner;
 
 $ENTRY Go =
   <MUtilitiesBanner::Type 'Text-To-HTML'>

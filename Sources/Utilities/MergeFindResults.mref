@@ -1,6 +1,6 @@
 $PROGRAM MergeFindResults;
 
-$IMPORT InOut, MUtilitiesBanner;
+$IMPORT InOut = MInOut, MUtilitiesBanner;
 
 $ENTRY Go =
 	<MUtilitiesBanner::Type 'MergeFindResults'>

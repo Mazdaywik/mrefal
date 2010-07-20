@@ -1,22 +1,37 @@
 @echo off
-set PROGRAMS=Grab_info Text-To-HTML TODO_list Recoder VersionUpdater
-set PROGRAMS=%PROGRAMS% MergeFindResults ErrorDecoder DocConverter
-set PROGRAMS=%PROGRAMS% DocConverter-wp ClearXLinx
+set MR-PROGRAMS=Grab_info Text-To-HTML TODO_list Recoder VersionUpdater
+set MR-PROGRAMS=%MR-PROGRAMS% MergeFindResults ErrorDecoder DocConverter
+set MR-PROGRAMS=%MR-PROGRAMS% DocConverter-wp ClearXLinx UnStructure
 
-..\..\Bin\VersionUpdater.cpp.exe /verfile:Utilities_version.txt /srcfile:mUtilitiesBanner.mref >nul
+set SR-PROGRAMS=SRMake.sref LexGen.sref
+set SR-PROGRAMS-TAIL=LexGen_Generator.sref SRMake_FileScanner.sref SRMake_ParseCmdLine.sref
+
+set VERSRC=/srcfile:mUtilitiesBanner.mref /srcfile:sUtilitiesBanner.sref
+
+refgo ..\..\Bin\VersionUpdater.rsl /verfile:Utilities_version.txt %VERSRC%
 
 if exist _compilation.log del _compilation.log
+if exist __err del __err
 
-echo y | call compile_mr %PROGRAMS% 2>__err >> _compilation.log
+echo y | call compile_mr %MR-PROGRAMS% 2>>__err >> _compilation.log
+
+for %%p in (%SR-PROGRAMS%) do (
+  call compile_sr %%p %SR-PROGRAMS-TAIL% 2>>__err >> _compilation.log
+)
 
 echo.>>_compilation.log
 echo STDERR:>>_compilation.log
 echo.>>_compilation.log
+type __err>>_compilation.log
 
 del __err
 
-del *.ref *.tds
+del *.ref *.tds *.cpp
 rd /s /q ~Defs Info ~ROut ~XLinx .Info ~Cpp-01 ~SimRef
+
+pushd SRPrep
+rd /s /q ~Defs Info ~ROut ~XLinx .Info ~Cpp-01 ~SimRef
+popd
 
 copy *.rsl ..\..\Bin
 copy *.exe ..\..\Bin

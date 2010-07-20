@@ -1,25 +1,48 @@
 @echo off
 set PATH=%PATH%;..\MR-Extent;..\..\Bin
 
-set VERFILE=..\..\Version.txt
-set VERSRC=mVersion.mref
+set VERFILE=..\Version.txt
+set VERSRC-MR=Compiler\MVersion.mref
+set VERSRC-SR=Compiler.sr\Version.sref
 set /P CURVER=<%VERFILE%
 set LOGFILE=~rebuild.log
 
+echo Rebuilding Module and Simple Refal (start version %CURVER%)>%LOGFILE%
+echo.>>%LOGFILE%
+
 rem ===========================================================================
-rem Сборка Модульного Рефала
+rem Тестовая сборка Простого Рефала
 rem ===========================================================================
+
+pushd Compiler.sr
+setlocal
+set LOGFILE=..\%LOGFILE%
+
+call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
+call :SUB_DUAL_PRINT "======= Test for errors Simple Refal. =======" %LOGFILE%
+call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
+echo.>>%LOGFILE%
+
+del __has_errors__
+call :SUB_CALL_AND_SAVE_OUTPUT "..\..\Bin\LexGen.exe Lexer.sref" %LOGFILE%
+copy srefc.exe srefc_.exe
+call :SUB_CALL_AND_SAVE_OUTPUT "srefc_ @srefc_e.prj" %LOGFILE%
+if exist *.obj del *.obj
+if exist *.tds del *.tds
+
+if exist __has_errors__ goto ERRORS
+
+endlocal
+popd
+
 
 pushd Compiler
 setlocal
 set LOGFILE=..\%LOGFILE%
 
-echo Rebuilding Module Refal (start version %CURVER%)>%LOGFILE%
-echo.>>%LOGFILE%
-
-call :SUB_DUAL_PRINT "==========================================" %LOGFILE%
-call :SUB_DUAL_PRINT "============ Test for errors. ============" %LOGFILE%
-call :SUB_DUAL_PRINT "==========================================" %LOGFILE%
+call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
+call :SUB_DUAL_PRINT "======= Test for errors Module Refal. =======" %LOGFILE%
+call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
 echo.>>%LOGFILE%
 
 call :SUB_CALL_COMPILER cpp  CPPSR %LOGFILE%
@@ -32,18 +55,62 @@ call :SUB_CALL_COMPILER r5-t R5    %LOGFILE%
 if errorlevel 1 goto ERRORS
 if exist __errors goto ERRORS
 
+endlocal
+popd
+
+rem ===========================================================================
+rem Обновление версии
+rem ===========================================================================
+
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
 call :SUB_DUAL_PRINT "== Checking successed. Update version. ==" %LOGFILE%
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
 echo.>>%LOGFILE%
 
 copy %VERFILE% %VERFILE%.new
-copy %VERSRC% %VERSRC%.bak
-refgo ../../Bin/VersionUpdater /verfile:%VERFILE%.new /srcfile:%VERSRC% > nul
+copy %VERSRC-MR% %VERSRC-MR%.bak
+copy %VERSRC-SR% %VERSRC-SR%.bak
 
-call :SUB_DUAL_PRINT "==========================================" %LOGFILE%
-call :SUB_DUAL_PRINT "=========== Final recompiling. ===========" %LOGFILE%
-call :SUB_DUAL_PRINT "==========================================" %LOGFILE%
+set VERSOURCES=/srcfile:%VERSRC-MR% /srcfile:%VERSRC-SR%
+
+refgo ../Bin/VersionUpdater /verfile:%VERFILE%.new %VERSOURCES% > nul
+
+rem ===========================================================================
+rem Рабочая пересборка Простого Рефала
+rem ===========================================================================
+pushd Compiler.sr
+setlocal
+set LOGFILE=..\%LOGFILE%
+
+call :SUB_DUAL_PRINT "==============================================" %LOGFILE%
+call :SUB_DUAL_PRINT "== Final recompiling Simple Refal, 2 times. ==" %LOGFILE%
+call :SUB_DUAL_PRINT "==============================================" %LOGFILE%
+echo.>>%LOGFILE%
+
+del __has_errors__
+call :SUB_CALL_AND_SAVE_OUTPUT "..\..\Bin\LexGen.exe Lexer.sref" %LOGFILE%
+copy srefc.exe srefc_.exe
+call :SUB_CALL_AND_SAVE_OUTPUT "srefc_ @srefc_e.prj" %LOGFILE%
+copy srefc.exe srefc_.exe
+call :SUB_CALL_AND_SAVE_OUTPUT "srefc_ @srefc_e.prj" %LOGFILE%
+if exist *.obj del *.obj
+if exist *.tds del *.tds
+
+if exist __has_errors__ goto UNEXPECTED_ERROR
+
+endlocal
+popd 
+
+rem ===========================================================================
+rem Рабочая пересборка Модульного Рефала
+rem ===========================================================================
+pushd Compiler
+setlocal
+set LOGFILE=..\%LOGFILE%
+
+call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
+call :SUB_DUAL_PRINT "====== Final recompiling Module Refal. ======" %LOGFILE%
+call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
 echo.>>%LOGFILE%
 
 for %%c in (cpp sr r5-t) do (
@@ -54,18 +121,27 @@ for %%c in (cpp sr r5-t) do (
   )
 )
 
+endlocal
+popd 
+
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
 call :SUB_DUAL_PRINT "=========== Updating release. ===========" %LOGFILE%
 call :SUB_DUAL_PRINT "=========================================" %LOGFILE%
 echo.>>%LOGFILE%
 
-cd ..\..
-call stable_update
-cd Sources\Compiler
+pushd ..
+setlocal
+set LOGFILE=Sources\%LOGFILE%
+
+call :SUB_CALL_AND_SAVE_OUTPUT "call stable_update" %LOGFILE%
+
+endlocal
+popd
 
 del %VERFILE%
 move %VERFILE%.new %VERFILE%
-del %VERSRC%.bak
+del %VERSRC-MR%.bak
+del %VERSRC-SR%.bak
 
 call :SUB_DUAL_PRINT "===========================================" %LOGFILE%
 call :SUB_DUAL_PRINT "========== Rebuilding successed. ==========" %LOGFILE%
@@ -92,8 +168,10 @@ goto :EOF
 :UNEXPECTED_ERROR
 
 del %VERFILE%.new
-del %VERSRC%
-move %VERSRC%.bak %VERSRC%
+del %VERSRC-MR%
+move %VERSRC-MR%.bak %VERSRC-MR%
+del %VERSRC-SR%
+move %VERSRC-SR%.bak %VERSRC-SR%
 
 call :SUB_DUAL_PRINT "================================================" %LOGFILE%
 call :SUB_DUAL_PRINT "== INTERNAL ERROR WHILE RECOMPILING! EXITING! ==" %LOGFILE%

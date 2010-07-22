@@ -62,7 +62,7 @@ TopLevelDescription =
       & FileHandler
       Required
       Multiply
-      // Здесь возможно будет описание группы
+      Optional & FileGroup
     )
     ((Param ('MP'))
       & ModulePathHandler
@@ -115,19 +115,69 @@ HelpHandler
 
 EOGHelpHandler
   t.hErrorList t.Help t.SrcPos NoParam NoGroup =
-    t.hErrorList Success t.Help;
+    t.hErrorList t.Help;
 
 RealConfig = ();
 
 FileHandler {
-  t.hErrorList
-  (e.Config-B (Files e.Files) e.Config-E)
-  t.SrcPos (e.FileName) NoGroup =
+  t.hErrorList (e.Config) t.SrcPos (e.FileName) NoGroup =
     t.hErrorList
+    <FileHandler-AddFile (e.FileName) e.Config>;
+
+  t.hErrorList (e.Config) t.SrcPos (e.FileName) (e.Target) =
+    t.hErrorList
+    <FileHandler-AddFile (e.FileName) e.Config>;
+}
+
+FileHandler-AddFile {
+  (e.FileName) e.Config-B (Files e.Files) e.Config-E =
     (e.Config-B (Files e.Files (e.FileName)) e.Config-E);
 
-  t.hErrorList (e.Config) t.SrcPos (e.FileName) NoGroup =
-    t.hErrorList (e.Config (Files (e.FileName)));
+  (e.FileName) e.Config = (e.Config (Files (e.FileName)));
+}
+
+FileGroup =
+  (
+    & FileConfig
+    ((Param ('target'))
+      & FileTargetHandler
+      Required
+      OneTime
+    )
+    ((Naked (EOG))
+      & FileEOGHandler
+      Required
+      OneTime
+    )
+  );
+
+FileConfig = ();
+
+FileTargetHandler {
+  t.hErrorList (/* пустой config */)
+  t.SrcPos (e.StrTargetName) NoGroup =
+    <FileTargetHandler-Check
+      t.hErrorList t.SrcPos (e.StrTargetName)
+      <MFileSystem::PathFromStr e.StrTargetName>
+    >;
+}
+
+FileTargetHandler-Check {
+  t.hErrorList t.SrcPos (e.StrTargetName)
+  Success e.PtTargetName =
+    t.hErrorList (e.PtTargetName);
+
+  t.hErrorList t.SrcPos (e.StrTargetName)
+  Fails =
+    <MError::AddCmdLineError
+      t.hErrorList t.SrcPos 'Incorrect target name \'' e.StrTargetName '\''
+    >
+    (Illegal);
+}
+
+FileEOGHandler {
+  t.hErrorList t.Config t.SrcPos NoParam NoGroup =
+    t.hErrorList t.Config;
 }
 
 ModulePathHandler

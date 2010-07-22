@@ -66,7 +66,7 @@ Make-Aux
     t.hContext t.hErrorList s.Result;
 
 /*
-  <Link t.hContext t.RootModuleName>
+  <Link t.Config t.hContext t.RootModuleName>
     == t.hContext Success
     == t.hContext Fails
 */
@@ -78,15 +78,14 @@ Link
     >;
 
 Link-Aux {
-  t.Config ( (e.OutName) ) t.hContext Success e.Modules =
-    <MOutModuleStatus::Linking e.OutName>
+  t.Config ( e.OutName (e.LastSegment) ) t.hContext Success e.Modules =
+    <MOutModuleStatus::Linking e.LastSegment>
     <MOutModuleStatus::Flush>
-    <MConfig::Link t.Config t.hContext (e.OutName) e.Modules>;
+    <MConfig::Link
+      t.Config t.hContext ((Relative) (e.LastSegment)) e.Modules
+    >;
 
-  t.Config ( (e.OutName) ) t.hContext Fails =
-    t.hContext Fails;
-
-  t.Config ( e.OtherHeadName ) t.hContext Success e.Modules =
+  t.Config ( e.OutName ) t.hContext Fails =
     t.hContext Fails;
 }
 

@@ -8,12 +8,12 @@ $IMPORT MLambda;
 $IMPORT C-Link = C-Link::MLinker;
 
 /**
-  <Link t.L-Config (e.ProgName) (t.ModuleName e.OutName)>
+  <Link t.L-Config (e.PtProgName) (t.ModuleName e.OutName)>
     == Success
     == Fails
 */
 $ENTRY Link
-  t.Config (e.ProgName) e.Modules =
+  t.Config (e.PtProgName) e.Modules =
     Success
     <C-Link::C-Link
       (Compiler
@@ -38,7 +38,7 @@ $ENTRY Link
       )
       (Output
         <C-LinkOption t.Config ExecutableFile>
-        e.ProgName '.cpp.exe'
+        <MFileSystem::StrFromPath e.PtProgName> '.cpp.exe'
       )
       <MLambda::Map & PrepareName e.Modules>
       <GetRunTimeFiles t.Config>

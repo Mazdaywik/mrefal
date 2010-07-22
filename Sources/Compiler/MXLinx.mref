@@ -3,6 +3,7 @@ $MODULE MXLinx;
 $IMPORT FileIO = MFileIO;
 $IMPORT Config::MConfig;
 $IMPORT MCreateDirIfNeed;
+$IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
@@ -328,16 +329,18 @@ GenerateSubEntity
 //------------------------------------------------------------------------------
 
 /*
-  <Link (e.OutName) (t.ModuleName e.FileName)*>
+  <Link (e.PtOutName) (t.ModuleName e.FileName)*>
     == Success
     == Fails
 */
 Link
-  (e.OutName) e.OutFileNames =
-    <MOutModuleStatus::Linking e.OutName ' / create xlinx table'>
+  (e.PtOutName) e.OutFileNames =
+    <MOutModuleStatus::Linking
+      <MFileSystem::StrFromPath e.PtOutName> ' / create xlinx table'
+    >
     <MOutModuleStatus::Flush>
     <Link-Aux
-      ( e.OutName )
+      ( e.PtOutName )
       <MLambda::Map
         <MLambda::Composite
           & MLambda.UnBracket
@@ -352,9 +355,9 @@ Link
     Success;
 
 Link-Aux
-  (e.OutName) e.Modules =
+  (e.PtOutName) e.Modules =
     <Link-Aux-2
-      (e.OutName)
+      (e.PtOutName)
       <MLambda::MapReduce
         & AddInvertedInfo
         (
@@ -450,25 +453,32 @@ AddInvertedInfo {
     (e.InvertedInfo) t.OtherEntity;
 }
 
-XLinx-FileName
-  e.OutName = <MCreateDirIfNeed::InfoDir> '\\' e.OutName;
+XLinx-FileNamePt {
+  (t.Prefix e.SubDir (e.TargetProgram)) e.Suffix =
+    <MCreateDirIfNeed::Create-T
+      <MFileSystem::StrFromPath
+        t.Prefix e.SubDir (<MCreateDirIfNeed::InfoName>)
+      >
+    >
+    '\\' e.TargetProgram e.Suffix;
+}
 
 Link-Aux-2
-  (e.OutName) (e.Inverted) e.Results =
+  (e.PtOutName) (e.Inverted) e.Results =
     <FileIO::Save
-      (<XLinx-FileName e.OutName '.module_list.txt'>)
+      (<XLinx-FileNamePt (e.PtOutName) '.module_list.txt'>)
       <PrintModuleList
         <RemoveParsers e.Results>
       >
     >
     <FileIO::Save
-      (<XLinx-FileName e.OutName '.tree.txt'>)
+      (<XLinx-FileNamePt (e.PtOutName) '.tree.txt'>)
       <PrintTree
         <MLambda::Map & FilterModules e.Results>
       >
     >
     <FileIO::Save
-      (<XLinx-FileName e.OutName '.xlinx.txt'>)
+      (<XLinx-FileNamePt (e.PtOutName) '.xlinx.txt'>)
       <MLambda::Map
         & PrintResult
         <SkipParser e.Results>
@@ -477,7 +487,7 @@ Link-Aux-2
       >
     >
     <FileIO::Save
-      (<XLinx-FileName e.OutName '.not linked.txt'>)
+      (<XLinx-FileNamePt (e.PtOutName) '.not linked.txt'>)
       <FindNotUsed e.Results>
     >;
 

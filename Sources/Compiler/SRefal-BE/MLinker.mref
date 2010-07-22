@@ -13,15 +13,15 @@ $IMPORT MHelpers = Config::MHelpers;
 $IMPORT C-Link = C-Link::MLinker;
 
 /**
-  <Link t.L-Config (e.ProgName) (t.ModuleName e.PathToModule)*>
+  <Link t.L-Config (e.PtProgName) (t.ModuleName e.PathToModule)*>
     == Success
     == Fails
 */
 $ENTRY Link {
-  t.L-Config (e.ProgName) e.Modules =
+  t.L-Config (e.PtProgName) e.Modules =
     Success
     <MakeHeadFile
-      (<HeadFileName e.ProgName> '.sref')
+      (<HeadFileNamePt e.PtProgName> '.sref')
       <MLambda::Map & ModuleName e.Modules>
     >
     <PerformCLink
@@ -44,14 +44,14 @@ $ENTRY Link {
       (Define <C-LinkOption t.L-Config DefineOpt>)
       (Output
         <C-LinkOption t.L-Config ExecutableFile>
-         e.ProgName '.exe'
+         <MFileSystem::StrFromPath e.PtProgName> '.exe'
       )
-      <GetSourceList (e.ProgName) t.L-Config e.Modules>
+      <GetSourceList (e.PtProgName) t.L-Config e.Modules>
     >;
 }
 
-HeadFileName {
-  e.ProgName = e.ProgName '.main';
+HeadFileNamePt {
+  e.PtProgName = <MFileSystem::StrFromPath e.PtProgName> '.main';
 }
 
 ModuleName {
@@ -85,24 +85,24 @@ SwC-LinkOption {
     == Fails
 */
 GetSourceList {
-  (e.ProgName) t.Config e.Modules =
-    <MFileSystem::RemoveFile <ErrorFlagFile e.ProgName>>
+  (e.PtProgName) t.Config e.Modules =
+    <MFileSystem::RemoveFile <ErrorFlagFilePt e.PtProgName>>
     <SRefal-SwCompiled
       <SrefToCpp
-        t.Config (<ErrorFlagFile e.ProgName>)
+        t.Config (<ErrorFlagFilePt e.PtProgName>)
         ( <MHelpers::ConfigExtract t.Config CExt> )
         <GetRunTimeFiles t.Config>
         (
           <MLambda::Map & GetModulePath e.Modules>
-          (<HeadFileName e.ProgName>)
+          (<HeadFileNamePt e.PtProgName>)
         )
       >
-      <MFileSystem::ExistFile <ErrorFlagFile e.ProgName>>
+      <MFileSystem::ExistFile <ErrorFlagFilePt e.PtProgName>>
     >;
 }
 
-ErrorFlagFile {
-  e.ProgName = '___' e.ProgName '_error_flag___';
+ErrorFlagFilePt {
+  e.PtProgName = '___' <MFileSystem::StrFromPath e.PtProgName> '_error_flag___';
 }
 
 SRefal-SwCompiled {

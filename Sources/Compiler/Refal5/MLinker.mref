@@ -4,6 +4,7 @@ $IMPORT MCreateDirIfNeed;
 $IMPORT MError;
 $IMPORT MExeTyper = Refal5::MExeTyper;
 $IMPORT MFileIO;
+$IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MLinkerAliasTable = Refal5::MLinkerAliasTable;
 $IMPORT MOrder;
@@ -12,19 +13,21 @@ $IMPORT MStrings;
 $IMPORT MVersion;
 
 /**
-  <Link (e.ProgName) (t.ModuleName e.ROutName)*>
+  <Link (e.PtProgName) (t.ModuleName e.ROutName)*>
     == Success
     == Fails
 */
 $ENTRY Link {
-  (e.ProgName) e.ROutFiles =
+  (e.PtProgName) e.ROutFiles =
     <StartLinkLoop
-      <MExeTyper::Create <DefLim> e.ProgName '.ref'>
+      <MExeTyper::Create
+        <DefLim> <MFileSystem::StrFromPath e.PtProgName> '.ref'
+      >
       <CreateUnitStorage>
       e.ROutFiles
     >
 
-    <MOS::System 'refc ' e.ProgName '.ref'>
+    <MOS::System 'refc ' <MFileSystem::StrFromPath e.PtProgName> '.ref'>
     Success;
 }
 

@@ -38,7 +38,7 @@ $ENTRY Link
       )
       (Output
         <C-LinkOption t.Config ExecutableFile>
-        <MFileSystem::StrFromPath e.PtProgName> '.cpp.exe'
+        <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
       )
       <MLambda::Map & PrepareName e.Modules>
       <GetRunTimeFiles t.Config>

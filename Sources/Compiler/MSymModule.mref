@@ -2,13 +2,12 @@ $MODULE MSymModule;
 
 /**
   Модуль инкапсулирует работу с sym-файлами: загрузку данных из них, сохранение
-на диск, кеширование внутри контекста.
+на диск.
 */
 
 $IMPORT FileIO = MFileIO;
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
-$IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
@@ -20,50 +19,45 @@ $IMPORT MQualifiedName;
 ------------------------------------------------------------------------------*/
 
 /**
-  <LoadInfo t.Context t.ModuleName>
-    == t.Context Success t.IModule
-    == t.Context Fails
+  <LoadInfo t.Context t.hErrorList t.ModuleName>
+    == t.Context t.hErrorList Success t.IModule
+    == t.Context t.hErrorList Fails
   t.ModuleName ::= t.QualifiedName
 */
 $ENTRY LoadInfo
-  t.Context t.ModuleName =
+  t.Context t.hErrorList t.ModuleName =
     <LoadInfo_New-SwGetName
-      t.ModuleName
+      t.ModuleName t.hErrorList
       <MContext::GetBackEnd t.Context t.ModuleName SymInfo>
     >;
 
 LoadInfo_New-SwGetName {
-  t.ModuleName t.Context Success e.FilePath =
-    t.Context
+  t.ModuleName t.hErrorList t.hContext Success e.FilePath =
+    t.hContext
     <LoadInfo_New-SwParseFile
       <MRefal-FE::MParser_Sym::SymModule
-        <MError::CreateErrList>
-        t.ModuleName e.FilePath
+        t.hErrorList t.ModuleName e.FilePath
       >
     >;
 
-  t.ModuleName t.Context Fails s.Reason =
+  t.ModuleName t.hErrorList t.hContext Fails s.Reason =
     <MQualifiedName::Destroy t.ModuleName>
-    t.Context Fails;
+    t.hContext t.hErrorList Fails;
 }
 
 LoadInfo_New-SwParseFile {
-  t.ErrorList Success Success t.IModule =
-    <MError::DestroyErrList t.ErrorList>
-    Success t.IModule;
+  t.hErrorList Success Success t.IModule =
+    t.hErrorList Success t.IModule;
 
-  t.ErrorList Success Warnings t.IModule =
-    <MError::PrintErrors t.ErrorList>
-    Success t.IModule;
+  t.hErrorList Success Warnings t.IModule =
+    t.hErrorList Success t.IModule;
 
-  t.ErrorList Success Errors t.IModule =
-    <MError::PrintErrors t.ErrorList>
+  t.hErrorList Success Errors t.IModule =
     <MIModule::Destroy t.IModule>
-    Fails;
+    t.hErrorList Fails;
 
-  t.ErrorList Fails =
-    <MError::PrintErrors t.ErrorList>
-    Fails;
+  t.hErrorList Fails =
+    t.hErrorList Fails;
 }
 
 //------------------------------------------------------------------------------

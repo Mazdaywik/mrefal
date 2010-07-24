@@ -45,15 +45,8 @@ CompileList-Aux {
       t.Config
       t.hErrorList
       <MLambda::MapReduce
-        <MLambda::Composite
-          & MLambda.UnBracket-H
-          <MLambda::Parallel-H
-            & MLambda.Bracket-H
-            <MLambda::BindLeft-H
-              & MModules.LookupCmdLineModule t.Config
-            >
-          >
-          & MLambda.Bracket-H
+        <MLambda::BindLeft
+          & AddCommandLineModule t.Config
         >
         t.hContext
         e.PtModules
@@ -61,9 +54,39 @@ CompileList-Aux {
     >;
 }
 
+AddCommandLineModule {
+  t.L-Config t.hContext (e.PtModuleName t.Target) =
+    <AddCommandLineModule-Aux
+      (e.PtModuleName) t.Target
+      <MModules::LookupCmdLineModule
+        t.hContext t.L-Config e.PtModuleName
+      >
+    >;
+}
+
+AddCommandLineModule-Aux {
+  (e.PtModuleName) t.Target t.hContext NotFount =
+    t.hContext (NotFound e.PtModuleName);
+
+  (e.PtModuleName) NoTarget
+  t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
+    t.hContext (Found t.QualifiedName);
+
+  (e.PtModuleName) (e.PtTargetName)
+  t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
+    <AddCommandLineModule-Aux-Guard
+      <MContext::SetTarget t.hContext t.QualifiedName e.PtTargetName>
+    >
+    (Found t.QualifiedName);
+}
+
+AddCommandLineModule-Aux-Guard {
+  t.hContext Success = t.hContext;
+}
+
 CheckFoundResult {
   t.Config t.hErrorList
-  t.hContext e.Results-B ( (e.Module) NotFound ) e.Results-E =
+  t.hContext e.Results-B ( NotFound e.Module ) e.Results-E =
     <MContext::Destroy t.hContext>
     <MError::DestroyErrList t.hErrorList>
     <MLambda::Map
@@ -83,7 +106,7 @@ CheckFoundResult {
 }
 
 PrintNotFound {
-  ( (e.PtModule) NotFound ) =
+  ( NotFound e.PtModule ) =
     <MInOut::WriteLine
       'CMDLINE ERROR: module '
       <MFileSystem::StrFromPath e.PtModule>
@@ -95,9 +118,7 @@ PrintNotFound {
 }
 
 Make {
-  t.Config
-  (t.hContext t.hErrorList Success)
-  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.PtBaseDirectory ) =
+  t.Config (t.hContext t.hErrorList Success) ( Found t.QualifiedName ) =
     (
       <MCompiler::Make
         t.hContext
@@ -107,9 +128,7 @@ Make {
       >
     );
 
-  t.Config
-  (t.hContext t.hErrorList Fails)
-  ( (e.PtModule) Found t.QualifiedName s.FrontEnd e.PtBaseDirectory ) =
+  t.Config (t.hContext t.hErrorList Fails) ( Found t.QualifiedName ) =
     (t.hContext t.hErrorList Fails);
 }
 

@@ -1,13 +1,14 @@
-+be:R5
++be:CPPSR
 +MP:.
 +MP:../Libraries/all.all
-+MP:../Libraries/all.r5-b
-+MP:../Libraries/all.r5-s
-+MP:../Libraries/windows.all
-+MP:../Libraries/windows.r5-b
-+MP:../Libraries/windows.r5-s
 +MP:../Libraries/all.cppsr01-b
 +MP:../Libraries/all.cppsr01-s
++MP:../Libraries/windows.all
 +MP:../Libraries/windows.cppsr01-b
 +MP:../Libraries/windows.cppsr01-s
 -cfg:mp-work-COMMON.cfg
+-xlinx
+MRefal
+(
+  -target:MRefal.cppsr.exe
+)

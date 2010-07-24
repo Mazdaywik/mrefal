@@ -335,8 +335,8 @@ GenerateSubEntity
 */
 Link
   (e.PtOutName) e.OutFileNames =
-    <MOutModuleStatus::Linking
-      <MFileSystem::StrFromPath e.PtOutName> ' / create xlinx table'
+    <MOutModuleStatus::XLinx
+      <MFileSystem::StrFromPath e.PtOutName>
     >
     <MOutModuleStatus::Flush>
     <Link-Aux

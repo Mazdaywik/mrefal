@@ -4,6 +4,7 @@ $IMPORT MClusters;
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext;
 $IMPORT MError;
+$IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MResolveTable;
@@ -70,23 +71,58 @@ Make-Aux
     == t.hContext Success
     == t.hContext Fails
 */
-Link
+Link {
   t.Config t.hContext t.RootModuleName =
-    <Link-Aux
-      t.Config ( <MQualifiedName::Parse t.RootModuleName> )
+    <Link-Aux-Target
+      t.Config t.RootModuleName
+      <Link-GetTarget t.hContext t.RootModuleName>
+    >;
+}
+
+Link-Aux-Target {
+  t.Config t.RootModuleName t.hContext e.PtTargetFile =
+    <Link-Aux-ListForLinking
+      t.Config (e.PtTargetFile)
       <MClusters::ListForLinking t.hContext t.RootModuleName>
     >;
+}
 
-Link-Aux {
-  t.Config ( e.OutName (e.LastSegment) ) t.hContext Success e.Modules =
-    <MOutModuleStatus::Linking e.LastSegment>
+Link-Aux-ListForLinking {
+  t.Config (e.PtTarget) t.hContext Success e.Modules =
+    <MOutModuleStatus::Linking
+      <MFileSystem::StrFromPath e.PtTarget>
+    >
     <MOutModuleStatus::Flush>
     <MConfig::Link
-      t.Config t.hContext ((Relative) (e.LastSegment)) e.Modules
+      t.Config t.hContext (e.PtTarget) e.Modules
     >;
 
-  t.Config ( e.OutName ) t.hContext Fails =
+  t.Config (e.PtTarget) t.hContext Fails =
     t.hContext Fails;
+}
+
+Link-GetTarget {
+  t.hContext t.RootModuleName =
+    <Link-GetTarget-SwKnown
+      <MContext::GetTarget t.hContext t.RootModuleName>
+      t.RootModuleName
+    >;
+}
+
+Link-GetTarget-SwKnown {
+  t.hContext Success Default t.RootModule =
+    t.hContext
+    <Link-GetTarget-SwKnown-CalcTarget
+      <MQualifiedName::Parse t.RootModule>
+    >;
+
+  t.hContext Success e.PtTarget t.RootModule =
+    t.hContext e.PtTarget;
+}
+
+Link-GetTarget-SwKnown-CalcTarget {
+  e.PacketPrefix (e.LastSegment) =
+    (Relative) (e.LastSegment);
 }
 
 //------------------------------------------------------------------------------
@@ -101,9 +137,9 @@ Link-Aux {
 Compile
   s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ModuleName =
     <Compile-SwNeedRecompile
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList
+      s.FnAnalyzer (e.Stack) t.Config
       <s.FnAnalyzer
-        t.hContext t.Config t.ModuleName
+        t.hErrorList t.hContext t.Config t.ModuleName
       >
     >;
 
@@ -122,15 +158,15 @@ Compile-SwNeedRecompile {
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
   t.ModuleName Success Raw Updated =
     <Compile-OnUpdated
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
   t.ModuleName Success Raw Library =
     <Compile-AnalyzeLibrary
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   //-----------------------------------------------------------------
@@ -142,22 +178,22 @@ Compile-SwNeedRecompile {
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
   t.ModuleName Success Ready Changed =
     <Compile-OnSuccessCompiled
-      t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
   t.ModuleName Success Ready Updated =
     <Compile-OnSuccessCompiled
-      t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
   t.ModuleName Success Ready Library =
     <Compile-OnSuccessCompiled
-      t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   //-----------------------------------------------------------------
@@ -646,8 +682,8 @@ Compile-Recompile-SwResolve {
 
 Compile-Recompile-SwGenerate {
   t.hErrorList t.ModuleName t.hContext t.hIModule Success =
-    (t.hContext t.hErrorList)
-    <MakeSuccessResult
+    <Compile-Recompile-UpdateCache
+      t.hContext t.hErrorList t.ModuleName
       <MIModule::GetModuleAttribute
         <MSymModule::SymReduce t.hIModule>
         ModuleType
@@ -657,6 +693,31 @@ Compile-Recompile-SwGenerate {
   t.hErrorList t.ModuleName t.hContext t.hIModule Fails =
     <MIModule::Destroy t.hIModule>
     (t.hContext t.hErrorList) Fails t.ModuleName;
+}
+
+Compile-Recompile-UpdateCache {
+  t.hContext t.hErrorList t.ModuleName
+  t.hIModule Found s.ModuleType =
+    <Compile-Recompile-UpdateCache-Aux
+      t.hContext t.hErrorList t.ModuleName
+      s.ModuleType
+      <MIModule::GetImportList-RealNames t.hIModule>
+    >;
+}
+
+Compile-Recompile-UpdateCache-Aux {
+  t.hContext t.hErrorList t.ModuleName s.ModuleType
+  t.hIModule e.ImportList =
+    <Compile-Recompile-UpdateCache-Finish
+      t.hErrorList s.ModuleType
+      <MContext::SetCachedImports t.hContext t.ModuleName e.ImportList>
+      t.hIModule
+    >;
+}
+
+Compile-Recompile-UpdateCache-Finish {
+  t.hErrorList s.ModuleType t.hContext Success t.hIModule =
+    (t.hContext t.hErrorList) Success t.hIModule s.ModuleType;
 }
 
 MakeSuccessResult
@@ -696,15 +757,15 @@ Parse-SelectFE {
 
 /*
   <Compile-OnUpdated
-    s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
+    s.FnAnalyzer (e.Stack) t.Config t.ModuleName t.hErrorList 
     t.hContext Success t.hSymIModule / Fails
   >
     == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
     == (t.hContext t.hErrorList) Fails t.ModuleName
 */
 Compile-OnUpdated {
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-  t.hContext Success t.hSymIModule =
+  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+  t.hContext t.hErrorList Success t.hSymIModule =
     <Compile-OnUpdated-AnalyzeImports
       s.FnAnalyzer
       <GetImportList-AnalyzeRecursiveLinks
@@ -717,8 +778,8 @@ Compile-OnUpdated {
       >
     >;
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-  t.hContext Fails =
+  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+  t.hContext t.hErrorList Fails =
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
     >;
@@ -787,9 +848,9 @@ ScanUpdatedSubModule-Aux {
 OnUpdated-ScanSubModule
   s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName =
     <OnUpdated-ScanSubModule-SwNeedRecompile
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList
+      s.FnAnalyzer (e.Stack) t.Config
       <s.FnAnalyzer
-        t.hContext t.Config t.ImportName
+        t.hErrorList t.hContext t.Config t.ImportName
       >
     >;
 
@@ -805,15 +866,15 @@ OnUpdated-ScanSubModule-SwNeedRecompile {
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList
   t.hContext t.ImportName Success Raw Updated =
     <Compile-OnUpdated
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ImportName
-      <MSymModule::LoadInfo t.hContext t.ImportName>
+      s.FnAnalyzer (e.Stack) t.Config t.ImportName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
     >;
 
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList
   t.hContext t.ImportName Success Raw Library =
     <Compile-AnalyzeLibrary
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ImportName
-      <MSymModule::LoadInfo t.hContext t.ImportName>
+      s.FnAnalyzer (e.Stack) t.Config t.ImportName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
     >;
 
   //-----------------------------------------------------------------
@@ -829,15 +890,15 @@ OnUpdated-ScanSubModule-SwNeedRecompile {
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList
   t.hContext t.ImportName Success Ready Updated =
     <Compile-OnSuccessCompiled
-      t.hErrorList t.ImportName
-      <MSymModule::LoadInfo t.hContext t.ImportName>
+      t.ImportName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
     >;
 
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList
   t.hContext t.ImportName Success Ready Library =
     <Compile-OnSuccessCompiled
-      t.hErrorList t.ImportName
-      <MSymModule::LoadInfo t.hContext t.ImportName>
+      t.ImportName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
     >;
 
   //-----------------------------------------------------------------
@@ -863,51 +924,66 @@ Compile-OnUpdated-SwScanSubModules {
   (t.hErrorList t.hSymIModule Success)
   e.ValidScannedImports =
     <MOutModuleStatus::Updated-Q t.ModuleName>
-    <MakeSuccessUpdated
-      t.hContext t.hErrorList t.ModuleName
-      <MakeSuccessResult
-        <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
+    <Compile-OnUpdated-ScanSubModules-Cache
+      t.hErrorList t.ModuleName
+      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
+      <MContext::SetCachedImports
+        t.hContext t.ModuleName
+        <MLambda::Map
+          & ModuleNameFromValidImport e.ValidScannedImports
+        >
       >
-    >
-    <MLambda::Map & DestroyScannedImports e.ValidScannedImports>;
+    >;
 
   t.hContext t.ModuleName
   (t.hErrorList t.hSymIModule Errors)
-  e.ValidScannedImports =
+  e.InvalidScannedImports =
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
     >
     <MIModule::Destroy t.hSymIModule>
-    <MLambda::Map & DestroyScannedImports e.ValidScannedImports>;
+    <MLambda::Map & DestroyScannedImports e.InvalidScannedImports>;
 }
 
 DestroyScannedImports
   (t.hSymIModule t.Alias) =
     <MIModule::Destroy t.hSymIModule>;
 
-MakeSuccessUpdated
-  t.hContext t.hErrorList t.ModuleName
-  Success t.hSymIModule s.ModuleType =
+ModuleNameFromValidImport
+  (t.hSymIModule t.Alias) =
+    <ModuleNameFromValidImport-Aux
+      <MIModule::GetModuleName t.hSymIModule>
+    >;
+
+ModuleNameFromValidImport-Aux
+  t.hIModule t.ModuleName =
+    <MIModule::Destroy t.hIModule> t.ModuleName;
+
+Compile-OnUpdated-ScanSubModules-Cache {
+  t.hErrorList t.ModuleName
+  t.hSymIModule Found s.ModuleType
+  t.hContext Success =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
       <MContext::FinishModule
         t.hContext t.ModuleName s.ModuleType Updated
       >
     >;
+}
 
 //------------------------------------------------------------------------------
 
 /*
   <Compile-AnalyzeLibrary
-    s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-    t.hContext Success t.hSymIModule / Fails
+    s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+    t.hContext t.hErrorList Success t.hSymIModule / Fails
   >
     == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
     == (t.hContext t.hErrorList) Fails t.ModuleName
 */
 Compile-AnalyzeLibrary {
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-  t.hContext Success t.hSymIModule =
+  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+  t.hContext t.hErrorList Success t.hSymIModule =
     <Compile-AnalyzeLibrary-AnalyzeImports
       s.FnAnalyzer
       <GetImportList-AnalyzeRecursiveLinks
@@ -920,8 +996,8 @@ Compile-AnalyzeLibrary {
       >
     >;
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-  t.hContext Fails =
+  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+  t.hContext t.hErrorList Fails =
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
     >;
@@ -979,9 +1055,9 @@ ScanLibrarySubModule-Aux {
 OnLibrary-ScanSubModule
   s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ModuleName =
     <OnLibrary-ScanSubModule-SwNeedCompile
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList
+      s.FnAnalyzer (e.Stack) t.Config
       <s.FnAnalyzer
-        t.hContext t.Config t.ModuleName
+        t.hErrorList t.hContext t.Config t.ModuleName
       >
     >;
 
@@ -1001,8 +1077,8 @@ OnLibrary-ScanSubModule-SwNeedCompile {
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList
   t.hContext t.ModuleName Success Raw Library =
     <Compile-AnalyzeLibrary
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   //-----------------------------------------------------------------
@@ -1022,8 +1098,8 @@ OnLibrary-ScanSubModule-SwNeedCompile {
   s.FnAnalyzer (e.Stack) t.Config t.hErrorList
   t.hContext t.ModuleName Success Ready Library =
     <OnLibrary-MakeSuccessResult
-      t.hErrorList t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+      t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
   //-----------------------------------------------------------------
@@ -1034,13 +1110,13 @@ OnLibrary-ScanSubModule-SwNeedCompile {
 }
 
 OnLibrary-MakeSuccessResult {
-  t.hErrorList t.ModuleName t.hContext Success t.hSymIModule =
+  t.ModuleName t.hContext t.hErrorList Success t.hSymIModule =
     (t.hContext t.hErrorList)
     <MakeSuccessResult
       <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
     >;
 
-  t.hErrorList t.ModuleName t.hContext Fails =
+  t.ModuleName t.hContext t.hErrorList Fails =
     <Compile-OnUpdated-OnLibrary-Fails
       t.hContext t.hErrorList t.ModuleName
     >;
@@ -1062,13 +1138,16 @@ Compile-OnLibrary-SwScanSubModules {
   (t.hErrorList t.hSymIModule Success)
   e.ValidScannedImports =
     <MOutModuleStatus::Library-Q t.ModuleName>
-    <MakeSuccessLibrary
-      t.hContext t.hErrorList t.ModuleName
-      <MakeSuccessResult
-        <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
+    <Compile-OnLibrary-ScanSubModules-Cache
+      t.hErrorList t.ModuleName
+      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
+      <MContext::SetCachedImports
+        t.hContext t.ModuleName
+        <MLambda::Map
+          & ModuleNameFromValidImport e.ValidScannedImports
+        >
       >
-    >
-    <MLambda::Map & DestroyScannedImports e.ValidScannedImports>;
+    >;
 
   t.hContext t.ModuleName
   (t.hErrorList t.hSymIModule Errors)
@@ -1080,33 +1159,35 @@ Compile-OnLibrary-SwScanSubModules {
     <MLambda::Map & DestroyScannedImports e.InvalidScannedImports>;
 }
 
-MakeSuccessLibrary
-  t.hContext t.hErrorList t.ModuleName
-  Success t.hSymIModule s.ModuleType =
+Compile-OnLibrary-ScanSubModules-Cache {
+  t.hErrorList t.ModuleName
+  t.hSymIModule Found s.ModuleType
+  t.hContext Success =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
       <MContext::FinishModule
         t.hContext t.ModuleName s.ModuleType Library
       >
     >;
+}
 
 //------------------------------------------------------------------------------
 
 /*
   <Compile-OnSuccessCompiled
-    t.hErrorList t.ModuleName t.hContext Success t.hSymIModule / Fails
+    t.ModuleName t.hContext t.hErrorList Success t.hSymIModule / Fails
   >
     == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
     == (t.hContext t.hErrorList) Fails t.ModuleName
 */
 Compile-OnSuccessCompiled {
-  t.hErrorList t.ModuleName t.hContext Success t.hSymIModule =
+  t.ModuleName t.hContext t.hErrorList Success t.hSymIModule =
     (t.hContext t.hErrorList)
     <MakeSuccessResult
       <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
     >;
 
-  t.hErrorList t.ModuleName t.hContext Fails =
+  t.ModuleName t.hContext t.hErrorList Fails =
     (
       <GuardUpdate
         <MContext::FinishModule

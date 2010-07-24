@@ -103,15 +103,15 @@ $ENTRY GenForward {
     ();
 }
 
-$ENTRY GenESwap {
-  t.Name = <GenSwap_Aux Entry t.Name>;
-}
+//$ENTRY GenESwap {
+//  t.Name = <GenSwap-Aux Entry t.Name>;
+//}
 
 $ENTRY GenSwap {
-  t.Name = <GenSwap_Aux Local t.Name>;
+  t.Name = <GenSwap-Aux Local t.Name>;
 }
 
-GenSwap_Aux {
+GenSwap-Aux {
   s.MemoryClass t.Name =
     <GenFnStart s.MemoryClass t.Name>
     ('  refalrts::Iter func_name = arg_begin;')
@@ -158,7 +158,7 @@ $ENTRY GenIdent-FuncName {
 GenIdent-Aux {
   (e.ExternalName) e.InternalName =
     ('//$LABEL ' e.ExternalName)
-    ('template <typename T>')
+    ('template <typename refal_param_int>')
     ('struct ' e.InternalName ' {')
     ('  static const char *name() {')
     ('    return "' e.ExternalName '";')

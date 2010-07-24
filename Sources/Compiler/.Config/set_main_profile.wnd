@@ -3,14 +3,17 @@
 5:  Рефал 5
     set PROFILE=mp-work-R5
     set PROFILE-SHORT=R5
+    set PROFILE-ACRO=
     .Config\change_window default
 S:  Простой Рефал
     set PROFILE=mp-work-SR
     set PROFILE-SHORT=SR
+    set PROFILE-ACRO=.sr.exe
     .Config\change_window default
 C:  Back-end Си++/Простой Рефал
     set PROFILE=mp-work-CPPSR
     set PROFILE-SHORT=Си++/SR
+    set PROFILE-ACRO=.cppsr.exe
     .Config\change_window default
 -:  
 D:  Оставить по умолчанию (%PROFILE-SHORT%)

@@ -19,7 +19,7 @@ $IMPORT SRefal-BE::MInit;
 
 /**
   <Load t.hErrorList (e.Argument)>
-    == t.hErrorList Success t.Config (e.PtFileName)*
+    == t.hErrorList Success t.Config (e.PtFileName t.Target)*
     == t.hErrorList Fails
 */
 $ENTRY Load
@@ -122,18 +122,19 @@ RealConfig = ();
 FileHandler {
   t.hErrorList (e.Config) t.SrcPos (e.FileName) NoGroup =
     t.hErrorList
-    <FileHandler-AddFile (e.FileName) e.Config>;
+    <FileHandler-AddFile (e.FileName) NoTarget e.Config>;
 
   t.hErrorList (e.Config) t.SrcPos (e.FileName) (e.Target) =
     t.hErrorList
-    <FileHandler-AddFile (e.FileName) e.Config>;
+    <FileHandler-AddFile (e.FileName) (e.Target) e.Config>;
 }
 
 FileHandler-AddFile {
-  (e.FileName) e.Config-B (Files e.Files) e.Config-E =
-    (e.Config-B (Files e.Files (e.FileName)) e.Config-E);
+  (e.FileName) t.Target e.Config-B (Files e.Files) e.Config-E =
+    (e.Config-B (Files e.Files (e.FileName t.Target)) e.Config-E);
 
-  (e.FileName) e.Config = (e.Config (Files (e.FileName)));
+  (e.FileName) t.Target e.Config =
+    (e.Config (Files (e.FileName t.Target)));
 }
 
 FileGroup =

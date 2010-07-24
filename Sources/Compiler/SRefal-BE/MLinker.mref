@@ -44,7 +44,7 @@ $ENTRY Link {
       (Define <C-LinkOption t.L-Config DefineOpt>)
       (Output
         <C-LinkOption t.L-Config ExecutableFile>
-         <MFileSystem::StrFromPath e.PtProgName> '.exe'
+         <MFileSystem::StrFromPath e.PtProgName>
       )
       <GetSourceList (e.PtProgName) t.L-Config e.Modules>
     >;

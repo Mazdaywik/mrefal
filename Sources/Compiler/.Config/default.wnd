@@ -6,12 +6,12 @@
 C:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PATHSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PATHSET%==SET set PATHSET=SET
-    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    %COMP% %MODE% +cfg:%PROFILE%.prj
     if exist __errors view:__errors
 B:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
-    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal 2>__err >__out
+    %COMP% %MODE% +cfg:%PROFILE%.prj 2>__err >__out
     view:__err
 S:  Перекомпилировать/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%)
     if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
@@ -25,20 +25,20 @@ M:  Пересборка
 K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
-    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
-    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    %COMP% %MODE% +cfg:%PROFILE%.prj
+    %COMP% %MODE% +cfg:%PROFILE%.prj
     if exist __errors view:__errors
 H:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
-    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal
+    %COMP% %MODE% +cfg:%PROFILE%.prj
     if exist __errors view:__errors
 G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
     %SCOMP% %MODE% +cfg:%SPROFILE%.cfg +xlinx MRefal
-    %COMP% %MODE% +cfg:%PROFILE%.cfg +xlinx MRefal 2>__err >__out
+    %COMP% %MODE% +cfg:%PROFILE%.prj >__out 2>__err
     view:__err
 -:  
 T:  Перейти
@@ -77,11 +77,11 @@ L:  Список нескомпонованных элементов
     cd ..
     view:.Info/"Not linked.txt
 K:  Список нескомпонованных элементов
-    view:".Info/MRefal.not linked.txt"
+    view:".Info/MRefal%PROFILE-ACRO%.not linked.txt"
 T:  Показ дерева модулей
-    view:.Info/MRefal.tree.txt
+    view:.Info/MRefal%PROFILE-ACRO%.tree.txt
 X:  Перекрёстные связи
-    view:.Info/MRefal.xlinx.txt
+    view:.Info/MRefal%PROFILE-ACRO%.xlinx.txt
 }
 -:  
 E:  Декодировать файл дампа !.! (6 Кбайт/с)

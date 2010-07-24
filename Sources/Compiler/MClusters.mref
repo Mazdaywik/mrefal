@@ -19,33 +19,33 @@ $IMPORT MSymModule;
 //==============================================================================
 
 /*
-  <DependencesList t.hContext t.ModuleName>
+  <DependencesList-Cached t.hContext t.ModuleName>
     == t.hContext Avail t.ImportedModules*
     == t.hContext NotAvail
     == t.hContext Fails
 */
-DependencesList
+DependencesList-Cached
   t.hContext t.ModuleName =
-    <DependencesList-SwAvail
+    <DependencesList-Cached-SwAvail
       t.ModuleName
       <MContext::GetStatusType
         t.hContext t.ModuleName
       >
     >;
 
-DependencesList-SwAvail {
+DependencesList-Cached-SwAvail {
   t.ModuleName t.hContext Success s.Status Updated =
-    <DependencesList-OnAvail
+    <DependencesList-Cached-OnAvail
       t.hContext t.ModuleName
     >;
 
   t.ModuleName t.hContext Success s.Status Library =
-    <DependencesList-OnAvail
+    <DependencesList-Cached-OnAvail
       t.hContext t.ModuleName
     >;
 
   t.ModuleName t.hContext Success Ready Changed =
-    <DependencesList-OnAvail
+    <DependencesList-Cached-OnAvail
       t.hContext t.ModuleName
     >;
 
@@ -59,26 +59,102 @@ DependencesList-SwAvail {
     t.hContext NotAvail;
 }
 
-DependencesList-OnAvail
+DependencesList-Cached-OnAvail
   t.hContext t.ModuleName =
-    <DependencesList-OnAvail-Aux
-      <MSymModule::LoadInfo t.hContext t.ModuleName>
+    <DependencesList-Cached-OnAvail-Aux
+      <MContext::GetCachedImports t.hContext t.ModuleName>
     >;
 
-DependencesList-OnAvail-Aux {
-  t.hContext Success t.hIModule =
-    <DependencesList-OnAvail-OnSuccess
-      t.hContext <DependencesFromIModule t.hIModule>
-    >;
+DependencesList-Cached-OnAvail-Aux {
+  t.hContext Success None = t.hContext Fails;
 
-  t.hContext Fails =
-    t.hContext Fails;
+  t.hContext Success e.ImportList =
+    t.hContext Avail e.ImportList;
+
+  t.hContext Fails = t.hContext Fails;
 }
 
-DependencesList-OnAvail-OnSuccess
-  t.hContext t.hIModule e.ImportedModuleNames =
+//------------------------------------------------------------------------------
+
+/*
+  <DependencesList-Real t.hErrorList t.hContext t.ModuleName>
+    == t.hErrorList t.hContext Avail t.ImportedModules*
+    == t.hErrorList t.hContext NotAvail
+    == t.hErrorList t.hContext Fails
+*/
+DependencesList-Real
+  t.hErrorList t.hContext t.ModuleName =
+    <DependencesList-Real-SwAvail
+      t.ModuleName t.hErrorList
+      <MContext::GetStatusType
+        t.hContext t.ModuleName
+      >
+    >;
+
+DependencesList-Real-SwAvail {
+  t.ModuleName t.hErrorList t.hContext
+  Success s.Status Updated =
+    <DependencesList-Real-OnAvail
+      t.hContext t.hErrorList t.ModuleName
+    >;
+
+  t.ModuleName t.hErrorList t.hContext
+  Success s.Status Library =
+    <DependencesList-Real-OnAvail
+      t.hContext t.hErrorList t.ModuleName
+    >;
+
+  t.ModuleName t.hErrorList t.hContext
+  Success Ready Changed =
+    <DependencesList-Real-OnAvail
+      t.hContext t.hErrorList t.ModuleName
+    >;
+
+  t.ModuleName t.hErrorList t.hContext
+  Success s.OtherStatus s.OtherType =
+    t.hErrorList t.hContext Fails;
+
+  t.ModuleName t.hErrorList t.hContext
+  Fails ModuleNotFound =
+    t.hErrorList t.hContext NotAvail;
+
+  t.ModuleName t.hErrorList t.hContext
+  Fails MismatchCase =
+    t.hErrorList t.hContext NotAvail;
+}
+
+DependencesList-Real-OnAvail
+  t.hContext t.hErrorList t.ModuleName =
+    <DependencesList-Real-OnAvail-Aux
+      t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
+    >;
+
+DependencesList-Real-OnAvail-Aux {
+  t.ModuleName t.hContext t.hErrorList Success t.hIModule =
+    <DependencesList-Real-OnAvail-OnSuccess
+      t.hContext t.hErrorList t.ModuleName
+      <DependencesFromIModule t.hIModule>
+    >;
+
+  t.ModuleName t.hContext t.hErrorList Fails =
+    t.hErrorList t.hContext Fails;
+}
+
+DependencesList-Real-OnAvail-OnSuccess
+  t.hContext t.hErrorList t.ModuleName t.hIModule e.ImportedModuleNames =
     <MIModule::Destroy t.hIModule>
-    t.hContext Avail e.ImportedModuleNames;
+    <DependencesList-Real-OnAvail-Cache
+      t.hErrorList
+      <MContext::SetCachedImports
+        t.hContext t.ModuleName e.ImportedModuleNames
+      >
+      e.ImportedModuleNames
+    >;
+
+DependencesList-Real-OnAvail-Cache
+  t.hErrorList t.hContext Success e.ImportedModuleNames =
+    t.hErrorList t.hContext Avail e.ImportedModuleNames;
 
 //------------------------------------------------------------------------------
 
@@ -93,128 +169,129 @@ $ENTRY DependencesFromIModule
 
 /**
   <CheckNeedCompile-LinkOnly
-    t.hContext t.Config t.ModuleName
+    t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hContext t.ModuleName Success s.Status s.Type
-    == t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
+    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-LinkOnly
-   t.hContext t.Config t.ModuleName =
+   t.hErrorList t.hContext t.Config t.ModuleName =
      <SwCheckNeedCompile-LinkOnly
-       t.ModuleName
+       t.ModuleName t.hErrorList
        <MModules::LookupImportModule
          t.hContext t.Config t.ModuleName
        >
      >;
 
 SwCheckNeedCompile-LinkOnly {
-  t.ModuleName t.hContext Success Ready s.Status =
-    t.hContext t.ModuleName Success Ready s.Status;
+  t.ModuleName t.hErrorList t.hContext Success Ready s.Status =
+    t.hErrorList t.hContext t.ModuleName Success Ready s.Status;
 
-  t.ModuleName t.hContext Success Raw s.Status =
-    t.hContext t.ModuleName Success Raw s.Status;
+  t.ModuleName t.hErrorList t.hContext Success Raw s.Status =
+    t.hErrorList t.hContext t.ModuleName Success Raw s.Status;
 
-  t.ModuleName t.hContext Success Found Errors =
+  t.ModuleName t.hErrorList t.hContext Success Found Errors =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Errors
+      t.hErrorList t.hContext t.ModuleName Errors
     >;
 
-  t.ModuleName t.hContext Success Found Changed =
+  t.ModuleName t.hErrorList t.hContext Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Errors
+      t.hErrorList t.hContext t.ModuleName Errors
     >;
 
-  t.ModuleName t.hContext Success Found Updated =
+  t.ModuleName t.hErrorList t.hContext Success Found Updated =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Updated
+      t.hErrorList t.hContext t.ModuleName Updated
     >;
 
-  t.ModuleName t.hContext Success Found Library =
+  t.ModuleName t.hErrorList t.hContext Success Found Library =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Library
+      t.hErrorList t.hContext t.ModuleName Library
     >;
 
-  t.ModuleName t.hContext Fails MismatchCase =
-    t.hContext t.ModuleName Fails MismatchCase;
+  t.ModuleName t.hErrorList t.hContext Fails MismatchCase =
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
 CheckNeedCompile-UpdateStatusType
-  t.hContext t.ModuleName s.NewType =
+  t.hErrorList t.hContext t.ModuleName s.NewType =
     <CheckNeedCompile-UpdateStatusType-Aux
+      t.hErrorList
       <MContext::SetRawType t.hContext t.ModuleName s.NewType>
       t.ModuleName s.NewType
     >;
 
 CheckNeedCompile-UpdateStatusType-Aux {
-  t.hContext Success t.ModuleName s.NewType =
-    t.hContext t.ModuleName Success Raw s.NewType;
+  t.hErrorList t.hContext Success t.ModuleName s.NewType =
+    t.hErrorList t.hContext t.ModuleName Success Raw s.NewType;
 
-  t.hContext Fails MismatchCase t.ModuleName s.NewType =
-    t.hContext t.ModuleName Fails MismatchCase;
+  t.hErrorList t.hContext Fails MismatchCase t.ModuleName s.NewType =
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
 //------------------------------------------------------------------------------
 
 /**
   <CheckNeedCompile-Build
-    t.hContext t.Config t.ModuleName
+    t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hContext t.ModuleName Success s.Status s.Type
-    == t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
+    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-Build
-   t.hContext t.Config t.ModuleName =
+   t.hErrorList t.hContext t.Config t.ModuleName =
      <SwCheckNeedCompile-Build
-       t.ModuleName
+       t.ModuleName t.hErrorList
        <MModules::LookupImportModule
          t.hContext t.Config t.ModuleName
        >
      >;
 
 SwCheckNeedCompile-Build {
-  t.ModuleName t.hContext Success Ready s.Status =
-    t.hContext t.ModuleName Success Ready s.Status;
+  t.ModuleName t.hErrorList t.hContext Success Ready s.Status =
+    t.hErrorList t.hContext t.ModuleName Success Ready s.Status;
 
-  t.ModuleName t.hContext Success Raw s.Status =
-    t.hContext t.ModuleName Success Raw s.Status;
+  t.ModuleName t.hErrorList t.hContext Success Raw s.Status =
+    t.hErrorList t.hContext t.ModuleName Success Raw s.Status;
 
-  t.ModuleName t.hContext Success Found Errors =
+  t.ModuleName t.hErrorList t.hContext Success Found Errors =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Errors
+      t.hErrorList t.hContext t.ModuleName Errors
     >;
 
-  t.ModuleName t.hContext Success Found Changed =
+  t.ModuleName t.hErrorList t.hContext Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Changed
+      t.hErrorList t.hContext t.ModuleName Changed
     >;
 
-  t.ModuleName t.hContext Success Found Updated =
+  t.ModuleName t.hErrorList t.hContext Success Found Updated =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Changed
+      t.hErrorList t.hContext t.ModuleName Changed
     >;
 
-  t.ModuleName t.hContext Success Found Library =
+  t.ModuleName t.hErrorList t.hContext Success Found Library =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Library
+      t.hErrorList t.hContext t.ModuleName Library
     >;
 
-  t.ModuleName t.hContext Fails MismatchCase =
-    t.hContext t.ModuleName Fails MismatchCase;
+  t.ModuleName t.hErrorList t.hContext Fails MismatchCase =
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
 //------------------------------------------------------------------------------
 
 /**
   <CheckNeedCompile-Make
-    t.hContext t.Config t.ModuleName
+    t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hContext t.ModuleName Success s.Status s.Type
-    == t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
+    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-Make
-  t.hContext t.Config t.ModuleName =
+  t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-R
-      (/* стек */) t.hContext t.Config t.ModuleName
+      (/* стек */) t.hErrorList t.hContext t.Config t.ModuleName
     >;
 
 /*
@@ -223,88 +300,88 @@ $ENTRY CheckNeedCompile-Make
 */
 CheckNeedCompile-R
   (e.Stack)
-  t.hContext t.Config t.ModuleName =
+  t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-SwRoot
-      (e.Stack) t.Config t.ModuleName
+      (e.Stack) t.Config t.ModuleName t.hErrorList
       <MModules::LookupImportModule
         t.hContext t.Config t.ModuleName
       >
     >;
 
 CheckNeedCompile-SwRoot {
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Success Ready s.Status =
-    t.hContext t.ModuleName Success Ready s.Status;
+    t.hErrorList t.hContext t.ModuleName Success Ready s.Status;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Success Raw s.Status =
-    t.hContext t.ModuleName Success Raw s.Status;
+    t.hErrorList t.hContext t.ModuleName Success Raw s.Status;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Success Found Errors =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Errors
+      t.hErrorList t.hContext t.ModuleName Errors
     >;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Changed
+      t.hErrorList t.hContext t.ModuleName Changed
     >;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Success Found Updated =
     <CheckNeedCompile-SwOne
       (e.Stack) t.Config
       <CheckNeedCompileOne
-        t.hContext t.Config t.ModuleName
+        t.hErrorList t.hContext t.Config t.ModuleName
       >
     >;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Success Found Library =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Library
+      t.hErrorList t.hContext t.ModuleName Library
     >;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Fails MismatchCase =
-    t.hContext t.ModuleName Fails MismatchCase;
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
 CheckNeedCompile-SwOne {
   (e.Stack) t.Config
-  t.hContext t.ModuleName Success Found Updated =
+  t.hErrorList t.hContext t.ModuleName Success Found Updated =
     <CheckNeedCompile-UpdateContext
       <CheckNeedCompile-ScanImports
         (e.Stack) t.Config t.ModuleName
-        <DependencesList t.hContext t.ModuleName>
+        <DependencesList-Real t.hErrorList t.hContext t.ModuleName>
       >
     >;
 
   (e.Stack) t.Config
-  t.hContext t.ModuleName Success Found Changed =
+  t.hErrorList t.hContext t.ModuleName Success Found Changed =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName Changed
+      t.hErrorList t.hContext t.ModuleName Changed
     >;
 
   (e.Stack) t.Config
-  t.hContext t.ModuleName Success Raw s.Type =
-    t.hContext t.ModuleName Success Raw s.Type;
+  t.hErrorList t.hContext t.ModuleName Success Raw s.Type =
+    t.hErrorList t.hContext t.ModuleName Success Raw s.Type;
 
   (e.Stack) t.Config
-  t.hContext t.ModuleName Success Ready s.Type =
-    t.hContext t.ModuleName Success Ready s.Type;
+  t.hErrorList t.hContext t.ModuleName Success Ready s.Type =
+    t.hErrorList t.hContext t.ModuleName Success Ready s.Type;
 
   (e.Stack) t.Config
-  t.hContext t.ModuleName Fails MismatchCase =
-    t.hContext t.ModuleName Fails MismatchCase;
+  t.hErrorList t.hContext t.ModuleName Fails MismatchCase =
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
 CheckNeedCompile-UpdateContext
-  t.hContext t.ModuleName Success s.Type =
+  t.hErrorList t.hContext t.ModuleName Success s.Type =
     <CheckNeedCompile-UpdateStatusType
-      t.hContext t.ModuleName s.Type
+      t.hErrorList t.hContext t.ModuleName s.Type
     >;
 
 GuardUpdateContext
@@ -317,58 +394,72 @@ CheckNeedCompile-ScanImports {
     будет выдано сообщение об ошибке.
   */
   (e.Stack-B t.RecursiveModule e.Stack-E )
-  t.Config t.ModuleName
+  t.Config t.ModuleName t.hErrorList
   t.hContext Avail
   e.Imports-B t.RecursiveModule e.Imports-E =
     t.hContext t.ModuleName Changed;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Avail e.Imports =
     <CheckNeedCompile-ScanResults
       t.ModuleName
       <MLambda::MapReduce
-        <MLambda::Composite
-          <MLambda::BindLeft-H
-            <MLambda::BindLeft & CheckNeedCompile-R ( e.Stack t.ModuleName )>
-            t.Config
-          >
-          & MLambda.Bracket-H
+        <MLambda::BindLeft-H
+          <MLambda::BindLeft & CheckNeedCompile-R-Format ( e.Stack t.ModuleName )>
+          t.Config
         >
-        t.hContext e.Imports
+        (t.hErrorList t.hContext) e.Imports
       >
     >;
 
   /*
     Реакция на ошибки, возможно, неразумная.
   */
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext NotAvail =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Fails =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
+}
+
+CheckNeedCompile-R-Format {
+  (e.Stack) (t.hErrorList t.hContext) t.Config t.ImportName =
+    <CheckNeedCompile-R-Format-Aux
+      <CheckNeedCompile-R
+        (e.Stack) t.hErrorList t.hContext t.Config t.ImportName
+      >
+    >;
+}
+
+CheckNeedCompile-R-Format-Aux {
+  t.hErrorList t.hContext t.ImportName Success s.Status s.Type =
+    (t.hErrorList t.hContext) (t.ImportName Success s.Status s.Type);
+
+  t.hErrorList t.hContext t.ImportName Fails s.Error =
+    (t.hErrorList t.hContext) (t.ImportName Fails s.Error);
 }
 
 CheckNeedCompile-ScanResults {
-  t.ModuleName t.hContext
+  t.ModuleName (t.hErrorList t.hContext)
   e.Results-B (t.ImportName Success s.Status Changed) e.Results-E =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  t.ModuleName t.hContext
+  t.ModuleName (t.hErrorList t.hContext)
   e.Results-B (t.ImportName Success s.Status Errors) e.Results-E =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  t.ModuleName t.hContext
+  t.ModuleName (t.hErrorList t.hContext)
   e.Results-B (t.ImportName Fails e.FailsReason) e.Results-E =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
   /*
     Оставшийся случай
     e.Results ::= (t.ImportName Success s.Status Library | Updated)*
   */
-  t.ModuleName t.hContext e.Results =
+  t.ModuleName (t.hErrorList t.hContext) e.Results =
     <CheckNeedCompile-CompareTimes
-      t.ModuleName
+      t.ModuleName t.hErrorList
       <MLambda::MapReduce
         <MLambda::Composite
           & GetTime
@@ -388,19 +479,19 @@ CheckNeedCompile-ScanResults {
 }
 
 CheckNeedCompile-CompareTimes {
-  t.ModuleName t.hContext
+  t.ModuleName t.hErrorList t.hContext
   e.Times-B ( Fails MismatchCase ) e.Times-E =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  t.ModuleName t.hContext
+  t.ModuleName t.hErrorList t.hContext
   e.Times-B ( Success s.Status Changed e.Time ) e.Times-E =
-    t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  t.ModuleName t.hContext
+  t.ModuleName t.hErrorList t.hContext
   ( Success s.Status Updated (e.MinSrcTime) (e.MaxSrcTime) )
   e.DependedTimes =
     <CheckNeedCompile-SwCompareTimes
-      t.ModuleName t.hContext
+      t.ModuleName t.hErrorList t.hContext
       <MLambda::Map
         <MLambda::Composite
           & MLambda.UnBracket
@@ -413,43 +504,43 @@ CheckNeedCompile-CompareTimes {
 }
 
 CheckNeedCompile-SwCompareTimes {
-  t.ModuleName t.hContext e.Compares-B '<' e.Compares-E =
-    t.hContext t.ModuleName Success Changed;
+  t.ModuleName t.hErrorList t.hContext e.Compares-B '<' e.Compares-E =
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  t.ModuleName t.hContext e.Compares-B '=' e.Compares-E =
-    t.hContext t.ModuleName Success Changed;
+  t.ModuleName t.hErrorList t.hContext e.Compares-B '=' e.Compares-E =
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
-  t.ModuleName t.hContext e.Compares =
-    t.hContext t.ModuleName Success Updated;
+  t.ModuleName t.hErrorList t.hContext e.Compares =
+    t.hErrorList t.hContext t.ModuleName Success Updated;
 }
 
 //------------------------------------------------------------------------------
 
 /*
   <CheckNeedCompileOne
-    t.hContext t.Config t.ModuleName
+    t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hContext t.ModuleName Success s.Status s.Type
-    == t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
+    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
 */
 CheckNeedCompileOne
-  t.hContext t.Config t.ModuleName =
+  t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompileOne-SwGetLastTime
-      t.ModuleName
+      t.ModuleName t.hErrorList
       <GetTime t.hContext t.ModuleName>
     >;
 
 CheckNeedCompileOne-SwGetLastTime {
-  t.ModuleName t.hContext
+  t.ModuleName t.hErrorList t.hContext
   Success s.Status s.Type Unknown =
-    t.hContext t.ModuleName Success s.Status s.Type;
+    t.hErrorList t.hContext t.ModuleName Success s.Status s.Type;
 
-  t.ModuleName t.hContext
+  t.ModuleName t.hErrorList t.hContext
   Success s.Status s.Type (e.MinTime) (e.MaxTime) =
-    t.hContext t.ModuleName Success s.Status s.Type;
+    t.hErrorList t.hContext t.ModuleName Success s.Status s.Type;
 
-  t.ModuleName t.hContext Fails MismatchCase =
-    t.hContext t.ModuleName Fails MismatchCase;
+  t.ModuleName t.hErrorList t.hContext Fails MismatchCase =
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
 //------------------------------------------------------------------------------
@@ -637,7 +728,7 @@ LoadDependences {
 
   t.hContext ( e.Loaded ) t.Next e.NotLoaded =
     <LoadDependences-UpdateLoaded
-      ( e.Loaded ) t.Next <DependencesList t.hContext t.Next> ( e.NotLoaded )
+      ( e.Loaded ) t.Next <DependencesList-Cached t.hContext t.Next> ( e.NotLoaded )
     >;
 }
 

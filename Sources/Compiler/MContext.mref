@@ -41,6 +41,12 @@ DefaultOptions
     // регистра, но регистр надо проверять)
     (RealName Unknown) // Unknown | t.QualifiedName
 
+    // Информация о имени целевого файла
+    (Target Default) // Default | e.PtTargetName
+
+    // Кэширование списка зависимостей
+    (CachedImports None) // None | t.ModuleName*
+
     // Информация о статусе компилирования
 
     (Type Errors) // Errors | Changed | Updated | Library
@@ -687,6 +693,112 @@ FinishModule-Aux {
   t.hContext Success = t.hContext Success;
 
   // Другие варианты недопустимы
+}
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  Доступ к некоторым полям
+*/
+
+/**
+  <GetTarget t.hContext t.ModuleName>
+    == Success Default
+    == Success e.PtTargetName
+    == Fails s.Error
+
+  s.Error ::= ModuleNotFound | MismatchCase
+*/
+$ENTRY GetTarget {
+  t.hContext t.ModuleName =
+    <GetTarget-Aux <ExtractOption t.hContext t.ModuleName Target>>;
+}
+
+GetTarget-Aux {
+  t.hContext Found Default = t.hContext Success Default;
+  t.hContext Found e.PtTarget = t.hContext Success e.PtTarget;
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+
+  // MismatchOption не рассматриваем.
+}
+
+/**
+  <SetTarget t.hContext t.ModuleName e.PtTargetName>
+    == t.hContext Succcess
+    == t.hContext Fails s.Error
+
+  s.Error ::= ModuleNotFound | MismatchCase
+*/
+$ENTRY SetTarget {
+  t.hContext t.ModuleName e.PtTargetName =
+    <SetTarget-SwKnown
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName e.PtTargetName
+    >;
+}
+
+SetTarget-SwKnown {
+  t.hContext Known t.ModuleName e.PtTargetName =
+    // Должна вернуть Success
+    <UpdateInfo t.hContext t.ModuleName (Target e.PtTargetName)>;
+
+  t.hContext MismatchCase t.ModuleName e.PtTargetName =
+    t.hContext Fails MismatchCase;
+
+  t.hContext NotKnown t.ModuleName e.PtTargetName =
+    t.hContext Fails ModuleNotFound;
+}
+
+/**
+  <GetCachedImports t.hContext t.ModuleName>
+    == Success None
+    == Success t.ImportName*
+    == Fails s.Error
+
+  s.Error ::= ModuleNotFound | MismatchCase
+*/
+$ENTRY GetCachedImports {
+  t.hContext t.ModuleName =
+    <GetCachedImports-Aux
+      <ExtractOption t.hContext t.ModuleName CachedImports>
+    >;
+}
+
+GetCachedImports-Aux {
+  t.hContext Found None = t.hContext Success None;
+  t.hContext Found e.Imports = t.hContext Success e.Imports;
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+
+  // MismatchOption не рассматриваем.
+}
+
+/**
+  <SetCachedImports t.hContext t.ModuleName t.ImportName*>
+    == t.hContext Success
+    == t.hContext Fails s.Error
+
+  s.Error ::= ModuleNotFound | MismatchCase
+*/
+$ENTRY SetCachedImports {
+  t.hContext t.ModuleName e.ImportList =
+    <SetCachedImports-SwKnown
+      <IsKnown t.hContext t.ModuleName>
+      t.ModuleName e.ImportList
+    >;
+}
+
+SetCachedImports-SwKnown {
+  t.hContext Known t.ModuleName e.ImportList =
+    // Должно вернуть Success
+    <UpdateInfo t.hContext t.ModuleName (CachedImports e.ImportList)>;
+
+  t.hContext MismatchCase t.ModuleName e.ImportList =
+    t.hContext Fails MismatchCase;
+
+  t.hContext NotKnown t.ModuleName e.ImportList =
+    t.hContext Fails ModuleNotFound;
 }
 
 $END MContext.

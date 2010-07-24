@@ -1,6 +1,5 @@
 $module CoreBE::Math;
 
-
 $entry Binary;
 $entry NumberCompare;
 

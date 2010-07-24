@@ -191,7 +191,7 @@ setlocal
   rem %1 --- команда
   rem %2 --- файл вывода
   echo Performing %~1
-  echo Perforimg %~1>> %2
+  echo Performimg %~1>> %2
   echo.>>%2
   %~1 1>~output 2>~error
   echo ==STDOUT==>>%2
@@ -217,7 +217,7 @@ setlocal
   call :SUB_DUAL_PRINT "----------------------------------------------------------" %3
   call :SUB_DUAL_PRINT "-- Recompiling with compiler '%1' with profile '%2' --"     %3
   call :SUB_DUAL_PRINT "----------------------------------------------------------" %3
-  set CMDLINE=call start-%1.bat +build +cfg:mp-work-%2.cfg +xlinx MRefal.mref
+  set CMDLINE=call start-%1.bat +build +cfg:mp-work-%2.prj
   call :SUB_CALL_AND_SAVE_OUTPUT "%CMDLINE%" %3
 endlocal
 goto :EOF

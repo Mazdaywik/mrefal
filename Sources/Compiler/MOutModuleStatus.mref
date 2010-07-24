@@ -46,6 +46,11 @@ $ENTRY Linking
     <FlushCompilingRecompiled>
     <Out Linking e.ProgName>;
 
+$ENTRY XLinx
+  e.ProgName =
+    <FlushCompilingRecompiled>
+    <Out XLinx e.ProgName>;
+
 $SWAP G_Compiling, G_Recompiled;
 
 FlushCompilingRecompiled =
@@ -92,6 +97,7 @@ StatusStr {
   Recompiled = '=Recompiled ';
   Library =    '+Load library ';
   Linking =    '*Linking ';
+  XLinx =      '*Creating xlinx tables ';
   Fails =      '>  FAILS ';
 }
 

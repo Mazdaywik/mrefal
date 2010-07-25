@@ -113,7 +113,7 @@ AvailFrontEnds {
   // Фильтруем по расширению
   t.Config e.Ext =
     <MLambda::Map
-      <MLambda::BindRight & FilterBackEnd e.Ext>
+      <MLambda::BindRight & FilterFrontEnd e.Ext>
       <MLambda::Map
         <MLambda::Composite
           <MLambda::Parallel
@@ -127,10 +127,10 @@ AvailFrontEnds {
     >;
 }
 
-FilterBackEnd {
-  ( s.BackEnd e.Ext ) e.Ext = s.BackEnd;
+FilterFrontEnd {
+  ( s.FrontEnd e.Ext ) e.Ext = s.FrontEnd;
 
-  ( s.BackEnd e.Ext1 ) e.Ext2 = ;
+  ( s.FrontEnd e.Ext1 ) e.Ext2 = ;
 }
 
 GenVariants-CmdLine-Aux {

@@ -1,0 +1,998 @@
+$MODULE FE-MRefal::MParser_Common;
+
+$IMPORT MLexer = FE-MRefal::MLexer;
+$IMPORT MLambda;
+$IMPORT MError;
+$IMPORT MIModule;
+$IMPORT MQualifiedName;
+
+//==============================================================================
+// Служебные функции
+//==============================================================================
+
+/**
+  <Parse s.FnModuleBody e.FileName>
+    == t.ErrorList Success t.IModule
+    == t.ErrorList Fails
+*/
+$ENTRY Parse
+  s.FnModuleBody e.FileName =
+    <NGenericModule
+      s.FnModuleBody
+      <MError::CreateErrList>
+      <MLexer::NextToken
+        <MLexer::Create e.FileName>
+      >
+    >;
+
+/**
+  <GeneralizeInfo
+    t.GenericErrorList t.QualifiedName
+    t.LocalErrorList {Maybe t.IModule}
+  >
+    == t.ErrorList Success s.ErrorsLevel t.IModule
+    == t.ErrorList Fails
+  s.ErrorsLevel ::= Success | Warnings | Errors
+*/
+$ENTRY GeneralizeInfo {
+  t.GenericErrorList t.QualifiedName
+  t.ErrorList Success t.IModule =
+    <MergeErrorLists
+      t.GenericErrorList
+      <CheckLocalErrorList
+        <CompareQNames
+          t.QualifiedName
+          t.ErrorList
+          t.IModule
+        >
+      >
+    >;
+
+  t.GenericErrorList t.QualifiedName
+  t.ErrorList Fails =
+    <MError::MergeLists t.GenericErrorList t.ErrorList>
+    <MQualifiedName::Destroy t.QualifiedName>
+    Fails;
+}
+
+/*
+  <MergeErrorLists
+    t.Generic t.ErrorList Success s.Result t.IModule
+    t.Generic t.ErrorList Fails
+  >
+    == t.ErrorList Success s.Result t.IModule
+    == t.ErrorList Fails
+  s.Reslult ::= Success | Warnings | Errors
+*/
+MergeErrorLists {
+  t.Generic t.LocalErrorList s.SF-Result e.MaybeInfo =
+    <MError::MergeLists t.Generic t.LocalErrorList>
+    s.SF-Result e.MaybeInfo;
+}
+
+/*
+  <CheckLocalErrorList
+    t.ErrorList Success t.IModule
+    t.ErrorList Fails
+  >
+    == t.ErrorList Success s.Result t.IModule
+    == t.ErrorList Fails
+*/
+CheckLocalErrorList {
+  t.ErrorList Success t.IModule =
+    <CheckLocalErrorList-Aux
+      <MError::ContentLevel t.ErrorList>
+      t.IModule
+    >;
+
+  t.ErrorList Fails = t.ErrorList Fails;
+}
+
+CheckLocalErrorList-Aux {
+  t.ErrorList Empty t.IModule =
+    t.ErrorList Success Success t.IModule;
+
+  t.ErrorList Warnigs t.IModule =
+    t.ErrorList Success Warnings t.IModule;
+
+  t.ErrorList Errors t.IModule =
+    t.ErrorList Success Errors t.IModule;
+
+}
+
+/*
+  <CompareQNames
+    t.QualifiedName t.ErrorList t.IModule
+  >
+    == t.ErrorList Success t.IModule
+    == t.ErrorList Fails
+*/
+CompareQNames
+  t.QualifiedName t.ErrorList t.IModule =
+    <CompareQNames-Aux
+      t.QualifiedName
+      t.ErrorList
+      <MIModule::GetModuleName t.IModule>
+    >;
+
+CompareQNames-Aux
+  t.ExternalName
+  t.ErrorList t.IModule
+  t.InternalName =
+    <SwCompareQNames-Aux
+      <MQualifiedName::Equals-T t.ExternalName t.InternalName>
+      t.ErrorList t.IModule
+    >;
+
+SwCompareQNames-Aux {
+  True t.ExternalName t.InternalName
+  t.ErrorList t.IModule =
+    <MQualifiedName::Destroy t.ExternalName>
+    <MQualifiedName::Destroy t.InternalName>
+    t.ErrorList Success t.IModule;
+
+  False t.ExternalName t.InternalName
+  t.ErrorList t.IModule =
+    <CompareQNames-AddErrorInfo
+      t.ExternalName t.InternalName
+      t.ErrorList
+      <MIModule::GetModuleAttribute t.IModule Position>
+    >;
+}
+
+CompareQNames-AddErrorInfo {
+  t.ExternalName t.InternalName
+  t.ErrorList
+  t.IModule Found t.SrcPos =
+    <MIModule::Destroy t.IModule>
+    <MError::AddMismatchInternalAndExternalNames
+      t.ErrorList t.SrcPos t.InternalName t.ExternalName
+    > Fails;
+
+  // Ошибку не проверяем, пусть будет fail down
+}
+
+//------------------------------------------------------------------------------
+// Функции добавления в таблицу символов
+//------------------------------------------------------------------------------
+
+$ENTRY AddNewFunction
+  t.hIModule t.SrcPos t.NewName e.Attribs t.hErrorList =
+    <AddNewFunction-SwRedeclaration
+      t.SrcPos t.NewName (e.Attribs) t.hErrorList
+      <MIModule::GetKind
+        <MIModule::AbsolutName t.hIModule t.NewName>
+      >
+    >;
+
+AddNewFunction-SwRedeclaration {
+  t.SrcPos t.NewName (e.Attribs) t.hErrorList
+  t.hIModule Success s.Kind =
+    t.hIModule
+    <MError::AddRedeclaredIdentifier
+      t.hErrorList t.SrcPos t.NewName
+    >;
+
+  t.SrcPos t.NewName (e.Attribs) t.hErrorList
+  t.hIModule NoName =
+    <AddNewFunction-SwEntryPoint
+      t.SrcPos
+      ( t.NewName <MQualifiedName::Parse t.NewName> ) e.Attribs
+      <UpdateEntity-GuardInvariant
+        t.hErrorList
+        <MIModule::UpdateFunction
+          t.hIModule t.NewName e.Attribs (Position t.SrcPos)
+        >
+        t.SrcPos t.NewName
+      >
+    >;
+}
+
+AddNewFunction-SwEntryPoint {
+  t.SrcPos ( t.FuncName e.ModuleName (e.LastSegment) )
+  e.Attribs-B (ScopeClass Entry) e.Attribs-E
+  t.hIModule t.hErrorList =
+    <AddNewFunction-SwEntryPoint-AbsolutName
+      t.SrcPos ( e.LastSegment )
+      <MIModule::AbsolutName t.hIModule t.FuncName>
+      t.hErrorList
+    >;
+
+  t.SrcPos ( t.FuncName e.Parsed ) e.Attribs t.hIModule t.hErrorList =
+    t.hIModule t.hErrorList;
+}
+
+AddNewFunction-SwEntryPoint-AbsolutName
+  t.SrcPos ( e.LastSegment )
+  t.hIModule t.FuncName t.hErrorList =
+    <AddNewFunction-SwEntryPoint-Aux
+      t.SrcPos ( t.FuncName e.LastSegment )
+      <MIModule::GetModuleAttribute
+        t.hIModule ModuleType
+      >
+      t.hErrorList
+    >;
+
+AddNewFunction-SwEntryPoint-Aux {
+  t.SrcPos ( t.FuncName 'Go' ) t.hIModule Found Main t.hErrorList =
+    <MIModule::SetGoEntryPoint
+      t.hIModule
+      (Function (Entry t.SrcPos t.FuncName))
+    >
+    t.hErrorList;
+
+  t.SrcPos ( t.FuncName 'Init' ) t.hIModule Found Regular t.hErrorList =
+    <MIModule::SetInitEntryPoint
+      t.hIModule
+      (Function (Entry t.SrcPos t.FuncName))
+    >
+    t.hErrorList;
+
+  t.SrcPos ( t.FuncName 'Final' ) t.hIModule Found Regular t.hErrorList =
+    <MIModule::SetFinalEntryPoint
+      t.hIModule
+      (Function (Entry t.SrcPos t.FuncName))
+    >
+    t.hErrorList;
+
+  t.SrcPos ( t.FuncName e.Name ) t.hIModule Found s.Type t.hErrorList =
+    t.hIModule t.hErrorList;
+}
+
+$ENTRY AddNewADT
+  t.hIModule t.SrcPos t.NewName e.Attribs t.hErrorList =
+    <AddNewFunctionAndADT-SwRedeclaration
+      t.SrcPos t.NewName (e.Attribs) t.hErrorList
+      & MIModule.UpdateADT
+      <MIModule::GetKind
+        <MIModule::AbsolutName t.hIModule t.NewName>
+      >
+    >;
+
+AddNewFunctionAndADT-SwRedeclaration {
+  t.SrcPos t.NewName (e.Attribs) t.hErrorList s.FnAdder
+  t.hIModule Success s.Kind =
+    t.hIModule
+    <MError::AddRedeclaredIdentifier
+      t.hErrorList t.SrcPos t.NewName
+    >;
+
+  t.SrcPos t.NewName (e.Attribs) t.hErrorList s.FnAdder
+  t.hIModule NoName =
+    <UpdateEntity-GuardInvariant
+      t.hErrorList
+      <s.FnAdder
+        t.hIModule t.NewName e.Attribs (Position t.SrcPos)
+      >
+      t.SrcPos t.NewName
+    >;
+}
+
+$ENTRY AddNewImport
+  t.hIModule t.SrcPos t.NewName (RealName t.RealName) t.hErrorList =
+    <AddNewImport-SwRedeclaration-Alias
+      t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+      <MIModule::GetKind t.hIModule t.NewName>
+    >;
+
+AddNewImport-SwRedeclaration-Alias {
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule Success s.Kind =
+    t.hIModule
+    <MError::AddRedeclaredIdentifier
+      t.hErrorList t.SrcPos t.NewName
+    >;
+
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule NoName =
+    <AddNewImport-SwRedeclaration-RealName
+      t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+      <MIModule::GetKind t.hIModule t.RealName>
+    >;
+}
+
+AddNewImport-SwRedeclaration-RealName {
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule Success ModuleName =
+    t.hIModule
+    <MError::AddRecursiveLink
+      t.hErrorList t.SrcPos t.RealName
+    >;
+
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule Success ImportName =
+    t.hIModule
+    <MError::AddRedeclaredIdentifier
+      t.hErrorList t.SrcPos t.RealName
+    >;
+
+  t.SrcPos t.NewName (RealName t.RealName) t.hErrorList
+  t.hIModule e.OtherResult =
+    <UpdateEntity-GuardInvariant
+      t.hErrorList
+      <MIModule::UpdateImport-X
+        t.hIModule
+        (Position t.SrcPos)
+        (RealName t.RealName)
+        (AliasName t.NewName)
+      >
+      t.SrcPos t.NewName
+    >;
+}
+
+UpdateEntity-GuardInvariant {
+  t.ErrorList t.IModule Success t.SrcPos t.NewName =
+    t.IModule t.ErrorList;
+
+  t.ErrorList t.IModule InvalidKind t.SrcPos t.NewName =
+    t.IModule
+    <MError::AddRedeclaredIdentifier
+      t.ErrorList t.SrcPos t.NewName
+    >;
+
+  /*
+    Две другие ошибки -- InvalidAttrib и InvariantError означают
+    нарушение инварианта. Программа автоматически умрёт.
+  */
+}
+
+/**-----------------------------------------------------------------------------
+  Функции синтаксического анализа делятся на три категории:
+  (1) Функции, распознающие основные секции файла: начало, конец, объявления,
+импорты, определения. Эти функции после себя на стеке ничего не оставляют.
+Даже в формате этих функций стек отсутствует.
+  После распознавания глобальной структуры эта информация сразу помещается
+в IModule, поэтому после работы этих функций стека не остаётся.
+  (2) Функции, распознающие остальные нетерминалы. Эти функции активно рабо-
+тают со стеком. Эти функции после распознавания оставляют на стеке распознан-
+ный нетерминал.
+  (3) Промежуточные функции. Они могут работать так, как хотят.
+------------------------------------------------------------------------------*/
+
+//==============================================================================
+// Общие нетерминалы.
+//==============================================================================
+
+//------------------------------------------------------------------------------
+// Распознавание заголовка и окончания модуля.
+//------------------------------------------------------------------------------
+
+/*
+  <NGenericModule s.FnBody t.ErrorList t.Lexer t.NextToken>
+    == t.ErrorList Success t.IModule
+    == t.ErrorList Fails
+*/
+NGenericModule
+  s.FnBody t.ErrorList t.Lexer t.NextToken =
+    <NGenericModule-SwParseHeader
+      s.FnBody
+      <NModuleHeader
+        t.ErrorList t.Lexer t.NextToken
+      >
+    >;
+
+NGenericModule-SwParseHeader {
+  s.FnBody
+  t.ErrorList Success t.IModule t.Lexer t.NextToken =
+    <s.FnBody
+      t.IModule t.ErrorList t.Lexer t.NextToken
+    >;
+
+  s.FnBody t.ErrorList Fails =
+    t.ErrorList Fails;
+}
+
+//-------------------------------------------------------------------------------
+
+// ModuleHeader = '$module' ModuleName ';' .
+
+NModuleHeader
+  t.ErrorList t.Lexer t.NextToken =
+    <NModuleHeader-ModuleName
+      <NModuleHeader-Directive
+        t.ErrorList t.Lexer t.NextToken
+      >
+    >;
+
+NModuleHeader-Directive {
+  t.ErrorList t.Lexer (Directive t.SrcPos Module) =
+    Regular
+    t.ErrorList <MLexer::NextToken t.Lexer>;
+
+  t.ErrorList t.Lexer (Directive t.SrcPos Program) =
+    Main
+    t.ErrorList <MLexer::NextToken t.Lexer>;
+
+  t.ErrorList t.Lexer (Directive t.SrcPos ClearModule) =
+    Regular
+    t.ErrorList <MLexer::NextToken t.Lexer>;
+
+  /* Обработка ошибок в данном случае -- добавляем в список ошибок неожиданный
+  символ, считаем, что прочли текущую лексему как '$module' и продолжаем
+  дальнейший разбор.
+  */
+  t.ErrorList t.Lexer t.OtherToken =
+    Regular
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'directive \'$MODULE\''
+    >
+    <MLexer::NextToken t.Lexer>;
+}
+
+NModuleHeader-ModuleName {
+  s.ModuleType
+  t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    <NModuleHeader-ModuleName-CheckQualified
+      s.ModuleType t.SrcPos
+      <NQuadQualifiedName
+        t.ErrorList
+        t.Lexer (Identifier t.SrcPos e.Name)
+      >
+    >;
+
+  /* Здесь мы пропускаем текущую неопознанную лексему до тех пор, пока
+  не встретим идентификатор или конец ввода */
+  s.ModuleType
+  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+    <MError::AddUnexpected
+      t.ErrorList (EndOfText t.SrcPos) 'module name'
+    >
+    Fails
+    <MLexer::Destroy t.Lexer>;
+
+  s.ModuleType t.ErrorList t.Lexer t.OtherToken =
+    <NModuleHeader-ModuleName
+      s.ModuleType
+      <MError::AddUnexpected
+        t.ErrorList t.OtherToken 'module name'
+      >
+      <MLexer::NextToken t.Lexer>
+    >;
+}
+
+CheckSuccess {
+  (e.FnName) t.IModule Success = t.IModule;
+
+  /* Нарушение инварианта -- fail down
+  В случае fail down в отладочном дампе будет виден параметр
+  e.FnName -- это позволяет отловить место вылета ошибки */
+}
+
+NModuleHeader-ModuleName-CheckQualified {
+  s.ModuleType t.SrcPos Success t.QualifiedName
+  t.ErrorList t.Lexer t.NextToken =
+    <NModuleHeader-ExpectEndSent
+      <CheckSuccess
+        ('NMH-MN-CQ')
+        <MIModule::Create
+          t.QualifiedName
+          (Position t.SrcPos)
+          (ModuleType s.ModuleType)
+        >
+      >
+      t.ErrorList t.Lexer t.NextToken
+    >;
+
+  /* Вообще-то эта ветвь не должна выполняться, т.к.
+  функция NQuadQualifiedName возвращает Fails только если на входе
+  она не получает идентификатор. А мы ей именно идентификатор посылаем. */
+  s.ModuleType t.SrcPos Fails
+  t.ErrorList t.Lexer t.NextToken =
+    t.ErrorList Fails
+    <MLexer::Destroy t.Lexer>;
+}
+
+NModuleHeader-ExpectEndSent {
+  t.IModule t.ErrorList t.Lexer (EndSent t.SrcPos) =
+    t.ErrorList
+    Success t.IModule <MLexer::NextToken t.Lexer>;
+
+  t.IModule t.ErrorList t.Lexer t.OtherToken =
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'semicolon'
+    >
+    Success t.IModule t.Lexer t.OtherToken;
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  <NModuleTailer
+    t.IModule t.ErrorList t.Lexer t.NextToken
+  >
+    == t.ErrorList Success t.IModule
+    == t.ErrorList Fails
+*/
+$ENTRY NModuleTailer {
+  t.hIModule t.hErrorList t.hLexer (Directive t.SrcPos End) =
+    <NModuleTailer-CheckGo
+      <MIModule::GetEntryPoint t.hIModule>
+      t.SrcPos t.hErrorList t.hLexer
+    >;
+}
+
+NModuleTailer-CheckGo {
+  t.hIModule Regular t.InitSeq t.FinalSeq
+  t.SrcPos t.hErrorList t.hLexer =
+    <NModuleTailer-ModuleName
+      t.hIModule t.hErrorList t.hLexer
+    >;
+
+  t.hIModule Go (Result e.Result)
+  t.SrcPos t.hErrorList t.hLexer =
+    <NModuleTailer-ModuleName
+      t.hIModule t.hErrorList t.hLexer
+    >;
+
+  t.hIModule Go None t.SrcPos t.hErrorList t.hLexer =
+    <NModuleTailer-ModuleName
+      t.hIModule
+      <MError::AddGoNotFound t.hErrorList t.SrcPos>
+      t.hLexer
+    >;
+}
+
+
+NModuleTailer-ModuleName {
+  t.hIModule t.hErrorList t.hLexer =
+    <NModuleTailer-ModuleName-Aux
+      <MIModule::GetModuleName t.hIModule>
+      <SrcPosQualifiedName
+        t.hErrorList <MLexer::NextToken t.hLexer>
+      >
+    >;
+}
+
+SrcPosQualifiedName
+  t.ErrorList t.Lexer (s.Token t.SrcPos e.Info) =
+    t.SrcPos
+    <NQuadQualifiedName
+      t.ErrorList t.Lexer (s.Token t.SrcPos e.Info)
+    >;
+
+NModuleTailer-ModuleName-Aux {
+  t.IModule t.HeadModuleName 
+  t.SrcPos Success t.TailModuleName
+  t.ErrorList t.Lexer t.NextToken =
+    <NModuleTailer-Dot
+      <NModuleTailer-CompareNames
+        t.SrcPos
+        <MQualifiedName::Equals-T t.HeadModuleName t.TailModuleName>
+        t.ErrorList
+      >
+      t.Lexer t.NextToken
+    >
+    Success
+    t.IModule;
+
+  /* Пропускаем следующую лексему, до тех пор, пока не встретим
+  конец файла или идентификатор */
+  t.IModule t.HeadModuleName
+  t.SrcPos Fails
+  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+    <MError::AddUnexpected
+      t.ErrorList (EndOfText t.SrcPos) 'repeat of module name'
+    >
+    Success
+    t.IModule;
+
+  t.hIModule t.HeadModuleName
+  t.SrcPos Fails
+  t.ErrorList t.Lexer t.OtherToken =
+    <NModuleTailer-ModuleName-Aux
+      t.hIModule t.HeadModuleName
+      <SrcPosQualifiedName
+        <MError::AddUnexpected
+          t.ErrorList t.OtherToken 'repeat of module name'
+        >
+        <MLexer::NextToken t.Lexer>
+      >
+    >;
+}
+
+NModuleTailer-CompareNames {
+  t.SrcPos
+  True t.HeadName t.TailName t.ErrorList =
+    t.ErrorList;
+
+  t.SrcPos
+  False t.HeadName t.TailName t.ErrorList =
+    <MError::AddNamesMismatch
+      t.ErrorList t.SrcPos t.HeadName t.TailName
+    >;
+}
+
+/*
+  <NModuleTailer-Dot t.ErrorList t.Lexer t.NextToken>
+    == t.ErrorList
+*/
+NModuleTailer-Dot {
+  t.ErrorList t.Lexer (Dot t.SrcPos) =
+    <NModuleTailer-EOF
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  /* Считаем, что точка была */
+  t.ErrorList t.Lexer t.OtherToken =
+    <NModuleTailer-EOF
+      <MError::AddUnexpected
+        t.ErrorList t.OtherToken 'end dot'
+      >
+      t.Lexer t.OtherToken
+    >;
+}
+
+NModuleTailer-EOF {
+  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+    t.ErrorList <MLexer::Destroy t.Lexer>;
+
+  /* Пропускаем все другие лексемы до тех пор, пока не доберёмся до конца файла */
+  t.ErrorList t.Lexer t.OtherToken =
+    <NModuleTailer-EOF
+      <MError::AddUnexpected
+        t.ErrorList t.OtherToken 'end of file'
+      >
+      <MLexer::NextToken t.Lexer>
+    >;
+}
+
+/*------------------------------------------------------------------------------
+  Распознавание блока импорта. Импорт используется как в исходных, так и в
+  символических файлах.
+------------------------------------------------------------------------------*/
+
+/*
+  ImportBlock = ModuleImport { ',' ModuleImport } ';' .
+  ModuleImport = [ ModuleAlias '=' ] ModuleName .
+  Последнюю строчку для удобства разбора преобразуем:
+  ModuleImport =
+    IDENTIFIER '::' QuadQualifiedName |
+    IDENTIFIER '=' QuadQualifiedName |
+    IDENTIFIER .
+
+  Таким образом, получим почти автоматную грамматику:
+  ImportBlock =
+    IDENTIFIER ImportBlock-AfterName .
+  ImportBlock-AfterName =
+    '::' ImportBlock-Qualified |
+    '=' ImportBlock-ModuleRenaming |
+    ',' ImportBlock |
+    ';' . // конец
+  ImportBlock-Qualified =
+    QuadQualifiedName ImportBlock-AfterQualified .
+  ImportBlock-AfterQualified =
+    ',' ImportBlock |
+    ';' . // конец
+  ImportBlock-ModuleRenaming =
+    QuadQualifiedName ImportBlock-AfterModuleRenaming
+  ImportBlock-AfterModuleRenaming =
+    ',' ImportBlock |
+    ';' . // конец
+
+  Не смотря на то, что описание грамматики для нетерминалов
+  ImportBlock-Qualified и ImportBlock-ModuleRenaming
+  одинаковы, записаны они отдельно, т.к. семантически они различаются.
+*/
+$ENTRY NImportBlock {
+  t.IModule
+  t.ErrorList t.Lexer (Identifier t.SrcPos e.ModuleName) =
+    <NImportBlock-AfterName
+      t.IModule
+      ( Import t.SrcPos e.ModuleName )
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.IModule
+  t.ErrorList t.Lexer t.OtherToken =
+    t.IModule
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'module name or module alias'
+    >
+    <MLexer::NextToken t.Lexer>;
+}
+
+NImportBlock-AfterName {
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer (DoubleColon t.SrcPos) =
+    <NImportBlock-Qualified
+      t.IModule
+      (Import t.ImportPos e.ModuleName)
+      <NQuadQualifiedName
+        t.ErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer (Replaces t.SrcPos) =
+    <NImportBlock-ModuleRenaming
+      t.IModule
+      (Alias t.ImportPos e.ModuleName)
+      <NQuadQualifiedName
+        t.ErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer (EndSent t.SrcPos) =
+    <AddNewImport
+      t.IModule t.ImportPos
+      <MQualifiedName::Create (e.ModuleName)>
+      (RealName
+        <MQualifiedName::Create (e.ModuleName)>
+      )
+      t.ErrorList
+    >
+    <MLexer::NextToken t.Lexer>;
+
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer (Comma t.SrcPos) =
+    <NImportBlock
+      <AddNewImport
+        t.IModule t.ImportPos
+        <MQualifiedName::Create (e.ModuleName)>
+        (RealName
+          <MQualifiedName::Create (e.ModuleName)>
+        )
+        t.ErrorList
+      >
+      <MLexer::NextToken t.Lexer>
+    >;
+
+  // Считаем, что пользователь пропустил точку с запятой
+  t.IModule (Import t.ImportPos e.ModuleName)
+  t.ErrorList t.Lexer t.OtherToken =
+    t.IModule
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'comma, semicolon or replace'
+    >
+    t.Lexer t.OtherToken;
+}
+
+NImportBlock-Qualified {
+  t.IModule (Import t.ImportPos e.FirstSegment)
+  Success t.QualifiedName
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterQualified
+      <AddNewImport
+        t.IModule t.ImportPos
+        <MQualifiedName::AddSuperName t.QualifiedName e.FirstSegment>
+        (RealName
+          <MQualifiedName::AddSuperName t.QualifiedName e.FirstSegment>
+        )
+        t.ErrorList
+      >
+      t.Lexer t.NextToken
+    >;
+
+  t.IModule (Import t.ImportPos e.FirstSegment)
+  Fails
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterQualified
+      t.IModule
+      <MError::AddUnexpected
+        t.ErrorList t.NextToken 'import name'
+      >
+      t.Lexer t.NextToken
+    >;
+}
+
+NImportBlock-AfterQualified {
+  t.IModule t.ErrorList
+  t.Lexer (EndSent t.SrcPos) =
+    t.IModule t.ErrorList
+    <MLexer::NextToken t.Lexer>;
+
+  t.IModule t.ErrorList
+  t.Lexer (Comma t.SrcPos) =
+    <NImportBlock
+      t.IModule t.ErrorList
+      <MLexer::NextToken t.Lexer>
+    >;
+
+  t.IModule t.ErrorList
+  t.Lexer t.OtherToken =
+    t.IModule
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'comma or semicolon'
+    >
+    t.Lexer t.OtherToken;
+}
+
+NImportBlock-ModuleRenaming {
+  t.IModule (Alias t.AliasPos e.Alias)
+  Success t.QualifiedName
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterModuleRenaming
+      <AddNewImport
+        t.IModule t.AliasPos
+        <MQualifiedName::Create (e.Alias)>
+        (RealName t.QualifiedName)
+        t.ErrorList
+      >
+      t.Lexer t.NextToken
+    >;
+
+  t.IModule (Alias t.AliasPos e.Alias)
+  Fails
+  t.ErrorList t.Lexer t.NextToken =
+    <NImportBlock-AfterModuleRenaming
+      t.IModule
+      <MError::AddUnexpected
+        t.ErrorList t.NextToken 'import name'
+      >
+      t.Lexer t.NextToken
+    >;
+}
+
+NImportBlock-AfterModuleRenaming {
+  t.IModule
+  t.ErrorList t.Lexer (Comma t.SrcPos) =
+    <NImportBlock
+      t.IModule
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.IModule
+  t.ErrorList t.Lexer (EndSent t.SrcPos) =
+    t.IModule
+    t.ErrorList <MLexer::NextToken t.Lexer>;
+
+  t.IModule
+  t.ErrorList t.Lexer t.OtherToken =
+    t.IModule
+    <MError::AddUnexpected
+      t.ErrorList t.OtherToken 'comma or semicolon'
+    >
+    t.Lexer t.OtherToken;
+}
+
+//------------------------------------------------------------------------------
+// Распознавание квалифицированных имён.
+//------------------------------------------------------------------------------
+
+/**
+  AnyQualifiedName = DotQualifiedName | QuadQualifiedName .
+  DotQualifiedName =
+    IDENTIFIER | DotQualifiedName '.' IDENTIFIER .
+  QuadQualifiedName =
+    IDENTIFIER | QuadQualifiedName '::' IDENTIFIER .
+  
+  <N***QualifiedName
+    t.ErrorList t.Lexer t.NextToken
+  >
+    == e.ScannedQName t.ErrorList t.Lexer t.NextToken
+
+  e.ScannedQName ::=
+    Success t<MQualifiedName::QName>.QualifiedName | Fails
+
+  В случае ошибки на стеке оставляется первый неожиданный терм.
+  Если имя было частично определено, например так:
+    'PackageName::ModuleName::222',
+  то имя считается распознанным успешно. Информация об ошибке
+  падает в t.ErrorList, но синтаксически инвариант соблюдётся.
+*/
+$ENTRY NAnyQualifiedName {
+  t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    Success
+    <NAnyQualifiedName-AfterName
+      <MQualifiedName::Create (e.Name)>
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.ErrorList t.Lexer t.Unexpected =
+    Fails
+    <MError::AddUnexpected
+      t.ErrorList t.Unexpected 'identifier'
+    >
+    t.Lexer t.Unexpected;
+}
+
+NAnyQualifiedName-AfterName {
+  t.StartName t.ErrorList t.Lexer (DoubleColon t.SrcPos) =
+    <NQuadQualifiedName-Loop
+      t.StartName
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.StartName t.ErrorList t.Lexer (Dot t.SrcPos) =
+    <NDotQualifiedName-Loop
+      t.StartName
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.StartName t.ErrorList t.Lexer t.OtherToken =
+    t.StartName
+    t.ErrorList t.Lexer t.OtherToken;
+}
+
+$ENTRY NQuadQualifiedName {
+  t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    Success
+    <NQuadQualifiedName-AfterName
+      <MQualifiedName::Create (e.Name)>
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.ErrorList t.Lexer t.Unexpected =
+    Fails
+    <MError::AddUnexpected
+      t.ErrorList t.Unexpected 'identifier'
+    >
+    t.Lexer t.Unexpected;
+}
+
+NQuadQualifiedName-AfterName {
+  t.PartOfName t.ErrorList t.Lexer (DoubleColon t.SrcPos) =
+    <NQuadQualifiedName-Loop
+      t.PartOfName
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.PartOfName t.ErrorList t.Lexer t.Unexpected =
+    t.PartOfName
+    t.ErrorList t.Lexer t.Unexpected;
+}
+
+NQuadQualifiedName-Loop {
+  t.PartOfName t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    <NQuadQualifiedName-AfterName
+      <MQualifiedName::AddSubName
+        t.PartOfName e.Name
+      >
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.PartOfName t.ErrorList t.Lexer t.Unexpected =
+    t.PartOfName
+    <MError::AddUnexpected
+      t.ErrorList t.Unexpected 'identifier'
+    >
+    t.Lexer t.Unexpected;
+}
+
+$ENTRY NDotQualifiedName {
+  t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    Success
+    <NDotQualifiedName-AfterName
+      <MQualifiedName::Create (e.Name)>
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.ErrorList t.Lexer t.Unexpected =
+    Fails
+    <MError::AddUnexpected
+      t.ErrorList t.Unexpected 'identifier'
+    >
+    t.Lexer t.Unexpected;
+}
+
+NDotQualifiedName-AfterName {
+  t.PartOfName t.ErrorList t.Lexer (Dot t.SrcPos) =
+    <NDotQualifiedName-Loop
+      t.PartOfName
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.PartOfName t.ErrorList t.Lexer t.Unexpected =
+    t.PartOfName
+    t.ErrorList t.Lexer t.Unexpected;
+}
+
+NDotQualifiedName-Loop {
+  t.PartOfName t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    <NDotQualifiedName-AfterName
+      <MQualifiedName::AddSubName
+        t.PartOfName e.Name
+      >
+      t.ErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.PartOfName t.ErrorList t.Lexer t.Unexpected =
+    t.PartOfName
+    <MError::AddUnexpected
+      t.ErrorList t.Unexpected 'identifier'
+    >
+    t.Lexer t.Unexpected;
+}
+
+$END FE-MRefal::MParser_Common.

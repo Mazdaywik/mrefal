@@ -1,0 +1,172 @@
+$MODULE BE-ModuleIF::MCompiler;
+
+$IMPORT MFileIO;
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MOrder;
+$IMPORT MQualifiedName;
+
+/**
+  <Generate t.hIModule e.FileName>
+    == t.hIModule
+*/
+$ENTRY Generate
+  t.IModule e.FileName =
+    <SaveToFile
+      (e.FileName)
+      <GenerateLines t.IModule>
+    >;
+
+SaveToFile
+  (e.FileName) t.IModule e.Lines =
+    t.IModule
+    <MFileIO::Save (e.FileName) e.Lines>;
+
+GenerateLines
+  t.IModule =
+    <GenerateBorders
+      <MIModule::GetModuleName t.IModule>
+    >;
+
+GenerateBorders
+  t.hIModule t.ModuleName =
+    <GenerateBorders-Aux
+      t.ModuleName
+      <MIModule::GetModuleAttribute t.hIModule ModuleType>
+    >;
+
+GenerateBorders-Aux {
+  t.ModuleName t.hIModule Found Main =
+    <MoveFirstLineToFront
+      <GenerateFunctions
+        <GetEntryList t.hIModule>
+      >
+      ('$program ' <MQualifiedName::ToPrintable-Quad t.ModuleName> ';')
+      ('$end ' <MQualifiedName::ToPrintable-Quad t.ModuleName> '.')
+    >;
+
+  t.ModuleName t.hIModule Found Regular =
+    <MoveFirstLineToFront
+      <GenerateFunctions
+        <GetEntryList t.hIModule>
+      >
+      ('$module ' <MQualifiedName::ToPrintable-Quad t.ModuleName> ';')
+      ('$end ' <MQualifiedName::ToPrintable-Quad t.ModuleName> '.')
+    >;
+}
+
+StringFromQualified
+  t.QualifiedName =
+    <StringFromQualified-Aux
+      <MQualifiedName::Parse t.QualifiedName>
+    >;
+
+StringFromQualified-Aux
+  (e.FirstSegment) e.Other =
+    <UnBracket
+      <MLambda::Reduce
+        & AddSegment
+        (e.FirstSegment)
+        e.Other
+      >
+    >;
+
+AddSegment
+  (e.Segments) (e.NextSegment) =
+    (e.Segments '::' e.NextSegment);
+
+UnBracket (e.Expr) = e.Expr;
+
+GetEntryList
+  t.IModule =
+    <MLambda::MapReduce
+      & ToEntry
+      <MIModule::GetFunctionList t.IModule>
+    >;
+
+ToEntry
+  t.IModule t.NextFn =
+    <SwToEntry
+      t.NextFn
+      <MIModule::GetFunctionAttribute
+        t.IModule ScopeClass t.NextFn
+      >
+    >;
+
+SwToEntry {
+  t.NextFn t.IModule Found Entry =
+    t.IModule t.NextFn;
+
+  t.NextFn t.IModule Found s.OtherScope =
+    t.IModule;
+}
+
+MoveFirstLineToFront
+  t.IModule e.Lines t.FirstLine t.LastLine =
+    t.IModule t.FirstLine () e.Lines t.LastLine;
+
+GenerateFunctions
+  t.IModule e.Functions =
+    <MLambda::MapReduce
+      & GenerateImport 
+      <MIModule::GetImportList-Aliases t.IModule>
+    >
+    ()
+    <MLambda::Map
+      <MLambda::Composite
+        & MLambda.UnBracket
+        & MQualifiedName.Create
+        & TypeFunction
+      >
+      <MOrder::Sort
+        <MLambda::Map
+          <MLambda::Composite
+            & MQualifiedName.Parse
+            & MLambda.Bracket
+          >
+          e.Functions
+        >
+      >
+    >
+    ();
+
+TypeFunction
+  t.FnName = ( '$entry ' <MQualifiedName::ToPrintable-Quad t.FnName> ';' );
+
+GenerateImport
+  t.IModule t.NextImport =
+    <GenerateImport-Aux
+      t.NextImport
+      <MIModule::GetImportAttribute-AliasName
+        t.IModule RealName t.NextImport
+      >
+    >;
+
+GenerateImport-Aux
+  t.LongAlias t.hIModule Found t.RealName =
+    <GenerateImport-ShortAlias
+      t.RealName
+      <MIModule::RelativeName t.hIModule t.LongAlias>
+    >;
+
+GenerateImport-ShortAlias
+  t.RealName t.hIModule Success t.ShortAlias =
+    t.hIModule
+    <SwGenerateImport-Aux
+      <MQualifiedName::Equals-T t.ShortAlias t.RealName>
+    >;
+
+SwGenerateImport-Aux {
+  True t.Alias t.RealName =
+    ('$import ' <StringFromQualified t.Alias> ';');
+
+  False t.Alias t.RealName =
+    ('$import '
+      <StringFromQualified t.Alias>
+      ' = '
+      <StringFromQualified t.RealName>
+      ';'
+    );
+}
+
+$END BE-ModuleIF::MCompiler.

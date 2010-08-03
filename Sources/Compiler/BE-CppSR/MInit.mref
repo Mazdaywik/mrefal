@@ -1,0 +1,35 @@
+$MODULE BE-CppSR::MInit;
+
+$IMPORT Config::MConfig;
+$IMPORT BE-CppSR::MCompiler;
+$IMPORT BE-CppSR::MLinker;
+
+$IMPORT MHelpers = Config::MHelpers;
+$IMPORT MLambda;
+
+$ENTRY Register
+  t.Config (e.Directory) (e.Ext) e.Tunings =
+    <Config::MConfig::RegisterBackEnd
+      t.Config
+      BE-CppSR
+      & BE-CppSR.MCompiler.Generate
+      <MLambda::BindLeft
+        & BE-CppSR.MLinker.Link
+        <MHelpers::InitConfig & Tunings e.Tunings>
+      >
+      (e.Directory) (e.Ext)
+    >;
+
+$ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
+
+Tunings =
+  (Single CCompiler ('compiler') 'call call-C++.bat')
+  (FileList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
+  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
+  (Single IncludeOpt ('include-opt') '-I')
+  (Single DefineOpt ('define') '-D')
+  (Single Prologue ('prologue') /* пусто */)
+  (Single Epilogue ('epilogue') /* пусто */)
+  (Single ExecutableFile ('exec') '-o');
+
+$END BE-CppSR::MInit.

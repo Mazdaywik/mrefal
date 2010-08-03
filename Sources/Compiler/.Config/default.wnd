@@ -41,21 +41,8 @@ G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%
     %COMP% %MODE% +cfg:%PROFILE%.prj >__out 2>__err
     view:__err
 -:  
-T:  Перейти
-{
-C:  Cpp-SR-BE
-    cd Cpp-SR-BE
-    ncmenu
-M:  MRefal-FE
-    cd MRefal-FE
-    ncmenu
-R:  Refal5
-    cd Refal5
-    ncmenu
-S:  SRefal-BE
-    cd SRefal-BE
-    ncmenu
-}
+L:  Удалить промежуточные файлы
+    for /d %d in (~*) do rmdir /s /q %d
 -:  
 I:  Статистика и информация
 {
@@ -135,8 +122,6 @@ C:  Back-end Си++/Простой Рефал
 D:  Оставить по умолчанию (%COMP-SHORT%)
     ncmenu
 }
-?:  Профиль %PROFILE-SHORT% (сменить) ...
-    .Config\change_window set_main_profile
 P:  Профиль %PROFILE-SHORT% (сменить)
 {
 :  [Установка основного профиля (по умолчанию %PROFILE-SHORT%)]

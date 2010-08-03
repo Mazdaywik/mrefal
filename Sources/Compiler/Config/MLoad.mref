@@ -10,12 +10,12 @@ $IMPORT MSrcPos;
 
 // Регистраторы
 
-$IMPORT Cpp-SR-BE::MInit;
-$IMPORT MRefal-FE::MInit;
-$IMPORT MSymModule;
-$IMPORT MXLinx;
-$IMPORT Refal5::MInit;
-$IMPORT SRefal-BE::MInit;
+$IMPORT BE-CppSR   ::MInit;
+$IMPORT BE-ModuleIF::MInit;
+$IMPORT BE-Refal5  ::MInit;
+$IMPORT BE-SimRef  ::MInit;
+$IMPORT BE-XLinx   ::MInit;
+$IMPORT FE-MRefal  ::MInit;
 
 /**
   <Load t.hErrorList (e.Argument)>
@@ -247,7 +247,7 @@ SwBackEndSelector {
 
 AddProfile {
   s.Profile (e.Depended) e.Config-B XLinxOn e.Config-E =
-    e.Config-B e.Config-E (Profile s.Profile (e.Depended XLinx-BE));
+    e.Config-B e.Config-E (Profile s.Profile (e.Depended BE-XLinx));
 
   s.Profile (e.Depended) e.Config =
     e.Config (Profile s.Profile (e.Depended));
@@ -258,7 +258,7 @@ XLinxOnHandler {
   (e.Config-B (Profile s.Profile (e.Depended)) e.Config-E)
   t.SrcPos NoParam NoGroup =
     t.hErrorList
-    (e.Config-B (Profile s.Profile (e.Depended XLinx-BE)) e.Config-E);
+    (e.Config-B (Profile s.Profile (e.Depended BE-XLinx)) e.Config-E);
 
   t.hErrorList (e.Config) t.SrcPos NoParam NoGroup =
     t.hErrorList (e.Config XLinxOn);
@@ -868,58 +868,55 @@ SwTuneFEHandler {
 //------------------------------------------------------------------------------
 
 BackEndsTable =
-  (Refal5-BE
+  (BE-CppSR
+    ('CppSR')
+    ((Relative) ('~CppSR'))
+    ('cpp')
+    & BE-CppSR.MInit.Register
+    & BE-CppSR.MInit.Extent
+  )
+  (BE-ModuleIF
+    ('ModuleIF')
+    ((Relative) ('~ModuleIF'))
+    ('mif')
+    & BE-ModuleIF.MInit.Register
+    & ExtentNone
+  )
+  (BE-Refal5
     ('Refal5')
     ((Relative) ('~ROut'))
     ('rout')
-    & Refal5.MInit.Register
+    & BE-Refal5.MInit.Register
     & ExtentNone
   )
-  (SymInfo
-    ('SymInfo')
-    ((Relative) ('~Defs'))
-    ('rsym')
-    & MSymModule.Register
-    & ExtentNone
+  (BE-SimRef
+    ('SimRef')
+    ((Relative) ('~SimRef'))
+    ('sref')
+    & BE-SimRef.MInit.Register
+    & BE-SimRef.MInit.Extent
   )
-  (
-    XLinx-BE
+  (BE-XLinx
     ('XLinx')
     ((Relative) ('~XLinx'))
     ('xlinx')
-    & MXLinx.Register
+    & BE-XLinx.MInit.Register
     & ExtentNone
-  )
-  (SRefal-BE
-    ('SRefal-BE')
-    ((Relative) ('~SimRef'))
-    ('sref')
-    & SRefal-BE.MInit.Register
-    & SRefal-BE.MInit.Extent
-  )
-  (Cpp-SR-BE
-    ('Cpp-SR-BE')
-    ((Relative) ('~CppSR'))
-    ('cpp')
-    & Cpp-SR-BE.MInit.Register
-    & Cpp-SR-BE.MInit.Extent
   );
 
 FrontEndsTable =
-  (MRefal-FE
+  (FE-MRefal
     ('MRefal')
     ('mref')
-    & MRefal-FE.MInit.Register
+    & FE-MRefal.MInit.Register
   );
 
 ExtentNone = <MHelpers::GenExtent /* пусто */>;
 
 ProfileBackEnd =
-  (Refal5 (Refal5-BE SymInfo) ('Refal5') ('R5'))
-  (SimpleRefal (SRefal-BE SymInfo)
-    ('SRefal') ('Simple') ('SimpleRefal') ('SR')
-  )
-  (Cpp-SR (Cpp-SR-BE SymInfo) ('CPPSR'));
+  (Pr-Refal5 (BE-Refal5 BE-ModuleIF) ('Refal5') ('R5'))
+  (Pr-SimRef (BE-SimRef BE-ModuleIF) ('SimRef') ('SRefal') ('SR'))
+  (Pr-CppSR  (BE-CppSR BE-ModuleIF)  ('CPPSR') ('C++/SR'));
 
 LookupDefault-BE-Ext
   s.BackEndId =

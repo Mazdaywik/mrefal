@@ -1,0 +1,272 @@
+$MODULE BE-SimRef::MLinker;
+
+$IMPORT MFileIO;
+$IMPORT MError;
+$IMPORT MLambda;
+$IMPORT MStrings;
+$IMPORT MFileSystem;
+$IMPORT MOS;
+$IMPORT MQualifiedName;
+
+$IMPORT MHelpers = Config::MHelpers;
+
+$IMPORT C-Link = C-Link::MLinker;
+
+/**
+  <Link t.L-Config (e.PtProgName) (t.ModuleName e.PathToModule)*>
+    == Success
+    == Fails
+*/
+$ENTRY Link {
+  t.L-Config (e.PtProgName) e.Modules =
+    Success
+    <MakeHeadFile
+      (<HeadFileNamePt e.PtProgName> '.sref')
+      <MLambda::Map & ModuleName e.Modules>
+    >
+    <PerformCLink
+      (Compiler
+        (ProgName <MHelpers::ConfigExtract t.L-Config CCompiler>)
+        (Prologue <MHelpers::ConfigExtract t.L-Config Prologue>)
+        (Epilogue <MHelpers::ConfigExtract t.L-Config Epilogue>)
+      )
+      (Include
+        <C-LinkOption t.L-Config IncludeOpt>
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            & MFileSystem.StrFromPath
+            & MLambda.Bracket
+          >
+          <MHelpers::ConfigExtract t.L-Config RunTimeDirs>
+        >
+      )
+      (Define <C-LinkOption t.L-Config DefineOpt>)
+      (Output
+        <C-LinkOption t.L-Config ExecutableFile>
+         <MFileSystem::StrFromPath e.PtProgName>
+      )
+      <GetSourceList (e.PtProgName) t.L-Config e.Modules>
+    >;
+}
+
+HeadFileNamePt {
+  e.PtProgName = <MFileSystem::StrFromPath e.PtProgName> '.main';
+}
+
+ModuleName {
+  (t.ModuleName e.Path) = t.ModuleName;
+}
+
+PerformCLink {
+  t.Compiler t.Include t.Define t.Output Success e.Sources =
+    <C-Link::C-Link
+      t.Compiler t.Include t.Define t.Output e.Sources
+    >;
+
+  t.Compiler t.Include t.Define t.Output Fails =
+    <MError::LinkError 'Errors while compilation with Simple Refal.'>;
+}
+
+C-LinkOption
+  t.Config s.OptName =
+    <SwC-LinkOption
+      <MHelpers::ConfigExtract t.Config s.OptName>
+    >;
+
+SwC-LinkOption {
+  /* пусто */ = (Option NotSupport);
+  e.Value = (Option e.Value);
+}
+
+/**
+  <GetSourceList t.Config e.Modules>
+    == Success (e.StrCppFile)*
+    == Fails
+*/
+GetSourceList {
+  (e.PtProgName) t.Config e.Modules =
+    <MFileSystem::RemoveFile <ErrorFlagFilePt e.PtProgName>>
+    <SRefal-SwCompiled
+      <SrefToCpp
+        t.Config (<ErrorFlagFilePt e.PtProgName>)
+        ( <MHelpers::ConfigExtract t.Config CExt> )
+        <GetRunTimeFiles t.Config>
+        (
+          <MLambda::Map & GetModulePath e.Modules>
+          (<HeadFileNamePt e.PtProgName>)
+        )
+      >
+      <MFileSystem::ExistFile <ErrorFlagFilePt e.PtProgName>>
+    >;
+}
+
+ErrorFlagFilePt {
+  e.PtProgName = '___' <MFileSystem::StrFromPath e.PtProgName> '_error_flag___';
+}
+
+SRefal-SwCompiled {
+  e.SourceList True = Fails;
+
+  e.SourceList False = Success e.SourceList;
+}
+
+GetModulePath {
+  (t.ModuleName e.StrPath '.sref') = (e.StrPath);
+}
+
+SrefToCpp {
+  t.Config (e.ErrorFlag) (e.CExt)
+  e.RunTimeSrc-B (NotFound e.PtFileName) e.RunTimeSrc-E
+  (e.Modules) =
+    <MError::LinkError
+      'Run-time file '
+      <MFileSystem::StrFromPath e.PtFileName>
+      ' not found'
+    >;
+
+  t.Config (e.ErrorFlag) (e.CExt) e.RunTimeSrc (e.Modules) =
+    <CallSRefC
+      t.Config (e.ErrorFlag)
+      <MLambda::Map
+        <MLambda::BindLeft & AppendExt 'sref'>
+        e.Modules
+      >
+      <MLambda::Map & FilterSRefs e.RunTimeSrc>
+    >
+    <MLambda::Map
+      <MLambda::BindLeft & AppendExt e.CExt>
+      e.Modules
+    >
+    <MLambda::Map
+      <MLambda::BindLeft & MakeCppRunTime e.CExt>
+      e.RunTimeSrc
+    >;
+}
+
+AppendExt {
+  e.L-Ext (e.StrPath) = (e.StrPath '.' e.L-Ext);
+}
+
+FilterSRefs {
+  (Found ('sref') e.PtFullPath) =
+    ( <MFileSystem::StrFromPath e.PtFullPath> );
+
+  (Found (e.CExt) e.PtFullPath) = /* пусто */;
+}
+
+MakeCppRunTime {
+  e.L-CExt (Found ('sref') e.PtFullPath) =
+    <MakeCppRunTime-Sref
+      e.L-CExt ( <MFileSystem::StrFromPath e.PtFullPath> )
+    >;
+
+  e.L-CExt (Found (e.L-CExt) e.PtFullPath) =
+    ( <MFileSystem::StrFromPath e.PtFullPath> );
+}
+
+MakeCppRunTime-Sref {
+  e.CExt (e.FileName '.sref') = (e.FileName '.' e.CExt);
+}
+
+CallSRefC {
+  t.Config (e.ErrorFlag) e.InputFileNames =
+    <MOS::System
+      '"' <MHelpers::ConfigExtract t.Config SRCompiler> '"'
+      ' -e "' e.ErrorFlag '"'
+      <MLambda::Map & MakeInputFileNames e.InputFileNames>
+    >;
+}
+
+MakeInputFileNames {
+  (e.FileName) = ' "' e.FileName '"';
+}
+
+GetRunTimeFiles {
+  t.Config =
+    <C-Link::LookupRuntimeFiles
+      (('sref') (<MHelpers::ConfigExtract t.Config CExt>))
+      (<MHelpers::ConfigExtract t.Config RunTimeDirs>)
+      <MHelpers::ConfigExtract t.Config RunTimeFiles>
+    >;
+}
+
+//------------------------------------------------------------------------------
+// Формирование головного файла с кодом инициализации
+//------------------------------------------------------------------------------
+
+MakeHeadFile
+  (e.HeadName) e.ModuleNames =
+    // Генерация файла со стартовой функцией
+    <MFileIO::Save
+      (e.HeadName)
+      ()
+      ()
+      ('$SWAP G_Finalizers;')
+      ()
+      ('$ENTRY RegisterE_ {')
+      ('  s.Finalizer =')
+      ('    <G_Finalizers s.Finalizer <G_Finalizers>>;')
+      ('}')
+      ()
+      <MLambda::Map & ModuleInitDeclarator e.ModuleNames>
+      ()
+      ('$ENTRY Go { =')
+      <MLambda::Map
+        & ModuleInitCaller <MStrings::Reverse e.ModuleNames>
+      >
+      ('  ;')
+      ('}')
+      ()
+      ('$EXTERN Exit;')
+      ()
+      ('$ENTRY ExitE_ {')
+      ('  s.Code =')
+      ('    <')
+      ('      {')
+      ('        s.NextFinalizer e.Finalizers =')
+      ('          <G_Finalizers e.Finalizers>')
+      ('          <s.NextFinalizer>')
+      ('          <ExitE_ s.Code>;')
+      ()
+      ('        /* пусто */ = <Exit s.Code>;')
+      ('      }')
+      ('      <G_Finalizers>')
+      ('    >;')
+      ('}')
+    >;
+
+ModuleInitDeclarator {
+  t.ModuleName =
+    ('$EXTERN ' <QNameCode t.ModuleName> 'P_EntryPointE_;');
+}
+
+ModuleInitCaller {
+  t.ModuleName =
+    ('  <' <QNameCode t.ModuleName> 'P_EntryPointE_>');
+}
+
+QNameCode {
+  t.Name = <DoQNameCode <MQualifiedName::Parse t.Name>>;
+}
+
+DoQNameCode {
+  (e.First) = <NameCode e.First>;
+
+  (e.First) (e.Second) =
+    <NameCode e.First> 'P_' <NameCode e.Second>;
+
+  (e.First) (e.Second) e.Tail =
+    <NameCode e.First> 'P_' <DoQNameCode (e.Second) e.Tail>;
+}
+
+NameCode {
+  e.Name = <MLambda::Map & NameCodeChar e.Name>;
+}
+
+NameCodeChar {
+  '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; s.Other = s.Other;
+}
+
+
+$END BE-SimRef::MLinker.

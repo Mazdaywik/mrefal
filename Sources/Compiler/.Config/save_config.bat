@@ -15,6 +15,9 @@ setlocal
   if NOT "%PROFILE%"== "" (
     echo     set PROFILE=%PROFILE%>>%filename%
   )
+  if NOT "%PROFILE-ACRO%"== "" (
+    echo     set PROFILE-ACRO=%PROFILE-ACRO%>>%filename%
+  )
   if NOT "%SCOMP-SHORT%"== "" (
     echo     set SCOMP-SHORT=%SCOMP-SHORT%>>%filename%
   )

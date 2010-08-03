@@ -5,7 +5,7 @@ $IMPORT InOut = MInOut;
 $IMPORT MFileSystem;
 $IMPORT MOS;
 $IMPORT MLambda;
-$IMPORT MLexer = MRefal-FE::MLexer;
+$IMPORT MLexer = FE-MRefal::MLexer;
 $IMPORT MOrder;
 $IMPORT MSrcPos;
 $IMPORT MOutModuleStatus;

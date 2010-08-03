@@ -1,0 +1,15 @@
+$MODULE FE-MRefal::MInit;
+
+$IMPORT Config::MConfig;
+$IMPORT FE-MRefal::MParser_MRefal;
+
+$ENTRY Register
+  t.Config (e.Ext) =
+    <Config::MConfig::RegisterFrontEnd
+      t.Config
+      MRefal_FrontEnd
+      & FE-MRefal.MParser_MRefal.SrcModule
+      (e.Ext)
+    >;
+
+$END FE-MRefal::MInit.

@@ -1,0 +1,17 @@
+$MODULE BE-Refal5::MInit;
+
+$IMPORT BE-Refal5::MBackEnd;
+$IMPORT BE-Refal5::MLinker;
+$IMPORT Config::MConfig;
+
+$ENTRY Register
+  t.Config (e.Directory) (e.Ext) =
+    <Config::MConfig::RegisterBackEnd
+      t.Config
+      BE-Refal5
+      & BE-Refal5.MBackEnd.Generate-T
+      & BE-Refal5.MLinker.Link
+      (e.Directory) (e.Ext)
+    >;
+
+$END BE-Refal5::MInit.

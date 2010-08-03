@@ -1,0 +1,38 @@
+$MODULE BE-SimRef::MInit;
+
+$IMPORT Config::MConfig;
+$IMPORT BE-SimRef::MCompiler;
+$IMPORT BE-SimRef::MLinker;
+
+$IMPORT MHelpers = Config::MHelpers;
+$IMPORT MLambda;
+
+$ENTRY Register
+  t.Config (e.Directory) (e.Ext) e.Tunings =
+    <Config::MConfig::RegisterBackEnd
+      t.Config
+      BE-SimRef
+      & BE-SimRef.MCompiler.Generate
+      <MLambda::BindLeft
+        & BE-SimRef.MLinker.Link
+        <MHelpers::InitConfig & Tunings e.Tunings>
+      >
+      (e.Directory) (e.Ext)
+    >;
+
+$ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
+
+Tunings =
+  (Single SRCompiler ('srcomp') 'srefc.exe')
+  (Single CCompiler ('ccomp') 'call call-C++.bat')
+  (FileList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
+  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
+  (Single IncludeOpt ('include-opt') '-I')
+  (Single DefineOpt ('define') '-D')
+  (Single Prologue ('prologue') /* пусто */)
+  (Single Epilogue ('epilogue') /* пусто */)
+  (Single ExecutableFile ('exec') '-o')
+  (Single ExtraOptions ('extra') /* пусто */)
+  (Single CExt ('cext') 'cpp');
+
+$END BE-SimRef::MInit.

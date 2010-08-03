@@ -49,7 +49,7 @@ ADTDefinition = '$data' ADTList .
 ADTList = ADTName | ADTName ',' ADTList .
 ADTName = INENTIFIER .
 
-.rsym:
+.mif:
 
 SymModule = ModuleHeader SymModuleBody ModuleTailer .
 SymModuleBody = SymModuleElement* .

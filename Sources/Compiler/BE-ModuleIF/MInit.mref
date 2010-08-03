@@ -1,0 +1,18 @@
+$MODULE BE-ModuleIF::MInit;
+
+$IMPORT Config::MConfig;
+$IMPORT BE-ModuleIF::MCompiler;
+
+$ENTRY Register
+  t.Config (e.Directory) (e.Ext) =
+    <Config::MConfig::RegisterBackEnd
+      t.Config
+      BE-ModuleIF
+      & BE-ModuleIF.MCompiler.Generate
+      & Link
+      (e.Directory) (e.Ext)
+    >;
+
+Link (e.OutName) e.Modules = Success; // Не линкуем.
+
+$END BE-ModuleIF::MInit.

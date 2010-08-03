@@ -1,0 +1,344 @@
+$MODULE BE-SimRef::MCompiler;
+
+$IMPORT MEscape;
+$IMPORT MFileIO;
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MOrder;
+$IMPORT MStrings;
+$IMPORT MQualifiedName;
+
+/**
+  <Generate t.hIModule e.OutName>
+    == t.hIModule
+*/
+$ENTRY Generate
+  t.hIModule e.OutName =
+    <Generate-Aux
+      (e.OutName)
+      <MLambda::MapReduce
+        <MLambda::Composite
+          <MLambda::Parallel-H
+            & MLambda.Identity
+            & MIModule.AbsolutName
+          >
+          & GenerateFunction
+        >
+        <MIModule::GetFunctionList t.hIModule>
+      >
+    >;
+
+/*
+  <GenerateFunction t.hIModule t.RelativeName t.AbsolutName>
+    == t.hIModule ( (e.Definitions) (e.FunctionCode) )
+*/
+GenerateFunction
+  t.hIModule t.RelativeName t.AbsolutName =
+    <GenerateFunction-Aux
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+          >
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute  Body t.RelativeName
+          >
+        >
+        t.hIModule
+      >
+      t.AbsolutName
+    >;
+
+GenerateFunction-Aux {
+  t.hIModule Found Swap NoAttrib t.AbsolutName =
+    t.hIModule
+    (
+      ()
+      (('$SWAP ' <QNameCode t.AbsolutName> ';') ())
+    );
+
+  t.hIModule Found s.ScopeClass Found (/* пусто */) t.AbsolutName =
+    t.hIModule
+    (
+      ()
+      ((<Gen-CheckEnum s.ScopeClass> <QNameCode t.AbsolutName> ';') ())
+    );
+
+  t.hIModule Found s.ScopeClass Found (e.Sentences) t.AbsolutName =
+    t.hIModule
+    (
+      (<MLambda::Map & Definition-Sentence e.Sentences>)
+      (
+        (
+          <Gen-FnScopeClass s.ScopeClass>
+          <QNameCode t.AbsolutName> ' {'
+        )
+        <MLambda::Map & Gen-Sentence e.Sentences>
+        ('}')
+        ()
+      )
+    );
+
+}
+
+Gen-CheckEnum {
+  Entry = '$EENUM ';
+  Local = '$ENUM ';
+}
+
+Gen-FnScopeClass {
+  Entry = '$ENTRY ';
+  Local = ;
+}
+
+Definition-Sentence {
+  ( (Pattern e.Pattern) (Result e.Result) ) =
+    <Definition-Pattern e.Pattern> <Definition-Result e.Result>;
+}
+
+Definition-Pattern {
+  e.Pattern = <MLambda::Map & Definition-Pattern-Term e.Pattern>;
+}
+
+Definition-Pattern-Term {
+  (Structure e.Pattern) =
+    <Definition-Pattern e.Pattern>;
+
+  (Abstract t.Callable e.Pattern) =
+    <Definition-Callable t.Callable>
+    <Definition-Pattern e.Pattern>;
+
+  t.Common = <Definition-Common-Term t.Common>;
+}
+
+Definition-Result {
+  e.Result = <MLambda::Map & Definition-Result-Term e.Result>;
+}
+
+Definition-Result-Term {
+  (Structure e.Result) =
+    <Definition-Result e.Result>;
+
+  (Abstract t.Callable e.Result) =
+    <Definition-Callable t.Callable>
+    <Definition-Result e.Result>;
+
+  (Function t.Callable e.Argument) =
+    <Definition-Callable t.Callable>
+    <Definition-Result e.Argument>;
+
+  (IndirectCall (SVar e.Index) e.Argument) =
+    <Definition-Result e.Argument>;
+
+  t.Common = <Definition-Common-Term t.Common>;
+}
+
+Definition-Common-Term {
+  (Identifier t.SrcPos e.Name) = ('$LABEL ' <NameCode e.Name> ';');
+
+  (EVar e.Index) = ;
+  (SVar e.Index) = ;
+  (TVar e.Index) = ;
+
+  (Literal e.Content) = ;
+  // (DQWord e.Content) = ;
+  (Macro s.Value) = ;
+
+  (FnPtr t.Callable) = <Definition-Callable t.Callable>;
+}
+
+Definition-Callable {
+  (s.ScopeClass t.SrcPos t.Name) =
+    (<Definition-ScopeClass s.ScopeClass> ' ' <QNameCode t.Name> ';');
+}
+
+Definition-ScopeClass {
+  Entry = '$EXTERN';
+  Local = '$FORWARD';
+  Swap = '$FORWARD';
+  ADT = '$ENUM';
+}
+
+Gen-Sentence {
+  ((Pattern e.Pattern) (Result e.Result)) =
+    ('  ' <Gen-Pattern e.Pattern> '=')
+    ('    ' <Gen-Result e.Result> ';');
+}
+
+Gen-Pattern {
+  e.Pattern = <MLambda::Map & Gen-Pattern-Term e.Pattern>;
+}
+
+Gen-Pattern-Term {
+  (Structure e.Pattern) = '(' <Gen-Pattern e.Pattern> ')';
+
+  (Abstract t.Callable e.Pattern) =
+    '[' <Gen-Callable t.Callable> <Gen-Pattern e.Pattern> ']';
+
+  t.Common = <Gen-Common-Term t.Common>;
+}
+
+Gen-Result {
+  e.Result = <MLambda::Map & Gen-Result-Term e.Result>;
+}
+
+Gen-Result-Term {
+  (Structure e.Result) = '(' <Gen-Result e.Result> ')';
+
+  (Abstract t.Callable e.Result) =
+    '[' <Gen-Callable t.Callable> <Gen-Result e.Result> ']';
+
+  (Function t.Callable e.Argument) =
+    '<' <Gen-Callable t.Callable> <Gen-Result e.Argument> '>';
+
+  (IndirectCall (SVar e.Index) e.Argument) =
+    '<s.' e.Index ' ' <Gen-Result e.Argument> '>';
+
+  t.Common = <Gen-Common-Term t.Common>;
+}
+
+Gen-Common-Term {
+  (Identifier t.SrcPos e.Name) = '#' <NameCode e.Name> ' ';
+
+  (EVar e.Index) = 'e.' <NameCode e.Index> ' ';
+  (SVar e.Index) = 's.' <NameCode e.Index> ' ';
+  (TVar e.Index) = 't.' <NameCode e.Index> ' ';
+
+  (Literal e.Content) = '\'' <Escape e.Content> '\' ';
+  // (DQWord e.Content) = ;
+  (Macro s.Value) = <MStrings::Symb s.Value> ' ';
+
+  (FnPtr t.Callable) = <Gen-Callable t.Callable>;
+}
+
+Escape {
+  e.Text = <MLambda::Map & MEscape.EscapeChar-Oct e.Text>;
+}
+
+Gen-Callable {
+  (s.ScopeClass t.SrcPos t.Name) = <QNameCode t.Name> ' ';
+}
+
+QNameCode {
+  t.Name = <DoQNameCode <MQualifiedName::Parse t.Name>>;
+}
+
+DoQNameCode {
+  (e.First) = <NameCode e.First>;
+
+  (e.First) (e.Second) =
+    <NameCode e.First> 'P_' <NameCode e.Second>;
+
+  (e.First) (e.Second) e.Tail =
+    <NameCode e.First> 'P_' <DoQNameCode (e.Second) e.Tail>;
+}
+
+NameCode {
+  e.Name = <MLambda::Map & NameCodeChar e.Name>;
+}
+
+NameCodeChar {
+  '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; s.Other = s.Other;
+}
+
+Generate-Aux
+  (e.OutName) t.hIModule e.Functions =
+    <Generate-Aux2
+      (e.OutName)
+      <GenEntries
+        <MLambda::Apply
+          <MLambda::Parallel-H
+            & MIModule.GetModuleName
+            <MLambda::Composite
+              & MIModule.GetEntryPoint
+              & MLambda.Bracket-H
+            >
+            & MIModule.GetImportList-RealNames
+          >
+          t.hIModule
+        >
+        //<MIModule::GetEntryPoint t.hIModule>
+      >
+      e.Functions
+    >;
+
+GenEntries {
+  t.hIModule t.ModuleName (Go (Result e.Result)) e.Imports =
+    t.hIModule
+    (
+      (
+        (<Definition-Result e.Result>)
+        (
+          ('$EXTERN ExitE_;')
+          ()
+          ('$ENTRY ' <QNameCode t.ModuleName> 'P_EntryPointE_ { =')
+          ('  ' <Gen-Result e.Result>)
+          ('  <ExitE_ 0>;')
+          ('}')
+        )
+      )
+    );
+
+  t.hIModule t.ModuleName (Regular t.InitSeq t.FinalSeq) e.Imports =
+    t.hIModule
+    (
+      (
+        (<Definition-Entry t.InitSeq> <Definition-Entry t.FinalSeq>)
+        (
+          ()
+          (<QNameCode t.ModuleName> 'P_FinalizeE_ { =')
+          ('  ' <GenEntry t.FinalSeq> ';')
+          ('}')
+          ()
+          ('$EXTERN RegisterE_;')
+          ()
+          ('$ENTRY ' <QNameCode t.ModuleName> 'P_EntryPointE_ { =')
+          ('  ' <GenEntry t.InitSeq>)
+          ('  <RegisterE_ ' <QNameCode t.ModuleName> 'P_FinalizeE_>;')
+          ('}')
+        )
+      )
+    );
+}
+
+Definition-Entry {
+  None = ;
+  (Result e.Result) = <Definition-Result e.Result>;
+}
+
+GenEntry {
+  None = '/* empty */';
+  (Result e.Result) = <Gen-Result e.Result>;
+}
+
+Generate-Aux2 {
+  (e.OutName) t.hIModule (e.Entries) e.Functions =
+    t.hIModule
+    <MFileIO::Save
+      (e.OutName)
+      <ScanDefinitionsAndBodies
+        <MLambda::MapReduce & FilterDefinitions () e.Functions e.Entries>
+      >
+    >;
+}
+
+FilterDefinitions {
+  (e.AllDefs) ((e.Defs) (e.Body)) =
+    (e.AllDefs e.Defs) e.Body;
+}
+
+ScanDefinitionsAndBodies {
+  (e.Defs) e.Bodies =
+    ()
+    <Unique <MOrder::Sort e.Defs>>
+    ()
+    e.Bodies;
+}
+
+Unique {
+  e.Begin t.Copy t.Copy e.End = e.Begin <Unique t.Copy e.End>;
+
+  e.NoCopies = e.NoCopies;
+}
+
+$END BE-SimRef::MCompiler.

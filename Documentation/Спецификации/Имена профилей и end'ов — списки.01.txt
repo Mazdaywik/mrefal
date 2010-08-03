@@ -1,0 +1,17 @@
+  End'ы:
+  Имя         Внешнее имя    Папка      Расширение  Синонимы
+  BE-CppSR     'CppSR'      '~CppSR'     '.cpp'     C++/SR
+  BE-ModuleIF  'ModuleIF'   '~ModuleIF'  '.mif'     Информация о межмодульных связях
+  BE-Refal5    'Refal5'     '~ROut'      '.rout'    Рефал 5
+  BE-SimRef    'SimRef'     '~SimRef'    '.sref'    Простой Рефал (back-end или профиль), SR
+  BE-XLinx     'XLinx'      '~XLinx'     '.xlinx'
+  FE-MRefal    'MRefal'                  '.mref'    Модульный Рефал (язык, front-end)
+
+  Профили:
+  Имя         Back-end'ы                           Внешние имена
+  Pr-CppSR    BE-CppSR, BE-ModuleIF, [BE-XLinx]   'CppSR', 'C++/SR'
+  Pr-Refal5   BE-Refal5, BE-ModuleIF, [BE-XLinx]  'Refal5', 'R5'
+  Pr-SimRef   BE-SimRef, BE-ModuleIF, [BE-XLinx]  'SimRef', 'SRefal', 'SR'
+
+  В списке back-end'ов XLinx помещён в квадратные скобки, т.к. является опциональным, т.е. его мож-
+но не включать в командной строке.

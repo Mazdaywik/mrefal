@@ -53,7 +53,8 @@ Link-Aux
     >;
 
 ModulesUnBracket
-  (e.Module) = (Parser) e.Module;
+  (t.ModuleHeader e.Entities) =
+    (Parser) t.ModuleHeader <MOrder::Sort e.Entities>;
 
 /*
   Данная функция нужна для того, чтобы объединить сведения

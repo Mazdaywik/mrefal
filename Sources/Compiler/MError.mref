@@ -98,7 +98,7 @@ $ENTRY MergeLists
 //------------------------------------------------------------------------------
 
 /**
-  <AddCmdLineError t.hErrorList e.Message>
+  <AddCmdLineError t.hErrorList t.SrcPos e.Message>
     == t.hErrorList
 */
 $ENTRY AddCmdLineError

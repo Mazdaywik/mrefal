@@ -1,4 +1,4 @@
-$MODULE MResolveTable;
+$MODULE Driver::MResolveTable;
 
 $IMPORT MQualifiedName;
 
@@ -94,4 +94,4 @@ LookupSubName {
     t.ResolveTable NotFound NotFound t.InternalQualifier;
 }
 
-$END MResolveTable.
+$END Driver::MResolveTable.

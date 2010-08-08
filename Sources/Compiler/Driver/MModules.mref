@@ -1,7 +1,7 @@
-$MODULE MModules;
+$MODULE Driver::MModules;
 
 $IMPORT MConfig = Config::MConfig;
-$IMPORT MContext;
+$IMPORT MContext = Driver::MContext;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MStrings;
@@ -14,12 +14,13 @@ $IMPORT MQualifiedName;
     == t.hContext Found
       t.QualifiedName s.FrontEndName e.PtBaseDirectory
     == t.hContext NotFound
+    == t.hContext Redefinition
 */
 $ENTRY LookupCmdLineModule
   t.hContext t.Config e.PtCmdLinePath (e.FileName) =
     <GenVariants-CmdLine
-        t.hContext t.Config e.PtCmdLinePath
-        <FindExt e.FileName>
+      t.hContext t.Config e.PtCmdLinePath
+      <FindExt e.FileName>
     >;
 
 FindExt
@@ -165,6 +166,8 @@ CorrectFormat-CmdLine {
   t.hContext Found s.Type t.ModuleName s.FrontEnd e.PtBaseDirectory =
     t.hContext Found t.ModuleName s.FrontEnd e.PtBaseDirectory;
 
+  t.hContext Redefinition = t.hContext Redefinition;
+
   t.hContext NotFound = t.hContext NotFound;
 }
 
@@ -181,7 +184,7 @@ $ENTRY LookupImportModule
   t.hContext t.Config t.ModuleName =
     <LookupImportModule-SwKnown
       t.Config t.ModuleName
-      <MContext::GetStatusType t.hContext t.ModuleName>
+      <MContext::GetStatusType_ t.hContext t.ModuleName>
    >;
 
 LookupImportModule-SwKnown {
@@ -230,7 +233,7 @@ CheckVariants-Import-CorrectFormat {
   t.ModuleName
   t.hContext NotFound =
     <GuardInvariant
-      <MContext::CreateModule
+      <MContext::CreateModule_
         t.hContext t.ModuleName
         (Type Errors)
         (FrontEnd None)
@@ -239,6 +242,9 @@ CheckVariants-Import-CorrectFormat {
     >
     Success Found Errors;
 }
+
+GuardInvariant
+  t.hContext Success = t.hContext;
 
 //------------------------------------------------------------------------------
 
@@ -263,12 +269,37 @@ FilterInvalidNames {
 }
 
 FilterInvalidNames-Aux {
-  (s.FrontEnd t.ModuleName e.PtBaseDirectory)
-  e.Segments-B (e.Name-B '?' e.Name-E) e.Segments-E =
-    /* Пусто */;
+  (s.FrontEnd t.ModuleName e.PtBaseDirectory) e.Segments =
+    <FilterInvalidNames-Aux-SwValidSegments
+      (s.FrontEnd t.ModuleName e.PtBaseDirectory)
+      <MLambda::Map
+        & FilterInvalidNames-CheckSegment e.Segments
+      >
+    >;
+}
 
-  (e.FrontEnd t.ModuleName e.PtBaseDirectory) e.Segments =
-    (e.FrontEnd t.ModuleName e.PtBaseDirectory);
+FilterInvalidNames-Aux-SwValidSegments {
+  (s.FrontEnd t.ModuleName e.PtBaseDirectory)
+  e.Segments-B Invalid e.Segments-E =
+    /* пусто */;
+
+  (s.FrontEnd t.ModuleName e.PtBaseDirectory) e.Segments =
+    (s.FrontEnd t.ModuleName e.PtBaseDirectory);
+}
+
+FilterInvalidNames-CheckSegment {
+  (e.Name-B '?' e.Name-E) = Invalid;
+  
+  (e.Name) =
+    <FilterInvalidNames-CheckSegment-FirstLetter
+      (e.Name) <MStrings::Upper e.Name>
+    >;
+}
+
+FilterInvalidNames-CheckSegment-FirstLetter {
+  (s.First e.Name) s.First e.NameUpper = (s.First e.Name);
+
+  (s.FirstLower e.Name) s.FirstUpper e.NameUpper = Invalid;
 }
 
 DoCheckVariants {
@@ -289,6 +320,9 @@ SwDoCheckVariant {
   (Found s.Type t.QualifiedName s.FrontEndName e.PtBaseDirectory)
   e.Tail =
     t.hContext Found s.Type t.QualifiedName s.FrontEndName e.PtBaseDirectory;
+
+  t.hContext t.Config Redefinition e.Tail =
+    t.hContext Redefinition;
 
   t.hContext t.Config NotFound e.Tail =
     <DoCheckVariants
@@ -378,44 +412,38 @@ CheckVariant-T-SrcAux-SwExist-Finish {
   t.hContext t.Config t.ModuleName
   (s.FrontEnd e.FrontEndName)
   (e.PtBaseDirectory)
-  e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E =
-    <GuardInvariant
-      <MContext::CreateModule
-        t.hContext t.ModuleName
-        (Type Changed)
-        (FrontEnd s.FrontEnd e.FrontEndName)
-        (BackEnds
-          <MLambda::Map
-            & BackEnds-DelTF
-            e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E
-          >
-        )
-      >
-    >
-    t.Config
-    (Found Changed t.ModuleName s.FrontEnd e.PtBaseDirectory);
-
-  t.hContext t.Config t.ModuleName
-  (s.FrontEnd e.FrontEndName)
-  (e.PtBaseDirectory)
   e.BackEnds =
-    <GuardInvariant
-      <MContext::CreateModule
+    <CheckVariant-T-SwRedefinition
+      <MContext::CreateModule_
         t.hContext t.ModuleName
-        (Type Updated)
+        (Type <BackEnds-CalcType e.BackEnds>)
         (FrontEnd s.FrontEnd e.FrontEndName)
         (BackEnds <MLambda::Map & BackEnds-DelTF e.BackEnds>)
       >
-    >
-    t.Config
-    (Found Updated t.ModuleName s.FrontEnd e.PtBaseDirectory);
+      t.Config
+      (Found
+        <BackEnds-CalcType e.BackEnds>
+        t.ModuleName s.FrontEnd e.PtBaseDirectory
+      )
+    >;
+}
+
+BackEnds-CalcType {
+  e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E = Changed;
+
+  e.BackEnds = Updated;
 }
 
 BackEnds-DelTF
   (s.BEName s.TrueFalse e.Path) = (s.BEName e.Path);
 
-GuardInvariant
-  t.hContext Success = t.hContext;
+CheckVariant-T-SwRedefinition {
+  t.hContext Success t.Config t.FoundInfo =
+    t.hContext t.Config t.FoundInfo;
+
+  t.hContext Fails Redefinition t.Config t.FoundInfo =
+    t.hContext t.Config Redefinition;
+}
 
 CheckVariant-T-LibAux {
   t.hContext t.Config t.QualifiedName
@@ -453,16 +481,16 @@ CheckVariant-T-LibAux-SwExist {
     t.hContext t.Config NotFound;
 
   t.hContext t.Config t.QualifiedName (e.PtBaseDirectory) e.BE-Files =
-    <GuardInvariant
-      <MContext::CreateModule
+    <CheckVariant-T-SwRedefinition
+      <MContext::CreateModule_
         t.hContext t.QualifiedName
         (Type Library)
         (FrontEnd None)
         (BackEnds e.BE-Files)
       >
-    >
-    t.Config
-    (Found Library t.QualifiedName Library e.PtBaseDirectory);
+      t.Config
+      (Found Library t.QualifiedName Library e.PtBaseDirectory)
+    >;
 }
 
-$END MModules.
+$END Driver::MModules.

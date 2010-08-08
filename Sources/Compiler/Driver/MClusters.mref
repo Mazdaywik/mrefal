@@ -1,4 +1,4 @@
-$MODULE MClusters;
+$MODULE Driver::MClusters;
 /**=============================================================================
   Функции модуля обрабатывают "гроздь" модулей -- набор прямо или косвенно зави-
 сящих модулей от некоторого модуля. Две основные фукции модуля: CheckNeedCompile
@@ -7,14 +7,14 @@ $MODULE MClusters;
 компоновке.
 ==============================================================================*/
 
-$IMPORT MContext;
+$IMPORT Driver::MModules;
+$IMPORT Driver::MSymModule;
+$IMPORT MContext = Driver::MContext;
 $IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
-$IMPORT MModules;
 $IMPORT MOrder;
 $IMPORT MStrings;
-$IMPORT MSymModule;
 
 //==============================================================================
 
@@ -28,7 +28,7 @@ DependencesList-Cached
   t.hContext t.ModuleName =
     <DependencesList-Cached-SwAvail
       t.ModuleName
-      <MContext::GetStatusType
+      <MContext::GetStatusType_
         t.hContext t.ModuleName
       >
     >;
@@ -86,7 +86,7 @@ DependencesList-Real
   t.hErrorList t.hContext t.ModuleName =
     <DependencesList-Real-SwAvail
       t.ModuleName t.hErrorList
-      <MContext::GetStatusType
+      <MContext::GetStatusType_
         t.hContext t.ModuleName
       >
     >;
@@ -127,7 +127,7 @@ DependencesList-Real-OnAvail
   t.hContext t.hErrorList t.ModuleName =
     <DependencesList-Real-OnAvail-Aux
       t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
+      <Driver::MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
     >;
 
 DependencesList-Real-OnAvail-Aux {
@@ -146,7 +146,7 @@ DependencesList-Real-OnAvail-OnSuccess
     <MIModule::Destroy t.hIModule>
     <DependencesList-Real-OnAvail-Cache
       t.hErrorList
-      <MContext::SetCachedImports
+      <MContext::SetCachedImports_
         t.hContext t.ModuleName e.ImportedModuleNames
       >
       e.ImportedModuleNames
@@ -178,7 +178,7 @@ $ENTRY CheckNeedCompile-LinkOnly
    t.hErrorList t.hContext t.Config t.ModuleName =
      <SwCheckNeedCompile-LinkOnly
        t.ModuleName t.hErrorList
-       <MModules::LookupImportModule
+       <Driver::MModules::LookupImportModule
          t.hContext t.Config t.ModuleName
        >
      >;
@@ -218,7 +218,7 @@ CheckNeedCompile-UpdateStatusType
   t.hErrorList t.hContext t.ModuleName s.NewType =
     <CheckNeedCompile-UpdateStatusType-Aux
       t.hErrorList
-      <MContext::SetRawType t.hContext t.ModuleName s.NewType>
+      <MContext::SetRawType_ t.hContext t.ModuleName s.NewType>
       t.ModuleName s.NewType
     >;
 
@@ -243,7 +243,7 @@ $ENTRY CheckNeedCompile-Build
    t.hErrorList t.hContext t.Config t.ModuleName =
      <SwCheckNeedCompile-Build
        t.ModuleName t.hErrorList
-       <MModules::LookupImportModule
+       <Driver::MModules::LookupImportModule
          t.hContext t.Config t.ModuleName
        >
      >;
@@ -303,7 +303,7 @@ CheckNeedCompile-R
   t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-SwRoot
       (e.Stack) t.Config t.ModuleName t.hErrorList
-      <MModules::LookupImportModule
+      <Driver::MModules::LookupImportModule
         t.hContext t.Config t.ModuleName
       >
     >;
@@ -389,15 +389,22 @@ GuardUpdateContext
 
 CheckNeedCompile-ScanImports {
   /*
-    В случае циклических связей возвратим NeedRecompile, т.к.
-    сюда не доходит t.hErrorList. Пускай лучше при перекомпиляции
-    будет выдано сообщение об ошибке.
+    На стадии компиляции (MCompiler) тажке производится
+    анализ рекурсивных ссылок и при этом ошибка добавляется
+    в t.hErrorList. Анализ рекурсивных ссылок проводится
+    не только для режима быстрой перекомпиляции,
+    но и для режима только компоновки и полной перекомпиляции.
+
+    Добавление сведений о циклических связях на этом этапе
+    приведёт только к дублированию сообщения об ошибке,
+    поэтому эту проверку лучше здесь проигнорировать и оставить
+    уровню выше.
   */
   (e.Stack-B t.RecursiveModule e.Stack-E )
   t.Config t.ModuleName t.hErrorList
   t.hContext Avail
   e.Imports-B t.RecursiveModule e.Imports-E =
-    t.hContext t.ModuleName Changed;
+    t.hErrorList t.hContext t.ModuleName Success Changed;
 
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Avail e.Imports =
@@ -559,7 +566,7 @@ GetTime
       <MLambda::Apply
         <MLambda::Parallel-H
           <MLambda::Composite
-            <MLambda::BindRight & MContext.GetStatusType t.ModuleName>
+            <MLambda::BindRight & MContext.GetStatusType_ t.ModuleName>
             & MLambda.Bracket-H
           >
           <MLambda::Composite
@@ -629,7 +636,7 @@ GetLastTime-CalcTime {
   t.ModuleName Updated t.hContext
   ( Success e.BackEnds ) ( Success s.FEName s.Init e.FrontEndName ) =
     /*
-      Наличие не проверяем, т.к. функция MModules::LookupImportModule проверяет
+      Наличие не проверяем, т.к. функция Driver::MModules::LookupImportModule проверяет
       наличие входных файлов и возвращает Updated только когда все выходные файлы
       присутствуют.
     */
@@ -671,7 +678,7 @@ GetDateTime-SwExist {
 GetLastTime-MakeResult-Library
   t.ModuleName Library t.hContext (e.MinTime) e.Times (e.MaxTime) =
     <GuardUpdateContext
-      <MContext::SetMinMaxTime
+      <MContext::SetMinMaxTime_
         t.hContext t.ModuleName (e.MinTime) (e.MaxTime)
       >
     >
@@ -687,7 +694,7 @@ GetLastTime-OutTime
 GetLastTime-Compare {
   t.ModuleName t.hContext (e.MaxTime) '<' (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
-      <MContext::SetMinMaxTime
+      <MContext::SetMinMaxTime_
         t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
       >
     >
@@ -695,7 +702,7 @@ GetLastTime-Compare {
 
   t.ModuleName t.hContext (e.MaxTime) s.OtherOrder (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
-      <MContext::SetMinMaxTime
+      <MContext::SetMinMaxTime_
         t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
       >
     >
@@ -825,4 +832,4 @@ DoTopologicalSort {
   ( e.Result ) ( e.AllSlaves ) ( e.NotHead ) = Fails;
 }
 
-$END MClusters.
+$END Driver::MClusters.

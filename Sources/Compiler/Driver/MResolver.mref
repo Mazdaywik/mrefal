@@ -1,10 +1,10 @@
-$MODULE MResolver;
+$MODULE Driver::MResolver;
 
 $IMPORT MError;
 $IMPORT MLambda;
 $IMPORT MIModule;
 $IMPORT MQualifiedName;
-$IMPORT MResolveTable;
+$IMPORT MResolveTable = Driver::MResolveTable;
 
 /**
   <Resolve t.Module t.ErrorList t.ResolveTable>
@@ -519,4 +519,4 @@ SwResolvingQualified {
     e.Argument ('!' Structure e.RMultiBracket);
 }
 
-$END MResolver.
+$END Driver::MResolver.

@@ -157,13 +157,13 @@ c }
 
 b Local::CoreBE::OS::MFileSystem::FindExtent
 c $Local::CoreBE::OS::MFileSystem::FindExtent$ {
-c   s.$Index::Next$ = 'FS-Extent.cpp.exe' ;
-c     , <Br FS-Extent 'FS-Extent.cpp.exe' >
+c   s.$Index::Next$
+c     , <Br FS-Extent '=' Loaded 'FS-Extent.cpp.exe' >
 c     :
 c     = 'FS-Extent.cpp.exe' ;
 
 c   s.$Index::Next$ '++extent:' e.$Index::Extent$
-c     , <Br FS-Extent e.$Index::Extent$ >
+c     , <Br FS-Extent '=' Loaded e.$Index::Extent$ >
 c     :
 c     = e.$Index::Extent$;
 

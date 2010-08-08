@@ -1,0 +1,6 @@
+-cfg:.Config/config-work-R5.cfg
+-xlinx
+MRefal
+(
+  -target:../Bin/MRefal.r5
+)

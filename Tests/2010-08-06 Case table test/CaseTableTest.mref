@@ -1,0 +1,80 @@
+$PROGRAM CaseTableTest;
+
+$IMPORT MCaseTable = Driver::MCaseTable;
+$IMPORT MFileIO;
+$IMPORT MLambda;
+$IMPORT MQualifiedName;
+
+$ENTRY Go =
+  <MFileIO::Save	
+    ('__case_table_test.txt')
+    <PerformTests
+      (MCaseTable.CheckSpace   ('Main'))
+      (MCaseTable.InsertModule ('Main'))
+      (MCaseTable.CheckSpace   ('Main') ('Test'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('Cc') ('Dd'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('Cc') ('Dd'))
+      (MCaseTable.InsertModule ('Aa') ('BB') ('Cc') ('Dd'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('CC') ('Dd'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('Cc'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('CC'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('Cc') ('Dd') ('Ee'))
+      (MCaseTable.InsertModule ('Aa') ('Bb') ('Cc') ('Ddd'))
+    >
+  >;
+
+PerformTests {
+  e.Tests =
+    <MLambda::TerminateAccumulator
+      & MCaseTable.Destroy
+      <MLambda::MapReduce
+        <MLambda::Composite
+          & MLambda.UnBracket-H
+          <MLambda::MakeHandled
+            <MLambda::MakeHandled & MQualifiedName.Create>
+          >
+          & PerformTest
+        >
+        <MCaseTable::Create>
+        e.Tests
+      >
+    >;
+}
+
+PerformTest {
+  t.CaseTable s.TestFunc t.Name =
+    <PerformTest-Aux
+      s.TestFunc t.Name
+      <s.TestFunc t.CaseTable t.Name>
+    >;
+}
+
+PerformTest-Aux {
+  s.TestFunc t.Name t.CaseTable e.Result =
+    t.CaseTable
+    (s.TestFunc <MQualifiedName::ToPrintable-Dot t.Name>)
+    <PerformTest-PrintResult e.Result>;
+}
+
+PerformTest-PrintResult {
+  AvailSpace = ('  avail space');
+  Success    = ('  add success');
+
+  ModuleExist t.ModuleName =
+    ('  module exist ' <MQualifiedName::ToPrintable-Dot t.ModuleName>);
+
+  Collision s.Collision t.Known t.Input =
+    ('  collision: ' <Collision s.Collision>)
+    ('  known: ' <MQualifiedName::ToPrintable-Dot t.Known>)
+    ('  input: ' <MQualifiedName::ToPrintable-Dot t.Input>);
+}
+
+Collision {
+  IllegalModuleCase = 'illegal module case';
+  IllegalPacketCase = 'illegal packet case';
+
+  ModuleOverPacket = 'input module over known packet';
+  PacketOverModule = 'input packet over known module';
+}
+
+$END CaseTableTest.

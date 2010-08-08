@@ -1,16 +1,13 @@
-$MODULE MContext;
+$MODULE Driver::MContext;
 
+$IMPORT MCaseTable = Driver::MCaseTable;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
+$IMPORT MSymTable;
 
 /*------------------------------------------------------------------------------
   Внутренняя структура:
-    t.Context ::= 
-      [Context t.ModuleInfo*]
-    t.ModuleInfo ::= 
-      ( t.ModuleName (s.Attrib e.Value)* )
-    t.ModuleName ::=
-      ( (e.Segment)* )
+    t.Context ::= [Context t.SymTable t.CaseTable]
 ------------------------------------------------------------------------------*/
 $DATA Context;
 
@@ -19,7 +16,7 @@ $DATA Context;
 /**
   <Create> == t.Context
 */
-$ENTRY Create = [Context];
+$ENTRY Create = [Context <MSymTable::Create> <MCaseTable::Create>];
 
 //------------------------------------------------------------------------------
 
@@ -27,12 +24,17 @@ $ENTRY Create = [Context];
   <Destroy t.Context> == empty
 */
 $ENTRY Destroy
-  [Context e.Info] = ;
+  [Context t.SymTable t.CaseTable] =
+    <MSymTable::Destroy t.SymTable>
+    <MCaseTable::Destroy t.CaseTable>;
 
 /**---------------------------------------------------------------------------*/
 //STARTCUT
 DefaultOptions
   =
+    // Вид сущности
+    (Kind Module)
+
     // Информация о входных и выходных частях
     (FrontEnd Unknowns) // Unknowns | None | s.FrontEnd e.FileName
     (BackEnds Unknowns) // e.BackEnds ::= Unknowns | (s.BackEnd e.FileName)*
@@ -74,48 +76,102 @@ DefaultOptions
 //------------------------------------------------------------------------------
 
 /*
+  <Explode t.QualifiedName> == e.ExplodedName
+*/
+Explode
+  t.QualifiedName =
+    <MStrings::Lower <MQualifiedName::Parse t.QualifiedName>>;
+
+/**
+  e.ContextErrorMessage ::=
+    MismatchModuleCase t.KnownModuleName t.InputModuleName
+    MismatchPacketCase t.KnownPacketName t.InputPacketName
+    ModuleOverPacket t.KnownPacketName t.InputModuleName
+    PacketOverModule t.KnownModuleName t.InputPacketName
+*/
+
+/*
+  <IsKnown t.hContext t.ModuleName>
+    == t.hContext Known
+    == t.hContext NotKnown
+    == t.hContext Error e.ContextErrorMessage
+*/
+IsKnown2 {
+  [Context t.SymTable t.CaseTable] t.ModuleName =
+    <IsKnown-SwCheckSpace
+      t.SymTable
+      <MCaseTable::CheckSpace t.CaseTable t.ModuleName>
+    >;
+}
+
+IsKnown-SwCheckSpace {
+  t.SymTable t.CaseTable AvailSpace =
+    [Context t.SymTable t.CaseTable] NotKnown;
+
+  t.SymTable t.CaseTable ModuleExist t.ModuleName =
+    [Context t.SymTable t.CaseTable] Known;
+
+  t.SymTable t.CaseTable Collision s.Collision t.Known t.Input =
+    [Context t.SymTable t.CaseTable]
+    Error <ContextErrorFromCollision s.Collision> t.Known t.Input;
+}
+
+ContextErrorFromCollision {
+  IllegalModuleCase = MismatchModuleCase;
+  IllegalPacketCase = MismatchPacketCase;
+
+  ModuleOverPacket = ModuleOverPacket;
+  PacketOverModule = PacketOverModule;
+}
+
+/*
   <IsKnown t.hContext t.ModuleName>
     == t.hContext Known
     == t.hContext MismatchCase
     == t.hContext NotKnown
 */
-IsKnown
-  [Context e.Info] t.ModuleName =
+?IsKnown
+  t.Context t.ModuleName =
+    <MSelfDiag::Log '<IsKnown>'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log>
+    <IsKnown??
+      <?IsKnown t.Context t.ModuleName>
+    >;
+
+$import MSelfDiag;
+
+IsKnown??
+  t.hContext s.Result =
+    <MSelfDiag::Log '</IsKnown>'>
+    <MSelfDiag::Log '  t.hContext = ' t.hContext>
+    <MSelfDiag::Log '  s.Result = ' s.Result>
+    <MSelfDiag::Log>
+    t.hContext s.Result;
+
+IsKnown_
+  [Context t.SymTable t.CaseTable] t.ModuleName =
     <IsKnown-CheckName
-      (e.Info)
-      ( <MStrings::Lower <MQualifiedName::Parse t.ModuleName>> )
+      t.CaseTable
+      <MSymTable::GetAttrib
+        t.SymTable <Explode t.ModuleName> RealName
+      >
       t.ModuleName
     >;
 
 IsKnown-CheckName {
-  (
-    e.Info-B
-    ((e.Name) e.Options-B (RealName Unknown) e.Options-E)
-    e.Info-E
-  ) (e.Name) t.RealName =
-    [Context
-      e.Info-B
-      ((e.Name) e.Options-B (RealName Unknown) e.Options-E)
-      e.Info-E
-    ] Known;
+  t.CaseTable t.SymTable Found Unknown t.RealName =
+    [Context t.SymTable t.CaseTable] Known;
 
-  (
-    e.Info-B
-    ((e.Name) e.Options-B (RealName t.RealName) e.Options-E)
-    e.Info-E
-  ) (e.Name) t.RealName =
-    [Context
-      e.Info-B
-      ((e.Name) e.Options-B (RealName t.RealName) e.Options-E)
-      e.Info-E
-    ] Known;
+  t.CaseTable t.SymTable Found t.RealName t.RealName =
+    [Context t.SymTable t.CaseTable] Known;
 
-  ( e.Info-B ((e.Name) e.Options) e.Info-E )
-  (e.Name) t.RealName =
-    [Context e.Info-B ((e.Name) e.Options) e.Info-E] MismatchCase;
+  t.CaseTable t.SymTable Found t.RealName-SymTable t.RealName-Argument =
+    [Context t.SymTable t.CaseTable] MismatchCase;
 
-  (e.Info) (e.Name) t.RealName =
-    [Context e.Info] NotKnown;
+  t.CaseTable t.SymTable NoName t.RealName =
+    [Context t.SymTable t.CaseTable] NotKnown;
 }
 
 /*
@@ -124,124 +180,174 @@ IsKnown-CheckName {
     == t.hContext Fails s.Error
   s.Error ::= UnknownOption | MismatchCase
 */
-UpdateInfo
-  [Context e.Info] t.QualifiedName e.NewOptions =
-    <UpdateInfo-FindName
-      [Context e.Info]
-      t.QualifiedName
-      (
-        <MStrings::Lower
-          <MQualifiedName::Parse t.QualifiedName>
-        >
-      )
+?UpdateInfo
+  t.Context t.ModuleName e.NewOptions =
+    <MSelfDiag::Log '<UpdateInfo>'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  e.NewOptions = ' e.NewOptions>
+    <MSelfDiag::Log>
+    <UpdateInfo??
+      <?UpdateInfo t.Context t.ModuleName e.NewOptions>
+    >;
+
+UpdateInfo?? {
+  t.Context Success =
+    <MSelfDiag::Log '</UpdateInfo> Success'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log>
+    t.Context Success;
+
+  t.Context Fails s.Result =
+    <MSelfDiag::Log '</UpdateInfo> Fails>'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log '  s.Result = ' s.Result>
+    <MSelfDiag::Log>
+    t.Context Fails s.Result;
+}
+
+/*
+  <UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
+    == t.hUpdatedContext Success
+    == t.hContext Fails UnknownOption
+    == t.hContext Fails e.ContextErrorMessage
+*/
+UpdateInfo2 {
+  [Context t.SymTable t.CaseTable] t.ModuleName e.NewOptions =
+    <UpdateInfo-SwInsertModule
+      t.SymTable t.ModuleName
+      <MCaseTable::InsertModule t.CaseTable t.ModuleName>
       e.NewOptions
-    >;
-
-UpdateInfo-FindName {
-  [Context
-    e.Info-B
-    ( (e.Name)
-      e.OldOptions-B (RealName Unknown) e.OldOptions-E
-    )
-    e.Info-E
-  ]
-  t.QualifiedName (e.Name) e.NewOptions =
-    <UpdateInfo-UpdateOptions
-      (e.Info-B) (e.Info-E) (e.Name)
-      <UpdateOptions
-        (e.OldOptions-B (RealName Unknown) e.OldOptions-E)
-        e.NewOptions
-      >
-    >;
-
-  [Context
-    e.Info-B
-    ( (e.Name)
-      e.OldOptions-B
-      (RealName t.RealQualifiedName)
-      e.OldOptions-E
-    )
-    e.Info-E
-  ]
-  t.QualifiedName (e.Name) e.NewOptions =
-    <UpdateInfo-FindName-CheckName
-      (e.Info-B) (e.Info-E)
-      (e.OldOptions-B) (e.OldOptions-E)
-      (RealName t.RealQualifiedName)
-      ( <MQualifiedName::Parse t.RealQualifiedName> )
-      ( <MQualifiedName::Parse t.QualifiedName> )
-      ( e.Name ) e.NewOptions
-    >;
-
-  [Context e.Info] t.QualifiedName (e.Name) e.NewOptions =
-    <UpdateInfo-UpdateOptions
-      (e.Info) () (e.Name)
-      <UpdateOptions
-        (<DefaultOptions>) e.NewOptions
-      >
     >;
 }
 
-UpdateInfo-FindName-CheckName {
-  (e.Info-B) (e.Info-E) (e.OldOptions-B) (e.OldOptions-E)
-  (RealName t.RealQualifiedName)
-  ( e.RealName ) ( e.RealName ) ( e.Name ) e.NewOptions =
-    <UpdateInfo-UpdateOptions
-      (e.Info-B) (e.Info-E) (e.Name)
-      <UpdateOptions
-        ( e.OldOptions-B (RealName t.RealQualifiedName) e.OldOptions-E )
-        e.NewOptions
+UpdateInfo-SwInsertModule {
+  t.SymTable t.ModuleName
+  t.CaseTable Success e.NewOptions =
+    /* TODO!!! */;
+
+  t.SymTable t.ModuleName
+  t.CaseTable ModuleExist t.ModuleName e.NewOptions =
+    /* TODO!!! */;
+
+  t.SymTable t.ModuleName
+  t.CaseTable Collision s.Collision t.Known t.Input =
+    [Context t.SymTable t.ModuleName]
+    Fails <ContextErrorFromCollision s.Collision> t.Known t.Input;
+}
+
+//UpdateInfo-FindName {
+//  t.CaseTable t.SymTable Found Unknown
+//  t.ModuleName (e.KeyName) e.NewOptions =
+//    <UpdateInfo-UpdateOptions
+//      t.CaseTable t.SymTable (e.KeyName) e.NewOptions
+//    >;
+//
+//  t.CaseTable t.SymTable Found t.RealName
+//  t.RealName (e.KeyName) e.NewOptions =
+//    <UpdateInfo-UpdateOptions
+//      t.CaseTable t.SymTable (e.KeyName) e.NewOptions
+//    >;
+//
+//  t.CaseTable t.SymTable Found t.RealName
+//  t.ModuleName (e.KeyName) e.NewOptions =
+//    [Context t.SymTable t.CaseTable] Fails MismatchCase;
+//
+//  t.CaseTable t.SymTable NoName
+//  t.ModuleName (e.KeyName) e.NewOptions =
+//    <UpdateInfo-UpdateOptions
+//      t.CaseTable
+//      <MSymTable::UpdateAttribSet
+//        t.SymTable (e.KeyName) <DefaultOptions>
+//      >
+//      (e.KeyName) e.NewOptions
+//    >;
+//}
+
+UpdateInfo {
+  [Context t.SymTable t.CaseTable] t.ModuleName e.NewOptions =
+    <UpdateInfo-Aux
+      t.CaseTable t.SymTable
+      t.ModuleName (<Explode t.ModuleName>) e.NewOptions
+    >;
+}
+
+UpdateInfo-Aux {
+  t.CaseTable t.SymTable t.ModuleName (e.KeyName) e.NewOptions =
+    <UpdateInfo-FindName
+      t.CaseTable
+      <MSymTable::GetAttrib
+        t.SymTable e.KeyName RealName
       >
+      t.ModuleName (e.KeyName) e.NewOptions
+    >;
+}
+
+UpdateInfo-FindName {
+  t.CaseTable t.SymTable Found Unknown
+  t.ModuleName (e.KeyName) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      t.CaseTable t.SymTable (e.KeyName) e.NewOptions
     >;
 
-  (e.Info-B) (e.Info-E) (e.OldOptions-B) (e.OldOptions-E)
-  (RealName t.RealQualifiedName)
-  ( e.RealName ) ( e.ExternalName ) (e.Name) e.NewOptions =
-    [Context
-      e.Info-B
-      ((e.Name) e.OldOptions-B (RealName t.RealQualifiedName) e.OldOptions-E)
-      e.Info-E
-    ]
-    Fails MismatchCase;
+  t.CaseTable t.SymTable Found t.RealName
+  t.RealName (e.KeyName) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      t.CaseTable t.SymTable (e.KeyName) e.NewOptions
+    >;
+
+  t.CaseTable t.SymTable Found t.RealName
+  t.ModuleName (e.KeyName) e.NewOptions =
+    [Context t.SymTable t.CaseTable] Fails MismatchCase;
+
+  t.CaseTable t.SymTable NoName
+  t.ModuleName (e.KeyName) e.NewOptions =
+    <UpdateInfo-UpdateOptions
+      t.CaseTable
+      <MSymTable::UpdateAttribSet
+        t.SymTable (e.KeyName) <DefaultOptions>
+      >
+      (e.KeyName) e.NewOptions
+    >;
 }
 
 UpdateInfo-UpdateOptions {
-  (e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Success e.Options =
-    [Context e.Info-B ( (e.Name) e.Options ) e.Info-E]
-    Success;
-
-  (e.Info-B) (e.Info-E) (e.Name) (e.OldOptions) Fails =
-    [Context e.Info-B ( (e.Name) e.OldOptions ) e.Info-E]
-    Fails UnknonwOption;
+  t.CaseTable t.SymTable (e.KeyName) e.Options =
+    <UpdateInfo-UpdateOptions-ExistOptions
+      t.CaseTable t.SymTable (e.KeyName) () e.Options
+    >;
 }
 
-UpdateOptions
-  (e.OldOptions) e.NewOptions =
-    (e.OldOptions)
-    <DoUpdateOptions
-      () (e.OldOptions) e.NewOptions
+UpdateInfo-UpdateOptions-ExistOptions {
+  t.CaseTable t.SymTable (e.KeyName) (e.Scanned)
+  (s.NextOption e.NextValue) e.Options =
+    <UpdateInfo-UpdateOptions-ExistOptions-SwExist
+      t.CaseTable
+      <MSymTable::GetAttrib t.SymTable e.KeyName s.NextOption>
+      (e.KeyName) (e.Scanned) (s.NextOption e.NextValue) (e.Options)
     >;
 
-DoUpdateOptions {
-  (e.NewOptions) () = Success e.NewOptions;
+  t.CaseTable t.SymTable (e.KeyName) (e.Scanned) =
+    [Context
+      <MSymTable::UpdateAttribSet t.SymTable (e.KeyName) e.Scanned>
+      t.CaseTable
+    ]
+    Success;
+}
 
-  (e.Updated)
-  ( (s.Option e.OldValue) e.OldOptions )
-  e.NewOptions-B (s.Option e.NewValue) e.NewOptions-E =
-    <DoUpdateOptions
-      (e.Updated
-        (s.Option e.NewValue)
-      )
-      (e.OldOptions) e.NewOptions-B e.NewOptions-E
+UpdateInfo-UpdateOptions-ExistOptions-SwExist {
+  t.CaseTable t.SymTable Found e.Value
+  (e.KeyName) (e.Scanned) (s.NextOption e.NewValue) (e.Options) =
+    <UpdateInfo-UpdateOptions-ExistOptions
+      t.CaseTable
+      t.SymTable (e.KeyName) (e.Scanned (s.NextOption e.NewValue)) e.Options
     >;
 
-  (e.Updated) (t.NextOption e.OldOptions) e.NewOptions =
-    <DoUpdateOptions
-      (e.Updated t.NextOption) (e.OldOptions) e.NewOptions
-    >;
+  t.CaseTable t.SymTable NoAttrib
+  (e.KeyName) (e.Scanned) (s.NextOption e.NewValue) (e.Options) =
+    [Context t.SymTable t.CaseTable] Fails UnknownOption;
 
-  (e.Updated) () e.NewOptions =
-    Fails;
+  // NoName не рассматриваем
 }
 
 //------------------------------------------------------------------------------
@@ -253,122 +359,76 @@ DoUpdateOptions {
     == t.hContext ModuleNotFound
     == t.hContext MismatchCase
 */
-ExtractOption
-  [Context e.Info] t.QualifiedName s.Option =
+?ExtractOption
+  t.Context t.ModuleName s.Option =
+    <MSelfDiag::Log '<ExtractOption>'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log '  t.ModuleName = ' t.ModuleName>
+    <MSelfDiag::Log '  s.Option = ' s.Option>
+    <MSelfDiag::Log>
+    <ExtractOption??
+      <?ExtractOption t.Context t.ModuleName s.Option>
+    >;
+
+ExtractOption?? {
+  t.Context Found e.Option =
+    <MSelfDiag::Log '</ExtractOption> Found'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log '  e.Option = ' e.Option>
+    <MSelfDiag::Log>
+    t.Context Found e.Option;
+
+  t.Context s.Error =
+    <MSelfDiag::Log '</ExtractOption>'>
+    <MSelfDiag::Log '  t.Context = ' t.Context>
+    <MSelfDiag::Log '  s.Error = ' s.Error>
+    <MSelfDiag::Log>
+    t.Context s.Error;
+}
+
+ExtractOption {
+  [Context t.SymTable t.CaseTable] t.QualifiedName s.Option =
+    <ExtractOption-Aux
+      t.CaseTable t.SymTable
+      t.QualifiedName <Explode t.QualifiedName> s.Option
+    >;
+}
+
+ExtractOption-Aux {
+  t.CaseTable t.SymTable t.ModuleName e.KeyName s.Option =
     <ExtractOption-CheckName
-      [Context e.Info]
-      <MQualifiedName::Parse-T t.QualifiedName>
-      s.Option
+      t.CaseTable
+      <MSymTable::GetAttrib t.SymTable e.KeyName s.Option>
+      t.ModuleName (e.KeyName)
     >;
+}
 
-ExtractOption-CheckName
-  t.hContext t.QualifiedName e.ExternalName s.Option =
-    <ExtractOption-CheckName-Aux
-      ( e.ExternalName )
-      <ExtractOption-FindName
-        t.hContext
-        <MStrings::Lower e.ExternalName>
-        s.Option
-      >
-    >;
-
-ExtractOption-CheckName-Aux {
-  ( e.ExternalName )
-  t.hContext Found e.Info =
+ExtractOption-CheckName {
+  t.CaseTable t.SymTable Found e.Info t.ModuleName (e.KeyName) =
     <ExtractOption-CheckName-SwMatch
-      (e.Info) (e.ExternalName)
-      <ExtractOption-FindName
-        t.hContext
-        <MStrings::Lower e.ExternalName>
-        RealName
-      >
+      e.Info t.ModuleName t.CaseTable
+      <MSymTable::GetAttrib t.SymTable e.KeyName RealName>
     >;
 
-  ( e.ExternalName )
-  t.hContext OptionNotFound = t.hContext OptionNotFound;
+  t.CaseTable t.SymTable NoAttrib t.ModuleName (e.KeyName) =
+    [Context t.SymTable t.CaseTable] OptionNotFound;
 
-  ( e.ExternalName )
-  t.hContext ModuleNotFound = t.hContext ModuleNotFound;
+  t.CaseTable t.SymTable NoName t.ModuleName (e.KeyName) =
+    [Context t.SymTable t.CaseTable] ModuleNotFound;
 }
 
 ExtractOption-CheckName-SwMatch {
-  (e.Info) (e.ExternalName)
-  t.hContext Found Unknown =
-    t.hContext Found e.Info;
+  e.Info t.ModuleName t.CaseTable t.SymTable Found Unknown =
+    [Context t.SymTable t.CaseTable] Found e.Info;
 
-  (e.Info) (e.ExternalName)
-  t.hContext Found t.RealName =
-    <ExtractOption-CheckName-SwMatch-Aux
-      (e.Info) (e.ExternalName)
-      <MQualifiedName::Parse t.RealName>
-      t.hContext
-    >;
+  e.Info t.RealName t.CaseTable t.SymTable Found t.RealName =
+    [Context t.SymTable t.CaseTable] Found e.Info;
 
-  // Остальные варианты не рассматриваем -- нарушение инварианта
+  e.Info t.ModuleName t.CaseTable t.SymTable Found t.RealName =
+    [Context t.SymTable t.CaseTable] MismatchCase;
+
+  // Остальные варианты не рассматриваем — нарушение инварианта
 }
-
-ExtractOption-CheckName-SwMatch-Aux {
-  (e.Info) (e.RealName) e.RealName t.hContext =
-    t.hContext Found e.Info;
-
-  (e.Info) (e.ExternalName) e.RealName t.hContext =
-    t.hContext MismatchCase;
-}
-
-ExtractOption-FindName {
-  [Context
-    e.Info-B
-    ( (e.Name) e.Options-B (s.Option e.Info) e.Options-E )
-    e.Info-E
-  ] e.Name s.Option =
-    [Context
-      e.Info-B
-      ( (e.Name) e.Options-B (s.Option e.Info) e.Options-E )
-      e.Info-E
-    ] Found e.Info;
-
-  [Context e.Info-B ((e.Name) e.Options) e.Info-E]
-  e.Name s.Option =
-    [Context e.Info-B ((e.Name) e.Options) e.Info-E]
-    OptionNotFound;
-
-  [Context e.Info] e.Name s.Option =
-    [Context e.Info] ModuleNotFound;
-}
-
-//------------------------------------------------------------------------------
-
-///*
-//  <GetRealName t.hContext t.ModuleName>
-//    == t.hContext Success t.RealName
-//    == t.hContext Fails ModuleNotFound
-//    == t.hContext Fails UnknownRealName
-//*/
-//$ENTRY GetRealName
-//  t.hContext t.ModuleName =
-//    <GetRealName-Aux
-//      t.hContext
-//      <MStrings::Lower <MQualifiedName::Parse t.ModuleName>>
-//    >;
-//
-//GetRealName-Aux {
-//  [Context
-//    e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
-//  ] e.Name =
-//    [Context
-//      e.Info-B ((e.Name) e.Options-B (RealName Unknown) e.Options-E) e.Info-E
-//    ] Fails UnknownRealName;
-//
-//  [Context
-//    e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
-//  ] e.Name =
-//    [Context
-//      e.Info-B ((e.Name) e.Options-B (RealName t.RealName) e.Options-E) e.Info-E
-//    ] Success t.RealName;
-//
-//  [Context e.Info] e.Name =
-//    [Context e.Info] Fails ModuleNotFound;
-//}
 
 //------------------------------------------------------------------------------
 
@@ -378,10 +438,10 @@ ExtractOption-FindName {
     == t.hContext Fails ModuleNotFound
     == t.hContext Fails MismatchCase
 */
-$ENTRY GetStatusType
+$ENTRY GetStatusType_
   t.hContext t.ModuleName =
     <GetStatusType-SwKnown
-      <IsKnown t.hContext t.ModuleName> t.ModuleName
+      <IsKnown_ t.hContext t.ModuleName> t.ModuleName
     >;
 
 GetStatusType-SwKnown {
@@ -431,13 +491,13 @@ GetStatusType-ReadType
   t.BackEndInfo ::=
     (BackEnds (s.BackEnd e.PathToBackEnd)*) | (BackEnds Unknowns)
 */
-$ENTRY CreateModule
+$ENTRY CreateModule_
   t.hContext t.ModuleName
   (Type s.Type)
   (FrontEnd s.FrontEnd e.PathToFrontEnd)
   (BackEnds e.BackEnds) =
     <CreateModule-SwDefined
-      <IsKnown t.hContext t.ModuleName>
+      <IsKnown_ t.hContext t.ModuleName>
       t.ModuleName
       (Type s.Type)
       (FrontEnd s.FrontEnd e.PathToFrontEnd)
@@ -559,10 +619,10 @@ GetBackEnd-Aux {
     == t.hContext Fails MismatchCase
     == t.hContext Fails CantUpdate
 */
-$ENTRY SetRawType
+$ENTRY SetRawType_
   t.hContext t.ModuleName s.Type =
     <SetRawType-SwKnown
-      <GetStatusType t.hContext t.ModuleName>
+      <GetStatusType_ t.hContext t.ModuleName>
       t.ModuleName s.Type
     >;
 
@@ -594,10 +654,10 @@ GuardUpdateInfo {
     == t.hContext Fails ModuleNotFound
     == t.hContext Fails MismatchCase
 */
-$ENTRY SetMinMaxTime
+$ENTRY SetMinMaxTime_
   t.hContext t.ModuleName (e.MinTime) (e.MaxTime) =
     <SetMinMaxTime-SwKnown
-      <IsKnown t.hContext t.ModuleName>
+      <IsKnown_ t.hContext t.ModuleName>
       t.ModuleName (e.MinTime) (e.MaxTime)
     >;
 
@@ -653,10 +713,10 @@ GetMinMaxTime-Aux {
     == t.hContext Fails MismatchCase
     == t.hContext Fails CantUpdate
 */
-$ENTRY FinishModule {
+$ENTRY FinishModule_ {
   t.hContext t.RealModuleName s.ModuleType Errors =
     <FinishModule-SwKnown
-      <GetStatusType t.hContext t.RealModuleName>
+      <GetStatusType_ t.hContext t.RealModuleName>
       t.RealModuleName
       (Type Errors)
       (Status Ready)
@@ -664,7 +724,7 @@ $ENTRY FinishModule {
 
   t.hContext t.RealModuleName s.ModuleType s.Type =
     <FinishModule-SwKnown
-      <GetStatusType t.hContext t.RealModuleName>
+      <GetStatusType_ t.hContext t.RealModuleName>
       t.RealModuleName
       (Type s.Type)
       (Status Ready)
@@ -730,10 +790,10 @@ GetTarget-Aux {
 
   s.Error ::= ModuleNotFound | MismatchCase
 */
-$ENTRY SetTarget {
+$ENTRY SetTarget_ {
   t.hContext t.ModuleName e.PtTargetName =
     <SetTarget-SwKnown
-      <IsKnown t.hContext t.ModuleName>
+      <IsKnown_ t.hContext t.ModuleName>
       t.ModuleName e.PtTargetName
     >;
 }
@@ -781,10 +841,10 @@ GetCachedImports-Aux {
 
   s.Error ::= ModuleNotFound | MismatchCase
 */
-$ENTRY SetCachedImports {
+$ENTRY SetCachedImports_ {
   t.hContext t.ModuleName e.ImportList =
     <SetCachedImports-SwKnown
-      <IsKnown t.hContext t.ModuleName>
+      <IsKnown_ t.hContext t.ModuleName>
       t.ModuleName e.ImportList
     >;
 }
@@ -801,4 +861,4 @@ SetCachedImports-SwKnown {
     t.hContext Fails ModuleNotFound;
 }
 
-$END MContext.
+$END Driver::MContext.

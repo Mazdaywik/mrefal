@@ -36,7 +36,7 @@ $ENTRY ToString {
   (SrcPos 'F' e.FileName s.LnNum) =
     '\'' e.FileName '\', ' <MStrings::Symb s.LnNum>;
 
-  (SrcPos 'CC') = 'Command line';
+  (SrcPos 'CC') = '<unknown>';
 
   (SrcPos 'C' s.ArgNo) =
     'Command line, argument ' <MStrings::Symb s.ArgNo>;

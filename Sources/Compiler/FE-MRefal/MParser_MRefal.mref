@@ -5,7 +5,7 @@ $IMPORT MLexer = FE-MRefal::MLexer;
 $IMPORT MParser_Common = FE-MRefal::MParser_Common;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
-$IMPORT MVarTable;
+$IMPORT MVarTable = FE-MRefal::MVarTable;
 
 /**
   <SrcModule t.ErrorList t.QualifiedName e.FileName>

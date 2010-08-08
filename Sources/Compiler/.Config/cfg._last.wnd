@@ -1,11 +1,11 @@
 L:  Загрузить _last
     set COMP-SHORT=C++/SR
-    set COMP=start-cpp
+    set COMP=..\Bin\start-cpp
     set PROFILE-SHORT=Си++/SR
     set PROFILE=mp-work-CPPSR
     set PROFILE-ACRO=.cppsr.exe
     set SCOMP-SHORT=C++/SR
-    set SCOMP=mrefal.s.cpp.exe
+    set SCOMP=..\Bin\mrefal.s.cpp.exe
     set SPROFILE-SHORT=Си++/SR
     set SPROFILE=mp-stable-CPPSR
     set MODE=+make

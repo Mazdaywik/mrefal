@@ -2,7 +2,7 @@ $MODULE Config::MConfig;
 
 //------------------------------------------------------------------------------
 
-$IMPORT MContext;
+$IMPORT Driver::MContext;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
@@ -196,7 +196,7 @@ DoGenerate {
 GenerateBy
   t.hContext t.hIModule t.ModuleName s.BackEndName t.FnGenerator =
     <GenerateBy-Aux
-      <MContext::GetBackEnd t.hContext t.ModuleName s.BackEndName>
+      <Driver::MContext::GetBackEnd t.hContext t.ModuleName s.BackEndName>
       t.hIModule t.ModuleName s.BackEndName t.FnGenerator
     >;
 
@@ -277,7 +277,7 @@ MakeObjName
   s.L-BackEnd t.hContext t.ModuleName =
     <MakeObjName-Aux
       t.ModuleName
-      <MContext::GetBackEnd t.hContext t.ModuleName s.L-BackEnd>
+      <Driver::MContext::GetBackEnd t.hContext t.ModuleName s.L-BackEnd>
     >;
 
 MakeObjName-Aux

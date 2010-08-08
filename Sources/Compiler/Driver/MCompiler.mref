@@ -1,16 +1,16 @@
-$MODULE MCompiler;
+$MODULE Driver::MCompiler;
 
-$IMPORT MClusters;
+$IMPORT Driver::MResolveTable;
+$IMPORT Driver::MResolver;
+$IMPORT MClusters = Driver::MClusters;
 $IMPORT MConfig = Config::MConfig;
-$IMPORT MContext;
+$IMPORT MContext = Driver::MContext;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
-$IMPORT MResolveTable;
-$IMPORT MResolver;
-$IMPORT MSymModule;
 $IMPORT MOutModuleStatus;
+$IMPORT MSymModule = Driver::MSymModule;
 $IMPORT MQualifiedName;
 
 /**
@@ -233,7 +233,7 @@ Compile-Recompile-UpdateContext {
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
       <GuardUpdate
-        <MContext::FinishModule
+        <MContext::FinishModule_
           t.hContext t.ModuleName Regular Errors
         >
       >
@@ -251,7 +251,7 @@ Compile-Recompile-UpdateContext-Aux
     <MOutModuleStatus::Compiled-Q t.ModuleName>
     <Compile-AfterUpdateContext
       t.hErrorList t.hIModule s.ModuleType
-      <MContext::FinishModule
+      <MContext::FinishModule_
         t.hContext t.ModuleName s.ModuleType Changed
       >
     >;
@@ -637,12 +637,12 @@ Compile-Recompile-Resolve
   (t.hErrorList t.hRawModule s.Result) e.ImportInfo =
     <Compile-Recompile-SwResolve
       t.Config t.ModuleName t.hContext s.Result
-      <MResolver::Resolve
+      <Driver::MResolver::Resolve
         t.hRawModule
         t.hErrorList
         <MLambda::Reduce
           & AddImportedInfoToResolveTable
-          <MResolveTable::Create>
+          <Driver::MResolveTable::Create>
           e.ImportInfo
         >
       >
@@ -659,7 +659,7 @@ AddImportedInfoToResolveTable
 
 AddFunctionToResolveTable
   t.hResolveTable (t.RealFunctionName t.AliasFunctionName)=
-    <MResolveTable::Add
+    <Driver::MResolveTable::Add
       t.hResolveTable t.AliasFunctionName Entry t.RealFunctionName
     >;
 
@@ -710,7 +710,7 @@ Compile-Recompile-UpdateCache-Aux {
   t.hIModule e.ImportList =
     <Compile-Recompile-UpdateCache-Finish
       t.hErrorList s.ModuleType
-      <MContext::SetCachedImports t.hContext t.ModuleName e.ImportList>
+      <MContext::SetCachedImports_ t.hContext t.ModuleName e.ImportList>
       t.hIModule
     >;
 }
@@ -790,7 +790,7 @@ Compile-OnUpdated-OnLibrary-Fails
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
       <GuardUpdate
-        <MContext::FinishModule
+        <MContext::FinishModule_
           t.hContext t.ModuleName Regular Errors
         >
       >
@@ -927,7 +927,7 @@ Compile-OnUpdated-SwScanSubModules {
     <Compile-OnUpdated-ScanSubModules-Cache
       t.hErrorList t.ModuleName
       <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
-      <MContext::SetCachedImports
+      <MContext::SetCachedImports_
         t.hContext t.ModuleName
         <MLambda::Map
           & ModuleNameFromValidImport e.ValidScannedImports
@@ -965,7 +965,7 @@ Compile-OnUpdated-ScanSubModules-Cache {
   t.hContext Success =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::FinishModule
+      <MContext::FinishModule_
         t.hContext t.ModuleName s.ModuleType Updated
       >
     >;
@@ -1141,7 +1141,7 @@ Compile-OnLibrary-SwScanSubModules {
     <Compile-OnLibrary-ScanSubModules-Cache
       t.hErrorList t.ModuleName
       <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
-      <MContext::SetCachedImports
+      <MContext::SetCachedImports_
         t.hContext t.ModuleName
         <MLambda::Map
           & ModuleNameFromValidImport e.ValidScannedImports
@@ -1165,7 +1165,7 @@ Compile-OnLibrary-ScanSubModules-Cache {
   t.hContext Success =
     <Compile-AfterUpdateContext
       t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::FinishModule
+      <MContext::FinishModule_
         t.hContext t.ModuleName s.ModuleType Library
       >
     >;
@@ -1190,7 +1190,7 @@ Compile-OnSuccessCompiled {
   t.ModuleName t.hContext t.hErrorList Fails =
     (
       <GuardUpdate
-        <MContext::FinishModule
+        <MContext::FinishModule_
           t.hContext t.ModuleName Regular Errors
         >
       >
@@ -1199,4 +1199,4 @@ Compile-OnSuccessCompiled {
     Fails t.ModuleName;
 }
 
-$END MCompiler.
+$END Driver::MCompiler.

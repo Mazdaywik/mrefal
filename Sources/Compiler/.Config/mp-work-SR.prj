@@ -1,0 +1,6 @@
+-cfg:.Config/config-work-SR.cfg
+-xlinx
+MRefal
+(
+  -target:../Bin/MRefal.sr.exe
+)

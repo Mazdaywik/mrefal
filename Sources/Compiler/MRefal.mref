@@ -1,23 +1,22 @@
 $PROGRAM MRefal;
 
-$IMPORT MCompiler;
-$IMPORT MConfig = Config::MConfig;
-$IMPORT MContext;
+$IMPORT Config::MLoad;
+$IMPORT Driver::MCompiler;
+$IMPORT Driver::MContext;
+$IMPORT Driver::MModules;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MInOut;
 $IMPORT MLambda;
-$IMPORT MLoadConfig = Config::MLoad;
-$IMPORT MModules;
 $IMPORT MOS;
-$IMPORT MQualifiedName;
+$IMPORT MSrcPos;
 $IMPORT MVersion;
 
 $ENTRY Go =
   <MVersion::Show>
   <CompileList
-    <MContext::Create>
-    <MLoadConfig::Load
+    <Driver::MContext::Create>
+    <Config::MLoad::Load
       <MError::CreateErrList>
       <MOS::ArgList>
     >
@@ -25,7 +24,7 @@ $ENTRY Go =
 
 CompileList {
   t.hContext t.hErrorList Success (Help e.Message) =
-    <MContext::Destroy t.hContext>
+    <Driver::MContext::Destroy t.hContext>
     <MError::DestroyErrList t.hErrorList>
     <MInOut::WriteText e.Message>;
 
@@ -35,7 +34,7 @@ CompileList {
     >;
 
   t.hContext t.hErrorList Fails =
-    <MContext::Destroy t.hContext>
+    <Driver::MContext::Destroy t.hContext>
     <MError::PrintErrors t.hErrorList>;
 }
 
@@ -58,15 +57,18 @@ AddCommandLineModule {
   t.L-Config t.hContext (e.PtModuleName t.Target) =
     <AddCommandLineModule-Aux
       (e.PtModuleName) t.Target
-      <MModules::LookupCmdLineModule
+      <Driver::MModules::LookupCmdLineModule
         t.hContext t.L-Config e.PtModuleName
       >
     >;
 }
 
 AddCommandLineModule-Aux {
-  (e.PtModuleName) t.Target t.hContext NotFount =
+  (e.PtModuleName) t.Target t.hContext NotFound =
     t.hContext (NotFound e.PtModuleName);
+
+  (e.PtModuleName) t.Target t.hContext Redefinition =
+    t.hContext (Redefinition e.PtModuleName);
 
   (e.PtModuleName) NoTarget
   t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
@@ -75,7 +77,9 @@ AddCommandLineModule-Aux {
   (e.PtModuleName) (e.PtTargetName)
   t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
     <AddCommandLineModule-Aux-Guard
-      <MContext::SetTarget t.hContext t.QualifiedName e.PtTargetName>
+      <Driver::MContext::SetTarget_
+        t.hContext t.QualifiedName e.PtTargetName
+      >
     >
     (Found t.QualifiedName);
 }
@@ -87,11 +91,24 @@ AddCommandLineModule-Aux-Guard {
 CheckFoundResult {
   t.Config t.hErrorList
   t.hContext e.Results-B ( NotFound e.Module ) e.Results-E =
-    <MContext::Destroy t.hContext>
-    <MError::DestroyErrList t.hErrorList>
-    <MLambda::Map
-      & PrintNotFound
-      e.Results-B ( (e.Module) NotFound ) e.Results-E
+    <Driver::MContext::Destroy t.hContext>
+    <MError::PrintErrors
+      <MLambda::Reduce
+        & PrintErrorLookup
+        t.hErrorList
+        e.Results-B ( NotFound e.Module ) e.Results-E
+      >
+    >;
+
+  t.Config t.hErrorList
+  t.hContext e.Results-B ( Redefinition e.Module ) e.Results-E =
+    <Driver::MContext::Destroy t.hContext>
+    <MError::PrintErrors
+      <MLambda::Reduce
+        & PrintErrorLookup
+        t.hErrorList
+        e.Results-B ( Redefinition e.Module ) e.Results-E
+      >
     >;
 
   t.Config t.hErrorList t.hContext e.ResultsFound =
@@ -105,22 +122,28 @@ CheckFoundResult {
     >;
 }
 
-PrintNotFound {
-  ( NotFound e.PtModule ) =
-    <MInOut::WriteLine
-      'CMDLINE ERROR: module '
-      <MFileSystem::StrFromPath e.PtModule>
-      ' not found'
+PrintErrorLookup {
+  t.hErrorList ( NotFound e.PtModule ) =
+    <MError::AddCmdLineError
+      t.hErrorList
+      <MSrcPos::Create-CmdLine-Common>
+      'module ' <MFileSystem::StrFromPath e.PtModule> ' not found'
     >;
 
-  ( (e.Module) Found t.QualifiedName s.FrontEnd e.PtBaseDirectory ) =
-    /* пусто */;
+  t.hErrorList ( Redefinition e.PtModule ) =
+    <MError::AddCmdLineError
+      t.hErrorList
+      <MSrcPos::Create-CmdLine-Common>
+      'module ' <MFileSystem::StrFromPath e.PtModule> ' redefined'
+    >;
+
+  t.hErrorList ( Found t.QualifiedName ) = t.hErrorList;
 }
 
 Make {
   t.Config (t.hContext t.hErrorList Success) ( Found t.QualifiedName ) =
     (
-      <MCompiler::Make
+      <Driver::MCompiler::Make
         t.hContext
         t.hErrorList
         t.Config
@@ -134,11 +157,11 @@ Make {
 
 FinishMake {
   ( t.hContext t.hErrorList Success ) =
-    <MContext::Destroy t.hContext>
+    <Driver::MContext::Destroy t.hContext>
     <MError::PrintErrors t.hErrorList>;
 
   ( t.hContext t.hErrorList Fails ) =
-    <MContext::Destroy t.hContext>
+    <Driver::MContext::Destroy t.hContext>
     <MError::PrintErrors t.hErrorList>;
 }
 

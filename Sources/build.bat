@@ -217,7 +217,7 @@ setlocal
   call :SUB_DUAL_PRINT "----------------------------------------------------------" %3
   call :SUB_DUAL_PRINT "-- Recompiling with compiler '%1' with profile '%2' --"     %3
   call :SUB_DUAL_PRINT "----------------------------------------------------------" %3
-  set CMDLINE=call start-%1.bat +build +cfg:mp-work-%2.prj
+  set CMDLINE=call ..\Bin\start-%1.bat +build +cfg:.Config/mp-work-%2.prj
   call :SUB_CALL_AND_SAVE_OUTPUT "%CMDLINE%" %3
 endlocal
 goto :EOF

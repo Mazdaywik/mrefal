@@ -92,8 +92,8 @@ SwOut {
 
 StatusStr {
   Updated =    ' Updated ';
-  Compiling =  '-Compiling ';
-  Compiled =   '-Compiled ';
+  Compiling =  '_Compiling ';
+  Compiled =   '~Compiled ';
   Recompiled = '=Recompiled ';
   Library =    '+Load library ';
   Linking =    '*Linking ';

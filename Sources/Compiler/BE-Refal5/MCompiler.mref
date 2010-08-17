@@ -1,4 +1,4 @@
-$MODULE BE-Refal5::MBackEnd;
+$MODULE BE-Refal5::MCompiler;
 
 $IMPORT MEscape;
 $IMPORT MFileIO;
@@ -9,10 +9,10 @@ $IMPORT MStrings;
 $IMPORT MVersion;
 
 /**
-  <Generate-T t.IModule e.OutName>
+  <Generate t.IModule e.OutName>
     == t.IModule
 */
-$ENTRY Generate-T
+$ENTRY Generate
   t.IModule e.OutName =
     <SaveModule
       (e.OutName)
@@ -275,4 +275,4 @@ GenerateCallable
   s.CallType t.SrcPos t.QualifiedFnName =
     '$' <XQualifiedToLine s.CallType t.QualifiedFnName> '$';
 
-$END BE-Refal5::MBackEnd.
+$END BE-Refal5::MCompiler.

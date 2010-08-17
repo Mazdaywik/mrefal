@@ -54,20 +54,6 @@ $ENTRY Lookup
     >;
 
 LookupModuleName {
-  [ResolveTable
-    e.Pairs-B
-    ( (e.ModuleAlias) ModuleAlias e.ExternalModuleNameSegments )
-    e.Pairs-E
-  ] (e.ValidScopes)
-  t.InternalQualifier e.ModuleAlias e.EntityNameSegments =
-    <LookupSubName
-      [ResolveTable
-        ( (e.ModuleAlias) ModuleAlias e.ExternalModuleNameSegments )
-        e.Pairs-B e.Pairs-E
-      ] (e.ValidScopes)
-      t.InternalQualifier e.ExternalModuleNameSegments e.EntityNameSegments
-    >;
-
   t.ResolveTable (e.ValidScopes) t.InternalQualifier e.Segments =
     <LookupSubName
       t.ResolveTable (e.ValidScopes) t.InternalQualifier e.Segments

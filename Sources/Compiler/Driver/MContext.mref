@@ -51,8 +51,8 @@ DefaultOptions
 
     // Информация о статусе компилирования
 
-    (Type Errors) // Errors | Changed | Updated | Library
-    (Status Found) // Found | Raw | Ready
+    (Type Errors) // Errors | Recompile | Updated | Library
+    (Status Found) // Found | Cluster | Ready
 
     /*
       Время последней модификации. Нужно для того, чтобы определить,
@@ -613,24 +613,24 @@ GetBackEnd-Aux {
 */
 
 /**
-  <SetRawType t.hContext t.ModuleName s.Type>
+  <SetClusterType t.hContext t.ModuleName s.Type>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
     == t.hContext Fails MismatchCase
     == t.hContext Fails CantUpdate
 */
-$ENTRY SetRawType_
+$ENTRY SetClusterType_
   t.hContext t.ModuleName s.Type =
-    <SetRawType-SwKnown
+    <SetClusterType-SwKnown
       <GetStatusType_ t.hContext t.ModuleName>
       t.ModuleName s.Type
     >;
 
-SetRawType-SwKnown {
+SetClusterType-SwKnown {
   t.hContext Success Found s.OldType t.ModuleName s.NewType =
     <GuardUpdateInfo
       <UpdateInfo
-        t.hContext t.ModuleName (Status Raw) (Type s.NewType)
+        t.hContext t.ModuleName (Status Cluster) (Type s.NewType)
       >
     >;
 
@@ -734,7 +734,7 @@ $ENTRY FinishModule_ {
 }
 
 FinishModule-SwKnown {
-  t.hContext Success Raw s.Type t.ModuleName e.NewOptions =
+  t.hContext Success Cluster s.Type t.ModuleName e.NewOptions =
     <FinishModule-Aux
       <UpdateInfo t.hContext t.ModuleName e.NewOptions>
     >;

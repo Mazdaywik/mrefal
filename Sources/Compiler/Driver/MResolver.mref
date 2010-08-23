@@ -7,6 +7,13 @@ $IMPORT MQualifiedName;
 $IMPORT MResolveTable = Driver::MResolveTable;
 
 /**
+  <Create> == t.hResolveTable
+*/
+$ENTRY Create = <MResolveTable::Create>;
+
+//------------------------------------------------------------------------------
+
+/**
   <AddModuleInfo t.hResolveTable t.Prefis t.hIModule>
     == t.hResolveTable t.hIModule
 */
@@ -117,55 +124,14 @@ DoExtractLocalInfo-ADT {
   s.ErrorStatus ::= Success | Errors
 */
 $ENTRY Resolve
-  t.hIModule t.hErrorList t.ResolveTable =
+  t.hIModule t.hErrorList t.hResolveTable =
     <ResolvingElements
-      <FillModuleAliases
-        <AddModuleInfo t.ResolveTable NoPrefix t.hIModule>
-        t.hErrorList
-      >
+      <MIModule::GetFunctionList t.hIModule>
+      t.hErrorList
+      t.hResolveTable
     >;
-
-FillModuleAliases
-  t.hResolveTable t.hIModule t.hErrorList =
-    t.hResolveTable t.hIModule t.hErrorList;
-
-FillModuleAliases-Aux
-  t.ResolveTable t.IModule e.ImportNames =
-    <UnBracketResult
-      <MLambda::MapReduce
-        & AddAlias
-        (t.ResolveTable t.IModule)
-        e.ImportNames
-      >
-    >;
-
-UnBracketResult
-  (t.ResolveTable t.IModule) = t.ResolveTable t.IModule;
-
-AddAlias
-  (t.ResolveTable t.IModule) t.NextAliasName =
-    <AddAlias-Aux
-      t.ResolveTable
-      t.NextAliasName
-      <MIModule::GetImportAttribute-AliasName
-        t.IModule RealName t.NextAliasName
-      >
-    >;
-
-AddAlias-Aux
-  t.ResolveTable t.AliasName
-  t.IModule Found t.RealName =
-    (t.ResolveTable t.IModule);
 
 ResolvingElements
-  t.ResolveTable t.IModule t.ErrorList =
-    <ResolvingElements-Aux
-      <MIModule::GetFunctionList t.IModule>
-      t.ErrorList
-      t.ResolveTable
-    >;
-
-ResolvingElements-Aux
   t.IModule e.Functions t.ErrorList t.ResolveTable =
     <DoResolvingFunctions
       Success
@@ -275,14 +241,19 @@ CheckSuccess
   >
     == t.IModule t.ErrorList t.ResolveTable
 */
-ResolvingFunction-Body
-  s.Errors t.IModule Found (e.Sentences)
-  t.ErrorList t.ResolveTable t.FnName =
+ResolvingFunction-Body {
+  s.Errors t.hIModule Found (e.Sentences)
+  t.hErrorList t.ResolveTable t.FnName =
     <ResolvingBody
       t.FnName
-      t.IModule s.Errors t.ErrorList t.ResolveTable
+      t.hIModule s.Errors t.hErrorList t.ResolveTable
       (/* Распознанные выражения */) e.Sentences
     >;
+
+  s.Errors t.hIModule NoAttrib
+  t.hErrorList t.ResolveTable t.FnName =
+    s.Errors t.hIModule t.hErrorList t.ResolveTable;
+}
 
 ResolvingBody {
   t.FnName t.IModule s.Errors t.ErrorList t.ResolveTable
@@ -456,9 +427,9 @@ ResolvingChain {
 
 /*
   То, ради чего делается весь этот сложный рекурсивный просмотр --
-анализ корректности вызовов. Стратегия обработки ошибок (необъявленных
-функций): функциональный терм заменяем скобочным термом и заносим
-информацию об ошибке в список ошибок.
+  анализ корректности вызовов. Стратегия обработки ошибок
+  (необъявленных функций): функциональный терм заменяем скобочным термом
+  и заносим информацию об ошибке в список ошибок.
 */
 ResolvingQualified {
   s.Errors t.ErrorList t.ResolveTable

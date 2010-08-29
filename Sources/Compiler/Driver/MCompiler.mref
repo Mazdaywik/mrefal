@@ -2,14 +2,13 @@ $MODULE Driver::MCompiler;
 
 $IMPORT Driver::MResolveTable;
 $IMPORT Driver::MResolver;
-$IMPORT MClusters = Driver::MClusters;
-$IMPORT MConfig = Config::MConfig;
+$IMPORT MConfig = Driver::MConfig;
 $IMPORT MContext = Driver::MContext;
 $IMPORT MError;
-$IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOutModuleStatus;
+$IMPORT MSelfDiag;
 $IMPORT MSymModule = Driver::MSymModule;
 $IMPORT MQualifiedName;
 
@@ -22,32 +21,18 @@ $ENTRY Make
   t.hContext t.hErrorList t.Config t.RootModuleName =
     <Make-SwResult
       t.Config t.RootModuleName
-      <Compile
-        <SelectMaker t.Config>
+      <ScanSubModule
+        Recompile
         () t.Config (t.hContext t.hErrorList) t.RootModuleName
       >
     >;
-
-SelectMaker
-  t.Config =
-    <SwSelectMaker
-      <MConfig::GetMakeMode t.Config>
-    >;
-
-SwSelectMaker {
-  Make = & MClusters.CheckNeedCompile-Make;
-
-  Build = & MClusters.CheckNeedCompile-Build;
-
-  LinkOnly = & MClusters.CheckNeedCompile-LinkOnly;
-}
 
 Make-SwResult {
   t.Config t.RootModuleName
   (t.hContext t.hErrorList) Success t.hIModule Main =
     <MIModule::Destroy t.hIModule>
     <Make-Aux
-      <Link t.Config t.hContext t.RootModuleName>
+      <MConfig::Link t.Config t.hContext t.RootModuleName>
       t.hErrorList
     >;
 
@@ -66,169 +51,377 @@ Make-Aux
   t.hContext s.Result t.hErrorList =
     t.hContext t.hErrorList s.Result;
 
-/*
-  <Link t.Config t.hContext t.RootModuleName>
-    == t.hContext Success
-    == t.hContext Fails
+//------------------------------------------------------------------------------
+
+/**
+  <ScanSubModule
+    s.Type
+    (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName
+  >
+    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
+    == (t.hContext t.hErrorList) Fails t.RealName
+    == (t.hContext t.hErrorList) IsNotLibrary t.RealName
+  s.Type ::= Recompile | Updated | Library
 */
-Link {
-  t.Config t.hContext t.RootModuleName =
-    <Link-Aux-Target
-      t.Config t.RootModuleName
-      <Link-GetTarget t.hContext t.RootModuleName>
+ScanSubModule {
+  s.Type
+  (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName =
+    <ScanSubModule-SwNeedRecompile
+      s.Type
+      (e.Stack) t.Config
+      <MConfig::CheckNeedCompile
+        t.hErrorList t.hContext t.Config t.ImportName
+      >
     >;
 }
 
-Link-Aux-Target {
-  t.Config t.RootModuleName t.hContext e.PtTargetFile =
-    <Link-Aux-ListForLinking
-      t.Config (e.PtTargetFile)
-      <MClusters::ListForLinking t.hContext t.RootModuleName>
+ScanSubModule-SwNeedRecompile {
+  s.TypeMode
+  (e.Stack) t.Config t.hErrorList
+  t.hContext t.ModuleName Success s.Status s.Type =
+    <ScanSubModule-SwSelect
+      <ScanSubModule-Select s.TypeMode s.Status s.Type>
+      (e.Stack) t.Config t.hErrorList t.hContext
+      t.ModuleName
+    >;
+
+  s.Type
+  (e.Stack) t.Config t.hErrorList
+  t.hContext t.ModuleName Fails MismatchCase =
+    (t.hContext t.hErrorList) Fails t.ModuleName;
+}
+
+ScanSubModule-Select {
+  s.TypeMode s.Status Errors    = Error           Fails        ;
+
+  Updated    s.Status Recompile = Error           Fails        ;
+  Library    s.Status Recompile = Error           IsNotLibrary ;
+
+  Library    s.Status Updated   = Error           IsNotLibrary ;
+
+  s.TypeMode Cluster  s.Type    = Compile         s.Type       ;
+  s.TypeMode Ready    s.Type    = SuccessCompiled              ;
+}
+
+ScanSubModule-SwSelect {
+  Error s.ErrorType
+  (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
+    (t.hContext t.hErrorList) s.ErrorType t.ModuleName;
+
+  SuccessCompiled
+  (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
+    <Compile-OnSuccessCompiled
+      t.ModuleName
+      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
+    >;
+
+  Compile s.Type
+  (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
+    <Compile
+      s.Type
+      (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName
     >;
 }
 
-Link-Aux-ListForLinking {
-  t.Config (e.PtTarget) t.hContext Success e.Modules =
-    <MOutModuleStatus::Linking
-      <MFileSystem::StrFromPath e.PtTarget>
-    >
-    <MOutModuleStatus::Flush>
-    <MConfig::Link
-      t.Config t.hContext (e.PtTarget) e.Modules
+Compile-OnSuccessCompiled {
+  t.ModuleName t.hContext t.hErrorList Success s.Errors t.hSymIModule =
+    (t.hContext t.hErrorList)
+    <MakeSuccessResult
+      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
     >;
 
-  t.Config (e.PtTarget) t.hContext Fails =
-    t.hContext Fails;
-}
-
-Link-GetTarget {
-  t.hContext t.RootModuleName =
-    <Link-GetTarget-SwKnown
-      <MContext::GetTarget t.hContext t.RootModuleName>
-      t.RootModuleName
+  t.ModuleName t.hContext t.hErrorList Fails =
+    /*
+      Compile-OnSuccessCompiled вызывается только на стадии Ready,
+      это значит, что стадия грозди была выполнена успешно,
+      а на ней считывается информация о межмодульных связях.
+      Поэтому ошибочное прочтение тут совершенно неожиданно.
+    */
+    <MSelfDiag::Error
+      'Compile-OnSuccessCompiled-Aux:\n'
+      '  Unexpected fail on reading module interface information (MII).\n'
+      '  Glitch appears while loading MII in module '
+      <MQualifiedName::ToPrintable-Dot t.ModuleName> '.'
     >;
 }
 
-Link-GetTarget-SwKnown {
-  t.hContext Success Default t.RootModule =
-    t.hContext
-    <Link-GetTarget-SwKnown-CalcTarget
-      <MQualifiedName::Parse t.RootModule>
-    >;
-
-  t.hContext Success e.PtTarget t.RootModule =
-    t.hContext e.PtTarget;
-}
-
-Link-GetTarget-SwKnown-CalcTarget {
-  e.PacketPrefix (e.LastSegment) =
-    (Relative) (e.LastSegment);
-}
+MakeSuccessResult
+  t.hIModule Found s.ModuleType =
+    Success t.hIModule s.ModuleType;
 
 //------------------------------------------------------------------------------
 
-/*
+/**
   <Compile
-    s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ModuleName
+    s.Type
+    (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName
   >
     == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
     == (t.hContext t.hErrorList) Fails t.ModuleName
+
+  s.Type ::= Updated | Library
 */
-Compile
-  s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ModuleName =
-    <Compile-SwNeedRecompile
-      s.FnAnalyzer (e.Stack) t.Config
-      <s.FnAnalyzer
-        t.hErrorList t.hContext t.Config t.ModuleName
+Compile {
+  s.Type
+  (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
+    <OutModuleStatus-Start-ByType s.Type t.ModuleName>
+    <UpdateContext
+      s.Type
+      <Compile-Aux
+        s.Type
+        (e.Stack) t.Config t.ModuleName
+        <MLambda::Apply
+          <LoadInfo-ByType s.Type>
+          t.Config t.hContext t.hErrorList t.ModuleName
+        >
+      >
+    >;
+}
+
+LoadInfo-ByType {
+  Recompile = & Parse;
+  s.Other   = & LoadInfo;
+}
+
+OutModuleStatus-Start-ByType {
+  Recompile t.ModuleName = <MOutModuleStatus::Compiling-Q t.ModuleName>;
+  s.Other   t.ModuleName = /* ничего */;
+}
+
+/**
+  <Compile-Aux
+    s.Type
+    (e.Stack) t.Config t.ModuleName
+    t.hContext t.hErrorList Success s.Errors t.hSymIModule / Fails
+  >
+    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
+    == (t.hContext t.hErrorList) Fails t.ModuleName
+
+  s.Type ::= Recompile | Updated | Library
+*/
+Compile-Aux {
+  s.Type
+  (e.Stack) t.Config t.ModuleName
+  t.hContext t.hErrorList Success s.Errors t.hSymIModule =
+    <Compile-AnalyzeImports
+      s.Type s.Errors t.Config
+      <GetImportList
+        (e.Stack) t.ModuleName
+        t.hContext t.hErrorList t.hSymIModule
       >
     >;
 
-Compile-SwNeedRecompile {
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Raw Errors =
+  s.Type
+  (e.Stack) t.Config t.ModuleName
+  t.hContext t.hErrorList Fails =
+    (t.hContext t.hErrorList) Fails t.ModuleName;
+}
+
+SelectResult {
+  s.Result Fails = Errors;
+  s.Result Success = s.Result;
+}
+
+Compile-AnalyzeImports {
+  s.Type s.Result t.Config
+  s.RecResult (e.Stack) t.ModuleName
+  t.hContext t.hErrorList t.hSymIModule e.Imports =
+    <Compile-AnalyzeImports-Aux
+      s.Type
+      (e.Stack) t.Config t.ModuleName
+      t.hContext <SelectResult s.Result s.RecResult>
+      t.hErrorList t.hSymIModule e.Imports
+    >;
+}
+
+Compile-AnalyzeImports-Aux {
+  s.Type
+  (e.Stack) t.Config t.ModuleName
+  t.hContext s.Result
+  t.hErrorList t.hSymIModule e.Imports =
+    <Compile-ScanSubModules
+      s.Type t.Config t.ModuleName t.hSymIModule s.Result
+      <MLambda::MapReduce
+        <MLambda::BindLeft
+          & CallScanSubModule
+          s.Type (e.Stack t.ModuleName) t.Config
+        >
+        (t.hContext t.hErrorList) e.Imports
+      >
+    >;
+}
+
+CallScanSubModule {
+  s.Type (e.Stack) t.Config
+  (t.hContext t.hErrorList) (t.AliasName t.RealName) =
+    <Scan-SubModule-Aux
+      s.Type t.AliasName
+      <ScanSubModule
+        s.Type (e.Stack) t.Config
+        (t.hContext t.hErrorList) t.RealName
+      >
+    >;
+}
+
+Scan-SubModule-Aux {
+  s.Type t.AliasName (t.hContext t.hErrorList) Success t.hIModule s.ModuleType =
+    (t.hContext t.hErrorList) (Success t.hIModule s.ModuleType t.AliasName);
+
+  s.Type t.AliasName (t.hContext t.hErrorList) Fails t.RealName =
+    (t.hContext t.hErrorList) (Fails t.RealName t.AliasName);
+
+  Library t.AliasName (t.hContext t.hErrorList) IsNotLibrary t.RealName =
+    (t.hContext t.hErrorList) (IsNotLibrary t.RealName t.AliasName);
+}
+
+Compile-ScanSubModules {
+  s.Type t.Config t.ModuleName t.hSymIModule s.Result
+  (t.hContext t.hErrorList) e.ScannedImports =
+    <Compile-Resolve
+      s.Type t.Config t.ModuleName t.hContext
+      <MLambda::MapReduce
+        & AnalyzeValidSubModule
+        (t.hErrorList t.hSymIModule s.Result)
+        e.ScannedImports
+      >
+    >;
+}
+
+/**
+  <Compile-Resolve
+    s.Type t.Config t.ModuleName t.hContext s.Result
+    (t.hErrorList t.hRawModule)
+    (t.SubModuleAlias t.hISubModule)*
+  >
+*/
+Compile-Resolve {
+  Recompile t.Config t.ModuleName t.hContext
+  (t.hErrorList t.hRawIModule s.Result) e.ImportInfo =
+    <Compile-Recompile-Generate
+      t.Config t.ModuleName t.hContext
+      <Resolve
+        t.hRawIModule t.hErrorList s.Result e.ImportInfo
+      >
+    >;
+
+  s.Type t.Config t.ModuleName t.hContext
+  (t.hErrorList t.hSymIModule s.Result) e.ImportInfo =
+    <Compile-SwScanSubModules
+      t.hContext t.ModuleName
+      (t.hErrorList t.hSymIModule s.Result)
+      <MLambda::Map & OnlyIModule e.ImportInfo>
+    >;
+}
+
+OnlyIModule {
+  (t.Alias t.hSymIModule) = t.hSymIModule;
+}
+
+Compile-Recompile-Generate {
+  t.Config t.ModuleName t.hContext
+  t.hIModule t.hErrorList Errors e.Imports =
+    <MLambda::Map & MIModule.Destroy t.hIModule e.Imports>
     (t.hContext t.hErrorList) Fails t.ModuleName;
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Raw Changed =
-    <Compile-Recompile
-      s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-      t.ModuleName
+  t.Config t.ModuleName t.hContext
+  t.hIModule t.hErrorList s.SuccessOrWarnings e.Imports =
+    <Compile-Recompile-SwGenerate
+      t.hErrorList t.ModuleName
+      <MConfig::Generate t.Config t.hContext t.hIModule t.ModuleName>
+      e.Imports
+    >;
+}
+
+Compile-Recompile-SwGenerate {
+  t.hErrorList t.ModuleName
+  t.hContext t.hIModule Success e.Imports =
+    <Compile-Cache
+      t.hContext t.hErrorList
+      <MIModule::GetModuleName
+        <MSymModule::SymReduce t.hIModule>
+      >
+      e.Imports
     >;
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Raw Updated =
-    <Compile-OnUpdated
-      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
-    >;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Raw Library =
-    <Compile-AnalyzeLibrary
-      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
-    >;
-
-  //-----------------------------------------------------------------
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Ready Errors =
+  t.hErrorList t.ModuleName
+  t.hContext t.hIModule Fails e.Imports =
+    <MIModule::Destroy t.hIModule e.Imports>
     (t.hContext t.hErrorList) Fails t.ModuleName;
+}
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Ready Changed =
-    <Compile-OnSuccessCompiled
-      t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
+Compile-SwScanSubModules {
+  t.hContext t.ModuleName
+  (t.hErrorList t.hSymIModule Errors)
+  e.InvalidScannedImports =
+    (t.hContext t.hErrorList) Fails t.ModuleName
+    <MIModule::Destroy t.hSymIModule>
+    <MLambda::Map & MIModule.Destroy e.InvalidScannedImports>;
+
+  t.hContext t.ModuleName
+  (t.hErrorList t.hSymIModule s.SuccessOrWarnings)
+  e.ValidScannedImports =
+    <Compile-Cache
+      t.hContext t.hErrorList
+      <MIModule::GetModuleName t.hSymIModule>
+      e.ValidScannedImports
     >;
+}
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Ready Updated =
-    <Compile-OnSuccessCompiled
-      t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
+/**
+  <Compile-Cache
+    t.hContext t.hErrorList t.hIModule t.ModuleName e.ValidScannedImports
+  >
+*/
+Compile-Cache {
+  t.hContext t.hErrorList t.hIModule t.ModuleName e.ValidScannedImports =
+    <Compile-ScanSubModules-Cache-Aux
+      t.hErrorList
+      <MIModule::GetModuleAttribute t.hIModule ModuleType>
+      <MContext::SetCachedImports_
+        t.hContext t.ModuleName
+        <MLambda::Map
+          <MLambda::Composite
+            & MIModule.GetModuleName
+            & DestroySymModule
+          >
+          e.ValidScannedImports
+        >
+      >
     >;
+}
 
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Success Ready Library =
-    <Compile-OnSuccessCompiled
-      t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
-    >;
+DestroySymModule {
+  t.hSymIModule t.ModuleName =
+    <MIModule::Destroy t.hSymIModule>
+    t.ModuleName;
+}
 
-  //-----------------------------------------------------------------
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext
-  t.ModuleName Fails MismatchCase =
-    (t.hContext t.hErrorList) Fails t.ModuleName;
+Compile-ScanSubModules-Cache-Aux {
+  t.hErrorList
+  t.hSymIModule Found s.ModuleType
+  t.hContext Success =
+    (t.hContext t.hErrorList) Success t.hSymIModule s.ModuleType;
 }
 
 //------------------------------------------------------------------------------
 
-/*
-  <Compile-Recompile
-    s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName
-  >
-    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
-    == (t.hContext t.hErrorList) Fails t.ModuleName
+/**
+  <UpdateContext s.Type e.CompileResult>
+    == e.CompileResult
+  e.CompileResult ::=
+    (t.hContext t.hErrorList) e.SubResult
+  e.SubResult ::= Success t.hIModule s.ModuleType | Fails t.ModuleName
 */
-Compile-Recompile
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
-    <MOutModuleStatus::Compiling-Q t.ModuleName>
-    <Compile-Recompile-UpdateContext
-      <Compile-Recompile-SwParse
-        s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-        <Parse t.Config t.hContext t.hErrorList t.ModuleName>
-      >
-    >;
 
-Compile-Recompile-UpdateContext {
+UpdateContext {
+  s.Type
   (t.hContext t.hErrorList) Success t.hIModule s.ModuleType =
-    <Compile-Recompile-UpdateContext-Aux
-      (t.hContext t.hErrorList) s.ModuleType
+    <UpdateContext-Aux
+      s.Type (t.hContext t.hErrorList) s.ModuleType
       <MIModule::GetModuleName t.hIModule>
     >;
 
+  s.Type
   (t.hContext t.hErrorList) Fails t.ModuleName =
     <MOutModuleStatus::Fails-Q t.ModuleName>
     (
@@ -245,42 +438,139 @@ Compile-Recompile-UpdateContext {
 GuardUpdate
   t.hContext Success = t.hContext;
 
-Compile-Recompile-UpdateContext-Aux
-  (t.hContext t.hErrorList) s.ModuleType
+UpdateContext-Aux {
+  s.Type (t.hContext t.hErrorList) s.ModuleType
   t.hIModule t.ModuleName =
-    <MOutModuleStatus::Compiled-Q t.ModuleName>
-    <Compile-AfterUpdateContext
+    <OutModuleStatus-Finish-ByType s.Type t.ModuleName>
+    <UpdateContext-AfterUpdate
       t.hErrorList t.hIModule s.ModuleType
       <MContext::FinishModule_
-        t.hContext t.ModuleName s.ModuleType Changed
+        t.hContext t.ModuleName s.ModuleType s.Type
       >
     >;
+}
 
-Compile-AfterUpdateContext
+UpdateContext-AfterUpdate
   t.hErrorList t.hIModule s.ModuleType t.hContext Success =
     (t.hContext t.hErrorList) Success t.hIModule s.ModuleType;
 
-Compile-Recompile-SwParse {
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList Success s.Result t.hRawIModule =
-    <Compile-Recompile-ProcessImportList
-      s.FnAnalyzer s.Result
+OutModuleStatus-Finish-ByType {
+  Recompile t.ModuleName = <MOutModuleStatus::Compiled-Q t.ModuleName>;
+  Updated   t.ModuleName = <MOutModuleStatus::Updated-Q  t.ModuleName>;
+  Library   t.ModuleName = <MOutModuleStatus::Library-Q  t.ModuleName>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <LoadInfo t.Config t.hContext t.hErrorList t.ModuleName>
+    == t.hContext t.hErrorList Success s.Result t.hSymIModule
+    == t.hContext t.hErrorList Fails
+
+  s.Result ::= Success | Warnings | Errors
+*/
+LoadInfo {
+  t.Config t.hContext t.hErrorList t.ModuleName =
+    <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Parse t.Config t.hContext t.hErrorList t.ModuleName>
+    == t.hContext t.hErrorList Success s.Result t.hRawIModule
+    == t.hContext t.hErrorList Fails
+
+  s.Result ::= Success | Warnings | Errors
+*/
+Parse
+  t.Config t.hContext t.hErrorList t.ModuleName =
+    <Parse-SelectFE
+      t.Config t.hErrorList t.ModuleName
+      <MContext::GetFrontEnd t.hContext t.ModuleName>
+    >;
+
+Parse-SelectFE {
+  t.Config t.hErrorList t.ModuleName t.hContext Success None =
+    // Неожиданно. Вообще-то тут не может быть библиотека.
+    t.hContext t.hErrorList Fails;
+
+  t.Config t.hErrorList t.ModuleName t.hContext Success s.FEName e.Path =
+    t.hContext
+    <MConfig::Load t.Config s.FEName t.hErrorList t.ModuleName e.Path>;
+
+  t.Config t.hErrorList t.ModuleName t.hContext Fails s.Reason =
+    t.hContext t.hErrorList Fails;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Resolve
+    t.hIModule t.hErrorList s.Result e.ImportInfo
+  >
+    == t.hIModule t.hErrorList s.Result t.hImportIModule*
+  e.ImportInfo ::= (t.RelativeAlias t.hImportIModule)*
+  s.Result ::= Success | Errors
+*/
+Resolve {
+  t.hIModule t.hErrorList s.Result e.ImportInfo =
+    <Resolve-Aux
+      t.hErrorList s.Result
+      <MLambda::MapReduce
+        <MLambda::Composite
+          & MLambda.UnBracket-H
+          & Driver.MResolver.AddModuleInfo
+        >
+        <Driver::MResolver::Create>
+        (NoPrefix t.hIModule) e.ImportInfo
+      >
+    >;
+}
+
+Resolve-Aux {
+  t.hErrorList s.Result t.hResolveTable t.hIModule e.ImportModules =
+    <Resolve-SwResolve
+      s.Result
+      <Driver::MResolver::Resolve
+        t.hIModule t.hErrorList t.hResolveTable
+      >
+      e.ImportModules
+    >;
+}
+
+Resolve-SwResolve {
+  s.PrevResult t.hIModule s.Result t.hErrorList e.ImportedModules =
+    t.hIModule t.hErrorList
+    <MultiplyResult s.PrevResult s.Result>
+    e.ImportedModules;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetImportList
+    (e.Stack) t.ModuleName t.hContext t.hErrorList t.hIModule
+  >
+    == s.Result (e.Stack) t.ModuleName
+      t.hContext t.hErrorList t.hIModule e.Import
+  s.Result ::= Success | Fails
+  e.Import ::= (t.AliasName t.RealName)*
+*/
+GetImportList {
+  (e.Stack) t.ModuleName t.hContext t.hErrorList t.hIModule =
+    <GetImportList-CheckValidNames
       <GetImportList-AnalyzeRecursiveLinks
-        (e.Stack) t.Config t.ModuleName
-        t.hContext t.hErrorList
+        (e.Stack) t.ModuleName t.hContext t.hErrorList
         <MLambda::MapReduce
           & PrepareImportList-Aliases
-          <MIModule::GetImportList-Aliases t.hRawIModule>
+          <MIModule::GetImportList-Aliases t.hIModule>
         >
       >
     >;
-
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList Fails =
-    (t.hContext t.hErrorList) Fails t.ModuleName;
 }
 
-/**
+/*
   <PrepareImportList-Aliases t.hIModule t.NextImportAlias>
     == t.hIModule (t.NextImport t.RealName)
 */
@@ -297,19 +587,19 @@ PrepareImportList-Aux
   t.NextImport t.hIModule Found t.RealName =
     t.hIModule (t.NextImport t.RealName);
 
-/**
+/*
   <GetImportList-AnalyzeRecursiveLinks
-    (e.Stack) t.Config t.ModuleName
+    (e.Stack) t.ModuleName
     t.hContext t.hErrorList t.hIModule e.Imports
   >
-    == FoundRecursives (e.Stack) t.Config t.ModuleName
+    == Success (e.Stack) t.ModuleName
     t.hContext t.hErrorList t.hIModule e.NonRecursiveImports
-    == NotFoundRecursives (e.Stack) t.Config t.ModuleName
+    == Fails (e.Stack) t.ModuleName
     t.hContext t.hErrorList t.hIModule e.Imports
   e.Imports ::= (t.AliasName t.RealName)
 */
 GetImportList-AnalyzeRecursiveLinks {
-  (e.Stack-B t.RecursiveLink e.Stack-E) t.Config t.ModuleName
+  (e.Stack-B t.RecursiveLink e.Stack-E) t.ModuleName
   t.hContext t.hErrorList t.hIModule
   e.Imports-B (t.Alias t.RecursiveLink) e.Imports-E =
     <GetImportList-TypeRecursiveImports
@@ -320,7 +610,7 @@ GetImportList-AnalyzeRecursiveLinks {
           (e.Stack-B e.Stack-E)
         >
       )
-      t.Config (e.Stack-B t.RecursiveLink e.Stack-E)
+      (e.Stack-B t.RecursiveLink e.Stack-E)
       <MLambda::MapReduce
         & GetSrcPosForImport
         t.hIModule
@@ -331,9 +621,9 @@ GetImportList-AnalyzeRecursiveLinks {
       >
     >;
 
-  (e.Stack) t.Config t.ModuleName
+  (e.Stack) t.ModuleName
   t.hContext t.hErrorList t.hIModule e.Imports =
-    NotFoundRecursives (e.Stack) t.Config t.ModuleName
+    Success (e.Stack) t.ModuleName
     t.hContext t.hErrorList t.hIModule e.Imports;
 }
 
@@ -373,9 +663,9 @@ GetSrcPosForImport-Aux
 
 GetImportList-TypeRecursiveImports
   t.hContext t.hErrorList t.ModuleName
-  (e.Imports) t.Config (e.Stack)
+  (e.Imports) (e.Stack)
   t.hIModule e.RecursiveLinks =
-    FoundRecursives (e.Stack) t.Config t.ModuleName
+    Fails (e.Stack) t.ModuleName
     t.hContext
     <MLambda::MapReduce
       <MLambda::Composite
@@ -386,20 +676,48 @@ GetImportList-TypeRecursiveImports
     >
     t.hIModule e.Imports;
 
-Compile-Recompile-ProcessImportList
-  s.FnAnalyzer s.Result s.RecResult (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList t.hRawIModule e.Imports =
-    <Compile-Recompile-ProcessImportList-Aux
-      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-      t.hContext <SelectResult s.Result s.RecResult>
-      <CheckImportNames
-        t.hErrorList t.hRawIModule
-        <MLambda::Map & CheckName e.Imports>
+GetImportList-CheckValidNames {
+  s.Result (e.Stack) t.ModuleName
+  t.hContext t.hErrorList t.hIModule e.ImportList =
+    <GetImportList-CheckValidNames-UpdateResult
+      s.Result (e.Stack) t.ModuleName t.hContext
+      <DoCheckValidNames
+        Success t.hErrorList t.hIModule () e.ImportList
       >
     >;
+}
+
+GetImportList-CheckValidNames-UpdateResult {
+  s.Result (e.Stack) t.ModuleName t.hContext
+  s.SubResult t.hErrorList t.hIModule e.ImportList =
+    <MultiplyResult s.Result s.SubResult>
+    (e.Stack) t.ModuleName
+    t.hContext t.hErrorList t.hIModule e.ImportList;
+}
+
+MultiplyResult {
+  Errors s.Result2 = Errors;
+  s.Result1 Errors = Errors;
+  Warnings s.Result2 = Warnings;
+  s.Result1 Warnings = Warnings;
+  Success Success = Success;
+}
+
+DoCheckValidNames {
+  s.Result t.hErrorList t.hIModule (e.Scanned)
+  (t.Alias t.RealName) e.Tail =
+    <DoCheckValidNames-SwValid
+      s.Result t.hErrorList t.hIModule (e.Scanned)
+      <CheckName t.Alias t.RealName>
+      e.Tail
+    >;
+
+  s.Result t.hErrorList t.hIModule (e.Scanned) =
+    s.Result t.hErrorList t.hIModule e.Scanned;
+}
 
 CheckName {
-  (t.Alias t.RealName) =
+  t.Alias t.RealName =
     <CheckName-Parsed
       t.Alias t.RealName
       <MQualifiedName::Parse t.RealName>
@@ -409,41 +727,32 @@ CheckName {
 CheckName-Parsed {
   t.Alias t.RealName
   e.Segments-B (e.Name-B '?' e.Name-E) e.Segments-E =
-    (Invalid t.Alias t.RealName);
+    Invalid t.Alias t.RealName;
 
   t.Alias t.RealName e.Segments =
-    (Valid t.Alias t.RealName);
+    Valid t.Alias t.RealName;
 }
 
-CheckImportNames {
-  t.hErrorList t.hRawIModule e.Imports =
-    <DoCheckImportNames
-      t.hErrorList t.hRawIModule () e.Imports
-    >;
-}
-
-DoCheckImportNames {
-  t.hErrorList t.hRawIModule (e.Scanned)
-  (Valid t.Alias t.RealName) e.Tail =
-    <DoCheckImportNames
-      t.hErrorList t.hRawIModule
+DoCheckValidNames-SwValid {
+  s.Result t.hErrorList t.hIModule (e.Scanned)
+  Valid t.Alias t.RealName e.Tail =
+    <DoCheckValidNames
+      s.Result t.hErrorList t.hIModule
       (e.Scanned (t.Alias t.RealName)) e.Tail
     >;
 
-  t.hErrorList t.hRawIModule (e.Scanned)
-  (Invalid t.Alias t.RealName) e.Tail =
-    <DoCheckImportNames
+  s.Result t.hErrorList t.hIModule (e.Scanned)
+  Invalid t.Alias t.RealName e.Tail =
+    <DoCheckValidNames
+      Fails
       <CheckImportName-AddError
         t.hErrorList t.RealName
         <MIModule::GetImportAttribute-AliasName
-          t.hRawIModule Position t.Alias
+          t.hIModule Position t.Alias
         >
       >
       (e.Scanned) e.Tail
     >;
-
-  t.hErrorList t.hRawIModule (e.Scanned) =
-    t.hErrorList t.hRawIModule e.Scanned;
 }
 
 CheckImportName-AddError {
@@ -454,118 +763,14 @@ CheckImportName-AddError {
     t.hRawIModule;
 }
 
-Compile-Recompile-ProcessImportList-Aux
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext s.Result
-  t.hErrorList t.hRawIModule e.Imports =
-    <Compile-Recompile-CompileSubModules
-      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-      t.hContext t.hErrorList s.Result
-      t.hRawIModule e.Imports
-    >;
-
-SelectResult {
-  s.Result FoundRecursives = Errors;
-  s.Result NotFoundRecursives = s.Result;
-}
-
-Compile-Recompile-CompileSubModules
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList s.Result
-  t.hRawIModule e.Imports =
-    <Compile-Recompile-CheckSubModules
-      t.Config t.ModuleName t.hRawIModule s.Result
-      <MLambda::MapReduce
-        <MLambda::BindLeft
-          & CompileSubModule s.FnAnalyzer (e.Stack t.ModuleName) t.Config
-        >
-        (t.hContext t.hErrorList)
-        e.Imports
-      >
-    >;
-
-CompileSubModule
-  s.FnAnalyzer (e.Stack) t.Config
-  (t.hContext t.hErrorList) (t.AliasName t.RealName) =
-    <CompileSubModule-Aux
-      t.AliasName
-      <Compile
-        s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.RealName
-      >
-    >;
-
-CompileSubModule-Aux {
-  t.AliasName (t.hContext t.hErrorList) Success t.hIModule s.ModuleType =
-    (t.hContext t.hErrorList) (Success t.hIModule s.ModuleType t.AliasName);
-
-  t.AliasName (t.hContext t.hErrorList) Fails t.RealName =
-    (t.hContext t.hErrorList) (Fails t.RealName t.AliasName);
-}
-
-Compile-Recompile-CheckSubModules
-  t.Config t.ModuleName t.hRawIModule s.Result
-  (t.hContext t.hErrorList)
-  e.SubModules =
-    <Compile-Recompile-Resolve
-      t.Config t.ModuleName t.hContext
-      <MLambda::MapReduce
-        <MLambda::Composite
-          & AnalyzeValidSubModule
-          & RelativeModuleName
-          <MLambda::MakeHandled & GetFunctionList-IfExist>
-        >
-        (t.hErrorList t.hRawIModule s.Result)
-        e.SubModules
-      >
-    >;
-
-RelativeModuleName {
-  (t.hErrorList t.hRawIModule s.Result) =
-    (t.hErrorList t.hRawIModule s.Result);
-
-  (t.hErrorList t.hRawIModule s.Result)
-  (t.hImportModule t.ImportModuleAlias) =
-    <RelativeModuleName-Aux
-      t.hErrorList s.Result t.hImportModule
-      <MIModule::RelativeName t.hRawIModule t.ImportModuleAlias>
-    >;
-}
-
-RelativeModuleName-Aux
-  t.hErrorList s.Result t.hImportModule
-  t.hRawIModule Success t.RelativeImportAlias =
-    (t.hErrorList t.hRawIModule s.Result)
-    (t.hImportModule t.RelativeImportAlias);
-
-GetFunctionList-IfExist {
-  (t.hRawIModule t.SubModuleAlias) =
-    (
-      <MLambda::MapReduce
-        <MLambda::BindLeft & GetFunctionList-PairNames t.SubModuleAlias>
-        <MIModule::GetFunctionList t.hRawIModule>
-      >
-    );
-
-  = ;
-}
-
-GetFunctionList-PairNames
-  t.SubModuleAlias t.hIModule t.FunctionName =
-    <GetFunctionList-PairNames-Aux
-      <MQualifiedName::Append t.SubModuleAlias t.FunctionName>
-      <MIModule::AbsolutName t.hIModule t.FunctionName>
-    >;
-
-GetFunctionList-PairNames-Aux
- t.AliasName t.hIModule t.RealName =
-   t.hIModule (t.RealName t.AliasName);
+//------------------------------------------------------------------------------
 
 /**
   <AnalyzeValidSubModule (t.hErrorList t.hIModule s.Result) t.ImportRes>
     == (t.hErrorList t.hIModule s.Result) (t.hISubModule t.SubModuleAlias)
     == (t.hErrorList t.hIModule Errors)
   t.ImportRes ::=
-    (t.Success t.hISubModule s.ModuleType t.Alias)
+    (Success t.hISubModule s.ModuleType t.Alias)
     | (Fails t.ImportName t.Alias)
     | (IsNotLibrary t.ImportName t.Alias)
 */
@@ -602,8 +807,17 @@ AnalyzeValidSubModule {
 
   (t.hErrorList t.hRawIModule s.Result)
   (Success t.hISubModule Regular t.Alias) =
-    (t.hErrorList t.hRawIModule s.Result) (t.hISubModule t.Alias);
+    <RelativeModuleName
+      t.hErrorList s.Result t.hISubModule
+      <MIModule::RelativeName t.hRawIModule t.Alias>
+    >;
 }
+
+RelativeModuleName
+  t.hErrorList s.Result t.hImportIModule
+  t.hRawIModule Success t.RelativeImportAlias =
+    (t.hErrorList t.hRawIModule s.Result)
+    (t.RelativeImportAlias t.hImportIModule);
 
 AnalyzeValidSubModule-AddError
   s.FnAddError t.hErrorList t.Alias
@@ -624,579 +838,5 @@ AnalyzeValidSubModule-ImportProgram
         t.hRawIModule Position t.ImportName
       >
     >;
-
-/*
-  <Compile-Recompile-Resolve
-    t.Config t.ModuleName t.hContext s.Result
-    (t.hErrorList t.hRawModule)
-    (t.hISubModule (t.RealFunctionName t.AliasFunctionName)*)*
-  >
-*/
-Compile-Recompile-Resolve
-  t.Config t.ModuleName t.hContext
-  (t.hErrorList t.hRawModule s.Result) e.ImportInfo =
-    <Compile-Recompile-SwResolve
-      t.Config t.ModuleName t.hContext s.Result
-      <Driver::MResolver::Resolve
-        t.hRawModule
-        t.hErrorList
-        <MLambda::Reduce
-          & AddImportedInfoToResolveTable
-          <Driver::MResolveTable::Create>
-          e.ImportInfo
-        >
-      >
-    >;
-
-AddImportedInfoToResolveTable
-  t.hResolveTable (t.hImportedIModule e.Functions) =
-    <MIModule::Destroy t.hImportedIModule>
-    <MLambda::Reduce
-      & AddFunctionToResolveTable
-      t.hResolveTable
-      e.Functions
-    >;
-
-AddFunctionToResolveTable
-  t.hResolveTable (t.RealFunctionName t.AliasFunctionName)=
-    <Driver::MResolveTable::Add
-      t.hResolveTable t.AliasFunctionName Entry t.RealFunctionName
-    >;
-
-Compile-Recompile-SwResolve {
-  t.Config t.ModuleName t.hContext s.Result t.hIModule Errors t.hErrorList =
-    <MIModule::Destroy t.hIModule>
-    (t.hContext t.hErrorList) Fails t.ModuleName;
-
-  t.Config t.ModuleName t.hContext Errors t.hIModule Success t.hErrorList =
-    <MIModule::Destroy t.hIModule>
-    (t.hContext t.hErrorList) Fails t.ModuleName;
-
-  t.Config t.ModuleName t.hContext s.SuccessOrWarnings
-  t.hIModule Success t.hErrorList =
-    <Compile-Recompile-SwGenerate
-      t.hErrorList t.ModuleName
-      <MConfig::Generate t.Config t.hContext t.hIModule t.ModuleName>
-    >;
-}
-
-Compile-Recompile-SwGenerate {
-  t.hErrorList t.ModuleName t.hContext t.hIModule Success =
-    <Compile-Recompile-UpdateCache
-      t.hContext t.hErrorList t.ModuleName
-      <MIModule::GetModuleAttribute
-        <MSymModule::SymReduce t.hIModule>
-        ModuleType
-      >
-    >;
-
-  t.hErrorList t.ModuleName t.hContext t.hIModule Fails =
-    <MIModule::Destroy t.hIModule>
-    (t.hContext t.hErrorList) Fails t.ModuleName;
-}
-
-Compile-Recompile-UpdateCache {
-  t.hContext t.hErrorList t.ModuleName
-  t.hIModule Found s.ModuleType =
-    <Compile-Recompile-UpdateCache-Aux
-      t.hContext t.hErrorList t.ModuleName
-      s.ModuleType
-      <MIModule::GetImportList-RealNames t.hIModule>
-    >;
-}
-
-Compile-Recompile-UpdateCache-Aux {
-  t.hContext t.hErrorList t.ModuleName s.ModuleType
-  t.hIModule e.ImportList =
-    <Compile-Recompile-UpdateCache-Finish
-      t.hErrorList s.ModuleType
-      <MContext::SetCachedImports_ t.hContext t.ModuleName e.ImportList>
-      t.hIModule
-    >;
-}
-
-Compile-Recompile-UpdateCache-Finish {
-  t.hErrorList s.ModuleType t.hContext Success t.hIModule =
-    (t.hContext t.hErrorList) Success t.hIModule s.ModuleType;
-}
-
-MakeSuccessResult
-  t.hIModule Found s.ModuleType =
-    Success t.hIModule s.ModuleType;
-
-//------------------------------------------------------------------------------
-
-/*
-  <Parse t.Config t.hContext t.hErrorList t.ModuleName>
-    == t.hContext t.hErrorList Success s.Result t.hRawIModule
-    == t.hContext t.hErrorList Fails
-
-  s.Result ::= Success | Warnings | Errors
-*/
-Parse
-  t.Config t.hContext t.hErrorList t.ModuleName =
-    <Parse-SelectFE
-      t.Config t.hErrorList t.ModuleName
-      <MContext::GetFrontEnd t.hContext t.ModuleName>
-    >;
-
-Parse-SelectFE {
-  t.Config t.hErrorList t.ModuleName t.hContext Success None =
-    // Неожиданно. Вообще-то тут не может быть библиотека.
-    t.hContext t.hErrorList Fails;
-
-  t.Config t.hErrorList t.ModuleName t.hContext Success s.FEName e.Path =
-    t.hContext
-    <MConfig::Load t.Config s.FEName t.hErrorList t.ModuleName e.Path>;
-
-  t.Config t.hErrorList t.ModuleName t.hContext Fails s.Reason =
-    t.hContext t.hErrorList Fails;
-}
-
-//------------------------------------------------------------------------------
-
-/*
-  <Compile-OnUpdated
-    s.FnAnalyzer (e.Stack) t.Config t.ModuleName t.hErrorList 
-    t.hContext Success t.hSymIModule / Fails
-  >
-    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
-    == (t.hContext t.hErrorList) Fails t.ModuleName
-*/
-Compile-OnUpdated {
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList Success t.hSymIModule =
-    <Compile-OnUpdated-AnalyzeImports
-      s.FnAnalyzer
-      <GetImportList-AnalyzeRecursiveLinks
-        (e.Stack) t.Config t.ModuleName
-        t.hContext t.hErrorList
-        <MLambda::MapReduce
-          & PrepareImportList-Aliases
-          <MIModule::GetImportList-Aliases t.hSymIModule>
-        >
-      >
-    >;
-
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList Fails =
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >;
-}
-
-Compile-OnUpdated-OnLibrary-Fails
-  t.hContext t.hErrorList t.ModuleName =
-    <MOutModuleStatus::Fails-Q t.ModuleName>
-    (
-      <GuardUpdate
-        <MContext::FinishModule_
-          t.hContext t.ModuleName Regular Errors
-        >
-      >
-      t.hErrorList
-    )
-    Fails t.ModuleName;
-
-Compile-OnUpdated-AnalyzeImports {
-  s.FnAnalyzer FoundRecursives (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList t.hSymIModule e.Imports =
-    <MIModule::Destroy t.hSymIModule>
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >;
-
-  s.FnAnalyzer NotFoundRecursives (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList t.hSymIModule e.Imports =
-    <Compile-OnUpdated-ScanSubModules
-      <MIModule::GetModuleName t.hSymIModule>
-      <MLambda::MapReduce
-        <MLambda::BindLeft
-          & ScanUpdatedSubModule s.FnAnalyzer (e.Stack t.ModuleName) t.Config
-        >
-        (t.hContext t.hErrorList)
-        e.Imports
-      >
-    >;
-}
-
-ScanUpdatedSubModule
-  s.FnAnalyzer (e.Stack) t.Config
-  (t.hContext t.hErrorList) (t.AliasName t.RealName) =
-    <ScanUpdatedSubModule-Aux
-      t.AliasName
-      <OnUpdated-ScanSubModule
-        s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.RealName
-      >
-    >;
-
-ScanUpdatedSubModule-Aux {
-  t.AliasName (t.hContext t.hErrorList) Success t.hIModule s.ModuleType =
-    (t.hContext t.hErrorList) (Success t.hIModule s.ModuleType t.AliasName);
-
-  t.AliasName (t.hContext t.hErrorList) Fails t.RealName =
-    (t.hContext t.hErrorList) (Fails t.RealName t.AliasName);
-}
-
-/*
-  <OnUpdated-ScanSubModule
-    s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName
-  >
-    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
-    == (t.hContext t.hErrorList) Fails t.ModuleName
-*/
-OnUpdated-ScanSubModule
-  s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName =
-    <OnUpdated-ScanSubModule-SwNeedRecompile
-      s.FnAnalyzer (e.Stack) t.Config
-      <s.FnAnalyzer
-        t.hErrorList t.hContext t.Config t.ImportName
-      >
-    >;
-
-OnUpdated-ScanSubModule-SwNeedRecompile {
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Raw Errors =
-    (t.hContext t.hErrorList) Fails t.ImportName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Raw Changed =
-    (t.hContext t.hErrorList) Fails t.ImportName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Raw Updated =
-    <Compile-OnUpdated
-      s.FnAnalyzer (e.Stack) t.Config t.ImportName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
-    >;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Raw Library =
-    <Compile-AnalyzeLibrary
-      s.FnAnalyzer (e.Stack) t.Config t.ImportName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
-    >;
-
-  //-----------------------------------------------------------------
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Ready Errors =
-    (t.hContext t.hErrorList) Fails t.ImportName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Ready Changed =
-    (t.hContext t.hErrorList) Fails t.ImportName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Ready Updated =
-    <Compile-OnSuccessCompiled
-      t.ImportName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
-    >;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Success Ready Library =
-    <Compile-OnSuccessCompiled
-      t.ImportName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ImportName>
-    >;
-
-  //-----------------------------------------------------------------
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ImportName Fails MismatchCase =
-    (t.hContext t.hErrorList) Fails t.ImportName;
-}
-
-Compile-OnUpdated-ScanSubModules
-  t.hSymIModule t.ModuleName (t.hContext t.hErrorList) e.ScannedImports =
-    <Compile-OnUpdated-SwScanSubModules
-      t.hContext t.ModuleName
-      <MLambda::MapReduce
-        & AnalyzeValidSubModule
-        (t.hErrorList t.hSymIModule Success)
-        e.ScannedImports
-      >
-    >;
-
-Compile-OnUpdated-SwScanSubModules {
-  t.hContext t.ModuleName
-  (t.hErrorList t.hSymIModule Success)
-  e.ValidScannedImports =
-    <MOutModuleStatus::Updated-Q t.ModuleName>
-    <Compile-OnUpdated-ScanSubModules-Cache
-      t.hErrorList t.ModuleName
-      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
-      <MContext::SetCachedImports_
-        t.hContext t.ModuleName
-        <MLambda::Map
-          & ModuleNameFromValidImport e.ValidScannedImports
-        >
-      >
-    >;
-
-  t.hContext t.ModuleName
-  (t.hErrorList t.hSymIModule Errors)
-  e.InvalidScannedImports =
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >
-    <MIModule::Destroy t.hSymIModule>
-    <MLambda::Map & DestroyScannedImports e.InvalidScannedImports>;
-}
-
-DestroyScannedImports
-  (t.hSymIModule t.Alias) =
-    <MIModule::Destroy t.hSymIModule>;
-
-ModuleNameFromValidImport
-  (t.hSymIModule t.Alias) =
-    <ModuleNameFromValidImport-Aux
-      <MIModule::GetModuleName t.hSymIModule>
-    >;
-
-ModuleNameFromValidImport-Aux
-  t.hIModule t.ModuleName =
-    <MIModule::Destroy t.hIModule> t.ModuleName;
-
-Compile-OnUpdated-ScanSubModules-Cache {
-  t.hErrorList t.ModuleName
-  t.hSymIModule Found s.ModuleType
-  t.hContext Success =
-    <Compile-AfterUpdateContext
-      t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::FinishModule_
-        t.hContext t.ModuleName s.ModuleType Updated
-      >
-    >;
-}
-
-//------------------------------------------------------------------------------
-
-/*
-  <Compile-AnalyzeLibrary
-    s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-    t.hContext t.hErrorList Success t.hSymIModule / Fails
-  >
-    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
-    == (t.hContext t.hErrorList) Fails t.ModuleName
-*/
-Compile-AnalyzeLibrary {
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList Success t.hSymIModule =
-    <Compile-AnalyzeLibrary-AnalyzeImports
-      s.FnAnalyzer
-      <GetImportList-AnalyzeRecursiveLinks
-        (e.Stack) t.Config t.ModuleName
-        t.hContext t.hErrorList
-        <MLambda::MapReduce
-          & PrepareImportList-Aliases
-          <MIModule::GetImportList-Aliases t.hSymIModule>
-        >
-      >
-    >;
-
-  s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList Fails =
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >;
-}
-
-Compile-AnalyzeLibrary-AnalyzeImports {
-  s.FnAnalyzer FoundRecursives (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList t.hSymIModule e.Imports =
-    <MIModule::Destroy t.hSymIModule>
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >;
-
-  s.FnAnalyzer NotFoundRecursives (e.Stack) t.Config t.ModuleName
-  t.hContext t.hErrorList t.hSymIModule e.Imports =
-    <Compile-OnLibrary-ScanSubModules
-      <MIModule::GetModuleName t.hSymIModule>
-      <MLambda::MapReduce
-        <MLambda::BindLeft
-          & ScanLibrarySubModule s.FnAnalyzer (e.Stack t.ModuleName) t.Config
-        >
-        ( t.hContext t.hErrorList ) e.Imports
-      >
-    >;
-}
-
-ScanLibrarySubModule
-  s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) (t.AliasName t.RealName) =
-    <ScanLibrarySubModule-Aux
-      t.AliasName
-      <OnLibrary-ScanSubModule
-        s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.RealName
-      >
-    >;
-
-ScanLibrarySubModule-Aux {
-  t.AliasName (t.hContext t.hErrorList) Success t.hIModule s.ModuleType =
-    (t.hContext t.hErrorList) (Success t.hIModule s.ModuleType t.AliasName);
-
-  t.AliasName (t.hContext t.hErrorList) Fails t.RealName =
-    (t.hContext t.hErrorList) (Fails t.RealName t.AliasName);
-
-  t.AliasName (t.hContext t.hErrorList) IsNotLibrary t.RealName =
-    (t.hContext t.hErrorList) (IsNotLibrary t.RealName t.AliasName);
-}
-
-/*
-  <OnLibrary-ScanSubModule
-    s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.RealName
-  >
-    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
-    == (t.hContext t.hErrorList) IsNotLibrary t.RealName
-    == (t.hContext t.hErrorList) Fails t.RealName
-*/
-OnLibrary-ScanSubModule
-  s.FnAnalyzer (e.Stack) t.Config (t.hContext t.hErrorList) t.ModuleName =
-    <OnLibrary-ScanSubModule-SwNeedCompile
-      s.FnAnalyzer (e.Stack) t.Config
-      <s.FnAnalyzer
-        t.hErrorList t.hContext t.Config t.ModuleName
-      >
-    >;
-
-OnLibrary-ScanSubModule-SwNeedCompile {
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Raw Errors =
-    (t.hContext t.hErrorList) Fails t.ModuleName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Raw Changed =
-    (t.hContext t.hErrorList) IsNotLibrary t.ModuleName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Raw Updated =
-    (t.hContext t.hErrorList) IsNotLibrary t.ModuleName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Raw Library =
-    <Compile-AnalyzeLibrary
-      s.FnAnalyzer (e.Stack) t.Config t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
-    >;
-
-  //-----------------------------------------------------------------
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Ready Errors =
-    (t.hContext t.hErrorList) Fails t.ModuleName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Ready Changed =
-    (t.hContext t.hErrorList) IsNotLibrary t.ModuleName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Ready Updated =
-    (t.hContext t.hErrorList) IsNotLibrary t.ModuleName;
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Success Ready Library =
-    <OnLibrary-MakeSuccessResult
-      t.ModuleName
-      <MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
-    >;
-
-  //-----------------------------------------------------------------
-
-  s.FnAnalyzer (e.Stack) t.Config t.hErrorList
-  t.hContext t.ModuleName Fails MismatchCase =
-    (t.hContext t.hErrorList) Fails t.ModuleName;
-}
-
-OnLibrary-MakeSuccessResult {
-  t.ModuleName t.hContext t.hErrorList Success t.hSymIModule =
-    (t.hContext t.hErrorList)
-    <MakeSuccessResult
-      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
-    >;
-
-  t.ModuleName t.hContext t.hErrorList Fails =
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >;
-}
-
-Compile-OnLibrary-ScanSubModules
-  t.hSymIModule t.ModuleName (t.hContext t.hErrorList) e.ScannedImports =
-    <Compile-OnLibrary-SwScanSubModules
-      t.hContext t.ModuleName
-      <MLambda::MapReduce
-        & AnalyzeValidSubModule
-        (t.hErrorList t.hSymIModule Success)
-        e.ScannedImports
-      >
-    >;
-
-Compile-OnLibrary-SwScanSubModules {
-  t.hContext t.ModuleName
-  (t.hErrorList t.hSymIModule Success)
-  e.ValidScannedImports =
-    <MOutModuleStatus::Library-Q t.ModuleName>
-    <Compile-OnLibrary-ScanSubModules-Cache
-      t.hErrorList t.ModuleName
-      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
-      <MContext::SetCachedImports_
-        t.hContext t.ModuleName
-        <MLambda::Map
-          & ModuleNameFromValidImport e.ValidScannedImports
-        >
-      >
-    >;
-
-  t.hContext t.ModuleName
-  (t.hErrorList t.hSymIModule Errors)
-  e.InvalidScannedImports =
-    <Compile-OnUpdated-OnLibrary-Fails
-      t.hContext t.hErrorList t.ModuleName
-    >
-    <MIModule::Destroy t.hSymIModule>
-    <MLambda::Map & DestroyScannedImports e.InvalidScannedImports>;
-}
-
-Compile-OnLibrary-ScanSubModules-Cache {
-  t.hErrorList t.ModuleName
-  t.hSymIModule Found s.ModuleType
-  t.hContext Success =
-    <Compile-AfterUpdateContext
-      t.hErrorList t.hSymIModule s.ModuleType
-      <MContext::FinishModule_
-        t.hContext t.ModuleName s.ModuleType Library
-      >
-    >;
-}
-
-//------------------------------------------------------------------------------
-
-/*
-  <Compile-OnSuccessCompiled
-    t.ModuleName t.hContext t.hErrorList Success t.hSymIModule / Fails
-  >
-    == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
-    == (t.hContext t.hErrorList) Fails t.ModuleName
-*/
-Compile-OnSuccessCompiled {
-  t.ModuleName t.hContext t.hErrorList Success t.hSymIModule =
-    (t.hContext t.hErrorList)
-    <MakeSuccessResult
-      <MIModule::GetModuleAttribute t.hSymIModule ModuleType>
-    >;
-
-  t.ModuleName t.hContext t.hErrorList Fails =
-    (
-      <GuardUpdate
-        <MContext::FinishModule_
-          t.hContext t.ModuleName Regular Errors
-        >
-      >
-      t.hErrorList
-    )
-    Fails t.ModuleName;
-}
 
 $END Driver::MCompiler.

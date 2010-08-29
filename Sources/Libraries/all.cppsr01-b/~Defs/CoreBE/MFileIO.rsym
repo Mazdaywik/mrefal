@@ -1,6 +1,5 @@
 $module CoreBE::MFileIO;
 
-
 $entry Close;
 $entry Open;
 $entry ReadLine;

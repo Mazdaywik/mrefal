@@ -1410,7 +1410,7 @@ ChunkPtr g_pool = 0;
 unsigned g_avail = 0;
 refalrts::Node *g_pnext_node = 0;
 
-}
+} // namespace pool
 
 unsigned g_memory_use = 0;
 
@@ -1461,6 +1461,14 @@ void refalrts::allocator::splice_to_freelist(
 bool refalrts::allocator::create_nodes() {
   refalrts::NodePtr new_node = refalrts::allocator::pool::alloc_node();
 
+#ifdef MEMORY_LIMIT
+
+  if( g_memory_use >= MEMORY_LIMIT ) {
+    return false;
+  }
+
+#endif //ifdef MEMORY_LIMIT
+
   if( new_node == 0 ) {
     return false;
   } else {
@@ -1481,7 +1489,14 @@ bool refalrts::allocator::create_nodes() {
 
 void refalrts::allocator::free_memory() {
   refalrts::allocator::pool::free();
-  fprintf( stderr, "Memory used %d bytes\n", g_memory_use * sizeof(Node) );
+  fprintf(
+    stderr,
+    "Memory used %d nodes, %d * %d = %d bytes\n",
+    g_memory_use,
+    g_memory_use,
+    sizeof(Node),
+    g_memory_use * sizeof(Node)
+  );
 }
 
 refalrts::NodePtr refalrts::allocator::pool::alloc_node() {
@@ -1587,6 +1602,7 @@ bool init_view_field();
 refalrts::FnResult main_loop();
 refalrts::FnResult execute_active( refalrts::Iter begin, refalrts::Iter end );
 void make_dump( refalrts::Iter begin, refalrts::Iter end );
+FILE* dump_stream();
 
 void free_view_field();
 
@@ -1995,24 +2011,50 @@ void refalrts::vm::print_seq(
 }
 
 void refalrts::vm::make_dump( refalrts::Iter begin, refalrts::Iter end ) {
-  fprintf( stderr, "\nERROR EXPRESSION:\n" );
-  print_seq( stderr, begin, end );
-  fprintf( stderr, "\nVIEW FIELD:\n" );
-  print_seq( stderr, & g_first_marker, & g_last_marker );
+  using refalrts::vm::dump_stream;
+
+  fprintf( dump_stream(), "\nERROR EXPRESSION:\n" );
+  print_seq( dump_stream(), begin, end );
+  fprintf( dump_stream(), "\nVIEW FIELD:\n" );
+  print_seq( dump_stream(), & g_first_marker, & g_last_marker );
 
 #ifdef DUMP_FREE_LIST
 
-  fprintf( stderr, "\nFREE LIST:\n" );
+  fprintf( dump_stream(), "\nFREE LIST:\n" );
   print_seq(
-    stderr,
+    dump_stream(),
     & refalrts::allocator::g_first_marker,
     & refalrts::allocator::g_last_marker
   );
 
 #endif //ifdef DUMP_FREE_LIST
 
-  fprintf( stderr,"\nEnd dump\n");
-  fflush(stderr);
+  fprintf( dump_stream(),"\nEnd dump\n");
+  fflush(dump_stream());
+}
+
+FILE *refalrts::vm::dump_stream() {
+#ifdef DUMP_FILE
+
+  static FILE *dump_file = 0;
+  
+  if( dump_file == 0 ) {
+    // Необходимо открыть файл.
+    // Если файл не открывается, используем stderr
+    dump_file = fopen( DUMP_FILE, "wt" );
+
+    if( dump_file == 0 ) {
+      dump_file = stderr;
+    }
+  }
+
+  return dump_file;
+
+#else //ifdef DUMP_FILE
+
+  return stderr;
+
+#endif //ifdef DUMP_FILE
 }
 
 void refalrts::vm::free_view_field() {

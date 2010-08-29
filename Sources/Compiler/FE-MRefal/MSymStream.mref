@@ -52,7 +52,7 @@ $DATA SymStream;
 
 $ENTRY Create {
   e.FileName =
-    [SymStream 1 <FileIO::Open 'r' e.FileName> (e.FileName)];
+    [SymStream 1 <FileIO::Open 'br' e.FileName> (e.FileName)];
 }
 
 $ENTRY NextChar {
@@ -85,8 +85,9 @@ $ENTRY NextChar {
 }
 
 CheckEnd {
-  (e.FileName) t.FInput e.Line 0 = t.FInput (e.FileName) e.Line EOF;
-  (e.FileName) t.FInput e.Line = t.FInput (e.FileName) e.Line CrLf;
+  (e.FileName) t.FInput e.Line 0    = t.FInput (e.FileName) e.Line EOF;
+  (e.FileName) t.FInput e.Line '\r' = t.FInput (e.FileName) e.Line CrLf;
+  (e.FileName) t.FInput e.Line      = t.FInput (e.FileName) e.Line CrLf;
 }
 
 NextChar-CheckUTF-8 {

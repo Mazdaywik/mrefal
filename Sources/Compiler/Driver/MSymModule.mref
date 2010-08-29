@@ -17,44 +17,53 @@ $IMPORT MQualifiedName;
 
 /**
   <LoadInfo t.Context t.hErrorList t.ModuleName>
-    == t.Context t.hErrorList Success t.IModule
+    == t.Context t.hErrorList Success s.Errors t.hIModule
     == t.Context t.hErrorList Fails
   t.ModuleName ::= t.QualifiedName
+  s.Errors ::= Success | Warnings
 */
 $ENTRY LoadInfo
-  t.Context t.hErrorList t.ModuleName =
-    <LoadInfo_New-SwGetName
-      t.ModuleName t.hErrorList
-      <Driver::MContext::GetBackEnd t.Context t.ModuleName BE-ModuleIF>
+  t.hContext t.hErrorList t.ModuleName =
+    <LoadInfo-SwBroken
+      <LoadInfo-SaveBroken t.hContext t.hErrorList t.ModuleName>
     >;
 
-LoadInfo_New-SwGetName {
+LoadInfo-SwBroken {
+  t.hContext t.hErrorList Success Errors t.hIModule =
+    t.hContext t.hErrorList Fails
+    <MIModule::Destroy t.hIModule>;
+
+  t.hContext t.hErrorList Success s.Error t.hIModule =
+    t.hContext t.hErrorList Success s.Error t.hIModule;
+
+  t.hContext t.hErrorList Fails =
+    t.hContext t.hErrorList Fails;
+}
+
+/**
+  <LoadInfo-SaveBroken t.Context t.hErrorList t.ModuleName>
+    == t.Context t.hErrorList Success s.Errors t.hIModule
+    == t.Context t.hErrorList Fails
+  t.ModuleName ::= t.QualifiedName
+  s.Errors ::= Success | Warnings | Errors
+*/
+$ENTRY LoadInfo-SaveBroken
+  t.hContext t.hErrorList t.ModuleName =
+    <LoadInfo-SwGetName
+      t.ModuleName t.hErrorList
+      <Driver::MContext::GetBackEnd t.hContext t.ModuleName BE-ModuleIF>
+    >;
+
+LoadInfo-SwGetName {
   t.ModuleName t.hErrorList t.hContext Success e.FilePath =
     t.hContext
-    <LoadInfo_New-SwParseFile
-      <FE-MRefal::MParser_Sym::SymModule
-        t.hErrorList t.ModuleName e.FilePath
-      >
+    <FE-MRefal::MParser_Sym::SymModule
+      t.hErrorList t.ModuleName e.FilePath
     >;
 
   t.ModuleName t.hErrorList t.hContext Fails s.Reason =
     <MQualifiedName::Destroy t.ModuleName>
     t.hContext t.hErrorList Fails;
-}
-
-LoadInfo_New-SwParseFile {
-  t.hErrorList Success Success t.IModule =
-    t.hErrorList Success t.IModule;
-
-  t.hErrorList Success Warnings t.IModule =
-    t.hErrorList Success t.IModule;
-
-  t.hErrorList Success Errors t.IModule =
-    <MIModule::Destroy t.IModule>
-    t.hErrorList Fails;
-
-  t.hErrorList Fails =
-    t.hErrorList Fails;
 }
 
 //------------------------------------------------------------------------------

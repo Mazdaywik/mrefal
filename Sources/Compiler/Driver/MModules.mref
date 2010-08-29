@@ -429,7 +429,7 @@ CheckVariant-T-SrcAux-SwExist-Finish {
 }
 
 BackEnds-CalcType {
-  e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E = Changed;
+  e.BackEnds-B (s.BEName False e.Path) e.BackEnds-E = Recompile;
 
   e.BackEnds = Updated;
 }

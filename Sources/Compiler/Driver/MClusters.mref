@@ -1,5 +1,4 @@
 $MODULE Driver::MClusters;
-
 /**=============================================================================
   Функции модуля обрабатывают "гроздь" модулей -- набор прямо или косвенно зави-
 сящих модулей от некоторого модуля. Две основные фукции модуля: CheckNeedCompile
@@ -45,7 +44,7 @@ DependencesList-Cached-SwAvail {
       t.hContext t.ModuleName
     >;
 
-  t.ModuleName t.hContext Success Ready Changed =
+  t.ModuleName t.hContext Success Ready Recompile =
     <DependencesList-Cached-OnAvail
       t.hContext t.ModuleName
     >;
@@ -106,7 +105,7 @@ DependencesList-Real-SwAvail {
     >;
 
   t.ModuleName t.hErrorList t.hContext
-  Success Ready Changed =
+  Success Ready Recompile =
     <DependencesList-Real-OnAvail
       t.hContext t.hErrorList t.ModuleName
     >;
@@ -132,7 +131,7 @@ DependencesList-Real-OnAvail
     >;
 
 DependencesList-Real-OnAvail-Aux {
-  t.ModuleName t.hContext t.hErrorList Success t.hIModule =
+  t.ModuleName t.hContext t.hErrorList Success s.Result t.hIModule =
     <DependencesList-Real-OnAvail-OnSuccess
       t.hContext t.hErrorList t.ModuleName
       <DependencesFromIModule t.hIModule>
@@ -177,58 +176,29 @@ $ENTRY DependencesFromIModule
 */
 $ENTRY CheckNeedCompile-LinkOnly
    t.hErrorList t.hContext t.Config t.ModuleName =
-     <SwCheckNeedCompile-LinkOnly
-       t.ModuleName t.hErrorList
-       <Driver::MModules::LookupImportModule
-         t.hContext t.Config t.ModuleName
-       >
+     <CheckNeedCompile-Generic-Start
+       & LinkOnly-SwStatusType
+       t.hErrorList t.hContext t.Config t.ModuleName
      >;
 
-SwCheckNeedCompile-LinkOnly {
-  t.ModuleName t.hErrorList t.hContext Success Ready s.Status =
-    t.hErrorList t.hContext t.ModuleName Success Ready s.Status;
-
-  t.ModuleName t.hErrorList t.hContext Success Raw s.Status =
-    t.hErrorList t.hContext t.ModuleName Success Raw s.Status;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Errors =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Errors
+CheckNeedCompile-Generic-Start {
+  s.FnSelector t.hErrorList t.hContext t.Config t.ModuleName =
+    <CheckNeedCompile-Root
+      s.FnSelector
+      (/* стек */) t.Config t.ModuleName t.hErrorList
+      <Driver::MModules::LookupImportModule
+        t.hContext t.Config t.ModuleName
+      >
     >;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Changed =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Errors
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Updated =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Updated
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Library =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Library
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Fails MismatchCase =
-    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
-CheckNeedCompile-UpdateStatusType
-  t.hErrorList t.hContext t.ModuleName s.NewType =
-    <CheckNeedCompile-UpdateStatusType-Aux
-      t.hErrorList
-      <MContext::SetRawType_ t.hContext t.ModuleName s.NewType>
-      t.ModuleName s.NewType
-    >;
-
-CheckNeedCompile-UpdateStatusType-Aux {
-  t.hErrorList t.hContext Success t.ModuleName s.NewType =
-    t.hErrorList t.hContext t.ModuleName Success Raw s.NewType;
-
-  t.hErrorList t.hContext Fails MismatchCase t.ModuleName s.NewType =
-    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
+LinkOnly-SwStatusType {
+  Ready   s.Type    = AsIs Ready   s.Type;
+  Cluster s.Type    = AsIs Cluster s.Type;
+  Found   Errors    = UpdateStatusType Errors;
+  Found   Recompile = UpdateStatusType Errors;
+  Found   Updated   = UpdateStatusType Updated;
+  Found   Library   = UpdateStatusType Library;
 }
 
 //------------------------------------------------------------------------------
@@ -242,42 +212,18 @@ CheckNeedCompile-UpdateStatusType-Aux {
 */
 $ENTRY CheckNeedCompile-Build
    t.hErrorList t.hContext t.Config t.ModuleName =
-     <SwCheckNeedCompile-Build
-       t.ModuleName t.hErrorList
-       <Driver::MModules::LookupImportModule
-         t.hContext t.Config t.ModuleName
-       >
+     <CheckNeedCompile-Generic-Start
+       & Build-SwStatusType
+       t.hErrorList t.hContext t.Config t.ModuleName
      >;
 
-SwCheckNeedCompile-Build {
-  t.ModuleName t.hErrorList t.hContext Success Ready s.Status =
-    t.hErrorList t.hContext t.ModuleName Success Ready s.Status;
-
-  t.ModuleName t.hErrorList t.hContext Success Raw s.Status =
-    t.hErrorList t.hContext t.ModuleName Success Raw s.Status;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Errors =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Errors
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Changed =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Changed
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Updated =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Changed
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Success Found Library =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Library
-    >;
-
-  t.ModuleName t.hErrorList t.hContext Fails MismatchCase =
-    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
+Build-SwStatusType {
+  Ready   s.Type    = AsIs Ready   s.Type;
+  Cluster s.Type    = AsIs Cluster s.Type;
+  Found   Errors    = UpdateStatusType Errors;
+  Found   Recompile = UpdateStatusType Recompile;
+  Found   Updated   = UpdateStatusType Recompile;
+  Found   Library   = UpdateStatusType Library;
 }
 
 //------------------------------------------------------------------------------
@@ -291,8 +237,9 @@ SwCheckNeedCompile-Build {
 */
 $ENTRY CheckNeedCompile-Make
   t.hErrorList t.hContext t.Config t.ModuleName =
-    <CheckNeedCompile-R
-      (/* стек */) t.hErrorList t.hContext t.Config t.ModuleName
+    <CheckNeedCompile-Generic-Start
+      & Make-SwStatusType
+      t.hErrorList t.hContext t.Config t.ModuleName
     >;
 
 /*
@@ -302,51 +249,72 @@ $ENTRY CheckNeedCompile-Make
 CheckNeedCompile-R
   (e.Stack)
   t.hErrorList t.hContext t.Config t.ModuleName =
-    <CheckNeedCompile-SwRoot
+    <CheckNeedCompile-Root
+      & Make-SwStatusType
       (e.Stack) t.Config t.ModuleName t.hErrorList
       <Driver::MModules::LookupImportModule
         t.hContext t.Config t.ModuleName
       >
     >;
 
+Make-SwStatusType {
+  Ready   s.Type    = AsIs Ready   s.Type;
+  Cluster s.Type    = AsIs Cluster s.Type;
+  Found   Errors    = UpdateStatusType Errors;
+  Found   Recompile = UpdateStatusType Recompile;
+  Found   Updated   = DepthAnalysis;
+  Found   Library   = UpdateStatusType Library;
+}
+
+CheckNeedCompile-Root {
+  s.FnSelector
+  (e.Stack) t.Config t.ModuleName t.hErrorList
+  t.hContext Success s.Status s.Type =
+    <CheckNeedCompile-SwRoot
+      (e.Stack) t.Config t.ModuleName t.hErrorList
+      t.hContext <s.FnSelector s.Status s.Type>
+    >;
+
+  s.FnSelector
+  (e.Stack) t.Config t.ModuleName t.hErrorList
+  t.hContext Fails MismatchCase =
+    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
+}
+
 CheckNeedCompile-SwRoot {
   (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Success Ready s.Status =
-    t.hErrorList t.hContext t.ModuleName Success Ready s.Status;
+  t.hContext AsIs s.Status s.Type =
+    t.hErrorList t.hContext t.ModuleName Success s.Status s.Type;
 
   (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Success Raw s.Status =
-    t.hErrorList t.hContext t.ModuleName Success Raw s.Status;
-
-  (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Success Found Errors =
+  t.hContext UpdateStatusType s.NewType =
     <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Errors
+      t.hErrorList t.hContext t.ModuleName s.NewType
     >;
 
   (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Success Found Changed =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Changed
-    >;
-
-  (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Success Found Updated =
+  t.hContext DepthAnalysis =
     <CheckNeedCompile-SwOne
       (e.Stack) t.Config
       <CheckNeedCompileOne
         t.hErrorList t.hContext t.Config t.ModuleName
       >
     >;
+}
 
-  (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Success Found Library =
-    <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Library
+CheckNeedCompile-UpdateStatusType
+  t.hErrorList t.hContext t.ModuleName s.NewType =
+    <CheckNeedCompile-UpdateStatusType-Aux
+      t.hErrorList
+      <MContext::SetClusterType_ t.hContext t.ModuleName s.NewType>
+      t.ModuleName s.NewType
     >;
 
-  (e.Stack) t.Config t.ModuleName t.hErrorList
-  t.hContext Fails MismatchCase =
+CheckNeedCompile-UpdateStatusType-Aux {
+  t.hErrorList t.hContext Success t.ModuleName s.NewType =
+    t.hErrorList t.hContext t.ModuleName Success Cluster s.NewType;
+
+  t.hErrorList t.hContext Fails MismatchCase t.ModuleName s.NewType =
     t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
 }
 
@@ -361,14 +329,14 @@ CheckNeedCompile-SwOne {
     >;
 
   (e.Stack) t.Config
-  t.hErrorList t.hContext t.ModuleName Success Found Changed =
+  t.hErrorList t.hContext t.ModuleName Success Found Recompile =
     <CheckNeedCompile-UpdateStatusType
-      t.hErrorList t.hContext t.ModuleName Changed
+      t.hErrorList t.hContext t.ModuleName Recompile
     >;
 
   (e.Stack) t.Config
-  t.hErrorList t.hContext t.ModuleName Success Raw s.Type =
-    t.hErrorList t.hContext t.ModuleName Success Raw s.Type;
+  t.hErrorList t.hContext t.ModuleName Success Cluster s.Type =
+    t.hErrorList t.hContext t.ModuleName Success Cluster s.Type;
 
   (e.Stack) t.Config
   t.hErrorList t.hContext t.ModuleName Success Ready s.Type =
@@ -405,7 +373,7 @@ CheckNeedCompile-ScanImports {
   t.Config t.ModuleName t.hErrorList
   t.hContext Avail
   e.Imports-B t.RecursiveModule e.Imports-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Avail e.Imports =
@@ -425,11 +393,11 @@ CheckNeedCompile-ScanImports {
   */
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext NotAvail =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Fails =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 }
 
 CheckNeedCompile-R-Format {
@@ -451,16 +419,16 @@ CheckNeedCompile-R-Format-Aux {
 
 CheckNeedCompile-ScanResults {
   t.ModuleName (t.hErrorList t.hContext)
-  e.Results-B (t.ImportName Success s.Status Changed) e.Results-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+  e.Results-B (t.ImportName Success s.Status Recompile) e.Results-E =
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   t.ModuleName (t.hErrorList t.hContext)
   e.Results-B (t.ImportName Success s.Status Errors) e.Results-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   t.ModuleName (t.hErrorList t.hContext)
   e.Results-B (t.ImportName Fails e.FailsReason) e.Results-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
   /*
     Оставшийся случай
     e.Results ::= (t.ImportName Success s.Status Library | Updated)*
@@ -489,11 +457,11 @@ CheckNeedCompile-ScanResults {
 CheckNeedCompile-CompareTimes {
   t.ModuleName t.hErrorList t.hContext
   e.Times-B ( Fails MismatchCase ) e.Times-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   t.ModuleName t.hErrorList t.hContext
-  e.Times-B ( Success s.Status Changed e.Time ) e.Times-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+  e.Times-B ( Success s.Status Recompile e.Time ) e.Times-E =
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   t.ModuleName t.hErrorList t.hContext
   ( Success s.Status Updated (e.MinSrcTime) (e.MaxSrcTime) )
@@ -513,10 +481,10 @@ CheckNeedCompile-CompareTimes {
 
 CheckNeedCompile-SwCompareTimes {
   t.ModuleName t.hErrorList t.hContext e.Compares-B '<' e.Compares-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   t.ModuleName t.hErrorList t.hContext e.Compares-B '=' e.Compares-E =
-    t.hErrorList t.hContext t.ModuleName Success Changed;
+    t.hErrorList t.hContext t.ModuleName Success Recompile;
 
   t.ModuleName t.hErrorList t.hContext e.Compares =
     t.hErrorList t.hContext t.ModuleName Success Updated;
@@ -707,7 +675,7 @@ GetLastTime-Compare {
         t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
       >
     >
-    Success Found Changed (e.MinTime) (e.MaxTime);
+    Success Found Recompile (e.MinTime) (e.MaxTime);
 }
 
 //==============================================================================

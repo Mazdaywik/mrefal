@@ -13,17 +13,18 @@ $IMPORT MSymModule = Driver::MSymModule;
 $IMPORT MQualifiedName;
 
 /**
-  <Make t.hContext t.hErrorList t.Config t.RootModuleName>
+  <Make t.hContext t.hErrorList t.Config t.SrcPos t.RootModuleName>
     == t.hContext t.hErrorList Success
     == t.hContext t.hErrorList Fails
 */
 $ENTRY Make
-  t.hContext t.hErrorList t.Config t.RootModuleName =
+  t.hContext t.hErrorList t.Config t.SrcPos t.RootModuleName =
     <Make-SwResult
       t.Config t.RootModuleName
       <ScanSubModule
         Recompile
-        () t.Config (t.hContext t.hErrorList) t.RootModuleName
+        () t.Config (t.hContext t.hErrorList)
+        t.SrcPos t.RootModuleName
       >
     >;
 
@@ -56,7 +57,7 @@ Make-Aux
 /**
   <ScanSubModule
     s.Type
-    (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName
+    (e.Stack) t.Config (t.hContext t.hErrorList) t.SrcPos t.ImportName
   >
     == (t.hContext t.hErrorList) Success t.hIModule s.ModuleType
     == (t.hContext t.hErrorList) Fails t.RealName
@@ -65,7 +66,7 @@ Make-Aux
 */
 ScanSubModule {
   s.Type
-  (e.Stack) t.Config (t.hContext t.hErrorList) t.ImportName =
+  (e.Stack) t.Config (t.hContext t.hErrorList) t.SrcPos t.ImportName =
     <ScanSubModule-SwNeedRecompile
       s.Type
       (e.Stack) t.Config
@@ -258,7 +259,7 @@ CallScanSubModule {
       s.Type t.AliasName
       <ScanSubModule
         s.Type (e.Stack) t.Config
-        (t.hContext t.hErrorList) t.RealName
+        (t.hContext t.hErrorList) '-' t.RealName
       >
     >;
 }

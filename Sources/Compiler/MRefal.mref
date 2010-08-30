@@ -54,9 +54,9 @@ CompileList-Aux {
 }
 
 AddCommandLineModule {
-  t.L-Config t.hContext (e.PtModuleName t.Target) =
+  t.L-Config t.hContext (t.SrcPos e.PtModuleName t.Target) =
     <AddCommandLineModule-Aux
-      (e.PtModuleName) t.Target
+      t.SrcPos (e.PtModuleName) t.Target
       <Driver::MModules::LookupCmdLineModule
         t.hContext t.L-Config e.PtModuleName
       >
@@ -64,24 +64,24 @@ AddCommandLineModule {
 }
 
 AddCommandLineModule-Aux {
-  (e.PtModuleName) t.Target t.hContext NotFound =
-    t.hContext (NotFound e.PtModuleName);
+  t.SrcPos (e.PtModuleName) t.Target t.hContext NotFound =
+    t.hContext (NotFound t.SrcPos e.PtModuleName);
 
-  (e.PtModuleName) t.Target t.hContext Redefinition =
-    t.hContext (Redefinition e.PtModuleName);
+  t.SrcPos (e.PtModuleName) t.Target t.hContext Redefinition =
+    t.hContext (Redefinition t.SrcPos e.PtModuleName);
 
-  (e.PtModuleName) NoTarget
+  t.SrcPos (e.PtModuleName) NoTarget
   t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
-    t.hContext (Found t.QualifiedName);
+    t.hContext (Found t.SrcPos t.QualifiedName);
 
-  (e.PtModuleName) (e.PtTargetName)
+  t.SrcPos (e.PtModuleName) (e.PtTargetName)
   t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
     <AddCommandLineModule-Aux-Guard
       <Driver::MContext::SetTarget_
         t.hContext t.QualifiedName e.PtTargetName
       >
     >
-    (Found t.QualifiedName);
+    (Found t.SrcPos t.QualifiedName);
 }
 
 AddCommandLineModule-Aux-Guard {
@@ -90,24 +90,24 @@ AddCommandLineModule-Aux-Guard {
 
 CheckFoundResult {
   t.Config t.hErrorList
-  t.hContext e.Results-B ( NotFound e.Module ) e.Results-E =
+  t.hContext e.Results-B ( NotFound t.SrcPos e.Module ) e.Results-E =
     <Driver::MContext::Destroy t.hContext>
     <MError::PrintErrors
       <MLambda::Reduce
         & PrintErrorLookup
         t.hErrorList
-        e.Results-B ( NotFound e.Module ) e.Results-E
+        e.Results-B ( NotFound t.SrcPos e.Module ) e.Results-E
       >
     >;
 
   t.Config t.hErrorList
-  t.hContext e.Results-B ( Redefinition e.Module ) e.Results-E =
+  t.hContext e.Results-B ( Redefinition t.SrcPos e.Module ) e.Results-E =
     <Driver::MContext::Destroy t.hContext>
     <MError::PrintErrors
       <MLambda::Reduce
         & PrintErrorLookup
         t.hErrorList
-        e.Results-B ( Redefinition e.Module ) e.Results-E
+        e.Results-B ( Redefinition t.SrcPos e.Module ) e.Results-E
       >
     >;
 
@@ -123,35 +123,35 @@ CheckFoundResult {
 }
 
 PrintErrorLookup {
-  t.hErrorList ( NotFound e.PtModule ) =
+  t.hErrorList ( NotFound t.SrcPos e.PtModule ) =
     <MError::AddCmdLineError
-      t.hErrorList
-      <MSrcPos::Create-CmdLine-Common>
+      t.hErrorList t.SrcPos
       'module ' <MFileSystem::StrFromPath e.PtModule> ' not found'
     >;
 
-  t.hErrorList ( Redefinition e.PtModule ) =
+  t.hErrorList ( Redefinition t.SrcPos e.PtModule ) =
     <MError::AddCmdLineError
-      t.hErrorList
-      <MSrcPos::Create-CmdLine-Common>
+      t.hErrorList t.SrcPos
       'module ' <MFileSystem::StrFromPath e.PtModule> ' redefined'
     >;
 
-  t.hErrorList ( Found t.QualifiedName ) = t.hErrorList;
+  t.hErrorList ( Found t.SrcPos t.QualifiedName ) = t.hErrorList;
 }
 
 Make {
-  t.Config (t.hContext t.hErrorList Success) ( Found t.QualifiedName ) =
+  t.Config (t.hContext t.hErrorList Success)
+  ( Found t.SrcPos t.QualifiedName ) =
     (
       <Driver::MCompiler::Make
         t.hContext
         t.hErrorList
         t.Config
-        t.QualifiedName
+        t.SrcPos t.QualifiedName
       >
     );
 
-  t.Config (t.hContext t.hErrorList Fails) ( Found t.QualifiedName ) =
+  t.Config (t.hContext t.hErrorList Fails)
+  ( Found t.SrcPos t.QualifiedName ) =
     (t.hContext t.hErrorList Fails);
 }
 

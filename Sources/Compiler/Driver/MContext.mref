@@ -496,6 +496,18 @@ $ENTRY CreateModule_
   (Type s.Type)
   (FrontEnd s.FrontEnd e.PathToFrontEnd)
   (BackEnds e.BackEnds) =
+    <CreateModule__
+      t.hContext t.ModuleName
+      (Type s.Type)
+      (FrontEnd s.FrontEnd e.PathToFrontEnd)
+      (BackEnds e.BackEnds)
+    >;
+
+CreateModule__
+  t.hContext t.ModuleName
+  (Type s.Type)
+  (FrontEnd s.FrontEnd e.PathToFrontEnd)
+  (BackEnds e.BackEnds) =
     <CreateModule-SwDefined
       <IsKnown_ t.hContext t.ModuleName>
       t.ModuleName
@@ -620,6 +632,12 @@ GetBackEnd-Aux {
     == t.hContext Fails CantUpdate
 */
 $ENTRY SetClusterType_
+  t.hContext t.ModuleName s.Type =
+    <SetClusterType__
+      t.hContext t.ModuleName s.Type
+    >;
+
+SetClusterType__  
   t.hContext t.ModuleName s.Type =
     <SetClusterType-SwKnown
       <GetStatusType_ t.hContext t.ModuleName>

@@ -1,4 +1,7 @@
 $MODULE MCreateDirIfNeed;
+//$PROGRAM MCreateDirIfNeed;
+
+$ENTRY Go { = ; }
 
 $IMPORT MFileSystem;
 

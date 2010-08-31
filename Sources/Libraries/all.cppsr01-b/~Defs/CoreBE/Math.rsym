@@ -1,5 +1,7 @@
 $module CoreBE::Math;
 
+//$import MSrcPos;
+
 $entry Binary;
 $entry NumberCompare;
 

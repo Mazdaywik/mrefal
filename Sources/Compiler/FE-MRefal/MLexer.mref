@@ -561,11 +561,16 @@ CreateUndefined
   s.First t.SymStream =
     <DoCreateUndefined (s.First) <MSymStream::NextChar t.SymStream>>;
 
-DoCreateUndefined
+DoCreateUndefined {
+  (e.BadSeq) t.SymStream EOF =
+    <MSymStream::ReturnChar t.SymStream EOF>
+    (Undefined <EscapeText e.BadSeq>);
+
   (e.BadSeq) t.SymStream s.Next =
     <SwDoCreateUndefined
       (e.BadSeq) t.SymStream <CheckValid-T s.Next>
     >;
+}
 
 SwDoCreateUndefined {
   (e.BadSeq) t.SymStream F s.Next =

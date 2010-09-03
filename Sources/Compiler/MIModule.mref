@@ -111,7 +111,10 @@ SwRelativeName {
     [IModule (Name e.ModName) t.EntryPoint t.hSymTable]
     Success <MQualifiedName::Create e.RelativeName>;
 
-  t.hIModule e.RelativeName = t.hIModule Fails;
+  [IModule t.Name t.EntryPoint t.hSymTable]
+  e.RelativeName =
+    [IModule t.Name t.EntryPoint t.hSymTable]
+    Fails;
 }
 
 /**---------------------------------------------------------------------------*/

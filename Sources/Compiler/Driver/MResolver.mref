@@ -16,8 +16,16 @@ $ENTRY Create = <MResolveTable::Create>;
 /**
   <AddModuleInfo t.hResolveTable t.Prefis t.hIModule>
     == t.hResolveTable t.hIModule
+
+  <AddModuleInfo t.hResolveTable t.Prefix BrokenModule>
+    == t.hResolveTable
 */
 $ENTRY AddModuleInfo {
+  t.hResolveTable t.Prefix BrokenModule =
+    <MResolveTable::AddBrokenImport
+      t.hResolveTable t.Prefix
+    >;
+
   t.hResolveTable t.Prefix t.hIModule =
     <AddModuleInfo-Aux
       t.hResolveTable t.Prefix
@@ -199,7 +207,7 @@ ResolvingFunction-Qualified
 SwResolvingFunction-Qualified {
   s.Errors Swap
   t.IModule t.ErrorList
-  t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+  t.ResolveTable Success s.ScopeClass t.ExternalQualifier
   t.Function =
     s.Errors
     <CheckSuccess
@@ -213,7 +221,7 @@ SwResolvingFunction-Qualified {
 
   s.Errors s.ScopeClass
   t.IModule t.ErrorList
-  t.ResolveTable Found s.ScopeClass t.ExternalQualifier
+  t.ResolveTable Success s.ScopeClass t.ExternalQualifier
   t.Function =
     <ResolvingFunction-Body
       s.Errors
@@ -430,6 +438,10 @@ ResolvingChain {
   анализ корректности вызовов. Стратегия обработки ошибок
   (необъявленных функций): функциональный терм заменяем скобочным термом
   и заносим информацию об ошибке в список ошибок.
+
+  Для ошибки типа BrokenImport информацию об ошибке в список ошибок
+  не заносим --- бессмысленно писать о неразрешённых функциях,
+  если загрузить импортируемый модуль не удалось.
 */
 ResolvingQualified {
   s.Errors t.ErrorList t.ResolveTable
@@ -458,7 +470,7 @@ ValidScopes {
 
 SwResolvingQualified {
   s.Errors t.ErrorList t.ResolveTable
-  Found s.ScopeClass t.QualifiedName t.SrcPos
+  Success s.ScopeClass t.QualifiedName t.SrcPos
   (e.ResolvedSentences)
   ( e.ScannedChain )
   e.Argument (e.NotScannedResult) =
@@ -468,14 +480,25 @@ SwResolvingQualified {
     e.Argument (e.NotScannedResult);
 
   s.Errors t.ErrorList t.ResolveTable
-  NotFound NotFound t.UnresolvedQualified t.SrcPos
+  Fails NotFound t.UnresolvedQualified t.SrcPos
   (e.ResolvedSentences)
   ( ('!' s.BracketType e.LMultiBracket) )
   e.Argument ('!' s.BracketType e.RMultiBracket) =
     Errors
     <MError::AddUnresolvedFunction
       t.ErrorList t.SrcPos t.UnresolvedQualified
-    > t.ResolveTable
+    >
+    t.ResolveTable
+    (e.ResolvedSentences)
+    ( ('!' Structure e.LMultiBracket) )
+    e.Argument ('!' Structure e.RMultiBracket);
+
+  s.Errors t.ErrorList t.ResolveTable
+  Fails BrokenImport t.UnresolvedQualified t.SrcPos
+  (e.ResolvedSentences)
+  ( ('!' s.BracketType e.LMultiBracket) )
+  e.Argument ('!' s.BracketType e.RMultiBracket) =
+    Errors t.ErrorList t.ResolveTable
     (e.ResolvedSentences)
     ( ('!' Structure e.LMultiBracket) )
     e.Argument ('!' Structure e.RMultiBracket);

@@ -41,9 +41,22 @@ $ENTRY Add
     ];
 
 /**
+  <AddBrokenImport t.hResolveTable t.ImportName>
+    == t.hResolveTable
+*/
+$ENTRY AddBrokenImport {
+  [ResolveTable e.Pairs] t.ImportName =
+    [ResolveTable
+      ((<MQualifiedName::Parse t.ImportName>) BrokenImport)
+      e.Pairs
+    ];
+}
+
+/**
   <Lookup t.ResolveTable (e.ValidScopes) t.InternalQualifier>
-    == t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-    == t.ResolveTable NotFound NotFound t.InternalQualifier
+    == t.ResolveTable Success s.ScopeClass t.ExternalQualifier
+    == t.ResolveTable Fails NotFound t.InternalQualifier
+    == t.ResolveTable Fails BrokenImport t.InternalQualifier
   e.ValidScopes ::= s.ScopeClass*
 */
 $ENTRY Lookup
@@ -63,6 +76,19 @@ LookupModuleName {
 LookupSubName {
   [ResolveTable
     e.Pairs-B
+    ((e.ImportSegments) BrokenImport)
+    e.Pairs-E
+  ]
+  (e.ValidScopes)
+  t.InternalQualifier e.ImportSegments e.InternalSegments =
+    [ResolveTable
+      ((e.ImportSegments) BrokenImport)
+      e.Pairs-B e.Pairs-E
+    ]
+    Fails BrokenImport t.InternalQualifier;
+
+  [ResolveTable
+    e.Pairs-B
     ((e.InternalSegments) s.ScopeClass e.ExternalSegments)
     e.Pairs-E
   ]
@@ -72,12 +98,12 @@ LookupSubName {
       ((e.InternalSegments) s.ScopeClass e.ExternalSegments)
       e.Pairs-B e.Pairs-E
     ]
-    Found s.ScopeClass
+    Success s.ScopeClass
     <MQualifiedName::Destroy t.InternalQualifier>
     <MQualifiedName::Create e.ExternalSegments>;
 
   t.ResolveTable (e.ValidScopes) t.InternalQualifier e.InternalSegments =
-    t.ResolveTable NotFound NotFound t.InternalQualifier;
+    t.ResolveTable Fails NotFound t.InternalQualifier;
 }
 
 $END Driver::MResolveTable.

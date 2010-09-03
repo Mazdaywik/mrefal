@@ -231,9 +231,9 @@ $ENTRY AddNamesMismatch
       t.ErrorList
       ( Semantics t.TailPos
         'Mismatch module names in head \''
-        <QualifiedNameToString t.InHead>
+        <StringFromQualifiedName t.InHead>
         '\' and in tail \''
-        <QualifiedNameToString t.InTail>
+        <StringFromQualifiedName t.InTail>
         '\''
       )
     >;
@@ -250,9 +250,37 @@ $ENTRY AddRecursiveLink
       t.hErrorList
       ( Semantics t.SrcPos
         'Recursive link in import '
-        <QualifiedNameToString t.ImportName>
+        <StringFromQualifiedName t.ImportName>
       )
     >;
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddRecursiveLoop t.hErrorList t.SrcPos t.ImportName*>
+    == t.hErrorList
+*/
+$ENTRY AddRecursiveLoop
+  t.hErrorList t.SrcPos e.ImportNames =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Found recursive loop: '
+        <PrintRecursiveLoop e.ImportNames>
+      )
+    >;
+
+PrintRecursiveLoop {
+  t.Name = <StringFromQualifiedName t.Name>;
+
+  t.Name1 t.Name2 =
+    <StringFromQualifiedName t.Name1> ' and '
+    <StringFromQualifiedName t.Name2>;
+
+  t.Name e.Names =
+    <StringFromQualifiedName t.Name> ', '
+    <PrintRecursiveLoop e.Names>;
+}
 
 //------------------------------------------------------------------------------
 
@@ -266,7 +294,7 @@ $ENTRY AddBrokenImport
       t.hErrorList
       ( Semantics t.SrcPos
         'Can\'t load import module '
-        <QualifiedNameToString t.ImportName>
+        <StringFromQualifiedName t.ImportName>
       )
     >;
 
@@ -282,7 +310,7 @@ $ENTRY AddInvalidImportName
       t.hErrorList
       ( Semantics t.SrcPos
         'Invalid import module name '
-        <QualifiedNameToString t.ImportName>
+        <StringFromQualifiedName t.ImportName>
       )
     >;
 
@@ -298,7 +326,7 @@ $ENTRY DependedFromSource
       t.hErrorList
       ( Semantics t.SrcPos
         'Can\'t load import source module from library '
-        <QualifiedNameToString t.ImportName>
+        <StringFromQualifiedName t.ImportName>
       )
     >;
 
@@ -313,8 +341,8 @@ $ENTRY AddImportHead
     <AddToList
       t.hErrorList
       ( Semantics t.SrcPos
-        'Can\'t import head module '
-        <QualifiedNameToString t.ImportName>
+        'Can\'t import $PROGRAM module '
+        <StringFromQualifiedName t.ImportName>
       )
     >;
 
@@ -332,13 +360,13 @@ $ENTRY AddMismatchInternalAndExternalNames
       t.ErrorList
       ( Semantics t.SrcPos
         'Mismatch internal module name '
-        <QualifiedNameToString t.InternalName>
+        <StringFromQualifiedName t.InternalName>
         ' and external name '
-        <QualifiedNameToString t.ExternalName>
+        <StringFromQualifiedName t.ExternalName>
       )
     >;
 
-QualifiedNameToString
+StringFromQualifiedName
   t.QualifiedName =
     <MQualifiedName::ToPrintable-Quad t.QualifiedName>;
 
@@ -353,7 +381,7 @@ $ENTRY AddRedeclaredIdentifier
     <AddToList
       t.ErrorList
       ( Semantics t.SrcPos
-        'Identifier redeclared ' <QualifiedNameToString t.Identifier>
+        'Identifier redeclared ' <StringFromQualifiedName t.Identifier>
       )
     >;
 
@@ -404,7 +432,7 @@ $ENTRY AddUnresolvedFunction {
       t.ErrorList
       ( Semantics
         t.SrcPos
-        'Unresolved calling <' <QualifiedNameToString t.EntityName> ' ... >'
+        'Unresolved calling <' <StringFromQualifiedName t.EntityName> ' ... >'
       )
     >;
 }

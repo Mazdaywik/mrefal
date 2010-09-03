@@ -6,12 +6,14 @@
 C:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PATHSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PATHSET%==SET set PATHSET=SET
+    if exist __dump del __dump
     %COMP% %MODE% +cfg:.Config/%PROFILE%.prj
     if exist __errors view:__errors
     if exist __dump view:__dump
 B:  Компилировать (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET SET PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
+    if exist __dump del __dump
     %COMP% %MODE% +cfg:.Config/%PROFILE%.prj 2>__err >__out
     view:__err
 S:  Перекомпилировать/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%)
@@ -26,20 +28,23 @@ M:  Пересборка
 K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
+    if exist __dump del __dump
     %COMP% %MODE% +cfg:.Config/%PROFILE%.prj
-    %COMP% %MODE% +cfg:.Config/%PROFILE%.prj
+    if not exist __errors %COMP% %MODE% +cfg:.Config/%PROFILE%.prj
     if exist __errors view:__errors
 H:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
+    if exist __dump del __dump
     %SCOMP% %MODE% +cfg:.Config/%SPROFILE%.cfg +xlinx MRefal
-    %COMP% %MODE% +cfg:.Config/%PROFILE%.prj
+    if not exist __errors %COMP% %MODE% +cfg:.Config/%PROFILE%.prj
     if exist __errors view:__errors
 G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if NOT %PAHTSET%==SET set PATH=%PATH%;..\..\Bin
     if NOT %PAHTSET%==SET set PATHSET=SET
+    if exist __dump del __dump
     %SCOMP% %MODE% +cfg:.Config/%SPROFILE%.cfg +xlinx MRefal
-    %COMP% %MODE% +cfg:.Config/%PROFILE%.prj >__out 2>__err
+    if not exist __errors %COMP% %MODE% +cfg:.Config/%PROFILE%.prj >__out 2>__err
     view:__err
 -:  
 L:  Удалить промежуточные файлы

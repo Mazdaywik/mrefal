@@ -810,7 +810,8 @@ TuneBEGroupEx-SwName {
   Success s.BackEndId =
     <BackEnd-GetExtension s.BackEndId>;
 
-  Fails e.BackEndName = /* пусто */;
+  Fails e.BackEndName =
+    /* пусто */;
 }
 
 //------------------------------------------------------------------------------

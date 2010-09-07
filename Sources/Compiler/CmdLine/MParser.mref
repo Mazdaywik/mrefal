@@ -956,15 +956,24 @@ CalcGroupHandler {
   (t.FnGroupHandler) e.Param = t.FnGroupHandler;
 
   (t.FnGroupHandler t.FnGroupHandlerEx) NoParam =
-    <MergeGroupHandlers
-      (<MLambda::Apply t.FnGroupHandler>)
-      <MLambda::Apply <MLambda::Apply t.FnGroupHandlerEx NoParam>>
+    <CalcGroupHandler-SwValidParam
+      t.FnGroupHandler
+      <MLambda::Apply t.FnGroupHandlerEx NoParam>
     >;
 
   (t.FnGroupHandler t.FnGroupHandlerEx) Param e.Param =
+    <CalcGroupHandler-SwValidParam
+      t.FnGroupHandler
+      <MLambda::Apply t.FnGroupHandlerEx e.Param>
+    >;
+}
+
+CalcGroupHandler-SwValidParam {
+  t.FnGroupHandler = t.FnGroupHandler;
+
+  t.FnGroupHandler t.FnSpecifiedHandler =
     <MergeGroupHandlers
-      (<MLambda::Apply t.FnGroupHandler>)
-      <MLambda::Apply <MLambda::Apply t.FnGroupHandlerEx e.Param>>
+      (<MLambda::Apply t.FnGroupHandler>) <MLambda::Apply t.FnSpecifiedHandler>
     >;
 }
 

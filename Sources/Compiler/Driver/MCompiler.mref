@@ -93,6 +93,7 @@ Make-Aux
   >
     == t.hContext t.hErrorList Success t.hIModule s.ModuleType
     == t.hContext t.hErrorList Fails t.RealName
+    == t.hContext t.hErrorList NotFound t.RealName
     == t.hContext t.hErrorList IsNotLibrary t.RealName
   s.Type ::= Recompile | Updated | Library
 */
@@ -125,7 +126,7 @@ ScanSubModule-SwNeedRecompile {
       t.ModuleName
     >;
 
-  s.Type (e.Stack) t.Config
+  s.TypeMode (e.Stack) t.Config
   t.hErrorList t.hContext t.ModuleName
   Fails MismatchCase =
     t.hContext t.hErrorList Fails t.ModuleName;
@@ -143,6 +144,10 @@ ScanSubModule-Select {
 }
 
 ScanSubModule-SwSelect {
+  Cluster Error Fails
+  (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
+    t.hContext t.hErrorList NotFound t.ModuleName;
+
   s.Status Error s.ErrorType
   (e.Stack) t.Config t.hErrorList t.hContext t.ModuleName =
     t.hContext t.hErrorList s.ErrorType t.ModuleName;
@@ -321,6 +326,16 @@ CallScanSubModule-Aux {
       t.hContext
       Errors
       <MError::AddBrokenImport t.hErrorList t.SrcPos t.RealName>
+    )
+    (t.AliasName BrokenModule);
+
+  s.Type t.AliasName t.SrcPos s.Result
+  t.hContext t.hErrorList
+  NotFound t.RealName =
+    (
+      t.hContext
+      Errors
+      <MError::AddModuleNotFound t.hErrorList t.SrcPos t.RealName>
     )
     (t.AliasName BrokenModule);
 

@@ -27,7 +27,7 @@ type __err>>_compilation.log
 del __err
 
 del *.ref *.tds *.cpp
-rd /s /q ~Defs Info ~ROut ~XLinx .Info ~Cpp-01 ~SimRef
+rd /s /q ~Defs Info ~ROut ~XLinx .Info ~Cpp-01 ~SimRef exe rsl
 
 pushd SRPrep
 rd /s /q ~Defs Info ~ROut ~XLinx .Info ~Cpp-01 ~SimRef

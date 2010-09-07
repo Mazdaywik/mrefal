@@ -187,6 +187,7 @@ SwitchTag {
   '+ERROR' = Error-Plus;
   'FIXED' = Fixed;
   'CHANGED' = Changed;
+  'RENAME' = Rename;
 
   e.UnknownTag =
     BadTag 'Unknown tag [' e.UnknownTag '] ';
@@ -270,12 +271,55 @@ GroupByTags {
 }
 
 ReduplicatePacket {
+  (e.Time) (e.Tags) e.Text =
+    <DoReduplicatePacket
+      (e.Time) (<GroupRenames e.Tags>) e.Text
+    >;
+}
+
+DoReduplicatePacket {
   (e.Time) ((s.Tag  e.Description)) e.Text =
     (s.Tag (e.Description) (e.Time) e.Text);
 
   (e.Time) ((s.Tag e.Description) e.Tags) e.Text =
     (s.Tag (e.Description) (e.Time) e.Text)
-    <ReduplicatePacket (e.Time) (e.Tags) e.Text>;
+    <DoReduplicatePacket (e.Time) (e.Tags) e.Text>;
+}
+
+GroupRenames {
+  (Rename e.OldName) (s.NewTag e.NewName) e.Tags =
+    <CheckRename (e.OldName) s.NewTag e.NewName>
+    <GroupRenames e.Tags>;
+
+  (Rename e.OldName) =
+    (BadTag 'Orphan [RENAME] ' e.OldName);
+
+  t.NextTag e.Tags = t.NextTag <GroupRenames e.Tags>;
+
+  /* пусто */ = /* пусто */;
+}
+
+CheckRename {
+  (e.OldName) ToDo e.NewName =
+    (Rename e.OldName (ToDo e.NewName));
+
+  (e.OldName) ToDo-Plus e.NewName =
+    (Rename-Plus e.OldName (ToDo e.NewName));
+
+  (e.OldName) ToThink e.NewName =
+    (Rename e.OldName (ToThink e.NewName));
+
+  (e.OldName) ToThink-Plus e.NewName =
+    (Rename-Plus e.OldName (ToThink e.NewName));
+
+  (e.OldName) Error e.NewName =
+    (Rename e.OldName (Error e.NewName));
+
+  (e.OldName) Error-Plus e.NewName =
+    (Rename-Plus e.OldName (Error e.NewName));
+
+  (e.OldName) s.OtherTag e.NewName =
+    (BadTag 'Can\'t rename to ' <PrintTag s.OtherTag> e.NewName);
 }
 
 SortTags
@@ -428,7 +472,7 @@ AnalyzeTag {
     ( e.Opened (Error (e.Description) (Error (e.Time) e.AddInfo)) )
     ( e.Closed );
 
-  ( e.Opened-B (Error (e.Description) e.Info ) e.Opened-E ) ( e.Closed )
+  ( e.Opened-B (Error (e.Description) e.Info) e.Opened-E ) ( e.Closed )
   (Fixed (e.Description) (e.Time) e.AddInfo) =
     ( e.Opened-B e.Opened-E )
     ( e.Closed
@@ -450,6 +494,60 @@ AnalyzeTag {
     ( e.Closed
       (Changed (e.Description) (Changed (e.Time) e.AddInfo))
     );
+
+  // RENANE
+
+  ( e.Opened-B (s.OldTag (e.OldDescription) e.Info) e.Opened-E ) ( e.Closed )
+  (Rename (e.OldDescription (s.NewTag e.NewDescription)) (e.Time) e.AddInfo) =
+    (
+      e.Opened-B
+      e.Opened-E
+      (s.NewTag
+        (e.NewDescription)
+        e.Info
+        (Rename (e.Time) s.OldTag e.OldDescription)
+        (s.NewTag (e.Time) e.AddInfo)
+      )
+    )
+    ( e.Closed );
+
+
+  ( e.Opened ) ( e.Closed )
+  (Rename (e.OldDescription (s.NewTag e.NewDescription)) (e.Time) e.AddInfo) =
+    ( e.Opened
+      (BadTag ('Widow [RENAME] ' e.OldDescription) (BadTag (e.Time) e.AddInfo))
+    )
+    ( e.Closed );
+
+  ( e.Opened-B (s.OldTag (e.OldDescription) e.Info) e.Opened-E ) ( e.Closed )
+  (Rename-Plus (e.OldDescription (s.NewTag e.NewDescription)) (e.Time) e.AddInfo) =
+    (
+      e.Opened-B
+      (s.NewTag
+        (e.NewDescription)
+        e.Info
+        (Rename (e.Time) s.OldTag e.OldDescription)
+        (s.NewTag (e.Time) e.AddInfo)
+      )
+      e.Opened-E
+    )
+    ( e.Closed );
+
+  ( e.Opened ) ( e.Closed )
+  (Rename-Plus (e.OldDescription (s.NewTag e.NewDescription)) (e.Time) e.AddInfo) =
+    ( e.Opened
+      (BadTag ('Widow [RENAME] ' e.OldDescription) (BadTag (e.Time) e.AddInfo))
+    )
+    ( e.Closed );
+
+  // BAD-TAG
+
+  ( e.Opened ) ( e.Closed )
+  (BadTag (e.Description) (e.Time) e.AddInfo) =
+    ( e.Opened
+      (BadTag (e.Description) (BadTag (e.Time) e.AddInfo))
+    )
+    ( e.Closed );
 }
 
 OutputInfo {
@@ -506,6 +604,7 @@ SwPrintTag {
   Error = 'ERROR';
   Fixed = 'FIXED';
   Changed = 'CHANGED';
+  Rename = 'RENAME';
   BadTag = 'BAD-TAG';
 }
 
@@ -516,7 +615,7 @@ SaveReport
       <MLambda::Map & PrintExtTag e.Info>
     >;
 
-PrintExtTag
+PrintExtTag {
   (s.Tag (e.Description) e.TagInfo) =
     (<MStrings::Repeat 100 '='>)
     ('  ' <PrintTag s.Tag> e.Description)
@@ -524,6 +623,7 @@ PrintExtTag
     ()
     <PrintComments e.TagInfo>
     ()();
+}
 
 PrintComments {
   = ;
@@ -536,13 +636,70 @@ PrintComments {
     <PrintComments t.Comment2 e.Tail>;
 }
 
-PrintComment
+PrintComment {
+  (Rename (e.Time) s.OldTag e.OldName) =
+    <PrintComment-Aux
+      (Rename
+        (e.Time)
+        <Underlined 'Old name is "' <PrintTag s.OldTag> e.OldName '"'>
+      )
+    >;
+
+  t.OtherComment =
+    <PrintComment-Aux t.OtherComment>;
+}
+
+Underlined {
+  e.Line =
+    <DoUnderlined
+      /* CyrTable — костыль для UTF-8. */
+      (<CyrTable>) () () e.Line
+    >;
+}
+
+CyrTable =
+  ('а') ('б') ('в') ('г') ('д') ('е') ('ё') ('ж') ('з') ('и') ('й')
+  ('к') ('л') ('м') ('н') ('о') ('п') ('р') ('с') ('т') ('у') ('ф')
+  ('х') ('ц') ('ч') ('ш') ('щ') ('ъ') ('ы') ('ь') ('э') ('ю') ('я')
+  ('А') ('Б') ('В') ('Г') ('Д') ('Е') ('Ё') ('Ж') ('З') ('И') ('Й')
+  ('К') ('Л') ('М') ('Н') ('О') ('П') ('Р') ('С') ('Т') ('У') ('Ф')
+  ('Х') ('Ц') ('Ч') ('Ш') ('Щ') ('Ъ') ('Ы') ('Ь') ('Э') ('Ю') ('Я');
+
+DoUnderlined {
+  (e.CyrTable-B (e.CyrLetter) e.CyrTable-E)
+  (e.Origin) (e.Underline) e.CyrLetter e.Tail =
+    <DoUnderlined
+      (e.CyrTable-B (e.CyrLetter) e.CyrTable-E)
+      (e.Origin e.CyrLetter) (e.Underline <LineType '~'>) e.Tail
+    >;
+
+  (e.CyrTable)
+  (e.Origin) (e.Underline) s.Next e.Tail =
+    <DoUnderlined
+      (e.CyrTable)
+      (e.Origin s.Next) (e.Underline <LineType s.Next>) e.Tail
+    >;
+
+  (e.CyrTable)
+  (e.Origin) (e.Underline) =
+    (Line '  ' e.Origin) (Line '  ' e.Underline);
+}
+
+LineType {
+  //' '     = ' ';
+  //'\t'    = '\t';
+  //'"'     = ' ';
+  s.Other = '"';
+}
+
+PrintComment-Aux {
   (s.Tag (e.Time) e.Lines) =
     ('  ' <PrintTag s.Tag> e.Time)
     ()
     <TrimEmpty
       <MLambda::Map & PrepareLine e.Lines>
     >;
+}
 
 PrepareLine (Line e.Line) = (e.Line);
 

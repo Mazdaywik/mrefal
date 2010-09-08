@@ -21,7 +21,7 @@ $DATA CaseTable;
 /*
   <Explode t.QualifiedName> == e.ExplodedName
 
-  e.ExplodedName ::= ((e.KeyName) (e.KeyName))*
+  e.ExplodedName ::= ((e.KeyName) (e.OrigName))*
 */
 Explode {
   t.QualifiedName =

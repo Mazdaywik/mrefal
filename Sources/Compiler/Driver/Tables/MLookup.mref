@@ -1,0 +1,267 @@
+$MODULE Driver::Tables::MLookup;
+/**
+  Таблица хранит в себе сведения о предыдущих попытках импорта модуля
+  с данным именем.
+
+  Имя может быть сохранено в этой структуре как корректное или ошибочное.
+
+  Ошибочным имя может быть по следующим причинам:
+    * недопустимо в дереве модулей (конфликт модуль/пакет),
+    * недопустимо в дереве модулей (ошибка регистра символов),
+    * невозможность загрузки модуля с этим именем,
+    * несовпадение со внутренним именем загруженного модуля.
+*/
+
+$IMPORT MFileSystem;
+$IMPORT MStrings;
+$IMPORT MQualifiedName;
+
+$DATA LookupTable;
+
+/*
+  Внутренняя структура
+
+  t.hLookupTable ::=
+    [LookupTable t.ModulePacket-Broken t.CantLoadBroken t.Detailed]
+
+  t.ModulePacketBroken ::= ((e.NoCaseName (s.Conflict t.KnownName))*)
+  t.CantLoadBroken ::= ((e.CanonicalName)*)
+  t.Detailed ::= ((e.CaseName (e.Status))*)
+
+  e.Status ::=
+    Success |
+    Tree-CaseError t.ValidCaseName |
+    MismatchWithInternal t.InternalName
+
+  s.Conflict ::= ModuleOverPacket | PacketOverModule
+
+  e.NoCaseName, e.CanonicalName, e.CaseName ::= (s.Char*)*
+  Эти три вида имён различаются лишь преобразованием регистра символов.
+
+  Алгоритм следующий:
+    1. Если имя обнаруживается в первом списке — возвращается ошибка
+  о недопустимости имени в дереве модулей (конфликт модуль/пакет).
+    2. Если имя обнаруживается в втором списке — возвращается ошибка
+  о невозможности загрузить данный модуль.
+    3. Если имя обнаруживается в третьем списке — возвращается ошибка
+  в зависимости от параметра s.Status.
+    4. Если имя не обнаруживается, то возвращается сообщение
+  об отсутствии имени в таблице.
+*/
+
+//------------------------------------------------------------------------------
+
+Explode-NoCase {
+  t.ImportName =
+    <MStrings::Upper <MQualifiedName::Parse t.ImportName>>;
+}
+
+Explode-Canonical {
+  t.ImportName =
+    <Explode-Canonical-Aux
+      <MFileSystem::CanonicalPath-Pt
+        (Relative) <MQualifiedName::Parse t.ImportName>
+      >
+    >;
+}
+
+Explode-Canonical-Aux {
+  (Relative) e.Canonical = e.Canonical;
+}
+
+Explode-Case {
+  t.ImportName = <MQualifiedName::Parse t.ImportName>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Create> == t.hLookupTable
+*/
+$ENTRY Create {
+  = [LookupTable () () ()];
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Destroy t.hLookupTable> == пусто
+*/
+$ENTRY Destroy {
+  [LookupTable
+    (e.ModulePacketErrors) (e.CantLoadErrors) (e.Detailed)
+  ] =
+    /* пусто */;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <LookupResult t.hLookupTable t.ImportName>
+    == t.hLookupTable s.Result
+    == t.hLookupTable Error e.Error
+
+  s.Result ::= Unknown | Success
+  s.Error ::=
+    Error-CantLoadModule |
+    Error-MismatchWithInternal t.InternalName |
+    Error-Tree-ModulePacket |
+    Error-Tree-CaseError
+*/
+$ENTRY LookupResult {
+  t.hLookupTable t.ImportName =
+    <LookupResult-Aux
+      t.hLookupTable
+      (<Explode-NoCase t.ImportName>)
+      (<Explode-Canonical t.ImportName>)
+      (<Explode-Case t.ImportName>)
+    >;
+}
+
+LookupResult-Aux {
+  [LookupTable
+    (
+      e.MP-Errors-B
+      (e.NoCaseName (s.Conflict t.KnownName))
+      e.MP-Errors-E
+    )
+    (e.CantLoad-Errors)
+    (e.Detailed)
+  ]
+  (e.NoCaseName) (e.CanonicalName) (e.CaseName) =
+    [LookupTable
+      (
+        e.MP-Errors-B
+        (e.NoCaseName (s.Conflict t.KnownName))
+        e.MP-Errors-E
+      )
+      (e.CantLoad-Errors)
+      (e.Detailed)
+    ]
+    Error Tree-ModulePacket s.Conflict t.KnownName;
+
+  [LookupTable
+    (e.ModulePacket-Errors)
+    (e.CL-Errors-B (e.CanonicalName) e.CL-Errors-E)
+    (e.Detailed)
+  ]
+  (e.NoCaseName) (e.CanonicalName) (e.CaseName) =
+    [LookupTable
+      (e.ModulePacket-Errors)
+      (e.CL-Errors-B (e.CanonicalName) e.CL-Errors-E)
+      (e.Detailed)
+    ]
+    Error CantLoadModule;
+
+  [LookupTable
+    (e.ModulePacket-Errors)
+    (e.CantLoad-Errors)
+    (e.Detailed-B (e.CaseName (e.Result)) e.Detailed-E)
+  ]
+  (e.NoCaseName) (e.CanonicalName) (e.CaseName) =
+    [LookupTable
+      (e.ModulePacket-Errors)
+      (e.CantLoad-Errors)
+      (e.Detailed-B (e.CaseName (e.Result)) e.Detailed-E)
+    ]
+    e.Result;
+
+  [LookupTable (e.MP-Errors) (e.CL-Errors) (e.Detailed)]
+  (e.NoCaseName) (e.CanonicalName) (e.CaseName) =
+    [LookupTable (e.MP-Errors) (e.CL-Errors) (e.Detailed)]
+    Unknown;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddSuccessImport t.hLookupTable t.ImportName>
+    == t.hLookupTable
+*/
+$ENTRY AddSuccessImport {
+  t.hLookupTable t.ImportName =
+    <AddDetailed t.hLookupTable t.ImportName (Success)>;
+}
+
+AddDetailed {
+  [LookupTable (e.MP-Errors) (e.CL-Errors) (e.Detailed)]
+  t.ImportName t.Error =
+    [LookupTable
+      (e.MP-Errors)
+      (e.CL-Errors)
+      ((<Explode-Case t.ImportName> t.Error) e.Detailed)
+    ];
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddError-CantLoadModule t.hLookupTable t.ImportName>
+    == t.hLookupTable
+*/
+$ENTRY AddError-CantLoadModule {
+  [LookupTable (e.MP-Errors) (e.CL-Errors) (e.Detailed)]
+  t.ImportName =
+    [LookupTable
+      (e.MP-Errors)
+      ((<Explode-Canonical t.ImportName>) e.CL-Errors)
+      (e.Detailed)
+    ];
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddError-MismatchWithInternal t.hLookupTable t.ImportName t.InternalName>
+    == t.hLookupTable
+*/
+$ENTRY AddError-MismatchWithInternal {
+  t.hLookupTable t.ImportName t.InternalName =
+    <AddDetailed
+      t.hLookupTable
+      t.ImportName
+      (Error MismatchWithInternal t.InternalName)
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddError-Tree-ModulePacket
+    t.hLookupTable
+    t.ImportName
+    s.Conflict t.KnownName
+  >
+    == t.hLookupTable
+  s.Conflict ::= ModuleOverPacket | PacketOverModule
+*/
+$ENTRY AddError-Tree-ModulePacket {
+  [LookupTable (e.MP-Errors) (e.CL-Errors) (e.Detailed)]
+  t.ImportName s.Conflict t.KnownName =
+    [LookupTable
+      (
+        (<Explode-NoCase t.ImportName> (Error s.Conflict t.KnownName))
+        e.MP-Errors
+      )
+      (e.CL-Errors)
+      (e.Detailed)
+    ];
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddError-Tree-CaseError t.hLookupTable t.ImportName t.ValidCaseName>
+    == t.hLookupTable
+*/
+$ENTRY AddError-Tree-CaseError {
+  t.hLookupTable t.ImportName t.ValidCaseName =
+    <AddDetailed
+      t.hLookupTable
+      t.ImportName
+      (Error Tree-CaseError t.ValidCaseName)
+    >;
+}
+
+$END Driver::Tables::MLookup.
+

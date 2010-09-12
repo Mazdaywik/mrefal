@@ -1,0 +1,14 @@
+$MODULE Driver::Tables::MModules;
+
+$IMPORT Driver::MContext;
+
+/*
+  Содержит сведения об уже обработанных модулях.
+*/
+
+$ENTRY GetStatusType {
+  t.hModuleTable =
+    <Driver::MContext::GetStatusType_ t.hModuleTable>;
+}
+
+$END Driver::Tables::MModules.

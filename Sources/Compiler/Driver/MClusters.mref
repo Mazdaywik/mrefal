@@ -7,7 +7,7 @@ $MODULE Driver::MClusters;
 компоновке.
 ==============================================================================*/
 
-$IMPORT Driver::MModules;
+$IMPORT Driver::MModuleFinder;
 $IMPORT Driver::MSymModule;
 $IMPORT MContext = Driver::MContext;
 $IMPORT MFileSystem;
@@ -186,7 +186,7 @@ CheckNeedCompile-Generic-Start {
     <CheckNeedCompile-Root
       s.FnSelector
       (/* стек */) t.Config t.ModuleName t.hErrorList
-      <Driver::MModules::LookupImportModule
+      <Driver::MModuleFinder::LookupImportModule
         t.hContext t.Config t.ModuleName
       >
     >;
@@ -252,7 +252,7 @@ CheckNeedCompile-R
     <CheckNeedCompile-Root
       & Make-SwStatusType
       (e.Stack) t.Config t.ModuleName t.hErrorList
-      <Driver::MModules::LookupImportModule
+      <Driver::MModuleFinder::LookupImportModule
         t.hContext t.Config t.ModuleName
       >
     >;
@@ -605,9 +605,9 @@ GetLastTime-CalcTime {
   t.ModuleName Updated t.hContext
   ( Success e.BackEnds ) ( Success s.FEName s.Init e.FrontEndName ) =
     /*
-      Наличие не проверяем, т.к. функция Driver::MModules::LookupImportModule проверяет
-      наличие входных файлов и возвращает Updated только когда все выходные файлы
-      присутствуют.
+      Наличие не проверяем, т.к. функция Driver::MModuleFinder::LookupImportModule
+      проверяет наличие входных файлов и возвращает Updated только когда
+      все выходные файлы присутствуют.
     */
     <GetLastTime-OutTime
       t.ModuleName t.hContext

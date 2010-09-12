@@ -1,0 +1,112 @@
+$MODULE Driver::MTables;
+
+/**
+  Агрегирует 3 таблицы, вмещая их в один терм (для удобства).
+*/
+
+/*
+  Внутренний формат:
+  [Tables t.hLookup t.hModules t.hTree]
+*/
+$DATA Tables;
+
+/**
+  <Create
+    s.FnCreateLookup
+    s.FnCreateModules
+    s.FnCreateModuleTree
+  >
+    == t.hTables
+*/
+$ENTRY Create {
+  s.FnCreateLookup
+  s.FnCreateModules
+  s.FnCreateModuleTree =
+    [Tables
+      <s.FnCreateLookup>
+      <s.FnCreateModules>
+      <s.FnCreateModuleTree>
+    ];
+}
+
+/**
+  <Destroy
+    t.hTables
+    s.FnDestroyLookup
+    s.FnDestroyModules
+    s.FnDestroyModuleTree
+  >
+    == пусто
+*/
+$ENTRY Destroy {
+  [Tables t.hLookup t.hModules t.hModuleTree]
+  s.FnDestroyLookup
+  s.FnDestroyModules
+  s.FnDestroyModuleTree =
+    <s.FnDestroyLookup t.hLookup>
+    <s.FnDestroyModules t.hModules>
+    <s.FnDestroyModuleTree t.hModuleTree>;
+}
+
+/**
+  <Lookup t.hTables s.FnOperation e.Arguments>
+    == t.hTables e.Result
+  <s.FnOperation t.hLookupTable e.Arguments>
+    == t.hLookupTable e.Result
+*/
+$ENTRY Lookup {
+  [Tables t.hLookup t.hModules t.hModuleTree]
+  s.FnOperation e.Arguments =
+    <Lookup-Aux
+      <s.FnOperation t.hLookup e.Arguments>
+      t.hModules t.hModuleTree
+    >;
+}
+
+Lookup-Aux {
+  t.hLookup e.Result t.hModules t.hModuleTree =
+    [Tables t.hLookup t.hModules t.hModuleTree] e.Result;
+}
+
+/**
+  <Modules t.hTables s.FnOperation e.Arguments>
+    == t.hTables e.Result
+  <s.FnOperation t.hModuleTable e.Arguments>
+    == t.hModuleTable e.Result
+*/
+$ENTRY Modules {
+  [Tables t.hLookup t.hModules t.hModuleTree]
+  s.FnOperation e.Arguments =
+    <Modules-Aux
+      t.hLookup
+      <s.FnOperation t.hModules e.Arguments>
+      t.hModuleTree
+    >;
+}
+
+Modules-Aux {
+  t.hLookup t.hModules e.Result t.hModuleTree =
+    [Tables t.hLookup t.hModules t.hModuleTree] e.Result;
+}
+
+/**
+  <ModuleTree t.hTables s.FnOperation e.Arguments>
+    == t.hTables e.Result
+  <s.FnOperation t.hModuleTree e.Arguments>
+    == t.hModuleTree e.Result
+*/
+$ENTRY ModuleTree {
+  [Tables t.hLookup t.hModules t.hModuleTree]
+  s.FnOperation e.Arguments =
+    <ModuleTree-Aux
+      t.hLookup t.hModules
+      <s.FnOperation t.hModuleTree e.Arguments>
+    >;
+}
+
+ModuleTree-Aux {
+  t.hLookup t.hModules t.hModuleTree e.Result =
+    [Tables t.hLookup t.hModules t.hModuleTree] e.Result;
+}
+
+$END Driver::MTables.

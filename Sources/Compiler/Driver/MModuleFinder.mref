@@ -1,4 +1,4 @@
-$MODULE Driver::MModules;
+$MODULE Driver::MModuleFinder;
 
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MContext = Driver::MContext;
@@ -493,4 +493,4 @@ CheckVariant-T-LibAux-SwExist {
     >;
 }
 
-$END Driver::MModules.
+$END Driver::MModuleFinder.

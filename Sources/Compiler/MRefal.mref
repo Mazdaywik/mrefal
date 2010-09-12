@@ -1,9 +1,10 @@
 $PROGRAM MRefal;
 
 $IMPORT Config::MLoad;
+$IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MCompiler;
 $IMPORT Driver::MContext;
-$IMPORT Driver::MModules;
+$IMPORT Driver::MModuleFinder;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MInOut;
@@ -57,7 +58,7 @@ AddCommandLineModule {
   t.L-Config t.hContext (t.SrcPos e.PtModuleName t.Target) =
     <AddCommandLineModule-Aux
       t.SrcPos (e.PtModuleName) t.Target
-      <Driver::MModules::LookupCmdLineModule
+      <Driver::MModuleFinder::LookupCmdLineModule
         t.hContext t.L-Config e.PtModuleName
       >
     >;
@@ -142,7 +143,7 @@ Make {
   t.Config (t.hContext t.hErrorList Success)
   ( Found t.SrcPos t.QualifiedName ) =
     (
-      <Driver::MCompiler::Make
+      <Driver::MCompilerOld::Make
         t.hContext
         t.hErrorList
         t.Config

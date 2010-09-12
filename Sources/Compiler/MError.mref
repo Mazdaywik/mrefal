@@ -365,6 +365,57 @@ $ENTRY AddImportHead
 //------------------------------------------------------------------------------
 
 /**
+  <AddTreeModulePacketConflict
+    t.hErrorList t.SrcPos t.ImportName s.Conflict t.KnownName
+  >
+    == t.hErrorList
+*/
+$ENTRY AddTreeModulePacketConflict {
+  t.hErrorList t.SrcPos t.ImportName ModuleOverPacket t.PacketName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Can\'t import module '
+        <StringFromQualifiedName t.ImportName>
+        ' because it is packet'
+      )
+    >;
+
+  t.hErrorList t.SrcPos t.ImportName PacketOverModule t.ModuleName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Can\'t import module '
+        <StringFromQualifiedName t.ImportName>
+        ' because '
+        <StringFromQualifiedName t.ModuleName>
+        ' is module, is not packet'
+      )
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddTreeCaseError t.hErrorList t.SrcPos t.ImportName t.ValidCaseName>
+    == t.hErrorList
+*/
+$ENTRY AddTreeCaseError {
+  t.hErrorList t.SrcPos t.ImportName t.ValidCaseName =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos
+        'Import module '
+        <StringFromQualifiedName t.ImportName>
+        ' has invalid name case, valid name is '
+        <StringFromQualifiedName t.ValidCaseName>
+      )
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+/**
   <AddMismatchInternalAndExternalNames
     t.ErrorList t.SrcPos t.InternalName t.ExternalName
   >

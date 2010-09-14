@@ -11,4 +11,16 @@ $ENTRY GetStatusType {
     <Driver::MContext::GetStatusType_ t.hModuleTable>;
 }
 
+$ENTRY GetCachedModuleIF {
+  t.hModuleTable t.ModuleName =
+    <Driver::MContext::GetCachedModuleIF t.ModuleName>;
+}
+
+$ENTRY SetCachedModuleIF {
+  t.hModuleTable t.ModuleName t.ModuleIF =
+    <Driver::MContext::SetCachedModuleIF
+      t.hModuleTable t.ModuleName t.ModuleIF
+    >;
+}
+
 $END Driver::Tables::MModules.

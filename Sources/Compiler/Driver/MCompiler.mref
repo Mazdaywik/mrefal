@@ -63,7 +63,7 @@ Make-Aux
   >
     == t.hTables t.hErrorList t.Interface_
   s.Type ::= Recompile | Updated | Library
-  t.Interface ::= t.ModuleIF | CantLoadInterface
+  t.Interface_ ::= t.ModuleIF | CantLoadInterface
 */
 $ENTRY ExternalName {
   s.Type (e.Stack-B t.ImportName e.Stack-E)
@@ -188,13 +188,14 @@ ExternalName-CheckModuleType {
   t.hErrorList t.SrcPos t.ImportName =
     <ExternalName-SwCheckModuleType
       t.hTables t.hErrorList t.SrcPos t.ImportName
-      s.Step <Driver::MModuleIF::GetModuleType-T t.ModuleIF>
+      t.ModuleIF s.Step
+      <Driver::MModuleIF::GetModuleType t.ModuleIF>
     >;
 }
 
 ExternalName-SwCheckModuleType {
   t.hTables t.hErrorList t.SrcPos t.ImportName
-  ImportModule t.ModuleIF Main =
+  t.ModuleIF ImportModule Main =
     t.hTables
     <MError::AddImportHead
       t.hErrorList t.SrcPos t.ImportName
@@ -202,8 +203,14 @@ ExternalName-SwCheckModuleType {
     CantLoadInterface;
 
   t.hTables t.hErrorList t.SrcPos t.ImportName
-  s.Step t.ModuleIF s.ModuleType =
+  t.ModuleIF s.Step s.ModuleType =
     t.hTables t.hErrorList t.ModuleIF;
+}
+
+ExternalName-OnUnknown {
+  s.Type (e.Stack) t.Config
+  t.hTables t.hErrorList t.SrcPos t.ImportName =
+    &!!!!!!!!!!!!!!;
 }
 
 //------------------------------------------------------------------------------

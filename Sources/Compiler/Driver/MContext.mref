@@ -62,7 +62,8 @@ DefaultOptions
     (MinMaxTime Unknown)
 
     (ModuleType Main) // Main | Regular
-    (CachedSym None) // None | t.IModule
+    (CachedSym None) // None | t.ModuleName*
+    (CachedModuleIF NotCached) // NotCached | t.ModuleIF
     ;
 //ENDCUT
 /**---------------------------------------------------------------------------*/
@@ -703,6 +704,57 @@ SetCachedImports-SwKnown {
     t.hContext Fails MismatchCase;
 
   t.hContext NotKnown t.ModuleName e.ImportList =
+    t.hContext Fails ModuleNotFound;
+}
+
+/**
+  <GetCachedModuleIF t.hContext t.ModuleName>
+    == Success NotCached
+    == Success t.ModuleIF
+    == Fails s.Error
+
+  s.Error ::= ModuleNotFound | MismatchCase
+*/
+$ENTRY GetCachedModuleIF {
+  t.hContext t.ModuleName =
+    <GetCachedModuleIF-Aux
+      <ExtractOption t.hContext t.ModuleName CachedModuleIF>
+    >;
+}
+
+GetCachedModuleIF-Aux {
+  t.hContext Found NotCached = t.hContext Success NotCached;
+  t.hContext Found t.ModuleIF = t.hContext Success t.ModuleIF;
+  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
+  t.hContext MismatchCase = t.hContext Fails MismatchCase;
+
+  // MismatchOption не рассматриваем.
+}
+
+/**
+  <SetCachedModuleIF t.hContext t.ModuleName t.ModuleIF>
+    == t.hContext Success
+    == t.hContext Fails s.Error
+
+  s.Error ::= ModuleNotFound | MismatchCase
+*/
+$ENTRY SetCachedModuleIF {
+  t.hContext t.ModuleName t.ModuleIF =
+    <SetCachedModuleIF-SwKnown
+      <IsKnown_ t.hContext t.ModuleName>
+      t.ModuleName t.ModuleIF
+    >;
+}
+
+SetCachedModuleIF-SwKnown {
+  t.hContext Known t.ModuleName t.ModuleIF =
+    // Должно вернуть Success
+    <UpdateInfo t.hContext t.ModuleName (CachedModuleIF t.ModuleIF)>;
+
+  t.hContext MismatchCase t.ModuleName t.ModuleIF =
+    t.hContext Fails MismatchCase;
+
+  t.hContext NotKnown t.ModuleName t.ModuleIF =
     t.hContext Fails ModuleNotFound;
 }
 

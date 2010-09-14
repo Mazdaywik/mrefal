@@ -1,9 +1,312 @@
 $MODULE Driver::MModuleIF;
 
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MModuleTable = Driver::Tables::MModules;
+$IMPORT MSymModule = Driver::MSymModule;
+$IMPORT MTables = Driver::MTables;
+
 /**
   АТД, представляющий собой интерфейс модуля.
   В отличие от IModule, данный тип предполагается свободным
   для копирования (без префикса t.h...).
 */
+
+$DATA ModuleIF, FunctionIF, ImportIF;
+
+/*
+  Внутреннее представление:
+  t.ModuleIF ::=
+    [ModuleIF
+      (t.ModuleName s.ModuleType t.SrcPos)
+      (t.FunctionIF*)
+      (t.ImportIF*)
+    ]
+  t.FunctionIF ::= [FunctionIF t.FunctionName t.SrcPos]
+  t.ImportIF ::= [ImportIF t.ImportName t.SrcPos]
+*/
+
+//------------------------------------------------------------------------------
+
+/**
+  <Load t.hTables t.hErrorList t.ModuleName>
+    == t.hTables t.hErrorList Success t.ModuleIF
+    == t.hTables t.hErrorList Fails
+*/
+$ENTRY Load {
+  t.hTables t.hErrorList t.ModuleName =
+    <Load-SwCached
+      t.hErrorList t.ModuleName <LoadCached t.hTables t.ModuleName>
+    >;
+}
+
+Load-SwCached {
+  t.hErrorList t.ModuleName t.hTables ModuleNotFound =
+    <Load-DirectLoad
+      t.hTables t.hErrorList t.ModuleName
+    >;
+
+  t.hErrorList t.ModuleName t.hTables NotCached =
+    <Load-DirectLoad
+      t.hTables t.hErrorList t.ModuleName
+    >;
+
+  t.hErrorList t.ModuleName t.hTables t.ModuleIF =
+    t.hTables t.hErrorList Success t.ModuleIF;
+}
+
+Load-DirectLoad {
+  t.hTables t.hErrorList t.ModuleName =
+    <Load-SwSymModule
+      <MTables::Modules
+        t.hTables
+        &MSymModule.LoadInfo t.hErrorList t.ModuleName
+      >
+    >;
+}
+
+Load-SwSymModule {
+  t.hTables t.hErrorList Success s.SuccessWarnings t.hSymIModule =
+    <Load-SymModule-Cache
+      t.hTables t.hErrorList <FromIModule t.hSymIModule>
+    >;
+
+  t.hTables t.hErrorList Fails =
+    t.hTables t.hErrorList Fails;
+}
+
+Load-SymModule-Cache {
+  t.hTables t.hErrorList t.ModuleIF =
+    <SaveCache t.hTables t.ModuleIF> t.hErrorList Success t.ModuleIF;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <LoadCached t.hTables t.ModuleName>
+    == t.hTables ModuleNotFound
+    == t.hTables NotCached
+    == t.hTables t.ModuleIF
+*/
+$ENTRY LoadCached {
+  t.hTables t.ModuleName =
+    <LoadCached-SwLoad
+      <MTables::Modules
+        t.hTables &MModuleTable.GetCachedModuleIF t.ModuleName
+      >
+    >;
+}
+
+LoadCached-SwLoad {
+  t.hTables Success t.Result /* t.ModuleIF | NotCached */ =
+    t.hTables t.Result;
+
+  t.hTables Fails s.Error = t.hTables ModuleNotFound;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <SaveCache t.hTables t.ModuleIF>
+    == t.hTables
+*/
+$ENTRY SaveCache {
+  t.hTables t.ModuleIF =
+    <SaveCache-ExtractName
+      t.hTables t.ModuleIF <GetName t.ModuleIF>
+    >;
+}
+
+SaveCache-ExtractName {
+  t.hTables t.ModuleIF t.ModuleName =
+    <SaveCache-UpdateModuleTable
+      <MTables::Modules
+        t.hTables
+        &MModuleTable.SetCachedModuleIF t.ModuleName t.ModuleIF
+      >
+    >;
+}
+
+SaveCache-UpdateModuleTable {
+  t.hTables Success = t.hTables;
+
+  // Ошибочные варианты должны быть исключены.
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <FromIModule t.hIModule> == t.ModuleIF
+*/
+$ENTRY FromIModule {
+  t.hIModule =
+    <FromIModule-BaseFields
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          & MIModule.GetModuleName
+          <MLambda::BindRight
+            & MIModule.GetModuleAttribute ModuleType
+          >
+          <MLambda::BindRight
+            & MIModule.GetModuleAttribute Position
+          >
+          <MLambda::Composite
+            & MIModule.GetFunctionList
+            & MLambda.Bracket-H
+          >
+          <MLambda::Composite
+            & MIModule.GetImportList-RealNames
+          >
+        > // Parallel-H
+        t.hIModule
+      > // Apply
+    >;
+}
+
+FromIModule-BaseFields {
+  t.hIModule t.ModuleName Found s.ModuleType t.ModuleSrcPos
+  (e.Functions) (e.Imports) =
+    <FromIModule-Detailed
+      t.ModuleName s.ModuleType t.ModuleSrcPos
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft-H
+            & CreateMIFList
+            & MIModule.GetFunctionAttribute
+            & CreateFunctionIF
+            e.Functions
+          >
+          <MLambda::BindLeft
+            & CreateMIFList
+            & MIModule.GetImportAttribute-RealName
+            & CreateImportIF
+            e.Imports
+          >
+        > // Parallel-H
+        t.hIModule
+      > // Apply
+    >;
+}
+
+CreateFunctionIF {
+  t.FunctionName t.SrcPos = [FunctionIF t.FunctionName t.SrcPos];
+}
+
+CreateImportIF {
+  t.ImportName t.SrcPos = [ImportIF t.ImportName t.SrcPos];
+}
+
+FromIModule-Detailed {
+  t.ModuleName s.ModuleType t.ModuleSrcPos
+  t.hIModule (e.FunctionIFs) (e.ImportIFs) =
+    <MIModule::Destroy t.hIModule>
+    [ModuleIF
+      (t.ModuleName s.ModuleType t.ModuleSrcPos)
+      (e.FunctionIFs) (e.ImportIFs)
+    ];
+}
+
+/*
+  <CreateMIFList
+    t.hIModule s.FnGetAttribute s.FnCreateDatatype
+    t.EntityName*
+  >
+    == t.hIModule (t.EntityIF*)
+*/
+CreateMIFList {
+  t.hIModule s.FnGetAttribute s.FnCreateDatatype
+  e.EntityNames =
+    <MLambda::Bracket-H
+      <MLambda::MapReduce
+        <MLambda::BindLeft
+          & CreateMIFEntity s.FnGetAttribute s.FnCreateDatatype
+        >
+        t.hIModule e.EntityNames
+      >
+    >;
+}
+
+/*
+  <CreateMIFEntity
+    s.FnGetAttribute s.FnCreateDatatype
+    t.hIModule t.EntityName
+  >
+    == t.hIModule t.EntityIF
+*/
+CreateMIFEntity {
+  s.L-FnGetAttribute s.L-FnCreateDatatype
+  t.hIModule t.EntityName =
+    <CreateMIFEntity-Relative
+      s.L-FnGetAttribute s.L-FnCreateDatatype
+      <MIModule::RelativeName t.hIModule t.EntityName>
+    >;
+}
+
+CreateMIFEntity-Relative {
+  s.FnGetAttribute s.FnCreateDatatype
+  t.hIModule Success t.RelativeName =
+    <CreateMIFEntity-GetSrcPos
+      s.FnCreateDatatype t.RelativeName
+      <s.FnGetAttribute t.hIModule t.RelativeName Position>
+    >;
+}
+
+CreateMIFEntity-GetSrcPos {
+  s.FnCreateDatatype t.RelativeName t.hIModule t.SrcPos =
+    t.hIModule <s.FnCreateDatatype t.RelativeName t.SrcPos>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetFunctions t.ModuleIF> == t.FunctionIF*
+*/
+$ENTRY GetFunctions {
+  [ModuleIF t.Head (e.Functions) (e.Imports)] = e.Functions;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetImports t.ModuleIF> == t.ImportIF
+*/
+$ENTRY GetImports {
+  [ModuleIF t.Head (e.Functions) (e.Imports)] = e.Imports;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetModuleType t.ModuleIF> == Regular | Main
+*/
+$ENTRY GetModuleType {
+  [ModuleIF (t.Name s.Type t.SrcPos) t.Functions t.Imports] = s.Type;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetName t.ModuleIF | t.FunctionIF | t.ImportIF> == t.QualifiedName
+*/
+$ENTRY GetName {
+  [ModuleIF (t.Name s.Type t.SrcPos) t.Functions t.Imports] = t.Name;
+
+  [FunctionIF t.Name t.SrcPos] = t.Name;
+
+  [ImportIF t.Name t.SrcPos] = t.Name;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <GetSrcPos t.ModuleIF | t.FunctionIF | t.ImportIF> == t.SrcPos
+*/
+$ENTRY GetSrcPos {
+  [ModuleIF (t.Name s.Type t.SrcPos) t.Functions t.Imports] = t.SrcPos;
+
+  [FunctionIF t.Name t.SrcPos] = t.SrcPos;
+
+  [ImportIF t.Name t.SrcPos] = t.SrcPos;
+}
 
 $END Driver::MModuleIF.

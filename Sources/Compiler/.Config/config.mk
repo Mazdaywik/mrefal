@@ -1,5 +1,6 @@
 # File ../include/platform.mk must be included before!!!
 CONFIGFILE=./.Config/config.sav.mk
+FARMENUFILE=./.Config/list_make_param.wnd
 
 include $(CONFIGFILE)
 
@@ -12,11 +13,27 @@ define PRINT-CONFIG
 endef
 
 define GEN-CONFIG
-	@$(EMPTYLINE)>> $(CONFIGFILE)
+	@$(ECHO) Writting configuration.
+	@$(EMPTYLINE)> $(CONFIGFILE)
 	@$(ECHO) profile = $(profile)>> $(CONFIGFILE)
 	@$(ECHO) comp = $(comp)>> $(CONFIGFILE)
 	@$(ECHO) scomp = $(scomp)>> $(CONFIGFILE)
 	@$(ECHO) mode = $(mode)>> $(CONFIGFILE)
+endef
+
+define GEN-FARMENU
+	@$(ECHO) C:  Продолжить > $(FARMENUFILE)
+	@$(ECHO)     set COMP-SHORT=$(comp) >> $(FARMENUFILE)
+	@$(ECHO)     set PROFILE-SHORT=$(profile) >> $(FARMENUFILE)
+	@$(ECHO)     set PROFILE-ACRO=.cppsr.exe >> $(FARMENUFILE)
+	@$(ECHO)     set SCOMP-SHORT=$(scomp) >> $(FARMENUFILE)
+	@$(ECHO)     set MODE=$(mode) >> $(FARMENUFILE)
+	@$(ECHO)     .Config\change_window default >> $(FARMENUFILE)
+	@$(ECHO) -: >> $(FARMENUFILE)
+	@$(ECHO) :   Компилятор $(comp) >> $(FARMENUFILE)
+	@$(ECHO) :   Профиль $(profile) >> $(FARMENUFILE)
+	@$(ECHO) :   Стабильный компилятор $(scomp) >> $(FARMENUFILE)
+	@$(ECHO) :   Режим $(mode) >> $(FARMENUFILE)
 endef
 
 define CHECKPARAM
@@ -43,7 +60,7 @@ $(CONFIGFILE): comp     = CPPSR
 $(CONFIGFILE): scomp    = CPPSR
 $(CONFIGFILE): mode     = MAKE
 
-$(CONFIGFILE): del_e
+$(CONFIGFILE)::
 	$(GEN-CONFIG)
 
 .PHONY: resetconfig reset_config delete_config gen_config
@@ -51,10 +68,13 @@ $(CONFIGFILE): del_e
 resetconfig reset_config:: delete_config gen_config
 
 delete_config:: del_e
-	-$(RM) $(call PATH, $(CONFIGFILE))
+	-$(RM) $(call FORMAT-PATH, $(CONFIGFILE))
 
 gen_config:: del_e
 	$(GEN-CONFIG)
+
+$(FARMENUFILE):: del_e
+	$(GEN-FARMENU)
 
 comp-R5 = $(call BATNAME, ../Bin/start-r5)
 comp-R5T = $(call BATNAME, ../Bin/start-r5-t)

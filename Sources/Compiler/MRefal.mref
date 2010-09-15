@@ -1,10 +1,14 @@
 $PROGRAM MRefal;
 
 $IMPORT Config::MLoad;
-$IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MCompiler;
+$IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MContext;
 $IMPORT Driver::MModuleFinder;
+$IMPORT Driver::MTables;
+$IMPORT Driver::Tables::MLookup;
+$IMPORT Driver::Tables::MModuleTree;
+$IMPORT Driver::Tables::MModules;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MInOut;
@@ -16,7 +20,11 @@ $IMPORT MVersion;
 $ENTRY Go =
   <MVersion::Show>
   <CompileList
-    <Driver::MContext::Create>
+    <Driver::MTables::Create
+      &Driver.Tables.MLookup.Create
+      &Driver.Tables.MModules.Create
+      &Driver.Tables.MModuleTree.Create
+    >
     <Config::MLoad::Load
       <MError::CreateErrList>
       <MOS::ArgList>
@@ -25,7 +33,12 @@ $ENTRY Go =
 
 CompileList {
   t.hContext t.hErrorList Success (Help e.Message) =
-    <Driver::MContext::Destroy t.hContext>
+    <Driver::MTables::Destroy
+      t.hContext
+      &Driver.Tables.MLookup.Destroy
+      &Driver.Tables.MModules.Destroy
+      &Driver.Tables.MModuleTree.Destroy
+    >
     <MError::DestroyErrList t.hErrorList>
     <MInOut::WriteText e.Message>;
 

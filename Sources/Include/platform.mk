@@ -6,14 +6,14 @@ endif
 
 ifneq ($(findstring Windows, $(UNAME)),)
   OS=Windows
-  CP=cmd.exe /c copy
-  MV=cmd.exe /c move
-  RM=cmd.exe /c del
-  ECHO=cmd.exe /c echo
-  EMPTYLINE=cmd.exe /c echo.
+  CP=$(ComSpec) /c copy
+  MV=$(ComSpec) /c move
+  RM=$(ComSpec) /c del
+  ECHO=$(ComSpec) /c echo
+  EMPTYLINE=$(ComSpec) /c echo.
   EXESUF=.exe
   BATSUF=.bat
-  PATH=$(strip $(subst /,\,$(1)))
+  FORMAT-PATH=$(strip $(subst /,\,$(1)))
 endif
 
 ifneq ($(findstring Linux, $(UNAME)),)
@@ -25,7 +25,7 @@ ifneq ($(findstring Linux, $(UNAME)),)
   EMPTYLINE=echo
   EXESUF=-lin
   BATSUF=.sh
-  PATH=$(strip $(1))
+  FORMAT-PATH=$(strip $(1))
 endif
 
 ifneq ($(findstring QNX, $(UNAME)),)
@@ -37,11 +37,11 @@ ifneq ($(findstring QNX, $(UNAME)),)
   EMPTYLINE=echo
   EXESUF=-qnx
   BATSUF=.sh
-  PATH=$(strip $(1))
+  FORMAT-PATH=$(strip $(1))
 endif
 
-EXENAME=$(call PATH, $(1)$(EXESUF))
-BATNAME=$(call PATH, $(1)$(BATSUF))
+EXENAME=$(call FORMAT-PATH, $(1)$(EXESUF))
+BATNAME=$(call FORMAT-PATH, $(1)$(BATSUF))
 
 .PHONY: del_e
 

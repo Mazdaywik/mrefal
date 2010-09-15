@@ -1,0 +1,12 @@
+C:  Продолжить 
+    set COMP-SHORT=CPPSR 
+    set PROFILE-SHORT=R5 
+    set PROFILE-ACRO=.cppsr.exe 
+    set SCOMP-SHORT=CPPSR 
+    set MODE=MAKE 
+    .Config\change_window default 
+-: 
+:   Компилятор CPPSR 
+:   Профиль R5 
+:   Стабильный компилятор CPPSR 
+:   Режим MAKE 

@@ -210,7 +210,7 @@ ExternalName-SwCheckModuleType {
 ExternalName-OnUnknown {
   s.Type (e.Stack) t.Config
   t.hTables t.hErrorList t.SrcPos t.ImportName =
-    //&!!!!!!!!!!!!!!
+    &!!!!!!!!!!!!!!
     ;
 }
 

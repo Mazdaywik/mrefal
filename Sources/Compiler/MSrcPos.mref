@@ -34,7 +34,7 @@ $ENTRY Create-RunTime
 */
 $ENTRY ToString {
   (SrcPos 'F' e.FileName s.LnNum) =
-    '\'' e.FileName '\', ' <MStrings::Symb s.LnNum>;
+    e.FileName ':' <MStrings::Symb s.LnNum>;
 
   (SrcPos 'CC') = '<unknown>';
 

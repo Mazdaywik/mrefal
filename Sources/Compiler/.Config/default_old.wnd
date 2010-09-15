@@ -197,8 +197,8 @@ V:  Сохранить как последнюю конфигурацию
     .Config\ncmenu
 }
 -:  
-O:  Старое меню
-    .Config\change_window default_old
+N:  Новое окно
+    .Config\change_window default
 -:  
 F7:  Сохранить окно
-    .Config\save_window default
+    .Config\save_window default_old

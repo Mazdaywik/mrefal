@@ -31,14 +31,19 @@ $ENTRY Go =
     >
   >;
 
-CompileList {
-  t.hContext t.hErrorList Success (Help e.Message) =
+DestroyContext {
+  t.hContext =
     <Driver::MTables::Destroy
       t.hContext
       &Driver.Tables.MLookup.Destroy
       &Driver.Tables.MModules.Destroy
       &Driver.Tables.MModuleTree.Destroy
-    >
+    >;
+}
+
+CompileList {
+  t.hContext t.hErrorList Success (Help e.Message) =
+    <DestroyContext t.hContext>
     <MError::DestroyErrList t.hErrorList>
     <MInOut::WriteText e.Message>;
 
@@ -48,7 +53,7 @@ CompileList {
     >;
 
   t.hContext t.hErrorList Fails =
-    <Driver::MContext::Destroy t.hContext>
+    <DestroyContext t.hContext>
     <MError::PrintErrors t.hErrorList>;
 }
 
@@ -105,7 +110,7 @@ AddCommandLineModule-Aux-Guard {
 CheckFoundResult {
   t.Config t.hErrorList
   t.hContext e.Results-B ( NotFound t.SrcPos e.Module ) e.Results-E =
-    <Driver::MContext::Destroy t.hContext>
+    <DestroyContext t.hContext>
     <MError::PrintErrors
       <MLambda::Reduce
         & PrintErrorLookup
@@ -116,7 +121,7 @@ CheckFoundResult {
 
   t.Config t.hErrorList
   t.hContext e.Results-B ( Redefinition t.SrcPos e.Module ) e.Results-E =
-    <Driver::MContext::Destroy t.hContext>
+    <DestroyContext t.hContext>
     <MError::PrintErrors
       <MLambda::Reduce
         & PrintErrorLookup
@@ -171,11 +176,11 @@ Make {
 
 FinishMake {
   ( t.hContext t.hErrorList Success ) =
-    <Driver::MContext::Destroy t.hContext>
+    <DestroyContext t.hContext>
     <MError::PrintErrors t.hErrorList>;
 
   ( t.hContext t.hErrorList Fails ) =
-    <Driver::MContext::Destroy t.hContext>
+    <DestroyContext t.hContext>
     <MError::PrintErrors t.hErrorList>;
 }
 

@@ -23,11 +23,11 @@ K:  Проверить (%COMP-SHORT%, %PROFILE-SHORT%) -> (%COMP-SHORT%, %PROFIL
     if exist __dump del __dump
     mingw32-make check
     if exist __errors view:__errors
-H:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
+H:  Проверить/stable (%SCOMP-SHORT%, %COMP-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%)
     if exist __dump del __dump
     mingw32-make check-s
     if exist __errors view:__errors
-G:  Проверить/stable (%SCOMP-SHORT%, %SPROFILE-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
+G:  Проверить/stable (%SCOMP-SHORT%, %COMP-SHORT%) -> (%COMP-SHORT%, %PROFILE-SHORT%) 2>__err
     if exist __dump del __dump
     mingw32-make check-s 2>__err >__out
     if exist __errors view:__errors

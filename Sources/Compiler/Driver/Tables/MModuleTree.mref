@@ -10,4 +10,308 @@ $MODULE Driver::Tables::MModuleTree;
   то проверяемое имя указано верно с учётом регистра.
 */
 
+$IMPORT MLambda;
+$IMPORT MStrings;
+$IMPORT MQualifiedName;
+
+$DATA CaseTable;
+
+/*
+  Внутренний формат:
+
+  [CaseTable t.Entity*]
+
+  t.Entity ::=
+    (Packet (e.KeyName) (e.OrigName) t.Entity*)
+    | (Module (e.KeyName) (e.OrigName))
+*/
+
+//------------------------------------------------------------------------------
+
+/*
+  <Explode t.QualifiedName> == e.ExplodedName
+
+  e.ExplodedName ::= ((e.KeyName) (e.OrigName))*
+*/
+Explode {
+  t.QualifiedName =
+    <MLambda::Map
+      &ExplodeSegment <MQualifiedName::Parse t.QualifiedName>
+    >;
+}
+
+ExplodeSegment {
+  (e.Segment) =
+    ((<MStrings::Lower e.Segment>) (e.Segment));
+}
+
+/*
+  <Implode e.ExplodeName> == t.QualifiedName
+*/
+Implode {
+  e.ExplodeName =
+    <MQualifiedName::Create
+      <MLambda::Map &ImplodeSegment e.ExplodeName>
+    >;
+}
+
+ImplodeSegment {
+  ((e.KeyName) (e.OrigName)) = (e.OrigName);
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <Create> == t.CaseTable
+*/
+$ENTRY Create = [CaseTable];
+
+//------------------------------------------------------------------------------
+
+/**
+  <Destroy t.CaseTable> == пусто
+*/
+$ENTRY Destroy {
+  [CaseTable e.Entities] =
+    <MLambda::Map & DestroyEntity e.Entities>;
+}
+
+DestroyEntity {
+  (Packet (e.KeyName) (e.OrigName) e.Entities) =
+    <MLambda::Map & DestroyEntity e.Entities>;
+
+  (Module (e.KeyName) (e.OrigName)) =
+    /* пусто */;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <CheckSpace t.CaseTable t.ModuleName>
+    == t.CaseTable AvailSpace
+    == t.CaseTable e.ErrorMessage
+
+  e.ErrorMessage ::=
+    ModuleExist t.ModuleName |
+    Collision IllegalModuleCase t.KnownModuleName t.InputModuleName |
+    Collision IllegalPacketCase t.KnownPacketName t.InputPacketName |
+    Collision ModuleOverPacket t.KnownPacketName t.InputModuleName |
+    Collision PacketOverModule t.KnownModuleName t.InputPacketName
+*/
+$ENTRY CheckSpace {
+  [CaseTable e.Entities] t.ModuleName =
+    <Lookup
+      & Fn-CheckSpace e.Entities t.ModuleName
+    >;
+}
+
+/**
+  <InsertModule t.CaseTable t.ModuleName>
+    == t.CaseTable Success
+    == t.CaseTable e.ErrorMessage
+*/
+$ENTRY InsertModule {
+  [CaseTable e.Entities] t.ModuleName =
+    <Lookup
+      & Fn-InsertModule e.Entities t.ModuleName
+    >;
+}
+
+/*
+  <Lookup s.FnPerform (e.Entities) t.ModuleName>
+    == t.CaseTable s.PerformResult
+    == t.CaseTable e.ErrorMessage
+
+  <s.FnPerform (e.Entities) e.ExplodedName>
+    == s.PerformResult e.Entites
+*/
+Lookup {
+  s.FnPerform e.Entities t.ModuleName =
+    <DoLookup
+      s.FnPerform (/*case errors*/)
+      (/* левая мультискобка */) (e.Entities) (/* правая мультискобка */)
+      () <Explode t.ModuleName>
+    >;
+}
+
+DoLookup {
+  s.FnPerform (e.CaseErrors)
+  (e.MB-Left)
+  (e.Entities-B (s.Type (e.KeyName) e.Info) e.Entities-E)
+  (e.MB-Right)
+  (e.Segments) ((e.KeyName) (e.OrigName)) e.Tail =
+    <SwDoLookup
+      s.FnPerform (e.CaseErrors)
+      (e.MB-Left (e.Entities-B))
+      (s.Type (e.KeyName) e.Info)
+      ((e.Entities-E) e.MB-Right)
+      (e.Segments) (e.KeyName) (e.OrigName) e.Tail
+    >;
+
+  s.FnPerform ()
+  (e.MB-Left) (e.Entities) (e.MB-Right)
+  (e.Segments) ((e.KeyName) (e.OrigName)) e.Tail =
+    <DoLookup-Perform
+      (e.MB-Left)
+      <s.FnPerform (e.Entities) ((e.KeyName) (e.OrigName)) e.Tail>
+      (e.MB-Right)
+    >;
+
+  s.FnPerform (e.CaseErrors (e.LastError))
+  (e.MB-Left) (e.Entities) (e.MB-Right)
+  (e.Segments) ((e.KeyName) (e.OrigName)) e.Tail =
+    <UnwrapTable
+      (e.MB-Left) e.Entities (e.MB-Right)
+    >
+    e.LastError;
+}
+
+DoLookup-Perform {
+  (e.MB-Left) s.PerformResult e.SubEntities (e.MB-Right) =
+    <UnwrapTable (e.MB-Left) e.SubEntities (e.MB-Right)>
+    s.PerformResult;
+}
+
+Fn-CheckSpace {
+  (e.Entities) e.InsertName = AvailSpace e.Entities;
+}
+
+Fn-InsertModule {
+  (e.Entities) e.ModuleName =
+    Success e.Entities <MakePackets e.ModuleName>;
+}
+
+MakePackets {
+  ((e.KeyModule) (e.OrigModule)) = (Module (e.KeyModule) (e.OrigModule));
+
+  ((e.KeyPacket) (e.OrigPacket)) e.Tail =
+    (Packet (e.KeyPacket) (e.OrigPacket) <MakePackets e.Tail>);
+}
+
+SwDoLookup {
+  s.FnPerform ()
+  (e.MB-Left) (Module (e.KeyModule) (e.OrigModule)) (e.MB-Right)
+  (e.Segments) (e.KeyModule) (e.OrigModule) =
+    <UnwrapTable
+      (e.MB-Left) (Module (e.KeyModule) (e.OrigModule)) (e.MB-Right)
+    >
+    ModuleExist
+    <MQualifiedName::Create e.Segments (e.OrigModule)>;
+
+  s.FnPerform (e.CaseErrors (e.LastError))
+  (e.MB-Left) (Module (e.KeyModule) (e.OrigModule)) (e.MB-Right)
+  (e.Segments) (e.KeyModule) (e.OrigModule) =
+    <UnwrapTable
+      (e.MB-Left) (Module (e.KeyModule) (e.OrigModule)) (e.MB-Right)
+    >
+    e.LastError;
+
+  s.FnPerform ()
+  (e.MB-Left) (Module (e.KeyModule) (e.KnownOrigModule)) (e.MB-Right)
+  (e.Segments) (e.KeyModule) (e.InputOrigModule) =
+    <UnwrapTable
+      (e.MB-Left) (Module (e.KeyModule) (e.KnownOrigModule)) (e.MB-Right)
+    >
+    Collision IllegalModuleCase
+    <CreateKnownName (e.MB-Left) e.KnownOrigModule>
+    <MQualifiedName::Create e.Segments (e.InputOrigModule)>;
+
+  s.FnPerform (e.CaseErrors (e.LastError))
+  (e.MB-Left) (Module (e.KeyModule) (e.KnownOrigModule)) (e.MB-Right)
+  (e.Segments) (e.KeyModule) (e.InputOrigModule) =
+    <UnwrapTable
+      (e.MB-Left) (Module (e.KeyModule) (e.KnownOrigModule)) (e.MB-Right)
+    >
+    e.LastError;
+
+  s.FnPerform (e.CaseErrors)
+  (e.MB-Left) (Module (e.KeyModule) (e.KnownOrigModule)) (e.MB-Right)
+  (e.Segments) (e.KeyModule) (e.InputOrigPacket) e.Tail =
+    <UnwrapTable
+      (e.MB-Left) (Module (e.KeyModule) (e.KnownOrigModule)) (e.MB-Right)
+    >
+    Collision PacketOverModule
+    <CreateKnownName (e.MB-Left) e.KnownOrigModule>
+    <MQualifiedName::Create e.Segments (e.InputOrigPacket)>;
+
+  s.FnPerform (e.CaseErrors)
+  (e.MB-Left)
+  (Packet (e.KeyPacket) (e.KnownOrigPacket) e.SubEntities)
+  (e.MB-Right)
+  (e.Segments) (e.KeyPacket) (e.InputModuleName) =
+    <UnwrapTable
+      (e.MB-Left)
+      (Packet (e.KeyPacket) (e.KnownOrigPacket) e.SubEntities)
+      (e.MB-Right)
+    >
+    Collision ModuleOverPacket
+    <CreateKnownName (e.MB-Left) e.KnownOrigPacket>
+    <MQualifiedName::Create e.Segments (e.InputModuleName)>;
+
+  s.FnPerform (e.CaseErrors)
+  (e.MB-Left)
+  (Packet (e.KeyPacket) (e.OrigPacket) e.SubEntities)
+  (e.MB-Right)
+  (e.Segments) (e.KeyPacket) (e.OrigPacket) e.Tail =
+    <DoLookup
+      s.FnPerform (e.CaseErrors)
+      (e.MB-Left (Packet (e.KeyPacket) (e.OrigPacket)))
+      (e.SubEntities)
+      (() e.MB-Right)
+      (e.Segments (e.OrigPacket)) e.Tail
+    >;
+
+  s.FnResult (e.CaseErrors)
+  (e.MB-Left)
+  (Packet (e.KeyPacket) (e.KnownOrigPacket) e.SubEntities)
+  (e.MB-Right)
+  (e.Segments) (e.KeyPacket) (e.InputOrigPacket) e.Tail =
+    <DoLookup
+      s.FnResult
+      (
+        e.CaseErrors
+        (
+          Collision IllegalPacketCase
+          <CreateKnownName (e.MB-Left) e.KnownOrigPacket>
+          <MQualifiedName::Create e.Segments (e.InputOrigPacket)>
+        )
+      )
+      (e.MB-Left (Packet (e.KeyPacket) (e.KnownOrigPacket)))
+      (e.SubEntities)
+      (() e.MB-Right)
+      (e.Segments (e.KnownOrigPacket)) e.Tail
+    >;
+}
+
+UnwrapTable {
+  (e.MB-Left (Packet (e.KeyPacket) (e.OrigPacket)))
+  e.SubEntities
+  (() e.MB-Right) =
+    <UnwrapTable
+      (e.MB-Left)
+      (Packet (e.KeyPacket) (e.OrigPacket) e.SubEntities)
+      (e.MB-Right)
+    >;
+
+  (e.MB-Left (e.Entities-B)) t.Elem ((e.Entities-E) e.MB-Right) =
+    <UnwrapTable
+      (e.MB-Left) e.Entities-B t.Elem e.Entities-E (e.MB-Right)
+    >;
+
+  () e.Entities () = [CaseTable e.Entities];
+}
+
+CreateKnownName {
+  (e.MB-Left) e.LastSegment =
+    <DoCreateKnownName e.MB-Left ((e.LastSegment))>;
+}
+
+DoCreateKnownName {
+  e.MB-Left (Packet (e.KeyName) (e.OrigName)) (e.Entities-B)
+  (e.Segments) =
+    <DoCreateKnownName e.MB-Left ((e.OrigName) e.Segments)>;
+
+  (e.Entities-B) (e.Segments) = <MQualifiedName::Create e.Segments>;
+}
+
 $END Driver::Tables::MModuleTree.

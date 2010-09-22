@@ -5,24 +5,24 @@ include .Config/config.mk
 
 all: work
 
-work: del_e
+work:
 	$(call CHECKPARAM, comp)
 	$(call CHECKPARAM, profile)
 	$(call CHECKPARAM, mode)
 	$(comp_tr) $(mode_tr) +cfg:.Config/$(profile_tr).prj
 
-stable: del_e
+stable:
 	$(call CHECKPARAM, scomp)
 	$(call CHECKPARAM, sprofile)
 	$(call CHECKPARAM, mode)
 	$(scomp_tr) $(mode_tr) +cfg:.Config/$(sprofile_tr).cfg +xlinx MRefal
 
-check: del_e
+check:
 	$(MAKE) work
 	@$(EMPTYLINE)
 	$(MAKE) work
 
-check-s: del_e
+check-s:
 	$(MAKE) stable
 	@$(EMPTYLINE)
 	$(MAKE) work

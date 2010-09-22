@@ -89,4 +89,10 @@ $ENTRY CreateModule_ {
     >;
 }
 
+$ENTRY SetTarget_ {
+  t.hTables t.ModuleName e.PtTargetName =
+    <MTables::Modules
+      t.hTables & MModuleTable.SetTarget t.ModuleName e.PtTargetName
+    >;
+}
 $END Driver::MContext.

@@ -407,7 +407,8 @@ $ENTRY AddTreeCaseError {
       ( Semantics t.SrcPos
         'Import module '
         <StringFromQualifiedName t.ImportName>
-        ' has invalid name case, valid name is '
+        ' has invalid name case, valid name '
+        '(name of module or packet that contains this module) is '
         <StringFromQualifiedName t.ValidCaseName>
       )
     >;

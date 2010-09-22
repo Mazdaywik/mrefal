@@ -1,5 +1,5 @@
 
-profile = CPPSR
-comp = CPPSR
-scomp = CPPSR
+profile = C++/SR
+comp = C++/SR
+scomp = C++/SR
 mode = MAKE

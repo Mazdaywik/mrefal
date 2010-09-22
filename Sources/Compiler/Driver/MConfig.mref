@@ -3,6 +3,7 @@ $MODULE Driver::MConfig;
 $IMPORT Config::MConfig;
 $IMPORT Driver::MClusters;
 $IMPORT Driver::MContext;
+$IMPORT Driver::MSymModule;
 $IMPORT MCreateDirIfNeed;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
@@ -198,6 +199,39 @@ MakeObjName-Aux
 //------------------------------------------------------------------------------
 
 /**
+  <LoadModule s.Type t.Config t.hTables t.hErrorList t.ModuleName>
+    == t.hTables t.hErrorList Success s.ParseResult t.hRawIModule
+    == t.hTables t.hErrorList Fails
+  s.ParseResult ::= Success | Warnings | Errors
+*/
+$ENTRY LoadModule {
+  Changed t.Config t.hTables t.hErrorList t.ModuleName =
+    <LoadModule-SelectFE
+      t.Config t.hErrorList t.ModuleName
+      <Driver::MContext::GetFrontEnd t.hTables t.ModuleName>
+    >;
+
+  // Library или Updated
+  s.Type t.Config t.hTables t.hErrorList t.ModuleName =
+    <Driver::MSymModule::LoadInfo-SaveBroken
+      t.hTables t.hErrorList t.ModuleName
+    >;
+}
+
+LoadModule-SelectFE {
+  t.Config t.hErrorList t.ModuleName
+  t.hTables Success s.FEName t.Path-Head e.Path-Tail /*v.Path*/ =
+    t.hTables
+    <Load
+      t.Config s.FEName t.hErrorList t.ModuleName
+      t.Path-Head e.Path-Tail
+    >;
+
+  t.Config t.hErrorList t.ModuleName t.hContext Fails s.Reason =
+    t.hContext t.hErrorList Fails;
+}
+
+/**
   <Load t.Config s.FEName t.hErrorList t.ModuleName e.StrPathToFile>
     == t.hErrorList Success s.Result t.hIModule
     == t.hErrorList Fails
@@ -222,6 +256,31 @@ Load-Aux {
 }
 
 //------------------------------------------------------------------------------
+
+/**
+  <CheckNeedCompile_NEW
+    t.hErrorList t.hTables t.Config t.ModuleName
+  >
+    == t.hErrorList t.hTables Success s.Status s.Type
+    == t.hErrorList t.hTables Fails MismatchCase
+*/
+$ENTRY CheckNeedCompile_NEW {
+  t.hErrorList t.hTables t.Config t.ModuleName =
+    <NEW-CutModuleName
+      <CheckNeedCompile t.hErrorList t.hTables t.Config t.ModuleName>
+    >;
+}
+
+/*
+  Здесь нужно будет проверять, что если модуль находится в таблице
+  поиска (Lookup), то его статус должен быть Ready независимо от того,
+  что написано в таблице модулей.
+*/
+
+NEW-CutModuleName {
+  t.hErrorList t.hTables t.ModuleName e.Result =
+    t.hErrorList t.hTables e.Result;
+}
 
 /**
   <CheckNeedCompile

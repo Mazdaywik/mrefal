@@ -1,12 +1,12 @@
 $PROGRAM CaseTableTest;
 
-$IMPORT MCaseTable = Driver::MCaseTable;
+$IMPORT MCaseTable = Driver::Tables::MModuleTree;
 $IMPORT MFileIO;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
 
 $ENTRY Go =
-  <MFileIO::Save	
+  <MFileIO::Save
     ('__case_table_test.txt')
     <PerformTests
       (MCaseTable.CheckSpace   ('Main'))

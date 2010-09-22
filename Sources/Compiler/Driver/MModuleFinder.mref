@@ -8,6 +8,34 @@ $IMPORT MStrings;
 $IMPORT MQualifiedName;
 
 /**
+  <PhysicalCompare t.Qualified1 t.Qualified2>
+    == Equal
+    == NotEqual
+*/
+$ENTRY PhysicalCompare {
+  t.Name1 t.Name2 =
+    <PhysicalCompare-Aux
+      (<PhysicalTransform t.Name1>)
+      (<PhysicalTransform t.Name2>)
+    >;
+}
+
+PhysicalTransform {
+  t.Name =
+    <MFileSystem::CanonicalPath-Pt
+      (Relative) <MQualifiedName::Parse t.Name>
+    >;
+}
+
+PhysicalCompare-Aux {
+  ((Relative) e.Name) ((Relative) e.Name) = Equal;
+
+  ((Relative) e.Name1) ((Relative) e.Name2) = NotEqual;
+}
+
+//=============================================================================
+
+/**
   <LookupCmdLineModule
     t.hContext t.Config e.PtCmdLinePath
   >

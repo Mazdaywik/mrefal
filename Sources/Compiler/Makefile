@@ -1,9 +1,9 @@
+all: work
+
 include ../Include/platform.mk
 include .Config/config.mk
 
 .PHONY: work stable check check-s
-
-all: work
 
 work:
 	$(call CHECKPARAM, comp)

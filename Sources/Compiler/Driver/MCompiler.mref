@@ -383,7 +383,7 @@ Compile-CompareWithPhysical-Aux {
   t.hTables t.hErrorList s.ParseResult t.hRawIModule
   Equal =
     <Compile-CheckModuleTree
-      s.Type (e.Stack) t.Config t.ImportName t.InternalName
+      s.Type (e.Stack) t.Config t.InternalName
       <MTables::ModuleTree
         t.hTables & MModuleTree.CheckSpace t.InternalName
       >
@@ -397,8 +397,48 @@ Compile-CompareWithPhysical-Aux {
 }
 
 Compile-CheckModuleTree {
-  s.Type (e.Stack) t.Config t.ImportName t.InternalName
-  t.hTables &!!!!!!!!;
+  s.Type (e.Stack) t.Config t.InternalName
+  t.hTables AvailSpace
+  t.hErrorList s.ParseResult t.hRawIModule =
+    <Compile-AddModuleToTreeTable
+      s.Type (e.Stack) t.Config t.InternalName
+      <MTables::ModuleTree
+        t.hTables & MModuleTree.InsertModule t.InternalName
+      >
+      t.hErrorList s.ParseResult t.hRawIModule
+    >;
+
+  /*
+    ModuleExist не рассматриваем, т.к. это недопустимо:
+    если бы он был в дереве модулей, то мы бы сюда не попали.
+
+    Добавление имени в дерево модулей возможно только при добавлении
+    модуля в таблицу поисков (иначе нарушение инварианта).
+  */
+
+  s.Type (e.Stack) t.Config t.InternalName
+  t.hTables Collision s.CollisionType t.KnownName t.InputName =
+    &!!!;
+}
+
+Compile-AddModuleToTree {
+  s.Type (e.Stack) t.Config t.InternalName
+  t.hTables Success t.hErrorList s.ParseResult t.hRawIModule =
+    <Compile-AddModuleToLookup
+      s.Type (e.Stack) t.Config t.InternalName
+      <MTables::Lookup
+        t.hTables & MLookupTable.AddSuccessImport t.InternalName
+      >
+      t.hErrorList s.ParseResult t.hRawIModule
+    >;
+
+  // Других вариантов быть не должно
+}
+
+Compile-AddModuleToLookup {
+  s.Type (e.Stack) t.Config t.InternalName
+  t.hTables t.hErrorList s.ParseResult t.hRawIModule =
+    &???????????????????????????????;
 }
 
 $END Driver::MCompiler.

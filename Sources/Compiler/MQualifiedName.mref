@@ -115,13 +115,13 @@ $ENTRY Parse-T
 $ENTRY ToRelativeFSPath-Pt
   [QName e.Segments] = (Relative) e.Segments;
 
-///*
-//  <ToRelativeFSPath-Str t.QualifiedName>
-//    == e.Segment '/' e.Segment '/' ... '/' e.Segment
-//*/
-//$ENTRY ToRelativeFSPath-Str
-//  [QName e.Segments] =
-//    <CreateTextual ('/') e.Segments>;
+/*
+  <ToRelativeFSPath-Str t.QualifiedName>
+    == e.Segment '/' e.Segment '/' ... '/' e.Segment
+*/
+$ENTRY ToRelativeFSPath-Str
+  [QName e.Segments] =
+    <CreateTextual ('/') e.Segments>;
 
 /**
   <ToPrintable-Dot t.QualifiedName>

@@ -205,7 +205,7 @@ MakeObjName-Aux
   s.ParseResult ::= Success | Warnings | Errors
 */
 $ENTRY LoadModule {
-  Changed t.Config t.hTables t.hErrorList t.ModuleName =
+  Recompile t.Config t.hTables t.hErrorList t.ModuleName =
     <LoadModule-SelectFE
       t.Config t.hErrorList t.ModuleName
       <Driver::MContext::GetFrontEnd t.hTables t.ModuleName>

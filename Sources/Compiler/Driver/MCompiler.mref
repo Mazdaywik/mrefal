@@ -1,8 +1,12 @@
 $MODULE Driver::MCompiler;
 
+$IMPORT MLambda;
+
+$IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MConfig;
 $IMPORT Driver::MModuleFinder;
 $IMPORT Driver::MModuleIF;
+$IMPORT Driver::MResolver;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MOutModuleStatus;
@@ -89,6 +93,7 @@ ExternalName-CheckLookup {
   s.Type (e.Stack)
   t.Config t.hTables t.hErrorList t.SrcPos t.ImportName =
     <ExternalName-SwSuccessModule
+      s.Type (e.Stack) t.SrcPos t.ImportName
       <ExternalName-SwKnown
         s.Type (e.Stack) t.Config
         t.hErrorList t.SrcPos t.ImportName
@@ -102,14 +107,12 @@ ExternalName-CheckLookup {
 ExternalName-SwKnown {
   s.Type (e.Stack) t.Config
   t.hErrorList t.SrcPos t.ImportName t.hTables Unknown =
-    s.Type (e.Stack) t.SrcPos t.ImportName
     <OnUnknown
       (e.Stack) t.Config t.hTables t.hErrorList t.ImportName
     >;
 
   s.Type (e.Stack) t.Config
   t.hErrorList t.SrcPos t.ImportName t.hTables e.Known =
-    s.Type (e.Stack) t.SrcPos t.ImportName
     t.hTables t.hErrorList e.Known;
 }
 
@@ -134,22 +137,26 @@ ExternalName-SwSuccessModule {
 }
 
 ExternalName-AddImportError {
-  t.hErrorList t.SrcPos t.ImportName CantLoadModule =
+  t.hErrorList t.SrcPos t.ImportName
+  CantLoadModule =
     <MError::AddModuleNotFound
       t.hErrorList t.SrcPos t.ImportName
     >;
 
-  t.hErrorList t.SrcPos t.ImportName MismatchWithInternal t.InternalName =
+  t.hErrorList t.SrcPos t.ImportName
+  MismatchWithInternal t.InternalName =
     <MError::AddMismatchInternalAndExternalNames
       t.hErrorList t.SrcPos t.InternalName t.ImportName
     >;
 
-  t.hErrorList t.SrcPos t.ImportName Tree-ModulePacket s.Conflict t.KnownName =
+  t.hErrorList t.SrcPos t.ImportName
+  Tree-ModulePacket s.Conflict t.KnownName =
     <MError::AddTreeModulePacketConflict
       t.hErrorList t.SrcPos t.ImportName s.Conflict t.KnownName
     >;
 
-  t.hErrorList t.SrcPos t.ImportName Tree-CaseError t.ValidCaseName =
+  t.hErrorList t.SrcPos t.ImportName
+  Tree-CaseError t.ValidCaseName =
     <MError::AddTreeCaseError
       t.hErrorList t.SrcPos t.ImportName t.ValidCaseName
     >;
@@ -204,7 +211,6 @@ ExternalName-OnKnown-StatusType-SwTranslated {
 
   (e.Stack) t.hTables t.hErrorList
   t.SrcPos t.ImportName LoadInterface =
-    t.hTables t.hErrorList
     <ExternalName-CheckModuleType
       <Step-From-Stack e.Stack>
       <Driver::MModuleIF::LoadCached t.hTables t.ImportName>
@@ -269,10 +275,13 @@ OnUnknown-CheckModuleTree {
   (e.Stack) t.Config
   t.hTables AvailSpace
   t.hErrorList t.ImportName =
-    <OnUnknown-CheckLookupModule
-      (e.Stack) t.Config
-      <Driver::MConfig::CheckNeedCompile_NEW
-        t.hErrorList t.hTables t.Config t.ImportName
+    <OnUnknown-UpdateTable
+      t.ImportName
+      <OnUnknown-CheckLookupModule
+        (e.Stack) t.Config t.ImportName
+        <Driver::MConfig::CheckNeedCompile_NEW
+          t.hErrorList t.hTables t.Config t.ImportName
+        >
       >
     >;
 
@@ -293,16 +302,16 @@ OnUnknown-CheckModuleTree-CreateError {
   t.ImportName ModuleOverPacket t.KnownPacketName =
     (Error Error-Tree-ModulePacket)
     & MLookupTable.AddError-Tree-ModulePacket
-    ModuleOverPacket t.KnownPacketName;
+    t.ImportName ModuleOverPacket t.KnownPacketName;
 
   t.ImportName PacketOverModule t.KnownModuleName =
     (Error Error-Tree-ModulePacket)
     & MLookupTable.AddError-Tree-ModulePacket
-    PacketOverModule t.KnownModuleName;
+    t.ImportName PacketOverModule t.KnownModuleName;
 
   t.ImportName s.CaseCollisionError t.CaseValidName =
     (Error Error-Tree-CaseError)
-    & MLookupTable.AddError-Tree-CaseError t.CaseValidName;
+    & MLookupTable.AddError-Tree-CaseError t.ImportName t.CaseValidName;
 }
 
 OnUnknown-CreateErrorResult {
@@ -313,6 +322,26 @@ OnUnknown-CreateErrorResult {
       t.hTables s.FnUpdateLookup e.UpdateLookupParam
     >
     e.ErrorResult;
+}
+
+OnUnknown-UpdateTable {
+  t.ImportName t.hTables t.hErrorList Success =
+    t.hTables t.hErrorList Success;
+
+  t.ImportName t.hTables t.hErrorList
+  Error Error-CantLoadModule =
+    <MTables::Lookup
+      t.hTables & MLookupTable.AddError-CantLoadModule t.ImportName
+    >
+    t.hErrorList Error Error-CantLoadModule;
+
+  t.ImportName t.hTables t.hErrorList
+  Error Error-MismatchWithInternal t.InternalName =
+    <MTables::Lookup
+      t.hTables & MLookupTable.AddError-MismatchWithInternal
+      t.ImportName t.InternalName
+    >
+    t.hErrorList Error-MismathWithInternal t.InternalName;
 }
 
 OnUnknown-CheckLookupModule {
@@ -351,8 +380,9 @@ Compile-SwLoad {
   s.Type (e.Stack) t.Config t.ModuleName
   t.hTables t.hErrorList Success s.ParseResult t.hRawIModule =
     <Compile-CompareWithPhysical
+      <MakeReturnStatus s.ParseResult>
       s.Type (e.Stack) t.Config t.ModuleName
-      t.hTables t.hErrorList s.ParseResult
+      t.hTables t.hErrorList
       <MIModule::GetModuleName t.hRawIModule>
     >;
 
@@ -365,47 +395,68 @@ Compile-SwLoad {
     t.hErrorList Error Error-CantLoadModule;
 }
 
+MakeReturnStatus {
+  Success = (Success);
+  Warnings = (Success);
+  Errors = (Errors Error-CantLoadModule);
+}
+
 Compile-CompareWithPhysical {
-  s.Type (e.Stack) t.Config t.ModuleName
-  t.hTables t.hErrorList s.ParseResult
+  t.ReturnStatus s.Type (e.Stack) t.Config t.ImportName
+  t.hTables t.hErrorList
   t.hRawIModule t.InternalName =
     <Compile-CompareWithPhysical-Aux
-      s.Type (e.Stack) t.Config t.ModuleName t.InternalName
-      t.hTables t.hErrorList s.ParseResult t.hRawIModule
+      t.ReturnStatus s.Type (e.Stack) t.Config
+      t.ImportName t.InternalName
+      t.hTables t.hErrorList
+      <MIModule::GetModuleAttribute t.hRawIModule Position>
       <Driver::MModuleFinder::PhysicalCompare
-        t.ModuleName t.InternalName
+        t.ImportName t.InternalName
       >
     >;
 }
 
 Compile-CompareWithPhysical-Aux {
-  s.Type (e.Stack) t.Config t.ImportName t.InternalName
-  t.hTables t.hErrorList s.ParseResult t.hRawIModule
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.ImportName t.InternalName
+  t.hTables t.hErrorList t.hRawIModule Found t.SrcPos
   Equal =
     <Compile-CheckModuleTree
-      s.Type (e.Stack) t.Config t.InternalName
+      t.ReturnStatus
+      s.Type (e.Stack) t.Config t.ImportName t.InternalName
       <MTables::ModuleTree
         t.hTables & MModuleTree.CheckSpace t.InternalName
       >
-      t.hErrorList s.ParseResult t.hRawIModule
+      t.hErrorList t.hRawIModule t.SrcPos
     >;
 
-  s.Type (e.Stack) t.Config t.ModuleName t.InternalName
-  t.hTables t.hErrorList s.ParseResult t.hRawIModule
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.ImportName t.InternalName
+  t.hTables t.hErrorList t.hRawIModule Found t.SrcPos
   NotEqual =
-    &!!!!;
+    <Compile-CheckImports
+      (Error Error-CantLoadModule)
+      s.Type (e.Stack) t.Config t.InternalName
+      t.hTables
+      <MError::AddMismatchInternalAndPhysicalNames
+        t.hErrorList t.SrcPos t.InternalName t.ImportName
+      >
+      t.hRawIModule
+    >;
 }
 
 Compile-CheckModuleTree {
-  s.Type (e.Stack) t.Config t.InternalName
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.ImportName t.InternalName
   t.hTables AvailSpace
-  t.hErrorList s.ParseResult t.hRawIModule =
+  t.hErrorList t.hRawIModule t.SrcPos =
     <Compile-AddModuleToTreeTable
-      s.Type (e.Stack) t.Config t.InternalName
+      t.ReturnStatus s.Type (e.Stack) t.Config
+      t.ImportName t.InternalName
       <MTables::ModuleTree
         t.hTables & MModuleTree.InsertModule t.InternalName
       >
-      t.hErrorList s.ParseResult t.hRawIModule
+      t.hErrorList t.hRawIModule
     >;
 
   /*
@@ -416,29 +467,289 @@ Compile-CheckModuleTree {
     модуля в таблицу поисков (иначе нарушение инварианта).
   */
 
-  s.Type (e.Stack) t.Config t.InternalName
-  t.hTables Collision s.CollisionType t.KnownName t.InputName =
-    &!!!;
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.ImportName t.InternalName
+  t.hTables Collision s.CollisionType t.KnownName t.InputName
+  t.hErrorList t.hRawIModule t.SrcPos =
+    <Compile-CheckImports
+      (Error Error-CantLoadModule)
+      s.Type (e.Stack) t.Config t.InternalName
+      t.hTables
+      <Compile-CheckModuleTree-AddCollisionError
+        t.hErrorList t.SrcPos t.InternalName s.CollisionType t.KnownName
+      >
+      t.hRawIModule
+    >;
 }
 
-Compile-AddModuleToTree {
-  s.Type (e.Stack) t.Config t.InternalName
-  t.hTables Success t.hErrorList s.ParseResult t.hRawIModule =
+Compile-CheckModuleTree-AddCollisionError {
+  t.hErrorList t.SrcPos t.InternalName
+  ModuleOverPacket t.KnownPacketName =
+    <MError::AddTreeModulePacketConflict
+      t.hErrorList t.SrcPos t.InternalName
+      ModuleOverPacket t.KnownPacketName
+    >;
+
+  t.hErrorList t.SrcPos t.InternalName
+  PacketOverModule t.KnownModuleName =
+    <MError::AddTreeModulePacketConflict
+      t.hErrorList t.SrcPos t.InternalName
+      PacketOverModule t.KnownModuleName
+    >;
+
+  t.hErrorList t.SrcPos t.InternalName
+  s.CaseError t.ValidCaseName =
+    <MError::AddTreeCaseError
+      t.hErrorList t.SrcPos t.InternalName t.ValidCaseName
+    >;
+}
+
+Compile-AddModuleToTreeTable {
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.ImportName t.InternalName
+  t.hTables Success t.hErrorList t.hRawIModule =
     <Compile-AddModuleToLookup
-      s.Type (e.Stack) t.Config t.InternalName
+      t.ReturnStatus s.Type (e.Stack) t.Config
+      t.ImportName t.InternalName
       <MTables::Lookup
         t.hTables & MLookupTable.AddSuccessImport t.InternalName
       >
-      t.hErrorList s.ParseResult t.hRawIModule
+      t.hErrorList t.hRawIModule
     >;
 
   // Других вариантов быть не должно
 }
 
 Compile-AddModuleToLookup {
-  s.Type (e.Stack) t.Config t.InternalName
-  t.hTables t.hErrorList s.ParseResult t.hRawIModule =
-    &???????????????????????????????;
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.Equal_ImportInternal t.Equal_ImportInternal
+  t.hTables t.hErrorList t.hRawIModule =
+    <Compile-CheckImports
+      t.ReturnStatus s.Type (e.Stack) t.Config
+      t.Equal_ImportInternal
+      t.hTables t.hErrorList t.hRawIModule
+    >;
+
+  t.ReturnStatus s.Type (e.Stack) t.Config
+  t.ImportName t.InternalName
+  t.hTables t.hErrorList t.hRawIModule =
+    <Compile-CheckImports
+      (Error Errror-MismatchWithInternal t.InternalName)
+      s.Type (e.Stack) t.Config t.InternalName
+      t.hTables t.hErrorList t.hRawIModule
+    >;
+}
+
+/**
+  <Compile-CheckImports
+    t.ReturnStatus s.Type (e.Stack) t.Config t.InternalName
+    t.hTables t.hErrorList t.hRawIModule
+  >
+    == t.hTables t.hErrorList e.KnownModuleStatus
+  t.ReturnStatus ::= (e.KnownModuleStatus)
+  e.KnownModuleStatus ::=
+    Success |
+    Error Error-CantLoadModule |
+    Error Error-MismatchWithInternal t.InternalName
+*/
+Compile-CheckImports {
+  t.ReturnStatus s.Type (e.Stack) t.Config t.InternalName
+  t.hTables t.hErrorList t.hRawIModule =
+    <Compile-CheckImports-LoadInterfaces
+      t.ReturnStatus s.Type (e.Stack) t.Config t.InternalName
+      t.hTables
+      <Driver::MCompilerOld::GetImportList
+        t.hErrorList t.hRawIModule
+      >
+    >;
+}
+
+Compile-CheckImports-LoadInterfaces {
+  t.ReturnStatus s.Type (e.Stack) t.Config t.InternalName
+  t.hTables
+  s.ListResult t.hErrorList t.hRawIModule e.ImportNames =
+    <Synthesis
+      <UpdateReturnStatus t.ReturnStatus s.ListResult>
+      s.Type t.Config
+      <Driver::MModuleIF::FromIModule-T t.hRawIModule>
+      <MLambda::MapReduce
+        <MLambda::BindLeft
+          & LoadInterface
+          s.Type (e.Stack t.InternalName) t.Config
+        >
+        (t.hTables t.hErrorList) e.ImportNames
+      >
+    >;
+}
+
+UpdateReturnStatus {
+  t.ReturnStatus Success = t.ReturnStatus;
+  t.ReturnStatus Fails = (Error Error-CantLoadModule);
+  t.ReturnStatus Errors = (Error Error-CantLoadModule);
+}
+
+LoadInterface {
+  s.Type (e.Stack) t.Config (t.hTables t.hErrorList)
+  (t.SrcPos t.AliasName t.RealName) =
+    <LoadInterface-Aux
+      t.AliasName
+      <ExternalName
+        s.Type (e.Stack)
+        t.Config t.hTables t.hErrorList t.SrcPos t.RealName
+      >
+    >;
+}
+
+LoadInterface-Aux {
+  t.AliasName t.hTables t.hErrorList t.Interface_ =
+    (t.hTables t.hErrorList) (t.AliasName t.Interface_);
+}
+
+Synthesis {
+  t.ReturnStatus Recompile t.Config
+  t.hRawIModule t.ModuleIF
+  (t.hTables t.hErrorList) e.ImportInterfaces =
+    <Synthesis-Recompile-Resolve
+      t.ReturnStatus t.Config
+      t.hTables t.hErrorList t.hRawIModule t.ModuleIF
+      e.ImportInterfaces
+    >;
+
+  t.ReturnStatus s.UpdateLibrary t.Config
+  t.hSymIModule t.ModuleIF
+  (t.hTables t.hErrorList) e.ImportInterfaces =
+    <MIModule::Destroy t.hSymIModule>
+    <Synthesis-Update
+      s.UpdateLibrary
+      <UpdateReturnStatus-ImportInterfaces
+        t.ReturnStatus e.ImportInterfaces
+      >
+      t.Config
+      t.hTables t.hErrorList t.ModuleIF
+    >;
+}
+
+Synthesis-Recompile-Resolve {
+  t.ReturnStatus t.Config
+  t.hTables t.hErrorList t.hRawIModule t.ModuleIF
+  e.ImportInterfaces =
+    <Synthesis-Recompile-Resolve-TablePrepared
+      <UpdateReturnStatus-ImportInterfaces
+        t.ReturnStatus e.ImportInterfaces
+      >
+      t.Config t.hTables t.hErrorList t.hRawIModule t.ModuleIF
+      <MLambda::MapReduce
+        <MLambda::Composite
+          & MLambda.UnBracket-H
+          & Driver.MResolver.AddModuleInfo-IF
+        >
+        <Driver.MResolver.CreateTable>
+        e.ImportInterfaces
+      >
+    >;
+}
+
+UpdateReturnStatus-ImportInterfaces {
+  t.ReturnStatus e.If-B (t.Alias CantLoadInterface) e.If-E =
+    (Error Error-CantLoadModule);
+
+  t.ReturnStatus e.Interfaces = t.ReturnStatus;
+}
+
+Synthesis-Recompile-Resolve-TablePrepared {
+  t.ReturnStatus t.Config t.hTables t.hErrorList
+  t.hRawIModule t.ModuleIF t.hResolveTable =
+    <Synthesis-Recompile-Resolve-TablePrepared-Aux
+      t.ReturnStatus t.Config
+      t.hTables t.hErrorList
+      t.ModuleIF
+      <Driver::MResolver::AddModuleInfo
+        t.hResolveTable NoPrefix t.hRawIModule
+      >
+    >;
+}
+
+Synthesis-Recompile-Resolve-TablePrepared-Aux {
+  t.ReturnStatus t.Config t.hTables t.hErrorList t.ModuleIF
+  t.hResolveTable t.hRawIModule =
+    <Synthesis-Recompile-Resolve-Resolved
+      t.ReturnStatus t.Config
+      t.hTables t.ModuleIF
+      <Driver::MResolver::Resolve
+        t.hRawIModule t.hErrorList t.hResolveTable
+      >
+    >;
+}
+
+Synthesis-Recompile-Resolve-Resolved {
+  t.ReturnStatus t.Config t.hTables t.ModuleIF
+  t.hIModule s.ResolveResult t.hErrorList =
+    <Synthesis-Recompile-Generate
+      <UpdateReturnStatus t.ReturnStatus s.ResolveResult>
+      t.Config t.hTables t.hErrorList t.hIModule t.ModuleIF
+    >;
+}
+
+Synthesis-Recompile-Generate {
+  (Success) t.Config t.hTables t.hErrorList t.hIModule t.ModuleIF =
+    <Synthesis-Recompile-SwGenerate
+      t.hErrorList t.ModuleIF
+      <Driver::MConfig::Generate
+        t.Config t.hTables t.hIModule
+        <Driver::MModuleIF::GetName t.ModuleIF>
+      >
+    >;
+
+  (Error e.Error) t.Config t.hTables t.hErrorList t.hIModule t.ModuleIF =
+    <MIModule::Destroy t.hIModule>
+    t.hTables t.hErrorList Error e.Error;
+}
+
+Synthesis-Recompile-SwGenerate {
+  t.hErrorList t.ModuleIF t.hTables t.hIModule Success =
+    <GuardSuccess
+      <MTables::Modules
+        <Driver::MModuleIF::SaveCache t.hTables t.ModuleIF>
+        & MModuleTable.FinishModule
+        <Driver::MModuleIF::GetName t.ModuleIF>
+        <Driver::MModuleIF::GetModuleType t.ModuleIF>
+        Recompile
+      >
+    >
+    t.hErrorList Success;
+
+  t.hErrorList t.ModuleIF t.hTables t.hIModule Fails =
+    t.hTables
+    <MError::AddFailGeneration
+      t.hErrorList
+      <Driver::MModuleIF::GetSrcPos t.ModuleIF>
+      <Driver::MModuleIF::GetName t.ModuleIF>
+    >
+    Error Error-CantLoadModule;
+}
+
+GuardSuccess {
+  t.hTables Success = t.hTables;
+}
+
+Synthesis-Update {
+  s.Type
+  (Success) t.Config t.hTables t.hErrorList t.ModuleIF =
+    <GuardSuccess
+      <MTables::Modules
+        <Driver::MModuleIF::SaveCache t.hTables t.ModuleIF>
+        & MModuleTable.FinishModule
+        <Driver::MModuleIF::GetName t.ModuleIF>
+        <Driver::MModuleIF::GetModuleType t.ModuleIF>
+        s.Type
+      >
+    >
+    t.hErrorList Success;
+
+  s.Type
+  (Error e.Error) t.Config t.hTables t.hErrorList t.ModuleIF =
+    t.hTables t.hErrorList Error e.Error;
 }
 
 $END Driver::MCompiler.
+

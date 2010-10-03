@@ -23,7 +23,7 @@ $ENTRY PhysicalCompare {
 PhysicalTransform {
   t.Name =
     <MFileSystem::CanonicalPath-Pt
-      (Relative) <MQualifiedName::Parse t.Name>
+      <MQualifiedName::ToRelativeFSPath-Pt t.Name>
     >;
 }
 

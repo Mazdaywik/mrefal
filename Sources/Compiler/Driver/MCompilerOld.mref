@@ -356,7 +356,7 @@ CallScanSubModule-Aux {
     (t.hErrorList t.hRawModule)
     (t.SubModuleAlias t.hISubModule)*
   >
-    == t.hContext t.hErrorList t.hIModule e.ValidScannedImports
+    == t.hContext t.hErrorList t.hIModule e.ImportNames
     == t.hContext t.hErrorList Fails t.ModuleName
 */
 Synthesis {
@@ -402,7 +402,8 @@ Synthesis-Generate {
 Synthesis-SwGenerate {
   t.hErrorList t.ModuleName
   t.hContext t.hIModule Success e.Imports =
-    t.hContext t.hErrorList <MSymModule::SymReduce t.hIModule> e.Imports;
+    t.hContext t.hErrorList <MSymModule::SymReduce t.hIModule>
+    <ImportNamesFromIModules e.Imports>;
 
   t.hErrorList t.ModuleName
   t.hContext t.hIModule Fails e.Imports =
@@ -421,12 +422,24 @@ SwNotCompilingModules {
   t.hContext t.ModuleName
   (t.hErrorList t.hSymIModule s.SuccessOrWarnings)
   e.ValidScannedImports =
-    t.hContext t.hErrorList t.hSymIModule e.ValidScannedImports;
+    t.hContext t.hErrorList t.hSymIModule
+    <ImportNamesFromIModules e.ValidScannedImports>;
+}
+
+ImportNamesFromIModules {
+  e.hIModules =
+    <MLambda::Map
+      <MLambda::Composite
+        & MIModule.GetModuleName
+        & DestroySymModule
+      >
+      e.hIModules
+    >;
 }
 
 /**
   <Compile-Cache
-    t.hContext t.hErrorList t.hIModule e.ValidScannedImports
+    t.hContext t.hErrorList t.hIModule e.ImportNames
   >
   <Compile-Cache
     t.hContext t.hErrorList Fails t.ModuleName
@@ -436,28 +449,21 @@ Compile-Cache {
   t.hContext t.hErrorList Fails t.ModuleName =
     t.hContext t.hErrorList Fails t.ModuleName;
 
-  t.hContext t.hErrorList t.hIModule e.ValidScannedImports =
+  t.hContext t.hErrorList t.hIModule e.ImportNames =
     <Compile-Cache-ModuleName
       t.hContext t.hErrorList
       <MIModule::GetModuleName t.hIModule>
-      e.ValidScannedImports
+      e.ImportNames
     >;
 }
 
 Compile-Cache-ModuleName {
-  t.hContext t.hErrorList t.hIModule t.ModuleName e.ValidScannedImports =
+  t.hContext t.hErrorList t.hIModule t.ModuleName e.ImportNames =
     <Compile-Cache-ModuleType
       t.hErrorList
       <MIModule::GetModuleAttribute t.hIModule ModuleType>
       <MContext::SetCachedImports_
-        t.hContext t.ModuleName
-        <MLambda::Map
-          <MLambda::Composite
-            & MIModule.GetModuleName
-            & DestroySymModule
-          >
-          e.ValidScannedImports
-        >
+        t.hContext t.ModuleName e.ImportNames
       >
     >;
 }
@@ -549,7 +555,7 @@ Resolve {
           & MLambda.UnBracket-H
           & Driver.MResolver.AddModuleInfo
         >
-        <Driver::MResolver::Create>
+        <Driver::MResolver::CreateTable>
         (NoPrefix t.hIModule) e.ImportInfo
       >
     >;
@@ -624,7 +630,7 @@ Parse-SelectFE {
   s.Result ::= Success | Fails
   e.Import ::= (t.SrcPos t.AliasName t.RealName)*
 */
-GetImportList {
+$ENTRY GetImportList {
   t.hErrorList t.hIModule =
     <GetImportList-CheckValidNames
       t.hErrorList

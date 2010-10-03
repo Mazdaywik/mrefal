@@ -137,10 +137,22 @@ SaveCache-UpdateModuleTable {
 
 /**
   <FromIModule t.hIModule> == t.ModuleIF
+  <FromIModule-T t.hIModule> == t.hIModule t.ModuleIF
 */
 $ENTRY FromIModule {
   t.hIModule =
+    <FromIModule-Aux & MIModule.Destroy t.hIModule>;
+}
+
+$ENTRY FromIModule-T {
+  t.hIModule =
+    <FromIModule-Aux & MLambda.Identity t.hIModule>;
+}
+
+FromIModule-Aux {
+  s.FnDestroy t.hIModule =
     <FromIModule-BaseFields
+      s.FnDestroy
       <MLambda::Apply
         <MLambda::Parallel-H
           & MIModule.GetModuleName
@@ -164,22 +176,29 @@ $ENTRY FromIModule {
 }
 
 FromIModule-BaseFields {
-  t.hIModule t.ModuleName Found s.ModuleType t.ModuleSrcPos
-  (e.Functions) (e.Imports) =
+  s.FnDestroy t.hIModule
+  t.ModuleName
+  Found s.ModuleType
+  Found t.ModuleSrcPos
+  (e.Functions)
+  e.Imports =
     <FromIModule-Detailed
-      t.ModuleName s.ModuleType t.ModuleSrcPos
+      s.FnDestroy t.ModuleName s.ModuleType t.ModuleSrcPos
       <MLambda::Apply
         <MLambda::Parallel-H
           <MLambda::BindLeft-H
             & CreateMIFList
             & MIModule.GetFunctionAttribute
             & CreateFunctionIF
+            & NoRelative
             e.Functions
           >
-          <MLambda::BindLeft
+          <MLambda::BindLeft-H
             & CreateMIFList
             & MIModule.GetImportAttribute-RealName
             & CreateImportIF
+            //& MIModule.RelativeName
+            & NoRelative
             e.Imports
           >
         > // Parallel-H
@@ -197,14 +216,20 @@ CreateImportIF {
 }
 
 FromIModule-Detailed {
-  t.ModuleName s.ModuleType t.ModuleSrcPos
+  s.FnDestroy t.ModuleName s.ModuleType t.ModuleSrcPos
   t.hIModule (e.FunctionIFs) (e.ImportIFs) =
-    <MIModule::Destroy t.hIModule>
+    <MSelfDiag::Log '<FromIModule-Detailed>'>
+    <MSelfDiag::Log '  e.FunctionIFs = ' e.FunctionIFs>
+    <MSelfDiag::Log '  e.ImportIFs = ' e.ImportIFs>
+    <MSelfDiag::Log>
+    <s.FnDestroy t.hIModule>
     [ModuleIF
       (t.ModuleName s.ModuleType t.ModuleSrcPos)
       (e.FunctionIFs) (e.ImportIFs)
     ];
 }
+
+$import MSelfDiag;
 
 /*
   <CreateMIFList
@@ -214,12 +239,16 @@ FromIModule-Detailed {
     == t.hIModule (t.EntityIF*)
 */
 CreateMIFList {
-  t.hIModule s.FnGetAttribute s.FnCreateDatatype
+  t.hIModule s.FnGetAttribute s.FnCreateDatatype s.FnGetRelative
   e.EntityNames =
     <MLambda::Bracket-H
       <MLambda::MapReduce
-        <MLambda::BindLeft
-          & CreateMIFEntity s.FnGetAttribute s.FnCreateDatatype
+        <MLambda::Composite
+          <MLambda::BindLeft
+            & CreateMIFEntity
+            s.FnGetAttribute s.FnCreateDatatype s.FnGetRelative
+          >
+          //& MLambda.Bracket-H
         >
         t.hIModule e.EntityNames
       >
@@ -234,12 +263,16 @@ CreateMIFList {
     == t.hIModule t.EntityIF
 */
 CreateMIFEntity {
-  s.L-FnGetAttribute s.L-FnCreateDatatype
+  s.L-FnGetAttribute s.L-FnCreateDatatype s.L-FnGetRelative
   t.hIModule t.EntityName =
     <CreateMIFEntity-Relative
       s.L-FnGetAttribute s.L-FnCreateDatatype
-      <MIModule::RelativeName t.hIModule t.EntityName>
+      <s.L-FnGetRelative t.hIModule t.EntityName>
     >;
+}
+
+NoRelative {
+  t.hIModule t.EntityName = t.hIModule Success t.EntityName;
 }
 
 CreateMIFEntity-Relative {
@@ -247,12 +280,12 @@ CreateMIFEntity-Relative {
   t.hIModule Success t.RelativeName =
     <CreateMIFEntity-GetSrcPos
       s.FnCreateDatatype t.RelativeName
-      <s.FnGetAttribute t.hIModule t.RelativeName Position>
+      <s.FnGetAttribute t.hIModule Position t.RelativeName>
     >;
 }
 
 CreateMIFEntity-GetSrcPos {
-  s.FnCreateDatatype t.RelativeName t.hIModule t.SrcPos =
+  s.FnCreateDatatype t.RelativeName t.hIModule Found t.SrcPos =
     t.hIModule <s.FnCreateDatatype t.RelativeName t.SrcPos>;
 }
 

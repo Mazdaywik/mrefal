@@ -441,6 +441,48 @@ StringFromQualifiedName
 //------------------------------------------------------------------------------
 
 /**
+  <AddMismatchInternalAndPhysicalNames
+    t.ErrorList t.SrcPos t.InternalName t.ExternalName
+  >
+    == t.ErrorList
+*/
+$ENTRY AddMismatchInternalAndPhysicalNames
+  t.ErrorList t.SrcPos t.InternalName t.ExternalName =
+    <AddToList
+      t.ErrorList
+      ( Semantics t.SrcPos
+        'Mismatch internal module name '
+        <StringFromQualifiedName t.InternalName>
+        ' and external name '
+        <CanonicalStringFromQualifiedName t.ExternalName>
+      )
+    >;
+
+CanonicalStringFromQualifiedName {
+  t.QualifiedName =
+    <MFileSystem::CanonicalPath-Str
+      <MQualifiedName::ToRelativeFSPath-Str t.QualifiedName>
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddFailGeneration t.ErrorList t.SrcPos t.ModuleName>
+    == t.UpdatedErrorList
+*/
+$ENTRY AddFailGeneration
+  t.ErrorList t.SrcPos t.ModuleName =
+    <AddToList
+      t.ErrorList
+      ( Semantics t.SrcPos
+        'Error while generating module ' <StringFromQualifiedName t.ModuleName>
+      )
+    >;
+
+//------------------------------------------------------------------------------
+
+/**
   <AddRedeclaredIdentifier t.ErrorList t.SrcPos t.Identifier>
     == t.UpdatedErrorList
 */

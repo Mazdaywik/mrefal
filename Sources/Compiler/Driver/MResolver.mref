@@ -1,5 +1,7 @@
 $MODULE Driver::MResolver;
 
+$IMPORT Driver::MModuleIF;
+
 $IMPORT MError;
 $IMPORT MLambda;
 $IMPORT MIModule;
@@ -9,7 +11,7 @@ $IMPORT MResolveTable = Driver::MResolveTable;
 /**
   <Create> == t.hResolveTable
 */
-$ENTRY Create = <MResolveTable::Create>;
+$ENTRY CreateTable = <MResolveTable::Create>;
 
 //------------------------------------------------------------------------------
 
@@ -122,6 +124,33 @@ DoExtractLocalInfo-ADT {
 
   t.IModule (e.LocalScope) =
     t.IModule e.LocalScope;
+}
+//------------------------------------------------------------------------------
+
+/**
+  <AddModuleInfo-IF t.hResolveTable t.Prefis t.ModuleIF>
+    == t.hResolveTable
+  <AddModuleInfo t.hResolveTable t.Prefix CantLoadInterface>
+    == t.hResolveTable
+*/
+$ENTRY AddModuleInfo-IF {
+  t.hResolveTable t.Prefix CantLoadInterface =
+    <MResolveTable::AddBrokenImport
+      t.hResolveTable t.Prefix
+    >;
+
+  t.hResolveTable t.Prefix t.ModuleIF =
+    <AddModuleInfo-Aux-!!!
+      t.hResolveTable t.Prefix
+      <MLambda::Map
+        & AddEntryScope
+        <Driver::MModuleIF::GetFunctions t.ModuleIF>
+      >
+    >;
+}
+
+AddEntryScope {
+  t.FunctionIF = (Entry <Driver::MModuleIF::GetName t.FunctionIF>);
 }
 
 //------------------------------------------------------------------------------

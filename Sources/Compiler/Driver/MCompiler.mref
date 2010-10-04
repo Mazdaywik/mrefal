@@ -168,7 +168,6 @@ ExternalName-OnKnown-StatusType {
   s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
   t.hTables Success Ready s.Type =
     <MSelfDiag::Log '<ExternalName-OnKnown-StatusType> Ready'>
-    <MSelfDiag::Log>
     <ExternalName-OnKnown-StatusType-SwTranslated
       (e.Stack) t.hTables t.hErrorList
       t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
@@ -177,7 +176,6 @@ ExternalName-OnKnown-StatusType {
   s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
   t.hTables Success Cluster s.Type =
     <MSelfDiag::Log '<ExternalName-OnKnown-StatusType> Cluster'>
-    <MSelfDiag::Log>
     <ExternalName-OnKnown-StatusType-SwTranslated
       (e.Stack) t.hTables t.hErrorList
       t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
@@ -330,6 +328,7 @@ OnUnknown-UpdateTable {
 
   t.ImportName t.hTables t.hErrorList
   Error Error-CantLoadModule =
+    <MOutModuleStatus::Fails-Q t.ImportName>
     <MTables::Lookup
       t.hTables & MLookupTable.AddError-CantLoadModule t.ImportName
     >
@@ -337,6 +336,7 @@ OnUnknown-UpdateTable {
 
   t.ImportName t.hTables t.hErrorList
   Error Error-MismatchWithInternal t.InternalName =
+    <MOutModuleStatus::Fails-Q t.ImportName>
     <MTables::Lookup
       t.hTables & MLookupTable.AddError-MismatchWithInternal
       t.ImportName t.InternalName
@@ -351,6 +351,9 @@ OnUnknown-CheckLookupModule {
 
   (e.Stack) t.Config t.ImportName
   t.hErrorList t.hTables Success Cluster s.Type =
+    <Driver::MCompilerOld::OutModuleStatus-Start-ByType
+      s.Type t.ImportName
+    >
     <Compile
       s.Type (e.Stack) t.Config t.hTables t.hErrorList t.ImportName
     >;
@@ -691,7 +694,8 @@ Synthesis-Recompile-Resolve-Resolved {
 }
 
 Synthesis-Recompile-Generate {
-  (Success) t.Config t.hTables t.hErrorList t.hIModule t.ModuleIF =
+  (Success) t.Config
+  t.hTables t.hErrorList t.hIModule t.ModuleIF =
     <Synthesis-Recompile-SwGenerate
       t.hErrorList t.ModuleIF
       <Driver::MConfig::Generate
@@ -700,13 +704,18 @@ Synthesis-Recompile-Generate {
       >
     >;
 
-  (Error e.Error) t.Config t.hTables t.hErrorList t.hIModule t.ModuleIF =
+  (Error e.Error) t.Config
+  t.hTables t.hErrorList t.hIModule t.ModuleIF =
     <MIModule::Destroy t.hIModule>
     t.hTables t.hErrorList Error e.Error;
 }
 
 Synthesis-Recompile-SwGenerate {
   t.hErrorList t.ModuleIF t.hTables t.hIModule Success =
+    <MOutModuleStatus::Compiled-Q
+      <Driver::MModuleIF::GetName t.ModuleIF>
+    >
+    <MIModule::Destroy t.hIModule>
     <GuardSuccess
       <MTables::Modules
         <Driver::MModuleIF::SaveCache t.hTables t.ModuleIF>
@@ -719,6 +728,7 @@ Synthesis-Recompile-SwGenerate {
     t.hErrorList Success;
 
   t.hErrorList t.ModuleIF t.hTables t.hIModule Fails =
+    <MIModule::Destroy t.hIModule>
     t.hTables
     <MError::AddFailGeneration
       t.hErrorList
@@ -735,6 +745,9 @@ GuardSuccess {
 Synthesis-Update {
   s.Type
   (Success) t.Config t.hTables t.hErrorList t.ModuleIF =
+    <Driver::MCompilerOld::OutModuleStatus-Finish-ByType
+      s.Type <Driver::MModuleIF::GetName t.ModuleIF>
+    >
     <GuardSuccess
       <MTables::Modules
         <Driver::MModuleIF::SaveCache t.hTables t.ModuleIF>

@@ -227,7 +227,7 @@ LoadInfo-ByType {
   s.Other   = & LoadInfo;
 }
 
-OutModuleStatus-Start-ByType {
+$ENTRY OutModuleStatus-Start-ByType {
   Recompile t.ModuleName = <MOutModuleStatus::Compiling-Q t.ModuleName>;
   s.Other   t.ModuleName = /* ничего */;
 }
@@ -530,7 +530,7 @@ UpdateContext-AfterUpdate
   t.hErrorList t.hIModule s.ModuleType t.hContext Success =
     t.hContext t.hErrorList Success t.hIModule s.ModuleType;
 
-OutModuleStatus-Finish-ByType {
+$ENTRY OutModuleStatus-Finish-ByType {
   Recompile t.ModuleName = <MOutModuleStatus::Compiled-Q t.ModuleName>;
   Updated   t.ModuleName = <MOutModuleStatus::Updated-Q  t.ModuleName>;
   Library   t.ModuleName = <MOutModuleStatus::Library-Q  t.ModuleName>;

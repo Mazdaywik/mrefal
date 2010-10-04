@@ -8,6 +8,7 @@ $MODULE Driver::MClusters;
 ==============================================================================*/
 
 $IMPORT Driver::MModuleFinder;
+$IMPORT Driver::MModuleIF;
 $IMPORT Driver::MSymModule;
 $IMPORT MContext = Driver::MContext;
 $IMPORT MFileSystem;
@@ -62,16 +63,33 @@ DependencesList-Cached-SwAvail {
 DependencesList-Cached-OnAvail
   t.hContext t.ModuleName =
     <DependencesList-Cached-OnAvail-Aux
+      t.ModuleName
       <MContext::GetCachedImports t.hContext t.ModuleName>
     >;
 
 DependencesList-Cached-OnAvail-Aux {
-  t.hContext Success None = t.hContext Fails;
+  t.ModuleName t.hContext Success None =// t.hContext Fails;
+    <DependencesList-Cached-OnAvail-NoDirectList
+      <MContext::GetCachedModuleIF t.hContext t.ModuleName>
+    >;
 
-  t.hContext Success e.ImportList =
+  t.ModuleName t.hContext Success e.ImportList =
     t.hContext Avail e.ImportList;
 
-  t.hContext Fails = t.hContext Fails;
+  t.ModuleName t.hContext Fails s.Error = t.hContext Fails;
+}
+
+DependencesList-Cached-OnAvail-NoDirectList {
+  t.hContext Success NotCached = t.hContext Fails;
+
+  t.hContext Success t.ModuleIF =
+    t.hContext Avail
+    <MLambda::Map
+      & Driver.MModuleIF.GetName
+      <Driver.MModuleIF.GetImports t.ModuleIF>
+    >;
+
+  t.hContext Fails s.Error = t.hContext Fails;
 }
 
 //------------------------------------------------------------------------------

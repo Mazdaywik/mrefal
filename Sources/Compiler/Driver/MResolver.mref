@@ -140,8 +140,9 @@ $ENTRY AddModuleInfo-IF {
     >;
 
   t.hResolveTable t.Prefix t.ModuleIF =
-    <AddModuleInfo-Aux-!!!
+    <AddModuleInfo-Aux-IF
       t.hResolveTable t.Prefix
+      <Driver::MModuleIF::GetName t.ModuleIF>
       <MLambda::Map
         & AddEntryScope
         <Driver::MModuleIF::GetFunctions t.ModuleIF>
@@ -151,6 +152,26 @@ $ENTRY AddModuleInfo-IF {
 
 AddEntryScope {
   t.FunctionIF = (Entry <Driver::MModuleIF::GetName t.FunctionIF>);
+}
+
+AddModuleInfo-Aux-IF {
+  t.hResolveTable t.Prefix t.ModuleName e.LocalInfo =
+    <MLambda::Reduce
+      <MLambda::BindLeft-H & AddModuleInfo-Entity-IF
+        t.Prefix t.ModuleName
+      >
+      t.hResolveTable e.LocalInfo
+    >;
+}
+
+AddModuleInfo-Entity-IF {
+  t.hResolveTable t.Prefix t.ModuleName (s.ScopeClass t.Name) =
+    <MResolveTable::Add
+      t.hResolveTable
+      <AppendPrefix t.Prefix t.Name>
+      s.ScopeClass
+      <MQualifiedName::Append t.ModuleName t.Name>
+    >;
 }
 
 //------------------------------------------------------------------------------

@@ -218,18 +218,12 @@ CreateImportIF {
 FromIModule-Detailed {
   s.FnDestroy t.ModuleName s.ModuleType t.ModuleSrcPos
   t.hIModule (e.FunctionIFs) (e.ImportIFs) =
-    <MSelfDiag::Log '<FromIModule-Detailed>'>
-    <MSelfDiag::Log '  e.FunctionIFs = ' e.FunctionIFs>
-    <MSelfDiag::Log '  e.ImportIFs = ' e.ImportIFs>
-    <MSelfDiag::Log>
     <s.FnDestroy t.hIModule>
     [ModuleIF
       (t.ModuleName s.ModuleType t.ModuleSrcPos)
       (e.FunctionIFs) (e.ImportIFs)
     ];
 }
-
-$import MSelfDiag;
 
 /*
   <CreateMIFList

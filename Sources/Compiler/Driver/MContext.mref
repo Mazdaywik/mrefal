@@ -17,6 +17,13 @@ $ENTRY GetCachedImports {
     >;
 }
 
+$ENTRY GetCachedModuleIF {
+  t.hTables t.ModuleName =
+    <MTables::Modules
+      t.hTables & MModuleTable.GetCachedModuleIF t.ModuleName
+    >;
+}
+
 $ENTRY SetCachedImports_ {
   t.hTables t.ModuleName e.Imports =
     <MTables::Modules

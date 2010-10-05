@@ -1,11 +1,11 @@
 $MODULE BE-ModuleIF::MInit;
 
-$IMPORT Config::MConfig;
+$IMPORT ConfiG::MConfig;
 $IMPORT BE-ModuleIF::MCompiler;
 
 $ENTRY Register
   t.Config (e.Directory) (e.Ext) =
-    <Config::MConfig::RegisterBackEnd
+    <ConfiG::MConfig::RegisterBackEnd
       t.Config
       BE-ModuleIF
       & BE-ModuleIF.MCompiler.Generate

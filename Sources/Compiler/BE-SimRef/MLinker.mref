@@ -8,7 +8,7 @@ $IMPORT MFileSystem;
 $IMPORT MOS;
 $IMPORT MQualifiedName;
 
-$IMPORT MHelpers = Config::MHelpers;
+$IMPORT MHelpers = ConfiG::MHelpers;
 
 $IMPORT C-Link = C-Link::MLinker;
 

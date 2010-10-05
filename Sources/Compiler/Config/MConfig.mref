@@ -1,4 +1,4 @@
-$MODULE Config::MConfig;
+$MODULE ConfiG::MConfig;
 
 //------------------------------------------------------------------------------
 
@@ -360,4 +360,4 @@ $ENTRY GetFrontEndExt {
   // отсутствие не проверяем
 }
 
-$END Config::MConfig.
+$END ConfiG::MConfig.

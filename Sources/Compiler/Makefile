@@ -3,7 +3,7 @@ all: work
 include ../Include/platform.mk
 include .Config/config.mk
 
-.PHONY: work stable check check-s
+.PHONY: work stable check check-s menu
 
 work:
 	$(call CHECKPARAM, comp)
@@ -27,3 +27,4 @@ check-s:
 	@$(EMPTYLINE)
 	$(MAKE) work
 
+menu: $(FARMENUFILE)

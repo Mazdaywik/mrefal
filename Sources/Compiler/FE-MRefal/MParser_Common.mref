@@ -124,7 +124,7 @@ CompareQNames-Aux
     >;
 
 SwCompareQNames-Aux {
-  True t.ExternalName t.InternalName
+  s.True t.ExternalName t.InternalName
   t.ErrorList t.IModule =
     <MQualifiedName::Destroy t.ExternalName>
     <MQualifiedName::Destroy t.InternalName>

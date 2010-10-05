@@ -1,6 +1,6 @@
 $PROGRAM MRefal;
 
-$IMPORT Config::MLoad;
+$IMPORT ConfiG::MLoad;
 $IMPORT Driver::MCompiler;
 $IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MContext;
@@ -25,7 +25,7 @@ $ENTRY Go =
       &Driver.Tables.MModules.Create
       &Driver.Tables.MModuleTree.Create
     >
-    <Config::MLoad::Load
+    <ConfiG::MLoad::Load
       <MError::CreateErrList>
       <MOS::ArgList>
     >

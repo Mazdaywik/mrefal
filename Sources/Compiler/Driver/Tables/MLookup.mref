@@ -105,8 +105,8 @@ $ENTRY Destroy {
   s.Error ::=
     Error-CantLoadModule |
     Error-MismatchWithInternal t.InternalName |
-    Error-Tree-ModulePacket |
-    Error-Tree-CaseError
+    Error-Tree-ModulePacket s.Conflict t.KnownName |
+    Error-Tree-CaseError t.ValidCaseName
 */
 $ENTRY LookupResult {
   t.hLookupTable t.ImportName =
@@ -151,7 +151,7 @@ LookupResult-Aux {
       (e.CL-Errors-B (e.CanonicalName) e.CL-Errors-E)
       (e.Detailed)
     ]
-    Error CantLoadModule;
+    Error Error-CantLoadModule;
 
   [LookupTable
     (e.ModulePacket-Errors)
@@ -259,7 +259,7 @@ $ENTRY AddError-Tree-CaseError {
     <AddDetailed
       t.hLookupTable
       t.ImportName
-      (Error Tree-CaseError t.ValidCaseName)
+      (Error Error-Tree-CaseError t.ValidCaseName)
     >;
 }
 

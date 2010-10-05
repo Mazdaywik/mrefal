@@ -96,7 +96,8 @@ ExternalName-CheckLookup {
       s.Type (e.Stack) t.SrcPos t.ImportName
       <ExternalName-SwKnown
         s.Type (e.Stack) t.Config
-        t.hErrorList t.SrcPos t.ImportName
+        <MError::IsErrorList t.hErrorList>
+        t.SrcPos t.ImportName
         <MTables::Lookup
           t.hTables & MLookupTable.LookupResult t.ImportName
         >
@@ -113,7 +114,7 @@ ExternalName-SwKnown {
 
   s.Type (e.Stack) t.Config
   t.hErrorList t.SrcPos t.ImportName t.hTables e.Known =
-    t.hTables t.hErrorList e.Known;
+    t.hTables <MError::IsErrorList t.hErrorList> e.Known;
 }
 
 ExternalName-SwSuccessModule {
@@ -131,34 +132,39 @@ ExternalName-SwSuccessModule {
   t.hTables t.hErrorList Error e.Error =
     t.hTables
     <ExternalName-AddImportError
-      t.hErrorList t.SrcPos t.ImportName e.Error
+      <MError::IsErrorList t.hErrorList>
+      t.SrcPos t.ImportName e.Error
     >
     CantLoadInterface;
 }
 
 ExternalName-AddImportError {
   t.hErrorList t.SrcPos t.ImportName
-  CantLoadModule =
-    <MError::AddModuleNotFound
-      t.hErrorList t.SrcPos t.ImportName
+  Error-CantLoadModule =
+    <MError::AddBrokenImport
+      <MError::IsErrorList t.hErrorList>
+      t.SrcPos t.ImportName
     >;
 
   t.hErrorList t.SrcPos t.ImportName
-  MismatchWithInternal t.InternalName =
+  Error-MismatchWithInternal t.InternalName =
     <MError::AddMismatchInternalAndExternalNames
-      t.hErrorList t.SrcPos t.InternalName t.ImportName
+      <MError::IsErrorList t.hErrorList>
+      t.SrcPos t.InternalName t.ImportName
     >;
 
   t.hErrorList t.SrcPos t.ImportName
-  Tree-ModulePacket s.Conflict t.KnownName =
+  Error-Tree-ModulePacket s.Conflict t.KnownName =
     <MError::AddTreeModulePacketConflict
-      t.hErrorList t.SrcPos t.ImportName s.Conflict t.KnownName
+      <MError::IsErrorList t.hErrorList>
+      t.SrcPos t.ImportName s.Conflict t.KnownName
     >;
 
   t.hErrorList t.SrcPos t.ImportName
-  Tree-CaseError t.ValidCaseName =
+  Error-Tree-CaseError t.ValidCaseName =
     <MError::AddTreeCaseError
-      t.hErrorList t.SrcPos t.ImportName t.ValidCaseName
+      <MError::IsErrorList t.hErrorList>
+      t.SrcPos t.ImportName t.ValidCaseName
     >;
 }
 
@@ -298,27 +304,27 @@ OnUnknown-CheckModuleTree {
 
 OnUnknown-CheckModuleTree-CreateError {
   t.ImportName ModuleOverPacket t.KnownPacketName =
-    (Error Error-Tree-ModulePacket)
+    (Error Error-Tree-ModulePacket ModuleOverPacket t.KnownPacketName)
     & MLookupTable.AddError-Tree-ModulePacket
     t.ImportName ModuleOverPacket t.KnownPacketName;
 
   t.ImportName PacketOverModule t.KnownModuleName =
-    (Error Error-Tree-ModulePacket)
+    (Error Error-Tree-ModulePacket PacketOverModule t.KnownModuleName)
     & MLookupTable.AddError-Tree-ModulePacket
     t.ImportName PacketOverModule t.KnownModuleName;
 
   t.ImportName s.CaseCollisionError t.CaseValidName =
-    (Error Error-Tree-CaseError)
+    (Error Error-Tree-CaseError t.CaseValidName)
     & MLookupTable.AddError-Tree-CaseError t.ImportName t.CaseValidName;
 }
 
 OnUnknown-CreateErrorResult {
   t.hErrorList t.hTables (e.ErrorResult)
   s.FnUpdateLookup e.UpdateLookupParam =
-    t.hErrorList
     <MTables::Lookup
       t.hTables s.FnUpdateLookup e.UpdateLookupParam
     >
+    <MError::IsErrorList t.hErrorList>
     e.ErrorResult;
 }
 

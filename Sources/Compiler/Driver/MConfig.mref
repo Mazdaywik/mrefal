@@ -1,6 +1,6 @@
 $MODULE Driver::MConfig;
 
-$IMPORT Config::MConfig;
+$IMPORT ConfiG::MConfig;
 $IMPORT Driver::MClusters;
 $IMPORT Driver::MContext;
 $IMPORT Driver::MSymModule;
@@ -21,7 +21,7 @@ $ENTRY Generate
       Success t.hContext t.hIModule t.ModuleName
       <MLambda::Map
         & GetFnCompiler
-        <Config::MConfig::GetExtendedBackEndList t.Config>
+        <ConfiG::MConfig::GetExtendedBackEndList t.Config>
       >
     >;
 
@@ -147,7 +147,7 @@ Link-Aux
     <DoLink
       t.hContext Success (e.OutName) (e.OrderedFiles)
       <MLambda::Map
-        & GetLinker <Config::MConfig::GetExtendedBackEndList t.Config>
+        & GetLinker <ConfiG::MConfig::GetExtendedBackEndList t.Config>
       >
     >;
 
@@ -240,7 +240,7 @@ LoadModule-SelectFE {
 $ENTRY Load {
   t.Config s.Name t.hErrorList t.ModuleName e.StrFilePath =
     <Load-Aux
-      <Config::MConfig::GetParser t.Config s.Name>
+      <ConfiG::MConfig::GetParser t.Config s.Name>
       t.hErrorList t.ModuleName e.StrFilePath
     >;
 }
@@ -292,7 +292,7 @@ NEW-CutModuleName {
 $ENTRY CheckNeedCompile {
   t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-Aux
-      <Config::MConfig::GetMakeMode t.Config>
+      <ConfiG::MConfig::GetMakeMode t.Config>
       t.hErrorList t.hContext t.Config t.ModuleName
     >;
 }

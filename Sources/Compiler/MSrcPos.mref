@@ -30,11 +30,24 @@ $ENTRY Create-RunTime
   = (SrcPos 'RT');
 
 /**
+  <ToString-Error t.SrcPos> == s.Char*
   <ToString t.SrcPos> == s.Char*
 */
-$ENTRY ToString {
+$ENTRY ToString-Error {
   (SrcPos 'F' e.FileName s.LnNum) =
     e.FileName ':' <MStrings::Symb s.LnNum>;
+
+  (SrcPos 'CC') = '<unknown>';
+
+  (SrcPos 'C' s.ArgNo) =
+    'Command line, argument ' <MStrings::Symb s.ArgNo>;
+
+  (SrcPos 'RT') = 'Runtime call';
+}
+
+$ENTRY ToString {
+  (SrcPos 'F' e.FileName s.LnNum) =
+    '\'' e.FileName '\', ' <MStrings::Symb s.LnNum>;
 
   (SrcPos 'CC') = '<unknown>';
 

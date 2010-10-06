@@ -637,7 +637,7 @@ PrintError {
 
 OutError {
   t.SrcPos (e.Kind) e.Message =
-    ( <MSrcPos::ToString t.SrcPos> ': ' e.Kind ' ERROR ' e.Message );
+    ( <MSrcPos::ToString-Error t.SrcPos> ': ' e.Kind ' ERROR ' e.Message );
 }
 
 $END MError.

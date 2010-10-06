@@ -9,10 +9,8 @@ $MODULE Driver::MClusters;
 
 $IMPORT Driver::MModuleFinder;
 $IMPORT Driver::MModuleIF;
-$IMPORT Driver::MSymModule;
 $IMPORT MContext = Driver::MContext;
 $IMPORT MFileSystem;
-$IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MOrder;
 $IMPORT MStrings;
@@ -60,26 +58,14 @@ DependencesList-Cached-SwAvail {
     t.hContext NotAvail;
 }
 
-DependencesList-Cached-OnAvail
+DependencesList-Cached-OnAvail {
   t.hContext t.ModuleName =
     <DependencesList-Cached-OnAvail-Aux
-      t.ModuleName
-      <MContext::GetCachedImports t.hContext t.ModuleName>
-    >;
-
-DependencesList-Cached-OnAvail-Aux {
-  t.ModuleName t.hContext Success None =// t.hContext Fails;
-    <DependencesList-Cached-OnAvail-NoDirectList
       <MContext::GetCachedModuleIF t.hContext t.ModuleName>
     >;
-
-  t.ModuleName t.hContext Success e.ImportList =
-    t.hContext Avail e.ImportList;
-
-  t.ModuleName t.hContext Fails s.Error = t.hContext Fails;
 }
 
-DependencesList-Cached-OnAvail-NoDirectList {
+DependencesList-Cached-OnAvail-Aux {
   t.hContext Success NotCached = t.hContext Fails;
 
   t.hContext Success t.ModuleIF =
@@ -141,56 +127,35 @@ DependencesList-Real-SwAvail {
     t.hErrorList t.hContext NotAvail;
 }
 
-DependencesList-Real-OnAvail
-  t.hContext t.hErrorList t.ModuleName =
+DependencesList-Real-OnAvail {
+  t.hTables t.hErrorList t.ModuleName =
     <DependencesList-Real-OnAvail-Aux
-      t.ModuleName
-      <Driver::MSymModule::LoadInfo t.hContext t.hErrorList t.ModuleName>
+      <Driver::MModuleIF::Load
+        t.hTables t.hErrorList t.ModuleName
+      >
     >;
-
-DependencesList-Real-OnAvail-Aux {
-  t.ModuleName t.hContext t.hErrorList Success s.Result t.hIModule =
-    <DependencesList-Real-OnAvail-OnSuccess
-      t.hContext t.hErrorList t.ModuleName
-      <DependencesFromIModule t.hIModule>
-    >;
-
-  t.ModuleName t.hContext t.hErrorList Fails =
-    t.hErrorList t.hContext Fails;
 }
 
-DependencesList-Real-OnAvail-OnSuccess
-  t.hContext t.hErrorList t.ModuleName t.hIModule e.ImportedModuleNames =
-    <MIModule::Destroy t.hIModule>
-    <DependencesList-Real-OnAvail-Cache
-      t.hErrorList
-      <MContext::SetCachedImports_
-        t.hContext t.ModuleName e.ImportedModuleNames
-      >
-      e.ImportedModuleNames
+DependencesList-Real-OnAvail-Aux {
+  t.hTables t.hErrorList Success t.ModuleIF =
+    t.hErrorList t.hTables Avail
+    <MLambda::Map
+      & Driver.MModuleIF.GetName
+      <Driver.MModuleIF.GetImports t.ModuleIF>
     >;
 
-DependencesList-Real-OnAvail-Cache
-  t.hErrorList t.hContext Success e.ImportedModuleNames =
-    t.hErrorList t.hContext Avail e.ImportedModuleNames;
+  t.hTables t.hErrorList Fails =
+    t.hErrorList t.hTables Fails;
+}
 
 //------------------------------------------------------------------------------
-
-/**
-  <DependencesFromIModule t.hIModule>
-    == t.hIModule t.ImportedModule*
-*/
-$ENTRY DependencesFromIModule
-  t.hIModule = <MIModule::GetImportList-RealNames t.hIModule>;
-
-//==============================================================================
 
 /**
   <CheckNeedCompile-LinkOnly
     t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
-    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext Success s.Status s.Type
+    == t.hErrorList t.hContext Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-LinkOnly
    t.hErrorList t.hContext t.Config t.ModuleName =
@@ -225,8 +190,8 @@ LinkOnly-SwStatusType {
   <CheckNeedCompile-Build
     t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
-    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext Success s.Status s.Type
+    == t.hErrorList t.hContext Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-Build
    t.hErrorList t.hContext t.Config t.ModuleName =
@@ -250,8 +215,8 @@ Build-SwStatusType {
   <CheckNeedCompile-Make
     t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
-    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext Success s.Status s.Type
+    == t.hErrorList t.hContext Fails MismatchCase
 */
 $ENTRY CheckNeedCompile-Make
   t.hErrorList t.hContext t.Config t.ModuleName =
@@ -296,13 +261,13 @@ CheckNeedCompile-Root {
   s.FnSelector
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext Fails MismatchCase =
-    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
+    t.hErrorList t.hContext Fails MismatchCase;
 }
 
 CheckNeedCompile-SwRoot {
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext AsIs s.Status s.Type =
-    t.hErrorList t.hContext t.ModuleName Success s.Status s.Type;
+    t.hErrorList t.hContext Success s.Status s.Type;
 
   (e.Stack) t.Config t.ModuleName t.hErrorList
   t.hContext UpdateStatusType s.NewType =
@@ -330,10 +295,10 @@ CheckNeedCompile-UpdateStatusType
 
 CheckNeedCompile-UpdateStatusType-Aux {
   t.hErrorList t.hContext Success t.ModuleName s.NewType =
-    t.hErrorList t.hContext t.ModuleName Success Cluster s.NewType;
+    t.hErrorList t.hContext Success Cluster s.NewType;
 
   t.hErrorList t.hContext Fails MismatchCase t.ModuleName s.NewType =
-    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
+    t.hErrorList t.hContext Fails MismatchCase;
 }
 
 CheckNeedCompile-SwOne {
@@ -354,15 +319,15 @@ CheckNeedCompile-SwOne {
 
   (e.Stack) t.Config
   t.hErrorList t.hContext t.ModuleName Success Cluster s.Type =
-    t.hErrorList t.hContext t.ModuleName Success Cluster s.Type;
+    t.hErrorList t.hContext Success Cluster s.Type;
 
   (e.Stack) t.Config
   t.hErrorList t.hContext t.ModuleName Success Ready s.Type =
-    t.hErrorList t.hContext t.ModuleName Success Ready s.Type;
+    t.hErrorList t.hContext Success Ready s.Type;
 
   (e.Stack) t.Config
   t.hErrorList t.hContext t.ModuleName Fails MismatchCase =
-    t.hErrorList t.hContext t.ModuleName Fails MismatchCase;
+    t.hErrorList t.hContext Fails MismatchCase;
 }
 
 CheckNeedCompile-UpdateContext
@@ -421,6 +386,7 @@ CheckNeedCompile-ScanImports {
 CheckNeedCompile-R-Format {
   (e.Stack) (t.hErrorList t.hContext) t.Config t.ImportName =
     <CheckNeedCompile-R-Format-Aux
+      t.ImportName
       <CheckNeedCompile-R
         (e.Stack) t.hErrorList t.hContext t.Config t.ImportName
       >
@@ -428,10 +394,10 @@ CheckNeedCompile-R-Format {
 }
 
 CheckNeedCompile-R-Format-Aux {
-  t.hErrorList t.hContext t.ImportName Success s.Status s.Type =
+  t.ImportName t.hErrorList t.hContext Success s.Status s.Type =
     (t.hErrorList t.hContext) (t.ImportName Success s.Status s.Type);
 
-  t.hErrorList t.hContext t.ImportName Fails s.Error =
+  t.ImportName t.hErrorList t.hContext Fails s.Error =
     (t.hErrorList t.hContext) (t.ImportName Fails s.Error);
 }
 

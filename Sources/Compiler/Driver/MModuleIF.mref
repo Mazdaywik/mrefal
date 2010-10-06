@@ -58,10 +58,11 @@ Load-SwCached {
 Load-DirectLoad {
   t.hTables t.hErrorList t.ModuleName =
     <Load-SwSymModule
-      <MTables::Modules
-        t.hTables
-        &MSymModule.LoadInfo t.hErrorList t.ModuleName
-      >
+      //<MTables::Modules
+      //  t.hTables
+      //  &MSymModule.LoadInfo t.hErrorList t.ModuleName
+      //>
+      <MSymModule.LoadInfo t.hTables t.hErrorList t.ModuleName>
     >;
 }
 
@@ -295,7 +296,7 @@ $ENTRY GetFunctions {
 //------------------------------------------------------------------------------
 
 /**
-  <GetImports t.ModuleIF> == t.ImportIF
+  <GetImports t.ModuleIF> == t.ImportIF*
 */
 $ENTRY GetImports {
   [ModuleIF t.Head (e.Functions) (e.Imports)] = e.Imports;

@@ -1,4 +1,4 @@
-$MODULE ConfiG::MHelpers;
+$MODULE Config::MHelpers;
 
 $IMPORT MError;
 $IMPORT MFileSystem;
@@ -119,4 +119,4 @@ GetTuning-Aux
 $ENTRY ConfigExtract
   (e.Config-B (s.Option e.Value) e.Config-E) s.Option = e.Value;
 
-$END ConfiG::MHelpers.
+$END Config::MHelpers.

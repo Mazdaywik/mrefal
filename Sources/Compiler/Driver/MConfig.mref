@@ -1,6 +1,6 @@
 $MODULE Driver::MConfig;
 
-$IMPORT ConfiG::MConfig;
+$IMPORT Config::MConfig;
 $IMPORT Driver::MClusters;
 $IMPORT Driver::MContext;
 $IMPORT Driver::MSymModule;
@@ -21,7 +21,7 @@ $ENTRY Generate
       Success t.hContext t.hIModule t.ModuleName
       <MLambda::Map
         & GetFnCompiler
-        <ConfiG::MConfig::GetExtendedBackEndList t.Config>
+        <Config::MConfig::GetExtendedBackEndList t.Config>
       >
     >;
 
@@ -147,7 +147,7 @@ Link-Aux
     <DoLink
       t.hContext Success (e.OutName) (e.OrderedFiles)
       <MLambda::Map
-        & GetLinker <ConfiG::MConfig::GetExtendedBackEndList t.Config>
+        & GetLinker <Config::MConfig::GetExtendedBackEndList t.Config>
       >
     >;
 
@@ -231,16 +231,10 @@ LoadModule-SelectFE {
     t.hContext t.hErrorList Fails;
 }
 
-/**
-  <Load t.Config s.FEName t.hErrorList t.ModuleName e.StrPathToFile>
-    == t.hErrorList Success s.Result t.hIModule
-    == t.hErrorList Fails
-  s.Result ::= Success | Warnings | Errors
-*/
-$ENTRY Load {
+Load {
   t.Config s.Name t.hErrorList t.ModuleName e.StrFilePath =
     <Load-Aux
-      <ConfiG::MConfig::GetParser t.Config s.Name>
+      <Config::MConfig::GetParser t.Config s.Name>
       t.hErrorList t.ModuleName e.StrFilePath
     >;
 }
@@ -258,41 +252,16 @@ Load-Aux {
 //------------------------------------------------------------------------------
 
 /**
-  <CheckNeedCompile_NEW
-    t.hErrorList t.hTables t.Config t.ModuleName
-  >
-    == t.hErrorList t.hTables Success s.Status s.Type
-    == t.hErrorList t.hTables Fails MismatchCase
-*/
-$ENTRY CheckNeedCompile_NEW {
-  t.hErrorList t.hTables t.Config t.ModuleName =
-    <NEW-CutModuleName
-      <CheckNeedCompile t.hErrorList t.hTables t.Config t.ModuleName>
-    >;
-}
-
-/*
-  Здесь нужно будет проверять, что если модуль находится в таблице
-  поиска (Lookup), то его статус должен быть Ready независимо от того,
-  что написано в таблице модулей.
-*/
-
-NEW-CutModuleName {
-  t.hErrorList t.hTables t.ModuleName e.Result =
-    t.hErrorList t.hTables e.Result;
-}
-
-/**
   <CheckNeedCompile
     t.hErrorList t.hContext t.Config t.ModuleName
   >
-    == t.hErrorList t.hContext t.ModuleName Success s.Status s.Type
-    == t.hErrorList t.hContext t.ModuleName Fails MismatchCase
+    == t.hErrorList t.hContext Success s.Status s.Type
+    == t.hErrorList t.hContext Fails MismatchCase
 */
 $ENTRY CheckNeedCompile {
   t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-Aux
-      <ConfiG::MConfig::GetMakeMode t.Config>
+      <Config::MConfig::GetMakeMode t.Config>
       t.hErrorList t.hContext t.Config t.ModuleName
     >;
 }

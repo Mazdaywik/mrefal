@@ -1,15 +1,15 @@
 $MODULE BE-CppSR::MInit;
 
-$IMPORT ConfiG::MConfig;
+$IMPORT Config::MConfig;
 $IMPORT BE-CppSR::MCompiler;
 $IMPORT BE-CppSR::MLinker;
 
-$IMPORT MHelpers = ConfiG::MHelpers;
+$IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 
 $ENTRY Register
   t.Config (e.Directory) (e.Ext) e.Tunings =
-    <ConfiG::MConfig::RegisterBackEnd
+    <Config::MConfig::RegisterBackEnd
       t.Config
       BE-CppSR
       & BE-CppSR.MCompiler.Generate

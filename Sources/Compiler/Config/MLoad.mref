@@ -1,10 +1,10 @@
-$MODULE ConfiG::MLoad;
+$MODULE Config::MLoad;
 
 $IMPORT CmdLine::MParser;
-$IMPORT MConfig = ConfiG::MConfig;
+$IMPORT MConfig = Config::MConfig;
 $IMPORT MError;
 $IMPORT MFileSystem;
-$IMPORT MHelpers = ConfiG::MHelpers;
+$IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 $IMPORT MSrcPos;
 
@@ -1044,4 +1044,4 @@ FrontEnd-SwIdFromName {
   (e.Name) e.Infos = Fails e.Name;
 }
 
-$END ConfiG::MLoad.
+$END Config::MLoad.

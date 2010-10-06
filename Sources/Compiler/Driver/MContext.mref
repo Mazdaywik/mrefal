@@ -10,24 +10,10 @@ $ENTRY GetStatusType_ {
     >;
 }
 
-$ENTRY GetCachedImports {
-  t.hTables t.ModuleName =
-    <MTables::Modules
-      t.hTables & MModuleTable.GetCachedImports t.ModuleName
-    >;
-}
-
 $ENTRY GetCachedModuleIF {
   t.hTables t.ModuleName =
     <MTables::Modules
       t.hTables & MModuleTable.GetCachedModuleIF t.ModuleName
-    >;
-}
-
-$ENTRY SetCachedImports_ {
-  t.hTables t.ModuleName e.Imports =
-    <MTables::Modules
-      t.hTables & MModuleTable.SetCachedImports t.ModuleName e.Imports
     >;
 }
 
@@ -64,14 +50,6 @@ $ENTRY SetMinMaxTime_ {
     <MTables::Modules
       t.hTables
       & MModuleTable.SetMinMaxTime t.ModuleName (e.MinTime) (e.MaxTime)
-    >;
-}
-
-$ENTRY FinishModule_ {
-  t.hTables t.ModuleName s.ModuleType s.Type =
-    <MTables::Modules
-      t.hTables
-      & MModuleTable.FinishModule t.ModuleName s.ModuleType s.Type
     >;
 }
 

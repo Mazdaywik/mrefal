@@ -1,6 +1,6 @@
 $PROGRAM MRefal;
 
-$IMPORT ConfiG::MLoad;
+$IMPORT Config::MLoad;
 $IMPORT Driver::MCompiler;
 $IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MContext;
@@ -25,7 +25,7 @@ $ENTRY Go =
       &Driver.Tables.MModules.Create
       &Driver.Tables.MModuleTree.Create
     >
-    <ConfiG::MLoad::Load
+    <Config::MLoad::Load
       <MError::CreateErrList>
       <MOS::ArgList>
     >
@@ -169,23 +169,6 @@ Make {
   t.Config (t.hTables t.hErrorList Fails)
   (Found t.SrcPos t.ModuleName) =
     (t.hTables t.hErrorList Fails);
-}
-
-Make2 {
-  t.Config (t.hContext t.hErrorList Success)
-  ( Found t.SrcPos t.QualifiedName ) =
-    (
-      <Driver::MCompilerOld::Make
-        t.hContext
-        t.hErrorList
-        t.Config
-        t.SrcPos t.QualifiedName
-      >
-    );
-
-  t.Config (t.hContext t.hErrorList Fails)
-  ( Found t.SrcPos t.QualifiedName ) =
-    (t.hContext t.hErrorList Fails);
 }
 
 FinishMake {

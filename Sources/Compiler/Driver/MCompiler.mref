@@ -168,24 +168,20 @@ ExternalName-AddImportError {
     >;
 }
 
-$IMPORT MSelfDiag; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 ExternalName-OnKnown-StatusType {
   s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
   t.hTables Success Ready s.Type =
-    <MSelfDiag::Log '<ExternalName-OnKnown-StatusType> Ready'>
     <ExternalName-OnKnown-StatusType-SwTranslated
       (e.Stack) t.hTables t.hErrorList
       t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
     >;
 
-  s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
-  t.hTables Success Cluster s.Type =
-    <MSelfDiag::Log '<ExternalName-OnKnown-StatusType> Cluster'>
-    <ExternalName-OnKnown-StatusType-SwTranslated
-      (e.Stack) t.hTables t.hErrorList
-      t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
-    >;
+  //s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
+  //t.hTables Success Cluster s.Type =
+  //  <ExternalName-OnKnown-StatusType-SwTranslated
+  //    (e.Stack) t.hTables t.hErrorList
+  //    t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
+  //  >;
 }
 
 TranslateType {
@@ -283,7 +279,7 @@ OnUnknown-CheckModuleTree {
       t.ImportName
       <OnUnknown-CheckLookupModule
         (e.Stack) t.Config t.ImportName
-        <Driver::MConfig::CheckNeedCompile_NEW
+        <Driver::MConfig::CheckNeedCompile
           t.hErrorList t.hTables t.Config t.ImportName
         >
       >
@@ -543,7 +539,7 @@ Compile-AddModuleToLookup {
   t.ImportName t.InternalName
   t.hTables t.hErrorList t.hRawIModule =
     <Compile-CheckImports
-      (Error Errror-MismatchWithInternal t.InternalName)
+      (Error Error-MismatchWithInternal t.InternalName)
       s.Type (e.Stack) t.Config t.InternalName
       t.hTables t.hErrorList t.hRawIModule
     >;

@@ -1,6 +1,6 @@
 $MODULE Driver::MModuleFinder;
 
-$IMPORT MConfig = ConfiG::MConfig;
+$IMPORT MConfig = Config::MConfig;
 $IMPORT MContext = Driver::MContext;
 $IMPORT MFileSystem;
 $IMPORT MLambda;

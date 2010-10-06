@@ -49,9 +49,6 @@ DefaultOptions
     // Информация о имени целевого файла
     (Target Default) // Default | e.PtTargetName
 
-    // Кэширование списка зависимостей
-    (CachedImports None) // None | t.ModuleName*
-
     // Информация о статусе компилирования
 
     (Type Errors) // Errors | Recompile | Updated | Library
@@ -102,32 +99,23 @@ Explode
 */
 IsKnown
   [Context t.SymTable] t.ModuleName =
-    <IsKnown-CheckName
+    <IsKnown-CheckKind
       <MSymTable::GetAttrib
-        t.SymTable <Explode t.ModuleName> RealName
+        t.SymTable <Explode t.ModuleName> Kind
       >
-      t.ModuleName
     >;
 
-IsKnown-CheckName {
-  t.SymTable Found Unknown t.RealName =
-    [Context t.SymTable] Known;
+IsKnown-CheckKind {
+  t.SymTable Found Module = [Context t.SymTable] Known;
 
-  t.SymTable Found t.RealName t.RealName =
-    [Context t.SymTable] Known;
-
-  t.SymTable Found t.RealName-SymTable t.RealName-Argument =
-    [Context t.SymTable] MismatchCase;
-
-  t.SymTable NoName t.RealName =
-    [Context t.SymTable] NotKnown;
+  t.SymTable NoName = [Context t.SymTable] NotKnown;
 }
 
 /*
   <UpdateInfo t.hContext t.QualifiedName e.NewOptionList>
     == t.hUpdatedContext Success
     == t.hContext Fails s.Error
-  s.Error ::= UnknownOption | MismatchCase
+  s.Error ::= UnknownOption
 */
 UpdateInfo {
   [Context t.SymTable] t.ModuleName e.NewOptions =
@@ -139,30 +127,18 @@ UpdateInfo {
 
 UpdateInfo-Aux {
   t.SymTable t.ModuleName (e.KeyName) e.NewOptions =
-    <UpdateInfo-FindName
-      <MSymTable::GetAttrib
-        t.SymTable e.KeyName RealName
-      >
+    <UpdateInfo-FindKind
+      <MSymTable::GetAttrib t.SymTable e.KeyName Kind>
       t.ModuleName (e.KeyName) e.NewOptions
     >;
 }
 
-UpdateInfo-FindName {
-  t.SymTable Found Unknown
-  t.ModuleName (e.KeyName) e.NewOptions =
-    <UpdateInfo-UpdateOptions
-      t.SymTable (e.KeyName) e.NewOptions
-    >;
-
-  t.SymTable Found t.RealName
+UpdateInfo-FindKind {
+  t.SymTable Found Module
   t.RealName (e.KeyName) e.NewOptions =
     <UpdateInfo-UpdateOptions
       t.SymTable (e.KeyName) e.NewOptions
     >;
-
-  t.SymTable Found t.RealName
-  t.ModuleName (e.KeyName) e.NewOptions =
-    [Context t.SymTable] Fails MismatchCase;
 
   t.SymTable NoName
   t.ModuleName (e.KeyName) e.NewOptions =
@@ -218,7 +194,6 @@ UpdateInfo-UpdateOptions-ExistOptions-SwExist {
     == t.hContext Found e.Option
     == t.hContext OptionNotFound
     == t.hContext ModuleNotFound
-    == t.hContext MismatchCase
 */
 ExtractOption {
   [Context t.SymTable] t.QualifiedName s.Option =
@@ -230,17 +205,17 @@ ExtractOption {
 
 ExtractOption-Aux {
   t.SymTable t.ModuleName e.KeyName s.Option =
-    <ExtractOption-CheckName
+    <ExtractOption-SwExist
       <MSymTable::GetAttrib t.SymTable e.KeyName s.Option>
       t.ModuleName (e.KeyName)
     >;
 }
 
-ExtractOption-CheckName {
+ExtractOption-SwExist {
   t.SymTable Found e.Info t.ModuleName (e.KeyName) =
-    <ExtractOption-CheckName-SwMatch
-      e.Info t.ModuleName
-      <MSymTable::GetAttrib t.SymTable e.KeyName RealName>
+    <ExtractOption-SwExist-CheckKind
+      e.Info
+      <MSymTable::GetAttrib t.SymTable e.KeyName Kind>
     >;
 
   t.SymTable NoAttrib t.ModuleName (e.KeyName) =
@@ -250,15 +225,9 @@ ExtractOption-CheckName {
     [Context t.SymTable] ModuleNotFound;
 }
 
-ExtractOption-CheckName-SwMatch {
-  e.Info t.ModuleName t.SymTable Found Unknown =
+ExtractOption-SwExist-CheckKind {
+  e.Info t.SymTable Found Module =
     [Context t.SymTable] Found e.Info;
-
-  e.Info t.RealName t.SymTable Found t.RealName =
-    [Context t.SymTable] Found e.Info;
-
-  e.Info t.ModuleName t.SymTable Found t.RealName =
-    [Context t.SymTable] MismatchCase;
 
   // Остальные варианты не рассматриваем — нарушение инварианта
 }
@@ -269,7 +238,6 @@ ExtractOption-CheckName-SwMatch {
   <GetStatusType t.hContext t.ModuleName>
     == t.hContext Success s.Status s.Type
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
 */
 $ENTRY GetStatusType
   t.hContext t.ModuleName =
@@ -283,9 +251,6 @@ GetStatusType-SwKnown {
       <ExtractOption t.hContext t.ModuleName Status>
       t.ModuleName
     >;
-
-  t.hContext MismatchCase t.ModuleName =
-    t.hContext Fails MismatchCase;
 
   t.hContext NotKnown t.ModuleName =
     t.hContext Fails ModuleNotFound;
@@ -349,10 +314,6 @@ CreateModule-SwDefined {
   t.ModuleName e.NewOptions =
     t.hContext Fails Redefinition;
 
-  t.hContext MismatchCase
-  t.ModuleName e.NewOptions =
-    t.hContext Fails Redefinition;
-
   // Вариант UnknownOption не рассматриваем -- нарушение инварианта
 }
 
@@ -360,11 +321,6 @@ CreateModule-SwCreated {
   t.hContext Success = t.hContext Success;
 
   // Вариант UnknownOption не рассматриваем -- нарушение инварианта
-
-  /*
-    Вариант MismatchCase не рассматриваем -- в контексте не должна была
-    присутствовать иноформация о модуле до добавления
-  */
 }
 
 /**
@@ -372,7 +328,6 @@ CreateModule-SwCreated {
     == t.hContext Success None
     == t.hContext Success s.FrontEnd e.Path
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
 */
 $ENTRY GetFrontEnd
   t.hContext t.ModuleName =
@@ -387,15 +342,12 @@ GetFrontEnd-Aux {
     t.hContext Success s.FrontEnd e.Path;
 
   t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 }
 
 /**
   <GetBackEndList t.hContext t.ModuleName>
     == t.hContext Success (s.BackEnd e.Path)*
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
 */
 $ENTRY GetBackEndList
    t.hContext t.ModuleName =
@@ -407,15 +359,12 @@ GetBackEndList-Aux {
   t.hContext Found e.BackEndList = t.hContext Success e.BackEndList;
 
   t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 }
 
 /**
   <GetBackEnd t.hContext t.ModuleName s.BackEnd>
     == t.hContext Success e.Path
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
     == t.hContext Fails BackEndNotFound
 */
 $ENTRY GetBackEnd
@@ -434,9 +383,6 @@ GetBackEnd-Aux {
 
   t.hContext Fails ModuleNotFound s.BackEnd =
     t.hContext Fails ModuleNotFound;
-
-  t.hContext Fails MismatchCase =
-    t.hContext Fails MismatchCase;
 }
 
 /**---------------------------------------------------------------------------*/
@@ -449,7 +395,6 @@ GetBackEnd-Aux {
   <SetClusterType t.hContext t.ModuleName s.Type>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
     == t.hContext Fails CantUpdate
 */
 $ENTRY SetClusterType
@@ -471,8 +416,6 @@ SetClusterType-SwKnown {
     t.hContext Fails CantUpdate;
 
   t.hContext Fails ModuleNotFound = t.hContext Fails ModuleNotFound;
-
-  t.hContext Fails MismatchCase = t.hContext Fails MismatchCase;
 }
 
 GuardUpdateInfo {
@@ -485,7 +428,6 @@ GuardUpdateInfo {
   <SetMinMaxTime t.hContext t.ModuleName (e.MinTime) (e.MaxTime)>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
 */
 $ENTRY SetMinMaxTime
   t.hContext t.ModuleName (e.MinTime) (e.MaxTime) =
@@ -504,9 +446,6 @@ SetMinMaxTime-SwKnown {
 
   t.hContext NotKnown t.ModuleName (e.MinTime) (e.MaxTime) =
     t.hContext Fails ModuleNotFound;
-
-  t.hContext MismatchCase t.ModuleName (e.MinTime) (e.MaxTime) =
-    t.hContext Fails MismatchCase;
 }
 
 /**
@@ -514,7 +453,6 @@ SetMinMaxTime-SwKnown {
     == t.hContext Success Unknown
     == t.hContext Success (e.MinTime) (e.MaxTime)
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
 */
 $ENTRY GetMinMaxTime
   t.hContext t.ModuleName =
@@ -529,8 +467,6 @@ GetMinMaxTime-Aux {
     t.hContext Success (e.MinTime) (e.MaxTime);
 
   t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 }
 
 /**---------------------------------------------------------------------------*/
@@ -543,7 +479,6 @@ GetMinMaxTime-Aux {
   <FinishModule t.hContext t.RealModuleName s.ModuleType s.Type>
     == t.hContext Success
     == t.hContext Fails ModuleNotFound
-    == t.hContext Fails MismatchCase
     == t.hContext Fails CantUpdate
 */
 $ENTRY FinishModule {
@@ -577,9 +512,6 @@ FinishModule-SwKnown {
 
   t.hContext Fails ModuleNotFound t.ModuleName e.NewOptions =
     t.hContext Fails ModuleNotFound;
-
-  t.hContext Fails MismatchCase t.ModuleName e.NewOptions =
-    t.hContext Fails MismatchCase;
 }
 
 FinishModule-Aux {
@@ -600,7 +532,7 @@ FinishModule-Aux {
     == Success e.PtTargetName
     == Fails s.Error
 
-  s.Error ::= ModuleNotFound | MismatchCase
+  s.Error ::= ModuleNotFound
 */
 $ENTRY GetTarget {
   t.hContext t.ModuleName =
@@ -611,7 +543,6 @@ GetTarget-Aux {
   t.hContext Found Default = t.hContext Success Default;
   t.hContext Found e.PtTarget = t.hContext Success e.PtTarget;
   t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 
   // MismatchOption не рассматриваем.
 }
@@ -621,7 +552,7 @@ GetTarget-Aux {
     == t.hContext Succcess
     == t.hContext Fails s.Error
 
-  s.Error ::= ModuleNotFound | MismatchCase
+  s.Error ::= ModuleNotFound
 */
 $ENTRY SetTarget {
   t.hContext t.ModuleName e.PtTargetName =
@@ -636,61 +567,7 @@ SetTarget-SwKnown {
     // Должна вернуть Success
     <UpdateInfo t.hContext t.ModuleName (Target e.PtTargetName)>;
 
-  t.hContext MismatchCase t.ModuleName e.PtTargetName =
-    t.hContext Fails MismatchCase;
-
   t.hContext NotKnown t.ModuleName e.PtTargetName =
-    t.hContext Fails ModuleNotFound;
-}
-
-/**
-  <GetCachedImports t.hContext t.ModuleName>
-    == Success None
-    == Success t.ImportName*
-    == Fails s.Error
-
-  s.Error ::= ModuleNotFound | MismatchCase
-*/
-$ENTRY GetCachedImports {
-  t.hContext t.ModuleName =
-    <GetCachedImports-Aux
-      <ExtractOption t.hContext t.ModuleName CachedImports>
-    >;
-}
-
-GetCachedImports-Aux {
-  t.hContext Found None = t.hContext Success None;
-  t.hContext Found e.Imports = t.hContext Success e.Imports;
-  t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
-
-  // MismatchOption не рассматриваем.
-}
-
-/**
-  <SetCachedImports t.hContext t.ModuleName t.ImportName*>
-    == t.hContext Success
-    == t.hContext Fails s.Error
-
-  s.Error ::= ModuleNotFound | MismatchCase
-*/
-$ENTRY SetCachedImports {
-  t.hContext t.ModuleName e.ImportList =
-    <SetCachedImports-SwKnown
-      <IsKnown t.hContext t.ModuleName>
-      t.ModuleName e.ImportList
-    >;
-}
-
-SetCachedImports-SwKnown {
-  t.hContext Known t.ModuleName e.ImportList =
-    // Должно вернуть Success
-    <UpdateInfo t.hContext t.ModuleName (CachedImports e.ImportList)>;
-
-  t.hContext MismatchCase t.ModuleName e.ImportList =
-    t.hContext Fails MismatchCase;
-
-  t.hContext NotKnown t.ModuleName e.ImportList =
     t.hContext Fails ModuleNotFound;
 }
 
@@ -700,7 +577,7 @@ SetCachedImports-SwKnown {
     == Success t.ModuleIF
     == Fails s.Error
 
-  s.Error ::= ModuleNotFound | MismatchCase
+  s.Error ::= ModuleNotFound
 */
 $ENTRY GetCachedModuleIF {
   t.hContext t.ModuleName =
@@ -713,7 +590,6 @@ GetCachedModuleIF-Aux {
   t.hContext Found NotCached = t.hContext Success NotCached;
   t.hContext Found t.ModuleIF = t.hContext Success t.ModuleIF;
   t.hContext ModuleNotFound = t.hContext Fails ModuleNotFound;
-  t.hContext MismatchCase = t.hContext Fails MismatchCase;
 
   // MismatchOption не рассматриваем.
 }
@@ -723,7 +599,7 @@ GetCachedModuleIF-Aux {
     == t.hContext Success
     == t.hContext Fails s.Error
 
-  s.Error ::= ModuleNotFound | MismatchCase
+  s.Error ::= ModuleNotFound
 */
 $ENTRY SetCachedModuleIF {
   t.hContext t.ModuleName t.ModuleIF =
@@ -737,9 +613,6 @@ SetCachedModuleIF-SwKnown {
   t.hContext Known t.ModuleName t.ModuleIF =
     // Должно вернуть Success
     <UpdateInfo t.hContext t.ModuleName (CachedModuleIF t.ModuleIF)>;
-
-  t.hContext MismatchCase t.ModuleName t.ModuleIF =
-    t.hContext Fails MismatchCase;
 
   t.hContext NotKnown t.ModuleName t.ModuleIF =
     t.hContext Fails ModuleNotFound;

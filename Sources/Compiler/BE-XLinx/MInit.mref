@@ -1,12 +1,12 @@
 $MODULE BE-XLinx::MInit;
 
-$IMPORT ConfiG::MConfig;
+$IMPORT Config::MConfig;
 $IMPORT BE-XLinx::MCompiler;
 $IMPORT BE-XLinx::MLinker;
 
 $ENTRY Register
   t.Config (e.Dir) (e.Ext) =
-    <ConfiG::MConfig::RegisterBackEnd
+    <Config::MConfig::RegisterBackEnd
       t.Config
       XLinxBE
       & BE-XLinx.MCompiler.Generate

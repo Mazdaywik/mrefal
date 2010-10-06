@@ -2,7 +2,7 @@ $MODULE BE-CppSR::MLinker;
 
 $IMPORT MError;
 $IMPORT MFileSystem;
-$IMPORT MHelpers = ConfiG::MHelpers;
+$IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 
 $IMPORT C-Link = C-Link::MLinker;

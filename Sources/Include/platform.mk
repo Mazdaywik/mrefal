@@ -6,7 +6,7 @@ endif
 
 ifneq ($(findstring Windows, $(UNAME)),)
   OS=Windows
-  CMD=$(ComSpec)
+  CMD=cmd.exe
   CP=$(CMD) /c copy
   MV=$(CMD) /c move
   RM=$(CMD) /c del

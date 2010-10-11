@@ -44,11 +44,11 @@ $DATA Config;
 
   s.FEName ::= IDENTIFIER -- Имя
   t.FnParser ::= {
-    t.ErrorList t.QualifiedName e.FileName =
-      t.ErrorList Success s.Result t.IModule;
+    t.hErrorList t.QualifiedName e.FileName =
+      t.hErrorList Success s.Result t.IModule;
   
-    t.ErrorList t.QualifiedName e.FileName =
-      t.ErrorList Fails;
+    t.hErrorList t.QualifiedName e.FileName =
+      t.hErrorList Fails;
   }
   s.Result ::= Success | Warnings | Errors
   e.Ext -- Расширение файлов исходного текста

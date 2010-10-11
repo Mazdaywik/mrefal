@@ -177,8 +177,8 @@ AddModuleInfo-Entity-IF {
 //------------------------------------------------------------------------------
 
 /**
-  <Resolve t.hIModule t.ErrorList t.ResolveTable>
-    == t.hResolvedIModule s.ErrorStatus t.ErrorList
+  <Resolve t.hIModule t.hErrorList t.ResolveTable>
+    == t.hResolvedIModule s.ErrorStatus t.hErrorList
   s.ErrorStatus ::= Success | Errors
 */
 $ENTRY Resolve
@@ -190,56 +190,56 @@ $ENTRY Resolve
     >;
 
 ResolvingElements
-  t.IModule e.Functions t.ErrorList t.ResolveTable =
+  t.IModule e.Functions t.hErrorList t.ResolveTable =
     <DoResolvingFunctions
       Success
-      t.IModule t.ErrorList t.ResolveTable e.Functions
+      t.IModule t.hErrorList t.ResolveTable e.Functions
     >;
 
 DoResolvingFunctions {
-  s.Errors t.IModule t.ErrorList t.ResolveTable
+  s.Errors t.IModule t.hErrorList t.ResolveTable
   t.NextFunction e.Tail =
     <DoResolvingFunctions
       <ResolvingFunction
-        s.Errors t.IModule t.ErrorList t.ResolveTable
+        s.Errors t.IModule t.hErrorList t.ResolveTable
         t.NextFunction
       >
       e.Tail
     >;
 
-  s.Errors t.IModule t.ErrorList t.ResolveTable =
+  s.Errors t.IModule t.hErrorList t.ResolveTable =
     t.IModule
     <MResolveTable::Destroy t.ResolveTable>
-    s.Errors t.ErrorList;
+    s.Errors t.hErrorList;
 }
 
 ResolvingFunction
-  s.Error t.IModule t.ErrorList t.ResolveTable t.Function =
+  s.Error t.IModule t.hErrorList t.ResolveTable t.Function =
     <ResolvingFunction-ScopeClass
       s.Error
       <MIModule::GetFunctionAttribute t.IModule ScopeClass t.Function>
-      t.ErrorList t.ResolveTable
+      t.hErrorList t.ResolveTable
       t.Function
     >;
 
 ResolvingFunction-ScopeClass {
   s.Errors
   t.IModule Found s.ScopeClass
-  t.ErrorList t.ResolveTable t.Function =
+  t.hErrorList t.ResolveTable t.Function =
     <ResolvingFunction-Qualified
       s.Errors s.ScopeClass
       <MIModule::GetFunctionAttribute t.IModule Qualified t.Function>
-      t.ErrorList t.ResolveTable t.Function
+      t.hErrorList t.ResolveTable t.Function
     >;
 }
 
 ResolvingFunction-Qualified
   s.Errors s.ScopeClass
   t.IModule Found t.QualifiedName
-  t.ErrorList t.ResolveTable t.Function =
+  t.hErrorList t.ResolveTable t.Function =
     <SwResolvingFunction-Qualified
       s.Errors s.ScopeClass
-      t.IModule t.ErrorList
+      t.IModule t.hErrorList
       <MResolveTable::Lookup
         t.ResolveTable (s.ScopeClass) t.QualifiedName
       >
@@ -248,15 +248,15 @@ ResolvingFunction-Qualified
 
 /*
   <SwResolvedFunction-Qualified
-    s.ScopeClass t.IModule t.ErrorList
+    s.ScopeClass t.IModule t.hErrorList
     t.ResolveTable Found s.ScopeClass t.ExternalQualifier
     t.FunctionName
   >
-    == t.IModule t.ErrorList t.ResolveTable
+    == t.IModule t.hErrorList t.ResolveTable
 */
 SwResolvingFunction-Qualified {
   s.Errors Swap
-  t.IModule t.ErrorList
+  t.IModule t.hErrorList
   t.ResolveTable Success s.ScopeClass t.ExternalQualifier
   t.Function =
     s.Errors
@@ -267,10 +267,10 @@ SwResolvingFunction-Qualified {
         (Qualified t.ExternalQualifier)
       >
     >
-    t.ErrorList t.ResolveTable;
+    t.hErrorList t.ResolveTable;
 
   s.Errors s.ScopeClass
-  t.IModule t.ErrorList
+  t.IModule t.hErrorList
   t.ResolveTable Success s.ScopeClass t.ExternalQualifier
   t.Function =
     <ResolvingFunction-Body
@@ -285,7 +285,7 @@ SwResolvingFunction-Qualified {
         >
         Body t.Function
       >
-      t.ErrorList t.ResolveTable t.Function
+      t.hErrorList t.ResolveTable t.Function
     >;
 }
 
@@ -295,9 +295,9 @@ CheckSuccess
 /*
   <ResolvingFunction-Body
     t.IModule Found (e.Sentences)
-    t.ErrorList t.ResolveTable e.FnName
+    t.hErrorList t.ResolveTable e.FnName
   >
-    == t.IModule t.ErrorList t.ResolveTable
+    == t.IModule t.hErrorList t.ResolveTable
 */
 ResolvingFunction-Body {
   s.Errors t.hIModule Found (e.Sentences)
@@ -314,7 +314,7 @@ ResolvingFunction-Body {
 }
 
 ResolvingBody {
-  t.FnName t.IModule s.Errors t.ErrorList t.ResolveTable
+  t.FnName t.IModule s.Errors t.hErrorList t.ResolveTable
   (e.Resolved) =
     s.Errors
     <CheckSuccess
@@ -322,14 +322,14 @@ ResolvingBody {
         t.IModule t.FnName (Body (e.Resolved))
       >
     >
-    t.ErrorList t.ResolveTable;
+    t.hErrorList t.ResolveTable;
 
-  t.FnName t.IModule s.Errors t.ErrorList t.ResolveTable
+  t.FnName t.IModule s.Errors t.hErrorList t.ResolveTable
   (e.Resolved) t.NextSentence e.Tail =
     <ResolvingBody
       t.FnName t.IModule
       <ResolvingSentence
-        s.Errors t.ErrorList t.ResolveTable
+        s.Errors t.hErrorList t.ResolveTable
         (e.Resolved) t.NextSentence
       > e.Tail
     >;
@@ -349,77 +349,77 @@ ResolvingBody {
 */
 
 ResolvingSentence {
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.UnresolvedChain ) =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( '$' ) e.UnresolvedChain '$'
     >;
 }
 
 ResolvingChain {
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( '$' e.ScannedChain ) '$' =
-    s.Errors t.ErrorList t.ResolveTable
+    s.Errors t.hErrorList t.ResolveTable
     ( e.ResolvedSentences
       ( e.ScannedChain )
     );
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Pattern e.SubChain ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' Pattern e.ScannedChain ) )
       e.SubChain ( '!' Pattern e.Tail )
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Result e.SubChain ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' Result e.ScannedChain ) )
       e.SubChain ( '!' Result e.Tail )
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Structure e.InBrackets ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' Structure e.ScannedChain ) )
       e.InBrackets ( '!' Structure e.Tail )
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Abstract e.InBrackets ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' Abstract e.ScannedChain ) )
       e.InBrackets ( '!' Abstract e.Tail )
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Qualified t.SrcPos t.QualifiedName )
   e.Tail =
     <ResolvingChain
       <ResolvingQualified
-        s.Errors t.ErrorList t.ResolveTable
+        s.Errors t.hErrorList t.ResolveTable
         (e.ResolvedSentences)
         ( e.ScannedChain )
         ( Qualified t.SrcPos t.QualifiedName )
@@ -427,56 +427,56 @@ ResolvingChain {
       >
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( Function t.Callable e.Argument ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' Function e.ScannedChain ) )
       t.Callable e.Argument ( '!' Function e.Tail )
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( FnPtr t.Callable ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' FnPtr e.ScannedChain ) )
       t.Callable ( '!' FnPtr e.Tail )
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   ( IndirectCall (SVar e.Index) e.Argument ) e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( ( '!' IndirectCall e.ScannedChain ) (SVar e.Index) )
       e.Argument ('!' IndirectCall e.Tail)
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( ( '!' s.BracketType e.LMultiBracket ) e.InBrackets )
   ( '!' s.BracketType e.RMultiBracket ) =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( e.LMultiBracket (s.BracketType e.InBrackets) )
       e.RMultiBracket
     >;
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( e.ScannedChain )
   t.NextTerm e.Tail =
     <ResolvingChain
-      s.Errors t.ErrorList t.ResolveTable
+      s.Errors t.hErrorList t.ResolveTable
       (e.ResolvedSentences)
       ( e.ScannedChain t.NextTerm )
       e.Tail
@@ -494,13 +494,13 @@ ResolvingChain {
   если загрузить импортируемый модуль не удалось.
 */
 ResolvingQualified {
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   (e.ResolvedSentences)
   ( ('!' s.BracketType e.LMultiBracket) )
   (Qualified t.SrcPosModule t.QualifiedName)
   e.Argument ('!' s.BracketType e.RMultiBracket) =
     <SwResolvingQualified
-      s.Errors t.ErrorList
+      s.Errors t.hErrorList
       <MResolveTable::Lookup
         t.ResolveTable
         ( <ValidScopes s.BracketType> )
@@ -519,36 +519,36 @@ ValidScopes {
 }
 
 SwResolvingQualified {
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   Success s.ScopeClass t.QualifiedName t.SrcPos
   (e.ResolvedSentences)
   ( e.ScannedChain )
   e.Argument (e.NotScannedResult) =
-    s.Errors t.ErrorList t.ResolveTable
+    s.Errors t.hErrorList t.ResolveTable
     (e.ResolvedSentences)
     ( e.ScannedChain (s.ScopeClass t.SrcPos t.QualifiedName) )
     e.Argument (e.NotScannedResult);
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   Fails NotFound t.UnresolvedQualified t.SrcPos
   (e.ResolvedSentences)
   ( ('!' s.BracketType e.LMultiBracket) )
   e.Argument ('!' s.BracketType e.RMultiBracket) =
     Errors
     <MError::AddUnresolvedFunction
-      t.ErrorList t.SrcPos t.UnresolvedQualified
+      t.hErrorList t.SrcPos t.UnresolvedQualified
     >
     t.ResolveTable
     (e.ResolvedSentences)
     ( ('!' Structure e.LMultiBracket) )
     e.Argument ('!' Structure e.RMultiBracket);
 
-  s.Errors t.ErrorList t.ResolveTable
+  s.Errors t.hErrorList t.ResolveTable
   Fails BrokenImport t.UnresolvedQualified t.SrcPos
   (e.ResolvedSentences)
   ( ('!' s.BracketType e.LMultiBracket) )
   e.Argument ('!' s.BracketType e.RMultiBracket) =
-    Errors t.ErrorList t.ResolveTable
+    Errors t.hErrorList t.ResolveTable
     (e.ResolvedSentences)
     ( ('!' Structure e.LMultiBracket) )
     e.Argument ('!' Structure e.RMultiBracket);

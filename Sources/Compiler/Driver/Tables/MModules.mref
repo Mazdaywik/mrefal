@@ -11,21 +11,21 @@ $IMPORT MSymTable;
 
 /*------------------------------------------------------------------------------
   Внутренняя структура:
-    t.Context ::= [Context t.SymTable]
+    t.hContext ::= [Context t.SymTable]
 ------------------------------------------------------------------------------*/
 $DATA Context;
 
 //------------------------------------------------------------------------------
 
 /**
-  <Create> == t.Context
+  <Create> == t.hContext
 */
 $ENTRY Create = [Context <MSymTable::Create>];
 
 //------------------------------------------------------------------------------
 
 /**
-  <Destroy t.Context> == empty
+  <Destroy t.hContext> == empty
 */
 $ENTRY Destroy
   [Context t.SymTable] =

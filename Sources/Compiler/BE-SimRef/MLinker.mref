@@ -102,7 +102,10 @@ GetSourceList {
 }
 
 ErrorFlagFilePt {
-  e.PtProgName = '___' <MFileSystem::StrFromPath e.PtProgName> '_error_flag___';
+  e.PtProgDir (e.ProgFile) =
+    <MFileSystem::StrFromPath
+      e.PtProgDir ('___' e.ProgFile '_error_flag___')
+    >;
 }
 
 SRefal-SwCompiled {

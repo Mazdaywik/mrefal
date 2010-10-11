@@ -416,13 +416,13 @@ Gen-Group-SrcPos {
 }
 
 Syntax-BindWithOptions
-  t.ErrorList e.Options =
+  t.hErrorList e.Options =
     <DoSyntax-BindWithOptions
-      t.ErrorList (/* просканировано */) e.Options
+      t.hErrorList (/* просканировано */) e.Options
     >;
 
 DoSyntax-BindWithOptions {
-  t.ErrorList (e.Scanned)
+  t.hErrorList (e.Scanned)
   (Option t.OptionSrcPos (e.Name) e.Param)
   (Group t.GroupSrcPos e.Inner)
   e.Tail =
@@ -430,36 +430,36 @@ DoSyntax-BindWithOptions {
       (e.Scanned)
       (t.OptionSrcPos (e.Name) e.Param)
       <Syntax-BindWithOptions
-        t.ErrorList e.Inner
+        t.hErrorList e.Inner
       >
       (e.Tail)
     >;
 
-  t.ErrorList (e.Scanned)
+  t.hErrorList (e.Scanned)
   (Option t.SrcPos (e.Name) e.Param) e.Tail =
     <DoSyntax-BindWithOptions
-      t.ErrorList
+      t.hErrorList
       (e.Scanned ((t.SrcPos (e.Name) e.Param)))
       e.Tail
     >;
 
-  t.ErrorList (e.Scanned) (Group t.SrcPos e.Inner) e.Tail =
+  t.hErrorList (e.Scanned) (Group t.SrcPos e.Inner) e.Tail =
     <DoSyntax-BindWithOptions
       <MError::AddCmdLineError
-        t.ErrorList t.SrcPos 'Widow group'
+        t.hErrorList t.SrcPos 'Widow group'
       >
       (e.Scanned) e.Inner e.Tail
     >;
 
-  t.ErrorList (e.Scanned) = t.ErrorList e.Scanned;
+  t.hErrorList (e.Scanned) = t.hErrorList e.Scanned;
 }
 
 DoSyntax-BindWithOptions-InBrackets
   (e.Scanned)
   (t.SrcPos (e.Name) e.Param)
-  t.ErrorList e.Inner (e.Tail) =
+  t.hErrorList e.Inner (e.Tail) =
     <DoSyntax-BindWithOptions
-      t.ErrorList
+      t.hErrorList
       (e.Scanned
         ((t.SrcPos (e.Name) e.Param) Group e.Inner)
       )

@@ -15,43 +15,43 @@ $ENTRY Destroy
 
 $ENTRY AddVariable {
   /* Повторное вхождение переменной -- ничего не добавляем */
-  t.ErrorList
+  t.hErrorList
   [VarTable e.Vars-B (s.VarType e.Index) e.Vars-E]
   t.SrcPos s.VarType e.Index =
-    t.ErrorList
+    t.hErrorList
     [VarTable e.Vars-B (s.VarType e.Index) e.Vars-E]
     Success;
 
   /* Две разные переменные не могут иметь один индекс */
-  t.ErrorList
+  t.hErrorList
   [VarTable e.Vars-B (s.OneVarType e.Index) e.Vars-E]
   t.SrcPos s.OtherVarType e.Index =
     <MError::AddVarTypeMismatch
-      t.ErrorList t.SrcPos e.Index
+      t.hErrorList t.SrcPos e.Index
     >
     [VarTable e.Vars-B (s.OneVarType e.Index) e.Vars-E]
     Fails;
 
   /* Просто добавляем переменную */
-  t.ErrorList
+  t.hErrorList
   [VarTable e.Variables]
   t.SrcPos s.VarType e.Index =
-    t.ErrorList [VarTable e.Variables (s.VarType e.Index)] Success;
+    t.hErrorList [VarTable e.Variables (s.VarType e.Index)] Success;
 }
 
 $ENTRY CheckVariable {
-  t.ErrorList
+  t.hErrorList
   [VarTable e.Vars-B (s.VarType e.Index) e.Vars-E]
   t.SrcPos s.VarType e.Index =
-    t.ErrorList
+    t.hErrorList
     [VarTable e.Vars-B (s.VarType e.Index) e.Vars-E]
     Success;
 
-  t.ErrorList
+  t.hErrorList
   [VarTable e.OtherVariables]
   t.SrcPos s.VarType e.Index =
     <MError::AddUndeclaredVariable
-      t.ErrorList t.SrcPos s.VarType e.Index
+      t.hErrorList t.SrcPos s.VarType e.Index
     >
     [VarTable e.OtherVariables]
     Fails;

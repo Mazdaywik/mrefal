@@ -1,9 +1,9 @@
 $MODULE Driver::MModuleIF;
 
+$IMPORT Driver::MUtils;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MModuleTable = Driver::Tables::MModules;
-$IMPORT MSymModule = Driver::MSymModule;
 $IMPORT MTables = Driver::MTables;
 
 /**
@@ -58,15 +58,15 @@ Load-SwCached {
 Load-DirectLoad {
   t.hTables t.hErrorList t.ModuleName =
     <Load-SwSymModule
-      //<MTables::Modules
-      //  t.hTables
-      //  &MSymModule.LoadInfo t.hErrorList t.ModuleName
-      //>
-      <MSymModule.LoadInfo t.hTables t.hErrorList t.ModuleName>
+      <Driver::MUtils::LoadInfo-SaveBroken t.hTables t.hErrorList t.ModuleName>
     >;
 }
 
 Load-SwSymModule {
+  t.hTables t.hErrorList Success Errors t.hSymIModule =
+    <MIModule::Destroy t.hSymIModule>
+    t.hTables t.hErrorList Fails;
+
   t.hTables t.hErrorList Success s.SuccessWarnings t.hSymIModule =
     <Load-SymModule-Cache
       t.hTables t.hErrorList <FromIModule t.hSymIModule>

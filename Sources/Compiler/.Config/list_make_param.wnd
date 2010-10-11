@@ -1,12 +1,12 @@
-C:  Продолжить
-    set COMP-SHORT=C++/SR
-    set PROFILE-SHORT=C++/SR
-    set PROFILE-ACRO=.cppsr.exe
-    set SCOMP-SHORT=C++/SR
-    set MODE=MAKE
-    .Config\change_window default
--:
-:   Компилятор C++/SR
-:   Профиль C++/SR
-:   Стабильный компилятор C++/SR
-:   Режим MAKE
+C:  Продолжить 
+    set COMP-SHORT=C++/SR 
+    set PROFILE-SHORT=C++/SR 
+    set PROFILE-ACRO=.cppsr.exe 
+    set SCOMP-SHORT=C++/SR 
+    set MODE=MAKE 
+    .Config\change_window default 
+-: 
+:   Компилятор C++/SR 
+:   Профиль C++/SR 
+:   Стабильный компилятор C++/SR 
+:   Режим MAKE 

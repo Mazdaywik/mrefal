@@ -49,9 +49,9 @@ $ENTRY DestroyErrList
 //------------------------------------------------------------------------------
 
 /**
-  <EmptyList t.ErrorList>
-    == t.ErrorList Empty
-    == t.ErrorList NotEmpty
+  <EmptyList t.hErrorList>
+    == t.hErrorList Empty
+    == t.hErrorList NotEmpty
 */
 $ENTRY EmptyList {
   [ErrorList] = [ErrorList] Empty;
@@ -63,19 +63,19 @@ $ENTRY EmptyList {
 //------------------------------------------------------------------------------
 
 /**
-  <ContentLevel t.ErrorList>
-    == t.ErrorList Empty
-    == t.ErrorList Warnings
-    == t.ErrorList Errors
+  <ContentLevel t.hErrorList>
+    == t.hErrorList Empty
+    == t.hErrorList Warnings
+    == t.hErrorList Errors
 */
 $ENTRY ContentLevel
-  t.ErrorList =
-    <SwContentLevel <EmptyList t.ErrorList>>;
+  t.hErrorList =
+    <SwContentLevel <EmptyList t.hErrorList>>;
 
 SwContentLevel {
-  t.ErrorList Empty = t.ErrorList Empty;
+  t.hErrorList Empty = t.hErrorList Empty;
   
-  t.ErrorList NotEmpty = t.ErrorList Errors;
+  t.hErrorList NotEmpty = t.hErrorList Errors;
 }
 
 //------------------------------------------------------------------------------
@@ -196,26 +196,26 @@ $ENTRY CmdLine-AlreadyAppeared
 //------------------------------------------------------------------------------
 
 /**
-  <AddUnexpected t.ErrorList t.UnexpToken e.ExpectedText>
+  <AddUnexpected t.hErrorList t.UnexpToken e.ExpectedText>
     == t.UpdatedErrorList
 */
 $ENTRY AddUnexpected {
-  t.ErrorList
+  t.hErrorList
   (Error t.SrcPos e.Message) e.ExpectedText =
     <AddToList
-      t.ErrorList (LexerError t.SrcPos e.Message )
+      t.hErrorList (LexerError t.SrcPos e.Message )
     >;
 
-  t.ErrorList
+  t.hErrorList
   (Undefined t.SrcPos e.Text) e.ExpectedText =
     <AddToList
-      t.ErrorList (LexerUndefined t.SrcPos e.Text )
+      t.hErrorList (LexerUndefined t.SrcPos e.Text )
     >;
 
-  t.ErrorList
+  t.hErrorList
   t.Unexpected e.ExpectedText =
     <AddToList
-      t.ErrorList (Unexpected t.Unexpected e.ExpectedText)
+      t.hErrorList (Unexpected t.Unexpected e.ExpectedText)
     >;
 }
 
@@ -223,16 +223,16 @@ $ENTRY AddUnexpected {
 
 /**
   <AddNamesMismatch
-    t.ErrorList t.TailPos
+    t.hErrorList t.TailPos
     t.InHead t.InTail
   >
-    == t.ErrorList
+    == t.hErrorList
 */
 $ENTRY AddNamesMismatch
-  t.ErrorList t.TailPos
+  t.hErrorList t.TailPos
   t.InHead t.InTail =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics t.TailPos
         'Mismatch module names in head \''
         <StringFromQualifiedName t.InHead>
@@ -422,14 +422,14 @@ $ENTRY AddTreeCaseError {
 
 /**
   <AddMismatchInternalAndExternalNames
-    t.ErrorList t.SrcPos t.InternalName t.ExternalName
+    t.hErrorList t.SrcPos t.InternalName t.ExternalName
   >
-    == t.ErrorList
+    == t.hErrorList
 */
 $ENTRY AddMismatchInternalAndExternalNames
-  t.ErrorList t.SrcPos t.InternalName t.ExternalName =
+  t.hErrorList t.SrcPos t.InternalName t.ExternalName =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics t.SrcPos
         'Mismatch internal module name '
         <StringFromQualifiedName t.InternalName>
@@ -446,14 +446,14 @@ StringFromQualifiedName
 
 /**
   <AddMismatchInternalAndPhysicalNames
-    t.ErrorList t.SrcPos t.InternalName t.ExternalName
+    t.hErrorList t.SrcPos t.InternalName t.ExternalName
   >
-    == t.ErrorList
+    == t.hErrorList
 */
 $ENTRY AddMismatchInternalAndPhysicalNames
-  t.ErrorList t.SrcPos t.InternalName t.ExternalName =
+  t.hErrorList t.SrcPos t.InternalName t.ExternalName =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics t.SrcPos
         'Mismatch internal module name '
         <StringFromQualifiedName t.InternalName>
@@ -472,13 +472,13 @@ CanonicalStringFromQualifiedName {
 //------------------------------------------------------------------------------
 
 /**
-  <AddFailGeneration t.ErrorList t.SrcPos t.ModuleName>
+  <AddFailGeneration t.hErrorList t.SrcPos t.ModuleName>
     == t.UpdatedErrorList
 */
 $ENTRY AddFailGeneration
-  t.ErrorList t.SrcPos t.ModuleName =
+  t.hErrorList t.SrcPos t.ModuleName =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics t.SrcPos
         'Error while generating module ' <StringFromQualifiedName t.ModuleName>
       )
@@ -487,13 +487,13 @@ $ENTRY AddFailGeneration
 //------------------------------------------------------------------------------
 
 /**
-  <AddRedeclaredIdentifier t.ErrorList t.SrcPos t.Identifier>
+  <AddRedeclaredIdentifier t.hErrorList t.SrcPos t.Identifier>
     == t.UpdatedErrorList
 */
 $ENTRY AddRedeclaredIdentifier
-  t.ErrorList t.SrcPos t.Identifier =
+  t.hErrorList t.SrcPos t.Identifier =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics t.SrcPos
         'Identifier redeclared ' <StringFromQualifiedName t.Identifier>
       )
@@ -506,9 +506,9 @@ $ENTRY AddRedeclaredIdentifier
     == t.hErrorList
 */
 $ENTRY AddVarTypeMismatch
-  t.ErrorList t.SrcPos e.VarName =
+  t.hErrorList t.SrcPos e.VarName =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics
         t.SrcPos 'Two different variables has same index ' e.VarName
       )
@@ -521,9 +521,9 @@ $ENTRY AddVarTypeMismatch
     == t.hErrorList
 */
 $ENTRY AddUndeclaredVariable
-  t.ErrorList t.SrcPos s.VarType e.Index =
+  t.hErrorList t.SrcPos s.VarType e.Index =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics
         t.SrcPos
         'Undeclared variable ' <VarTypeToPrefix s.VarType> e.Index
@@ -541,9 +541,9 @@ VarTypeToPrefix {
     == t.hErrorList
 */
 $ENTRY AddUnresolvedFunction {
-  t.ErrorList t.SrcPos t.EntityName =
+  t.hErrorList t.SrcPos t.EntityName =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics
         t.SrcPos
         'Unresolved calling <' <StringFromQualifiedName t.EntityName> ' ... >'
@@ -558,9 +558,9 @@ $ENTRY AddUnresolvedFunction {
     == t.hErrorList
 */
 $ENTRY AddGoNotFound {
-  t.ErrorList t.SrcPos =
+  t.hErrorList t.SrcPos =
     <AddToList
-      t.ErrorList
+      t.hErrorList
       ( Semantics t.SrcPos 'Go function expected in main module' )
     >;
 }

@@ -8,15 +8,15 @@ $IMPORT MStrings;
 $IMPORT MVarTable = FE-MRefal::MVarTable;
 
 /**
-  <SrcModule t.ErrorList t.QualifiedName e.FileName>
-    == t.ErrorList Success s.Result t.IModule
-    == t.ErrorList Fails
+  <SrcModule t.hErrorList t.QualifiedName e.FileName>
+    == t.hErrorList Success s.Result t.IModule
+    == t.hErrorList Fails
   s.Result ::= Success | Warnings | Errors
 */
 $ENTRY SrcModule
-  t.ErrorList t.QualifiedName e.FileName =
+  t.hErrorList t.QualifiedName e.FileName =
     <MParser_Common::GeneralizeInfo
-      t.ErrorList
+      t.hErrorList
       t.QualifiedName
       <MParser_Common::Parse
         &NModuleBody e.FileName
@@ -30,78 +30,78 @@ $ENTRY SrcModule
 /*
   ModuleBody = { ImportBlock | FunctionDefinition | SwapDefinition }* .
 
-  <NModuleBody t.IModule t.ErrorList t.Lexer t.NextToken >
-    == t.ErrorList Success t.IModule
-    == t.ErrorList Fails
+  <NModuleBody t.IModule t.hErrorList t.Lexer t.NextToken >
+    == t.hErrorList Success t.IModule
+    == t.hErrorList Fails
 */
 NModuleBody {
   t.IModule
-  t.ErrorList t.Lexer (Directive t.SrcPos Import) =
+  t.hErrorList t.Lexer (Directive t.SrcPos Import) =
     <NModuleBody
       <MParser_Common::NImportBlock
         t.IModule
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (Directive t.SrcPos Swap) =
+  t.hErrorList t.Lexer (Directive t.SrcPos Swap) =
     <NModuleBody
       <NSwapBlock
         t.IModule
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (Directive t.SrcPos Entry) =
+  t.hErrorList t.Lexer (Directive t.SrcPos Entry) =
     <NModuleBody
       <NFunctionDefinition
         t.IModule
         ( Entry )
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (Directive t.SrcPos Data) =
+  t.hErrorList t.Lexer (Directive t.SrcPos Data) =
     <NModuleBody
       <NDataBlock
         t.IModule
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NModuleBody
       <NFunctionDefinition
         t.IModule
         ( Local )
-        t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident)
+        t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident)
       >
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (EndSent t.SrcPos) =
+  t.hErrorList t.Lexer (EndSent t.SrcPos) =
     <NModuleBody
       t.IModule
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   /* Завершение рекурсии */
   t.IModule
-  t.ErrorList t.Lexer (Directive t.SrcPos End) =
+  t.hErrorList t.Lexer (Directive t.SrcPos End) =
     <MParser_Common::NModuleTailer
       t.IModule
-      t.ErrorList t.Lexer (Directive t.SrcPos End)
+      t.hErrorList t.Lexer (Directive t.SrcPos End)
     >;
 
   /* При обнаружении конца файла завершаем анализ */
   t.IModule
-  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+  t.hErrorList t.Lexer (EndOfText t.SrcPos) =
     <MError::AddUnexpected
-      t.ErrorList
+      t.hErrorList
       (EndOfText t.SrcPos)
       '$entry, $import, $swap or local function definition'
     >
@@ -111,11 +111,11 @@ NModuleBody {
 
   /* Любая другая лексема пропускается */
   t.IModule
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     <NModuleBody
       t.IModule
       <MError::AddUnexpected
-        t.ErrorList
+        t.hErrorList
         t.OtherToken
         '$entry, $import, $swap or local function definition'
       >
@@ -132,45 +132,45 @@ NModuleBody {
 */
 NSwapBlock {
   t.IModule
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NSwapBlock-AfterName
       <MParser_Common::AddNewFunction
         t.IModule t.SrcPos
         <MQualifiedName::Create (e.Ident)>
         (ScopeClass Swap)
         (Qualified <MQualifiedName::Create (e.Ident)>)
-        t.ErrorList
+        t.hErrorList
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.IModule
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     t.IModule
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'swap name'
+      t.hErrorList t.OtherToken 'swap name'
     >
     t.Lexer t.OtherToken;
 }
 
 NSwapBlock-AfterName {
   t.IModule
-  t.ErrorList t.Lexer (Comma t.SrcPos) =
+  t.hErrorList t.Lexer (Comma t.SrcPos) =
     <NSwapBlock
       t.IModule
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (EndSent t.SrcPos) =
+  t.hErrorList t.Lexer (EndSent t.SrcPos) =
     t.IModule
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
   t.IModule
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     t.IModule
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'comma or semicolon'
+      t.hErrorList t.OtherToken 'comma or semicolon'
     >
     t.Lexer t.OtherToken;
 }
@@ -184,43 +184,43 @@ NSwapBlock-AfterName {
 */
 NDataBlock {
   t.IModule
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NDataBlock-AfterName
       <MParser_Common::AddNewADT
         t.IModule t.SrcPos
         <MQualifiedName::Create (e.Ident)>
-        t.ErrorList
+        t.hErrorList
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.IModule
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     t.IModule
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'swap name'
+      t.hErrorList t.OtherToken 'swap name'
     >
     t.Lexer t.OtherToken;
 }
 
 NDataBlock-AfterName {
   t.IModule
-  t.ErrorList t.Lexer (Comma t.SrcPos) =
+  t.hErrorList t.Lexer (Comma t.SrcPos) =
     <NDataBlock
       t.IModule
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.IModule
-  t.ErrorList t.Lexer (EndSent t.SrcPos) =
+  t.hErrorList t.Lexer (EndSent t.SrcPos) =
     t.IModule
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
   t.IModule
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     t.IModule
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'comma or semicolon'
+      t.hErrorList t.OtherToken 'comma or semicolon'
     >
     t.Lexer t.OtherToken;
 }
@@ -229,22 +229,22 @@ NDataBlock-AfterName {
 
 NFunctionDefinition {
   t.IModule ( s.ScopeClass )
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NFunctionDefinition-Closing
       t.IModule
       <NFunctionBody
         (( (Function s.ScopeClass (e.Ident) t.SrcPos) ))
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   /* Возвращаемся в ModuleBody, как будто спецификатора $ENTRY и не было
   в помине */
   t.IModule ( s.ScopeClass )
-  t.ErrorList t.Lexer t.UnexpectedToken =
+  t.hErrorList t.Lexer t.UnexpectedToken =
     t.IModule
     <MError::AddUnexpected
-      t.ErrorList t.UnexpectedToken 'function name'
+      t.hErrorList t.UnexpectedToken 'function name'
     >
     t.Lexer t.UnexpectedToken;
 }
@@ -252,62 +252,62 @@ NFunctionDefinition {
 NFunctionDefinition-Closing
   t.IModule
   ( t.FunctionBody ( Function s.ScopeClass (e.Name) t.SrcPos ) )
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     <MParser_Common::AddNewFunction
       t.IModule t.SrcPos
       <MQualifiedName::Create (e.Name)>
       (Body t.FunctionBody)
       (ScopeClass s.ScopeClass)
       (Qualified <MQualifiedName::Create (e.Name)>)
-      t.ErrorList
+      t.hErrorList
     >
     t.Lexer t.NextToken;
 
 //------------------------------------------------------------------------------
 
 NFunctionBody {
-  ( t.ParentStack ) t.ErrorList t.Lexer (OpenBlock t.SrcPos) =
+  ( t.ParentStack ) t.hErrorList t.Lexer (OpenBlock t.SrcPos) =
     <NBlock
       ( t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
-  ( t.ParentStack ) t.ErrorList t.Lexer t.StartSentence =
+  ( t.ParentStack ) t.hErrorList t.Lexer t.StartSentence =
     <NFunctionBody
       <NSentence
         ( (OneSentence t.ParentStack) )
-        t.ErrorList t.Lexer t.StartSentence
+        t.hErrorList t.Lexer t.StartSentence
       >
     >;
 
   ( e.Sentence OneSentence (e.ParentStack) )
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     ( (e.Sentence) e.ParentStack )
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 }
 
 //------------------------------------------------------------------------------
 
 NBlock {
   ( e.Sentences (e.ParentStack) )
-  t.ErrorList t.Lexer (CloseBlock t.SrcPos) =
+  t.hErrorList t.Lexer (CloseBlock t.SrcPos) =
     ( (<MStrings::Reverse e.Sentences>) e.ParentStack )
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
   ( e.Sentences (e.ParentStack) )
-  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+  t.hErrorList t.Lexer (EndOfText t.SrcPos) =
     ( (<MStrings::Reverse e.Sentences>) e.ParentStack )
     <MError::AddUnexpected
-      t.ErrorList (EndOfText t.SrcPos) 'start of pattern of closing block'
+      t.hErrorList (EndOfText t.SrcPos) 'start of pattern of closing block'
     >
     <MLexer::NextToken t.Lexer>;
 
   ( e.Sentences t.ParentStack )
-  t.ErrorList t.Lexer t.StartSentence =
+  t.hErrorList t.Lexer t.StartSentence =
     <NBlock
       <NSentence
         ( (e.Sentences t.ParentStack) )
-        t.ErrorList t.Lexer t.StartSentence
+        t.hErrorList t.Lexer t.StartSentence
       >
     >;
 }
@@ -316,31 +316,31 @@ NBlock {
 
 NSentence {
   ( (e.ParentStack) )
-  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+  t.hErrorList t.Lexer (EndOfText t.SrcPos) =
     ( e.ParentStack )
     <MError::AddUnexpected
-      t.ErrorList (EndOfText t.SrcPos) 'start of pattern'
+      t.hErrorList (EndOfText t.SrcPos) 'start of pattern'
     >
     t.Lexer (EndOfText t.SrcPos);
 
   ( t.ParentStack )
-  t.ErrorList t.Lexer (s.StartOfPattern t.SrcPos e.Info) =
+  t.hErrorList t.Lexer (s.StartOfPattern t.SrcPos e.Info) =
     <NSentence-ExpectReplaces
       <NPatternExpr
         <MVarTable::Create>
         ( '$' (t.ParentStack) )
-        t.ErrorList t.Lexer (s.StartOfPattern t.SrcPos e.Info)
+        t.hErrorList t.Lexer (s.StartOfPattern t.SrcPos e.Info)
       >
     >;
 }
 
 NSentence-ExpectReplaces {
   t.VarTable ( t.Pattern t.ParentStack )
-  t.ErrorList t.Lexer (Replaces t.SrcPos) =
+  t.hErrorList t.Lexer (Replaces t.SrcPos) =
     <NSentence-Closing
       <NResultExpr
         t.VarTable ( '$' (t.Pattern t.ParentStack) )
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
@@ -351,42 +351,42 @@ NSentence-ExpectReplaces {
   образца. */
 
   t.VarTable ( t.Pattern (e.ParentStack) )
-  t.ErrorList t.Lexer (EndOfText t.SrcPos) =
+  t.hErrorList t.Lexer (EndOfText t.SrcPos) =
     <MVarTable::Destroy t.VarTable>
     ( e.ParentStack )
     <MError::AddUnexpected
-      t.ErrorList (EndOfText t.SrcPos) '\'=\''
+      t.hErrorList (EndOfText t.SrcPos) '\'=\''
     >
     <MLexer::NextToken t.Lexer>;
 
   t.VarTable ( t.Pattern (e.ParentStack) )
-  t.ErrorList t.Lexer t.UnexpectedToken =
+  t.hErrorList t.Lexer t.UnexpectedToken =
     <MVarTable::Destroy t.VarTable>
     ( e.ParentStack )
     <MError::AddUnexpected
-      t.ErrorList t.UnexpectedToken '\'=\''
+      t.hErrorList t.UnexpectedToken '\'=\''
     >
     <MLexer::NextToken t.Lexer>;
 }
 
 NSentence-Closing {
   t.VarTable ( t.Result t.Pattern (e.ParentStack) )
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     <MVarTable::Destroy t.VarTable>
     ( (t.Pattern t.Result) e.ParentStack )
     <ExpectEndSent
-      t.ErrorList t.Lexer t.NextToken
+      t.hErrorList t.Lexer t.NextToken
     >;
 }
 
 ExpectEndSent {
-  t.ErrorList t.Lexer (EndSent t.SrcPos) =
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+  t.hErrorList t.Lexer (EndSent t.SrcPos) =
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
   /* Делаем вид, что точка с запятой была */
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'semicolon'
+      t.hErrorList t.OtherToken 'semicolon'
     >
     t.Lexer t.OtherToken;
 }
@@ -394,30 +394,30 @@ ExpectEndSent {
 //------------------------------------------------------------------------------
 
 AddVariable {
-  t.ErrorList t.VarTable Success
+  t.hErrorList t.VarTable Success
   ( e.PatternExpr t.ParentStack )
   t.Lexer (Var t.SrcPos s.VarType e.Index) =
     t.VarTable
     ( e.PatternExpr (s.VarType e.Index) t.ParentStack )
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
-  t.ErrorList t.VarTable Fails
+  t.hErrorList t.VarTable Fails
   ( e.PatternExpr t.ParentStack )
   t.Lexer t.VarToken =
     t.VarTable
     ( e.PatternExpr t.ParentStack )
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 }
 
 //------------------------------------------------------------------------------
 
 NPatternExpr {
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (Var t.SrcPos s.VarType e.Index) =
+  t.hErrorList t.Lexer (Var t.SrcPos s.VarType e.Index) =
     <NPatternExpr
       <AddVariable
         <MVarTable::AddVariable
-          t.ErrorList t.VarTable t.SrcPos s.VarType e.Index
+          t.hErrorList t.VarTable t.SrcPos s.VarType e.Index
         >
         ( e.PatternExpr t.ParentStack )
         t.Lexer (Var t.SrcPos s.VarType e.Index)
@@ -425,158 +425,158 @@ NPatternExpr {
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Identifier) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Identifier) =
     <NPatternExpr
       t.VarTable
       <AnyExpr-AnalyzeStartOfQualifiedName
         ( e.PatternExpr t.ParentStack )
         (t.SrcPos e.Identifier)
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (Literal t.SrcPos e.Content) =
+  t.hErrorList t.Lexer (Literal t.SrcPos e.Content) =
     <NPatternExpr
       t.VarTable
       (e.PatternExpr (Literal e.Content) t.ParentStack)
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (DQWord t.SrcPos e.Content) =
+  t.hErrorList t.Lexer (DQWord t.SrcPos e.Content) =
     <NPatternExpr
       t.VarTable
       (e.PatternExpr (DQWord e.Content) t.ParentStack)
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (Macro t.SrcPos s.Value) =
+  t.hErrorList t.Lexer (Macro t.SrcPos s.Value) =
     <NPatternExpr
       t.VarTable
       (e.PatternExpr (Macro s.Value) t.ParentStack)
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (Ampersand t.SrcPos) =
+  t.hErrorList t.Lexer (Ampersand t.SrcPos) =
     <NPatternExpr
       t.VarTable
       <QualifiedSuccessed
         t.SrcPos ( e.PatternExpr t.ParentStack )
         <MParser_Common::NDotQualifiedName
-          t.ErrorList <MLexer::NextToken t.Lexer>
+          t.hErrorList <MLexer::NextToken t.Lexer>
         >
       >
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (OpenBrac t.SrcPos) =
+  t.hErrorList t.Lexer (OpenBrac t.SrcPos) =
     <NPatternExpr
       t.VarTable ( (')' e.PatternExpr) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (OpenSquare t.SrcPos) =
+  t.hErrorList t.Lexer (OpenSquare t.SrcPos) =
     <NPatternExpr
       <CallableADTName
         t.VarTable ( (']' e.PatternExpr) t.ParentStack )
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   /* Сделаем осмысленную реакцию на ошибки -- будем интерпретировать
   функциональную скобку как структурную. */
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (OpenFnCall t.SrcPos) =
+  t.hErrorList t.Lexer (OpenFnCall t.SrcPos) =
     <NPatternExpr
       t.VarTable ( (')' e.PatternExpr) t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList (OpenFnCall t.SrcPos)
+        t.hErrorList (OpenFnCall t.SrcPos)
         'any correct passive term'
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( (')' e.MultiBracket) e.InBrackets t.ParentStack)
-  t.ErrorList t.Lexer (CloseBrac t.SrcPos) =
+  t.hErrorList t.Lexer (CloseBrac t.SrcPos) =
     <NPatternExpr
       t.VarTable
       (e.MultiBracket (Structure e.InBrackets) t.ParentStack)
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable
   ( (']' e.MultiBracket) InvalidADT e.InBrackets t.ParentStack)
-  t.ErrorList t.Lexer (CloseSquare t.SrcPos) =
+  t.hErrorList t.Lexer (CloseSquare t.SrcPos) =
     <NPatternExpr
       t.VarTable
       (e.MultiBracket (Structure e.InBrackets) t.ParentStack)
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable
   ( (']' e.MultiBracket) t.Callable e.InBrackets t.ParentStack)
-  t.ErrorList t.Lexer (CloseSquare t.SrcPos) =
+  t.hErrorList t.Lexer (CloseSquare t.SrcPos) =
     <NPatternExpr
       t.VarTable
       (e.MultiBracket
         (Abstract t.Callable e.InBrackets)
         t.ParentStack
       )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   /* Продолжение осмысленной реакции -- интерпретация закрывающей
   функциональной скобки как структурной*/
   t.VarTable ( (')' e.MultiBracket) e.InBracket t.ParentStack)
-  t.ErrorList t.Lexer (CloseFnCall t.SrcPos) =
+  t.hErrorList t.Lexer (CloseFnCall t.SrcPos) =
     <NPatternExpr
       t.VarTable
       (e.MultiBracket (Structure e.InBracket) t.ParentStack)
       <MError::AddUnexpected
-        t.ErrorList (CloseFnCall t.SrcPos)
+        t.hErrorList (CloseFnCall t.SrcPos)
         'any correct passive term'
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (CloseBrac t.SrcPos) =
+  t.hErrorList t.Lexer (CloseBrac t.SrcPos) =
     <NPatternExpr
       t.VarTable ( e.PatternExpr t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList (CloseBrac t.SrcPos)
+        t.hErrorList (CloseBrac t.SrcPos)
         'any correct term (unbalanced structure brackets)'
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
-  t.ErrorList t.Lexer (CloseSquare t.SrcPos) =
+  t.hErrorList t.Lexer (CloseSquare t.SrcPos) =
     <NPatternExpr
       t.VarTable ( e.PatternExpr t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList (CloseSquare t.SrcPos)
+        t.hErrorList (CloseSquare t.SrcPos)
         'any correct term (unbalanced ADT brackets)'
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( '$' e.PatternExpr (e.ParentStack))
-  t.ErrorList t.Lexer (Replaces t.SrcPos) =
+  t.hErrorList t.Lexer (Replaces t.SrcPos) =
     t.VarTable ( (Pattern e.PatternExpr) e.ParentStack )
-    t.ErrorList t.Lexer (Replaces t.SrcPos);
+    t.hErrorList t.Lexer (Replaces t.SrcPos);
 
   t.VarTable
   ( (s.BracketType e.MultiBracket) e.InBrackets t.ParentStack )
-  t.ErrorList t.Lexer (Replaces t.SrcPos) =
+  t.hErrorList t.Lexer (Replaces t.SrcPos) =
     <NPatternExpr
       t.VarTable ( e.MultiBracket (e.InBrackets) t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList (Replaces t.SrcPos)
+        t.hErrorList (Replaces t.SrcPos)
         '\'' s.BracketType '\''
       >
       t.Lexer (Replaces t.SrcPos)
@@ -584,21 +584,21 @@ NPatternExpr {
 
   t.VarTable
   ( (s.BracketType e.MultiBracket) e.InBrackets t.ParentStack )
-  t.ErrorList t.Lexer t.Unexpected =
+  t.hErrorList t.Lexer t.Unexpected =
     <NPatternExpr
       t.VarTable ( e.MultiBracket (e.InBrackets) t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList t.Unexpected
+        t.hErrorList t.Unexpected
         '\'' s.BracketType '\''
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( '$' e.PatternExpr (e.ParentStack) )
-  t.ErrorList t.Lexer t.Unexpected =
+  t.hErrorList t.Lexer t.Unexpected =
     t.VarTable ( (Pattern e.PatternExpr) e.ParentStack )
     <MError::AddUnexpected
-      t.ErrorList t.Unexpected
+      t.hErrorList t.Unexpected
       'pattern expression or semicolon'
     >
     t.Lexer t.Unexpected;
@@ -608,25 +608,25 @@ NPatternExpr {
 
 AnyExpr-AnalyzeStartOfQualifiedName {
   (e.Expression t.ParentStack) (t.SrcPos e.Name)
-  t.ErrorList t.Lexer (Dot t.DotSrcPos) =
+  t.hErrorList t.Lexer (Dot t.DotSrcPos) =
     <ConcatQualified
       (e.Name)
       t.SrcPos (e.Expression t.ParentStack)
       <MParser_Common::NDotQualifiedName
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   (e.Expression t.ParentStack) (t.SrcPos e.Name)
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     (e.Expression (Identifier t.SrcPos e.Name) t.ParentStack)
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 }
 
 ConcatQualified {
   (e.Name) t.SrcPos (e.Expression t.ParentStack)
   Success t.QualifiedName
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     (e.Expression
       (FnPtr
         (Qualified
@@ -636,13 +636,13 @@ ConcatQualified {
       )
       t.ParentStack
     )
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 
   (e.Name) t.SrcPos (e.Expression t.ParentStack)
   Fails
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     (e.Expression (Identifier e.Name) t.ParentStack)
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 }
 
 //------------------------------------------------------------------------------
@@ -650,38 +650,38 @@ ConcatQualified {
 QualifiedSuccessed {
   t.SrcPos ( e.Expression t.ParentStack)
   Success t.QualifiedName
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     (e.Expression
       (FnPtr (Qualified t.SrcPos t.QualifiedName))
       t.ParentStack
     )
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 
   t.SrcPos ( e.Expression t.ParentStack )
   Fails
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
         (e.Expression t.ParentStack)
-        t.ErrorList t.Lexer t.NextToken;
+        t.hErrorList t.Lexer t.NextToken;
 }
 
 //------------------------------------------------------------------------------
 
 CallableADTName {
   t.VarTable ( e.Pattern t.UpParentStack )
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Content) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Content) =
     t.VarTable
     ( e.Pattern
       (Qualified t.SrcPos
         <MQualifiedName::Create (e.Content)>
       ) t.UpParentStack
-    ) t.ErrorList <MLexer::NextToken t.Lexer>;
+    ) t.hErrorList <MLexer::NextToken t.Lexer>;
 
   t.VarTable ( e.Pattern t.UpParentStack )
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     t.VarTable
     ( e.Pattern InvalidADT t.UpParentStack )
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'name of ADT'
+      t.hErrorList t.OtherToken 'name of ADT'
     >
     t.Lexer t.OtherToken;
 
@@ -690,28 +690,28 @@ CallableADTName {
 //------------------------------------------------------------------------------
 
 CheckVariable {
-  t.ErrorList t.VarTable Success
+  t.hErrorList t.VarTable Success
   ( e.ResultExpr t.ParentStack )
   t.Lexer (Var t.SrcPos s.VarType e.Index) =
     t.VarTable ( e.ResultExpr (s.VarType e.Index) t.ParentStack )
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
-  t.ErrorList t.VarTable Fails
+  t.hErrorList t.VarTable Fails
   ( e.ResultExpr t.ParentStack )
   t.Lexer t.VarToken =
     t.VarTable ( e.ResultExpr t.ParentStack )
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 }
 
 //------------------------------------------------------------------------------
 
 NResultExpr {
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (Var t.SrcPos s.VarType e.Index) =
+  t.hErrorList t.Lexer (Var t.SrcPos s.VarType e.Index) =
     <NResultExpr
       <CheckVariable
         <MVarTable::CheckVariable
-          t.ErrorList t.VarTable t.SrcPos s.VarType e.Index
+          t.hErrorList t.VarTable t.SrcPos s.VarType e.Index
         >
         ( e.ResultExpr t.ParentStack )
         t.Lexer (Var t.SrcPos s.VarType e.Index)
@@ -719,92 +719,92 @@ NResultExpr {
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
     <NResultExpr
       t.VarTable
       <AnyExpr-AnalyzeStartOfQualifiedName
         ( e.ResultExpr t.ParentStack )
         (t.SrcPos e.Ident)
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (Literal t.SrcPos e.Content) =
+  t.hErrorList t.Lexer (Literal t.SrcPos e.Content) =
     <NResultExpr
       t.VarTable
       ( e.ResultExpr (Literal e.Content) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (DQWord t.SrcPos e.Content) =
+  t.hErrorList t.Lexer (DQWord t.SrcPos e.Content) =
     <NResultExpr
       t.VarTable
       ( e.ResultExpr (DQWord e.Content) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (Macro t.SrcPos s.Value) =
+  t.hErrorList t.Lexer (Macro t.SrcPos s.Value) =
     <NResultExpr
       t.VarTable
       ( e.ResultExpr (Macro s.Value) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ( e.ResultExpr t.ParentStack )
-  t.ErrorList t.Lexer (Ampersand t.SrcPos) =
+  t.hErrorList t.Lexer (Ampersand t.SrcPos) =
     <NResultExpr
       t.VarTable
       <QualifiedSuccessed
         t.SrcPos ( e.ResultExpr t.ParentStack )
         <MParser_Common::NDotQualifiedName
-          t.ErrorList <MLexer::NextToken t.Lexer>
+          t.hErrorList <MLexer::NextToken t.Lexer>
         >
       >
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (OpenBrac t.SrcPos) =
+  t.hErrorList t.Lexer (OpenBrac t.SrcPos) =
     <NResultExpr
       t.VarTable ( ( ')' e.ResultExpr ) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (OpenFnCall t.SrcPos) =
+  t.hErrorList t.Lexer (OpenFnCall t.SrcPos) =
     <NResultExpr
       <NCallable
         t.VarTable
         ( ( ('>' e.ResultExpr) t.ParentStack ) )
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >                        
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (OpenSquare t.SrcPos) =
+  t.hErrorList t.Lexer (OpenSquare t.SrcPos) =
     <NResultExpr
       <CallableADTName
         t.VarTable ( ( ']' e.ResultExpr ) t.ParentStack )
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.VarTable ( ( ')' e.MultiBracket ) e.InBrackets t.ParentStack )
-  t.ErrorList t.Lexer (CloseBrac t.SrcPos) =
+  t.hErrorList t.Lexer (CloseBrac t.SrcPos) =
     <NResultExpr
       t.VarTable
       ( e.MultiBracket (Structure e.InBrackets) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer ( CloseBrac t.SrcPos ) =
+  t.hErrorList t.Lexer ( CloseBrac t.SrcPos ) =
     <NResultExpr
       t.VarTable ( e.ResultExpr t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList ( CloseBrac t.SrcPos )
+        t.hErrorList ( CloseBrac t.SrcPos )
         'result expression or semicolon (unbalanced structure brackets)'
       >
       <MLexer::NextToken t.Lexer>
@@ -812,31 +812,31 @@ NResultExpr {
 
   t.VarTable
   ( ( ']' e.MultiBracket ) InvalidADT e.InBrackets t.ParentStack )
-  t.ErrorList t.Lexer (CloseSquare t.SrcPos) =
+  t.hErrorList t.Lexer (CloseSquare t.SrcPos) =
     <NResultExpr
       t.VarTable
       ( e.MultiBracket (Structure e.InBrackets) t.ParentStack )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable
   ( ( ']' e.MultiBracket ) t.Callable e.InBrackets t.ParentStack )
-  t.ErrorList t.Lexer (CloseSquare t.SrcPos) =
+  t.hErrorList t.Lexer (CloseSquare t.SrcPos) =
     <NResultExpr
       t.VarTable
       ( e.MultiBracket
         (Abstract t.Callable e.InBrackets)
         t.ParentStack
       )
-      t.ErrorList <MLexer::NextToken t.Lexer>
+      t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (CloseSquare t.SrcPos) =
+  t.hErrorList t.Lexer (CloseSquare t.SrcPos) =
     <NResultExpr
       t.VarTable ( e.ResultExpr t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList (CloseSquare t.SrcPos)
+        t.hErrorList (CloseSquare t.SrcPos)
         'result expression or semicolon (unbalanced ADT brackets)'
       >
       <MLexer::NextToken t.Lexer>
@@ -846,72 +846,72 @@ NResultExpr {
   интерпретируем как структурные. */
   t.VarTable
   ( ('>' e.MultiBracket) InvalidCallable e.ResultExprFnArgument t.ParentStack )
-  t.ErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
+  t.hErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
     <NResultExpr
       t.VarTable
       ( e.MultiBracket
         (Structure e.ResultExprFnArgument)
         t.ParentStack
-      ) t.ErrorList <MLexer::NextToken t.Lexer>
+      ) t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable
   ( ('>' e.MultiBracket) (FnCall t.Callable) e.ResultExprFnArgument t.ParentStack )
-  t.ErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
+  t.hErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
     <NResultExpr
       t.VarTable
       ( e.MultiBracket
         ( Function t.Callable e.ResultExprFnArgument )
         t.ParentStack
       )
-      t.ErrorList
+      t.hErrorList
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable
   ( ('>' e.MultiBracket) (IndirectCall (SVar e.Index)) e.ResultExprFnArgument t.ParentStack )
-  t.ErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
+  t.hErrorList t.Lexer ( CloseFnCall t.SrcPos ) =
     <NResultExpr
       t.VarTable
       ( e.MultiBracket
         (IndirectCall (SVar e.Index) e.ResultExprFnArgument)
         t.ParentStack
-      ) t.ErrorList <MLexer::NextToken t.Lexer>
+      ) t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)
-  t.ErrorList t.Lexer (CloseFnCall t.SrcPos) =
+  t.hErrorList t.Lexer (CloseFnCall t.SrcPos) =
     <NResultExpr
       t.VarTable ( e.ResultExpr t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList (CloseFnCall t.SrcPos)
+        t.hErrorList (CloseFnCall t.SrcPos)
         'result expression or semicolon (unbalanced function brackets)'
       >
       <MLexer::NextToken t.Lexer>
     >;
 
   t.VarTable ('$' e.ResultExpr (e.ParentStack))
-  t.ErrorList t.Lexer (EndSent t.SrcPos) =
+  t.hErrorList t.Lexer (EndSent t.SrcPos) =
     t.VarTable ( (Result e.ResultExpr) e.ParentStack )
-    t.ErrorList t.Lexer (EndSent t.SrcPos);
+    t.hErrorList t.Lexer (EndSent t.SrcPos);
 
   t.VarTable
   ( ( s.BracketType e.MultiBracket ) e.InBrackets t.ParentStack )
-  t.ErrorList t.Lexer t.Unexpected =
+  t.hErrorList t.Lexer t.Unexpected =
     <NResultExpr
       t.VarTable ( e.MultiBracket (e.InBrackets) t.ParentStack )
       <MError::AddUnexpected
-        t.ErrorList t.Unexpected
+        t.hErrorList t.Unexpected
         s.BracketType ' (unbalanced brackets)'
       >
       t.Lexer t.Unexpected
     >;
 
   t.VarTable ( '$' e.ResultExpr (e.ParentStack) )
-  t.ErrorList t.Lexer t.Unexpected =
+  t.hErrorList t.Lexer t.Unexpected =
     t.VarTable ( (e.ResultExpr) e.ParentStack )
     <MError::AddUnexpected
-      t.ErrorList t.Unexpected
+      t.hErrorList t.Unexpected
       'result expression or \';\''
     >
     t.Lexer t.Unexpected;
@@ -921,40 +921,40 @@ NResultExpr {
 
 NCallable {
   t.VarTable ( t.ParentStack )
-  t.ErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Name) =
     t.VarTable
     <NCallable-ReadQualifiedName
       t.SrcPos ( t.ParentStack )
       <MParser_Common::NAnyQualifiedName
-        t.ErrorList t.Lexer (Identifier t.SrcPos e.Name)
+        t.hErrorList t.Lexer (Identifier t.SrcPos e.Name)
       >
     >;
 
   t.VarTable ( t.ParentStack )
-  t.ErrorList t.Lexer (Ampersand t.SrcPos) =
+  t.hErrorList t.Lexer (Ampersand t.SrcPos) =
     t.VarTable
     <NCallable-ReadQualifiedName
       t.SrcPos ( t.ParentStack )
       <MParser_Common::NDotQualifiedName
-        t.ErrorList <MLexer::NextToken t.Lexer>
+        t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
 
   t.VarTable ( t.ParentStack )
-  t.ErrorList t.Lexer (Var t.SrcPos SVar e.Index) =
+  t.hErrorList t.Lexer (Var t.SrcPos SVar e.Index) =
     <CheckCallableVariable
       <MVarTable::CheckVariable
-        t.ErrorList t.VarTable t.SrcPos SVar e.Index
+        t.hErrorList t.VarTable t.SrcPos SVar e.Index
       > ( t.ParentStack )
       t.Lexer (Var t.SrcPos SVar e.Index)
     >;
 
   t.VarTable ( (e.ResultExpr t.UpParentStack) )
-  t.ErrorList t.Lexer t.OtherToken =
+  t.hErrorList t.Lexer t.OtherToken =
     t.VarTable
     ( e.ResultExpr InvalidCallable t.UpParentStack )
     <MError::AddUnexpected
-      t.ErrorList t.OtherToken 'function name or module name'
+      t.hErrorList t.OtherToken 'function name or module name'
     >
     t.Lexer t.OtherToken;
 }
@@ -962,23 +962,23 @@ NCallable {
 NCallable-ReadQualifiedName {
   t.NamePos ( (e.ResultExpr t.UpParentStack) )
   Success t.QualifiedName
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     ( e.ResultExpr
       ( FnCall
         ( Qualified t.NamePos t.QualifiedName )
       ) t.UpParentStack
     )
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 
   t.NamePos ( (e.ResultExpr t.UpParentStack) )
   Fails
-  t.ErrorList t.Lexer t.NextToken =
+  t.hErrorList t.Lexer t.NextToken =
     ( e.ResultExpr InvalidCallable t.UpParentStack )
-    t.ErrorList t.Lexer t.NextToken;
+    t.hErrorList t.Lexer t.NextToken;
 }
 
 CheckCallableVariable {
-  t.ErrorList t.VarTable Success
+  t.hErrorList t.VarTable Success
   ( (e.ResultExpr t.UpParentStack) )
   t.Lexer (Var t.SrcPos SVar e.Index) =
     t.VarTable (
@@ -986,14 +986,14 @@ CheckCallableVariable {
       ( IndirectCall (SVar e.Index))
       t.UpParentStack
     )
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 
-  t.ErrorList t.VarTable Fails
+  t.hErrorList t.VarTable Fails
   ( (e.ResultExpr t.UpParentStack) )
   t.Lexer (Var t.SrcPos SVar e.Index) =
     t.VarTable
     ( e.ResultExpr InvalidCallable t.UpParentStack)
-    t.ErrorList <MLexer::NextToken t.Lexer>;
+    t.hErrorList <MLexer::NextToken t.Lexer>;
 }
 
 

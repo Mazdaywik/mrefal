@@ -2,11 +2,11 @@ $MODULE Driver::MCompiler;
 
 $IMPORT MLambda;
 
-$IMPORT Driver::MCompilerOld;
 $IMPORT Driver::MConfig;
 $IMPORT Driver::MModuleFinder;
 $IMPORT Driver::MModuleIF;
 $IMPORT Driver::MResolver;
+$IMPORT Driver::MUtils;
 $IMPORT MError;
 $IMPORT MIModule;
 $IMPORT MOutModuleStatus;
@@ -353,7 +353,7 @@ OnUnknown-CheckLookupModule {
 
   (e.Stack) t.Config t.ImportName
   t.hErrorList t.hTables Success Cluster s.Type =
-    <Driver::MCompilerOld::OutModuleStatus-Start-ByType
+    <Driver::MUtils::OutModuleStatus-Start-ByType
       s.Type t.ImportName
     >
     <Compile
@@ -375,7 +375,7 @@ Compile {
   s.Type (e.Stack) t.Config t.hTables t.hErrorList t.ImportName =
     <Compile-SwLoad
       s.Type (e.Stack) t.Config t.ImportName
-      <Driver::MConfig::LoadModule
+      <Driver::MUtils::LoadModule
         s.Type t.Config t.hTables t.hErrorList t.ImportName
       >
     >;
@@ -403,7 +403,7 @@ Compile-SwLoad {
 MakeReturnStatus {
   Success = (Success);
   Warnings = (Success);
-  Errors = (Errors Error-CantLoadModule);
+  Errors = (Error Error-CantLoadModule);
 }
 
 Compile-CompareWithPhysical {
@@ -563,7 +563,7 @@ Compile-CheckImports {
     <Compile-CheckImports-LoadInterfaces
       t.ReturnStatus s.Type (e.Stack) t.Config t.InternalName
       t.hTables
-      <Driver::MCompilerOld::GetImportList
+      <Driver::MUtils::GetImportList
         t.hErrorList t.hRawIModule
       >
     >;
@@ -747,7 +747,7 @@ GuardSuccess {
 Synthesis-Update {
   s.Type
   (Success) t.Config t.hTables t.hErrorList t.ModuleIF =
-    <Driver::MCompilerOld::OutModuleStatus-Finish-ByType
+    <Driver::MUtils::OutModuleStatus-Finish-ByType
       s.Type <Driver::MModuleIF::GetName t.ModuleIF>
     >
     <GuardSuccess

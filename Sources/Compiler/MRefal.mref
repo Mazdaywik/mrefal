@@ -2,8 +2,6 @@ $PROGRAM MRefal;
 
 $IMPORT Config::MLoad;
 $IMPORT Driver::MCompiler;
-$IMPORT Driver::MCompilerOld;
-$IMPORT Driver::MContext;
 $IMPORT Driver::MModuleFinder;
 $IMPORT Driver::MTables;
 $IMPORT Driver::Tables::MLookup;
@@ -96,8 +94,9 @@ AddCommandLineModule-Aux {
   t.SrcPos (e.PtModuleName) (e.PtTargetName)
   t.hContext Found t.QualifiedName s.FrontEnd e.PtBaseDirectory =
     <AddCommandLineModule-Aux-Guard
-      <Driver::MContext::SetTarget_
-        t.hContext t.QualifiedName e.PtTargetName
+      <Driver::MTables::Modules
+        t.hContext
+	& Driver.Tables.MModules.SetTarget t.QualifiedName e.PtTargetName
       >
     >
     (Found t.SrcPos t.QualifiedName);

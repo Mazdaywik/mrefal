@@ -41,7 +41,7 @@ GenerateFunction
             & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
           >
           <MLambda::BindLeft-H
-            & MIModule.GetFunctionAttribute  Body t.RelativeName
+            & MIModule.GetFunctionAttribute Body t.RelativeName
           >
         >
         t.hIModule
@@ -192,7 +192,7 @@ Gen-Result-Term {
     '<' <Gen-Callable t.Callable> <Gen-Result e.Argument> '>';
 
   (IndirectCall (SVar e.Index) e.Argument) =
-    '<s.' e.Index ' ' <Gen-Result e.Argument> '>';
+    '<s.' <NameCode e.Index> ' ' <Gen-Result e.Argument> '>';
 
   t.Common = <Gen-Common-Term t.Common>;
 }

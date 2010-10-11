@@ -381,11 +381,11 @@ static refalrts::FnResult VerNumber(refalrts::Iter arg_begin, refalrts::Iter arg
     const static refalrts::ResultAction raa[] = {
       {refalrts::icChar, 0, 0, '0'},
       {refalrts::icChar, 0, 0, '.'},
-      {refalrts::icChar, 0, 0, '1'},
+      {refalrts::icChar, 0, 0, '2'},
       {refalrts::icChar, 0, 0, '.'},
       {refalrts::icChar, 0, 0, '9'},
       {refalrts::icChar, 0, 0, '8'},
-      {refalrts::icChar, 0, 0, '0'},
+      {refalrts::icChar, 0, 0, '1'},
       {refalrts::icEnd}
     };
     refalrts::Iter allocs[2*sizeof(raa)/sizeof(raa[0])];
@@ -402,7 +402,7 @@ static refalrts::FnResult VerNumber(refalrts::Iter arg_begin, refalrts::Iter arg
     if( ! refalrts::alloc_char( n1, '.' ) )
       return refalrts::cNoMemory;
     refalrts::Iter n2 = 0;
-    if( ! refalrts::alloc_char( n2, '1' ) )
+    if( ! refalrts::alloc_char( n2, '2' ) )
       return refalrts::cNoMemory;
     refalrts::Iter n3 = 0;
     if( ! refalrts::alloc_char( n3, '.' ) )
@@ -414,7 +414,7 @@ static refalrts::FnResult VerNumber(refalrts::Iter arg_begin, refalrts::Iter arg
     if( ! refalrts::alloc_char( n5, '8' ) )
       return refalrts::cNoMemory;
     refalrts::Iter n6 = 0;
-    if( ! refalrts::alloc_char( n6, '0' ) )
+    if( ! refalrts::alloc_char( n6, '1' ) )
       return refalrts::cNoMemory;
     res = refalrts::splice_elem( res, n6 );
     res = refalrts::splice_elem( res, n5 );

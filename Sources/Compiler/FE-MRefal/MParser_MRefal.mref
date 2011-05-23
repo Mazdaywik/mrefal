@@ -178,7 +178,7 @@ NSwapBlock-AfterName {
 //------------------------------------------------------------------------------
 
 /*
-  DataBlock = '$swap' DataBlock-Chain .
+  DataBlock = '$data' DataBlock-Chain .
   DataBlock-Chain = IDENTIFIER DataBlock-AfterName .
   DataBlock-AfterName = ';' | ',' DataBlock-Chain .
 */

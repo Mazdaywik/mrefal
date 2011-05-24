@@ -81,10 +81,7 @@ StartLinkLoop-Aux {
           >
           'Starter'
         >
-        (('Starter')
-          ('$$ENTRY Go { = ' e.InitCode '<$Entry::__Exit$ 0 >; }')
-        )
-        <ExitFunctionCode>
+        <RuntimeCode e.InitCode>
         e.Units
       >
       <MLambda::Reduce
@@ -92,6 +89,16 @@ StartLinkLoop-Aux {
       >
       t.hExeTyper
     >;
+}
+
+RuntimeCode {
+  e.InitCode =
+    // Starter
+    (('Starter')
+      ('$$ENTRY Go { = ' e.InitCode '<$Entry::__Exit$ 0 >; }')
+    )
+    // Entry::__Exit
+    <ExitFunctionCode>;
 }
 
 ExitFunctionCode =

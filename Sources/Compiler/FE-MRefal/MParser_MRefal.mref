@@ -125,100 +125,89 @@ NModuleBody {
 
 //------------------------------------------------------------------------------
 
-/*
-  SwapBlock = '$swap' SwapBlock-Chain .
-  SwapBlock-Chain = IDENTIFIER SwapBlock-AfterName .
-  SwapBlock-AfterName = ';' | ',' Swap-Chain .
-*/
 NSwapBlock {
-  t.IModule
-  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
-    <NSwapBlock-AfterName
-      <MParser_Common::AddNewFunction
-        t.IModule t.SrcPos
-        <MQualifiedName::Create (e.Ident)>
-        (ScopeClass Swap)
-        (Qualified <MQualifiedName::Create (e.Ident)>)
-        t.hErrorList
-      >
-      <MLexer::NextToken t.Lexer>
+  t.hIModule t.hErrorList t.Lexer t.NextToken =
+    <ListDeclaration-Chain
+      & NSwapBlock-AddName ('swap')
+      t.hIModule t.hErrorList t.Lexer t.NextToken
     >;
-
-  t.IModule
-  t.hErrorList t.Lexer t.OtherToken =
-    t.IModule
-    <MError::AddUnexpected
-      t.hErrorList t.OtherToken 'swap name'
-    >
-    t.Lexer t.OtherToken;
 }
 
-NSwapBlock-AfterName {
-  t.IModule
-  t.hErrorList t.Lexer (Comma t.SrcPos) =
-    <NSwapBlock
-      t.IModule
-      t.hErrorList <MLexer::NextToken t.Lexer>
+NSwapBlock-AddName {
+  t.hIModule t.SrcPos t.SwapName t.hErrorList =
+    <MParser_Common::AddNewFunction
+      t.hIModule t.SrcPos t.SwapName
+      (ScopeClass Swap)
+      (Qualified t.SwapName)
+      t.hErrorList
     >;
-
-  t.IModule
-  t.hErrorList t.Lexer (EndSent t.SrcPos) =
-    t.IModule
-    t.hErrorList <MLexer::NextToken t.Lexer>;
-
-  t.IModule
-  t.hErrorList t.Lexer t.OtherToken =
-    t.IModule
-    <MError::AddUnexpected
-      t.hErrorList t.OtherToken 'comma or semicolon'
-    >
-    t.Lexer t.OtherToken;
 }
 
-//------------------------------------------------------------------------------
+NDataBlock {
+  t.hIModule t.hErrorList t.Lexer t.NextToken =
+    <ListDeclaration-Chain
+      & MParser_Common.AddNewADT ('data type')
+      t.hIModule t.hErrorList t.Lexer t.NextToken
+    >;
+}
 
 /*
-  DataBlock = '$data' DataBlock-Chain .
-  DataBlock-Chain = IDENTIFIER DataBlock-AfterName .
-  DataBlock-AfterName = ';' | ',' DataBlock-Chain .
+  ListDeclaration = ListMarker ListDeclaration-Chain .
+  ListDeclaration-Chain = IDENTIFIER ListDeclaration-AfterName .
+  ListDeclaration-AfterName = ';' | ',' ListDeclaration-Chain .
+
+  ListMarker = '$swap' | '$data' .
+
+  <ListDeclaration-Chain
+    s.AddItem (e.ListName)
+    t.hIModule t.hErrorList t.Lexer t.NextToken
+  >
+    == t.hIModule t.hErrorList t.Lexer t.NextToken
+
+  <s.AddItem
+    t.hIModule t.SrcPos t.ItemName t.hErrorList
+  >
+    == t.hIModule t.hErrorList
 */
-NDataBlock {
-  t.IModule
-  t.hErrorList t.Lexer (Identifier t.SrcPos e.Ident) =
-    <NDataBlock-AfterName
-      <MParser_Common::AddNewADT
-        t.IModule t.SrcPos
-        <MQualifiedName::Create (e.Ident)>
+ListDeclaration-Chain {
+  s.AddItem (e.ListName)
+  t.hIModule
+  t.hErrorList t.Lexer (Identifier t.SrcPos e.Name) =
+    <ListDeclaration-AfterName
+      s.AddItem (e.ListName)
+      <s.AddItem
+        t.hIModule t.SrcPos
+        <MQualifiedName::Create (e.Name)>
         t.hErrorList
       >
       <MLexer::NextToken t.Lexer>
     >;
 
-  t.IModule
+  s.AddItem (e.ListName)
+  t.hIModule
   t.hErrorList t.Lexer t.OtherToken =
-    t.IModule
+    t.hIModule
     <MError::AddUnexpected
-      t.hErrorList t.OtherToken 'swap name'
+      t.hErrorList t.OtherToken e.ListName ' name'
     >
     t.Lexer t.OtherToken;
 }
 
-NDataBlock-AfterName {
-  t.IModule
-  t.hErrorList t.Lexer (Comma t.SrcPos) =
-    <NDataBlock
-      t.IModule
-      t.hErrorList <MLexer::NextToken t.Lexer>
+ListDeclaration-AfterName {
+  s.AddItem (e.ListName)
+  t.hIModule t.hErrorList t.Lexer (Comma t.SrcPos) =
+    <ListDeclaration-Chain
+      s.AddItem (e.ListName)
+      t.hIModule t.hErrorList <MLexer::NextToken t.Lexer>
     >;
 
-  t.IModule
-  t.hErrorList t.Lexer (EndSent t.SrcPos) =
-    t.IModule
-    t.hErrorList <MLexer::NextToken t.Lexer>;
+  s.AddItem (e.ListName)
+  t.hIModule t.hErrorList t.Lexer (EndSent t.SrcPos) =
+    t.hIModule t.hErrorList <MLexer::NextToken t.Lexer>;
 
-  t.IModule
-  t.hErrorList t.Lexer t.OtherToken =
-    t.IModule
+  s.AddItem (e.ListName)
+  t.hIModule t.hErrorList t.Lexer t.OtherToken =
+    t.hIModule
     <MError::AddUnexpected
       t.hErrorList t.OtherToken 'comma or semicolon'
     >

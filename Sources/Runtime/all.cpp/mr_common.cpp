@@ -532,7 +532,6 @@ REFAL_FUNC(implement_strings::symb) {
   splice_evar( open_call, number_b, number_e );
   splice_to_freelist( open_call, close_call );
   return cSuccess;
-  
 }
 
 REFAL_FUNC(implement_strings::numb) {

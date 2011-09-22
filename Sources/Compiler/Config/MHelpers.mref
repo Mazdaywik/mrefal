@@ -96,7 +96,7 @@ $ENTRY InitConfig
 InitTuning
   e.Tunings (s.OptionType s.OptionId (e.OptionName) e.Default) =
     (<GetTuning s.OptionId e.Tunings (e.Default)>);
-    
+
 /*
   <GetTuning s.Tuning e.TunerList (e.Default)>
     == e.TunerValue

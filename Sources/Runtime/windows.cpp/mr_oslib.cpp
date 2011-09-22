@@ -336,7 +336,7 @@ REFAL_FUNC(implement_fs::find_files) {
       if( ! allocated ) return cRecognitionImpossible;
 
       allocs.push_back(close_main_bracket);
-        
+
     } while( FindNextFile(hFind, &find_file_data) != 0 );
 
     // Просмотр папки мог прерваться и ошибкой
@@ -371,7 +371,7 @@ REFAL_FUNC(implement_fs::find_files) {
     open_call->link_info = 0;
     open_call->tag = cDataIdentifier;
     open_call->ident_info = REFAL_IDENT(Fails);
-    
+
     splice_to_freelist(func_name, close_call);
     return cSuccess;
   }
@@ -523,7 +523,7 @@ REFAL_FUNC(implement_fs::file_attributes) {
 
   if( get_attribute ) {
     // Получение атрибутов удалось
-    
+
     // Распределяем память для результата
     reset_allocator();
 

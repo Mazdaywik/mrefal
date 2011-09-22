@@ -568,7 +568,6 @@ Extract-Rebalance {
     <Extract-SwRebalance
       <UnrollStep (e.LeftMB) (Tree1 t.Tree) (e.RightMB)>
     >;
-    
 
   (e.LeftMB) t.Tree (e.RightMB) =
     <Unroll (e.LeftMB) t.Tree (e.RightMB)>;
@@ -608,7 +607,7 @@ Parse {
 }
 
 Extract-SwRebalance-Aux {
-  t.Tree1 (t.Key1 e.Value1) t.Tree2 (t.Key2 e.Value2) 
+  t.Tree1 (t.Key1 e.Value1) t.Tree2 (t.Key2 e.Value2)
   t.Tree3 (t.Key3 e.Value3) t.Tree4 (t.Key4 e.Value4)
   t.Tree5 (t.Key5 e.Value5) t.Tree6 (t.Key6 e.Value6) t.Tree7 =
     [Tree
@@ -619,7 +618,7 @@ Extract-SwRebalance-Aux {
       [Tree t.Tree6 (t.Key6 e.Value6) t.Tree7]
     ];
 
-  t.Tree1 (t.Key1 e.Value1) t.Tree2 (t.Key2 e.Value2) 
+  t.Tree1 (t.Key1 e.Value1) t.Tree2 (t.Key2 e.Value2)
   t.Tree3 (t.Key3 e.Value3) t.Tree4 (t.Key4 e.Value4)
   t.Tree5 (t.Key5 e.Value5) t.Tree6 =
     [Tree

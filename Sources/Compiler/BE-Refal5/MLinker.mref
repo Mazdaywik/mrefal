@@ -414,7 +414,7 @@ DoLoadUnits {
     <AnalyseLine (e.NextLine)>
     <DoLoadUnits e.Lines>;
 }
-    
+
 AnalyseLine {
   ('v ' e.Version) = (Version e.Version);
 

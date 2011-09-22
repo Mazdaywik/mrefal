@@ -121,7 +121,7 @@ DoEscaped-Seq {
 CheckFinalize {
   t.MultiBracket (e.Scanned) & Error e.Tail = Fails;
 
-  t.MultiBracket (e.Scanned) s.Atom e.Tail = 
+  t.MultiBracket (e.Scanned) s.Atom e.Tail =
     <DoUnserialize
       t.MultiBracket (e.Scanned s.Atom) e.Tail
     >;
@@ -181,7 +181,7 @@ SwCallFunction {
   ('FileAttributes') e.FileName =
     <Result-FileAttributes <FS::FileAttributes e.FileName>>;
 
-  ('FindFiles') e.Mask = 
+  ('FindFiles') e.Mask =
     <Result-FindFiles <FS::FindFiles e.Mask>>;
 
   ('FullName') e.FileName =

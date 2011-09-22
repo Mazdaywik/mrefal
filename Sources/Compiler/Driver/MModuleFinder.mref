@@ -317,7 +317,7 @@ FilterInvalidNames-Aux-SwValidSegments {
 
 FilterInvalidNames-CheckSegment {
   (e.Name-B '?' e.Name-E) = Invalid;
-  
+
   (e.Name) =
     <FilterInvalidNames-CheckSegment-FirstLetter
       (e.Name) <MStrings::Upper e.Name>

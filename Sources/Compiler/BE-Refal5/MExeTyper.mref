@@ -98,7 +98,7 @@ $ENTRY TypeChar {
       [ExeTyper s.Limit s.Free e.Converted]
       s.Char '\'' <SingleChars>
     >;
-  
+
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Char =
     [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted s.Char];
 }

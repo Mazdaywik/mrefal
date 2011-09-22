@@ -74,7 +74,7 @@ $ENTRY ContentLevel
 
 SwContentLevel {
   t.hErrorList Empty = t.hErrorList Empty;
-  
+
   t.hErrorList NotEmpty = t.hErrorList Errors;
 }
 

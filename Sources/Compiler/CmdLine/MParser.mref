@@ -243,7 +243,7 @@ ErrorIfNotExist {
 ErrorIfNotExist-SwExist {
   t.SrcPos True e.FileName = /* пусто */;
 
-  t.SrcPos False e.FileName = 
+  t.SrcPos False e.FileName =
     (Error
       t.SrcPos 'Configuration file \'' e.FileName '\' not found'
     );

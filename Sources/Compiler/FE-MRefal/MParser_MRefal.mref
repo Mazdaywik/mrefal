@@ -768,7 +768,7 @@ NResultExpr {
         t.VarTable
         ( ( ('>' e.ResultExpr) t.ParentStack ) )
         t.hErrorList <MLexer::NextToken t.Lexer>
-      >                        
+      >
     >;
 
   t.VarTable (e.ResultExpr t.ParentStack)

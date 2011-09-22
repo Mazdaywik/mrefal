@@ -176,8 +176,8 @@ UpdateInfo-UpdateOptions-ExistOptions-SwExist {
   t.SymTable Found e.Value
   (e.KeyName) (e.Scanned) (s.NextOption e.NewValue) (e.Options) =
     <UpdateInfo-UpdateOptions-ExistOptions
-     
-      t.SymTable (e.KeyName) (e.Scanned (s.NextOption e.NewValue)) e.Options
+      t.SymTable (e.KeyName) (e.Scanned (s.NextOption e.NewValue))
+      e.Options
     >;
 
   t.SymTable NoAttrib

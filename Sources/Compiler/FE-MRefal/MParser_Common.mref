@@ -550,7 +550,7 @@ SrcPosQualifiedName
     >;
 
 NModuleTailer-ModuleName-Aux {
-  t.IModule t.HeadModuleName 
+  t.IModule t.HeadModuleName
   t.SrcPos Success t.TailModuleName
   t.hErrorList t.Lexer t.NextToken =
     <NModuleTailer-Dot
@@ -855,7 +855,7 @@ NImportBlock-AfterModuleRenaming {
     IDENTIFIER | DotQualifiedName '.' IDENTIFIER .
   QuadQualifiedName =
     IDENTIFIER | QuadQualifiedName '::' IDENTIFIER .
-  
+
   <N***QualifiedName
     t.hErrorList t.Lexer t.NextToken
   >

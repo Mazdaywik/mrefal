@@ -52,7 +52,7 @@ FindGroups {
 }
 
 MergeGroups {
-	((e.FirstLine) e.Lines1) e.Groups 
+	((e.FirstLine) e.Lines1) e.Groups
 	((e.FirstLine) e.Lines2) e.Tail =
 		<MergeGroups
 			((e.FirstLine) e.Lines1 () e.Lines2) e.Groups e.Tail

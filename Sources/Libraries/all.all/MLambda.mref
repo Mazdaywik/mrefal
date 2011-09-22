@@ -233,7 +233,7 @@ $ENTRY Reduce-R {
 
   t.Lambda t.Accum = t.Accum;
 }
-  
+
 /**
   <MapReduce t.Lambda t.Accum t.Src*>
     == t.Accum' e.Result*

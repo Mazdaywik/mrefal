@@ -13,7 +13,7 @@ $MODULE FE-MRefal::MSymStream;
 
   <Destroy t.SymStream> == empty
   закрывает поток;
-  
+
   <UnGetChar t.SymStream s.Char> == t.SymStream
   возвращает символ обратно в поток, при необходимости корректируется номер
 строки;

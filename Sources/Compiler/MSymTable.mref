@@ -16,7 +16,7 @@ $IMPORT MStrings;
 // Функции для работы с таблицей символов
 //------------------------------------------------------------------------------
 
-/* Внутренний формат: 
+/* Внутренний формат:
   t.SymTable ::= [SymTable e.Names]
   e.Names ::= (e.Name e.Attribs)*
   e.Attribs ::= (s.Attrib e.Value)*
@@ -175,7 +175,7 @@ DoExtractNames {
     t.SymTable e.Names;
 }
 
-$ENTRY Destroy 
+$ENTRY Destroy
   [SymTable e.Names] = ;
 
 

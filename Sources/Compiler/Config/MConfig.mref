@@ -46,7 +46,7 @@ $DATA Config;
   t.FnParser ::= {
     t.hErrorList t.QualifiedName e.FileName =
       t.hErrorList Success s.Result t.IModule;
-  
+
     t.hErrorList t.QualifiedName e.FileName =
       t.hErrorList Fails;
   }
@@ -304,7 +304,7 @@ GetFEPath-T-Aux1 {
       (e.Ext)
       <MFileSystem::ConcatPath (e.PtBaseFolder) e.PtRelative>
     >;
-}  
+}
 
 GetFEPath-T-Aux2 {
   (e.Ext) Success e.PtFullPath =

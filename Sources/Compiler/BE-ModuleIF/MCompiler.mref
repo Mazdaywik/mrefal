@@ -108,7 +108,7 @@ MoveFirstLineToFront
 GenerateFunctions
   t.IModule e.Functions =
     <MLambda::MapReduce
-      & GenerateImport 
+      & GenerateImport
       <MIModule::GetImportList-Aliases t.IModule>
     >
     ()

@@ -4,7 +4,7 @@ set MR-PROGRAMS=%MR-PROGRAMS% MergeFindResults ErrorDecoder DocConverter
 set MR-PROGRAMS=%MR-PROGRAMS% DocConverter-wp ClearXLinx UnStructure
 
 set SR-PROGRAMS=SRMake.sref LexGen.sref
-set SR-PROGRAMS-TAIL=LexGen_Generator.sref SRMake_FileScanner.sref SRMake_ParseCmdLine.sref
+set SR-PROGRAMS-TAIL=SRMake_FileScanner.sref SRMake_ParseCmdLine.sref
 
 set VERSRC=/srcfile:mUtilitiesBanner.mref /srcfile:sUtilitiesBanner.sref
 

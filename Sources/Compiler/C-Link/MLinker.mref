@@ -7,6 +7,8 @@ $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MStrings;
 
+$IMPORT MProfiler;
+
 /**
   <C-Link
     (Compiler
@@ -23,7 +25,11 @@ $IMPORT MStrings;
 
   e.Option = char* | NotSupport
 */
-$ENTRY C-Link {
+$ENTRY C-Link
+  e.ManyOptions =
+    <MProfiler::Quantify &Profiling-C-Link e.ManyOptions>;
+
+Profiling-C-Link {
   (Compiler (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue))
   (Include e.IncludeInfo) (Define e.DefineInfo) (Output e.OutputInfo)
   e.FileNames =

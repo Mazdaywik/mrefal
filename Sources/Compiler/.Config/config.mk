@@ -5,35 +5,19 @@ FARMENUFILE=./.Config/list_make_param.wnd
 include $(CONFIGFILE)
 
 define PRINT-CONFIG
-	@$(ECHO) CONFIG:
-	@$(ECHO) Work profile......$(profile)
-	@$(ECHO) Work compiler.....$(comp)
-	@$(ECHO) Stable compiler...$(scomp)
-	@$(ECHO) Mode..............$(mode)
+	@$(call PRINTLINE, CONFIG:)
+	@$(call PRINTLINE, Work profile......$(profile))
+	@$(call PRINTLINE, Work compiler.....$(comp))
+	@$(call PRINTLINE, Stable compiler...$(scomp))
+	@$(call PRINTLINE, Mode..............$(mode))
 endef
 
 define GEN-CONFIG
-	@$(ECHO) Writting configuration.
-	@$(EMPTYLINE)> $(CONFIGFILE)
-	@$(ECHO) profile = $(profile)>> $(CONFIGFILE)
-	@$(ECHO) comp = $(comp)>> $(CONFIGFILE)
-	@$(ECHO) scomp = $(scomp)>> $(CONFIGFILE)
-	@$(ECHO) mode = $(mode)>> $(CONFIGFILE)
-endef
-
-define GEN-FARMENU
-	@$(call PRINTLINE,C:  Продолжить) > $(FARMENUFILE)
-	@$(call PRINTLINE,    set COMP-SHORT=$(comp)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,    set PROFILE-SHORT=$(profile)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,    set PROFILE-ACRO=.cppsr.exe) >> $(FARMENUFILE)
-	@$(call PRINTLINE,    set SCOMP-SHORT=$(scomp)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,    set MODE=$(mode)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,    .Config\change_window default) >> $(FARMENUFILE)
-	@$(call PRINTLINE,-:) >> $(FARMENUFILE)
-	@$(call PRINTLINE,:   Компилятор $(comp)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,:   Профиль $(profile)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,:   Стабильный компилятор $(scomp)) >> $(FARMENUFILE)
-	@$(call PRINTLINE,:   Режим $(mode)) >> $(FARMENUFILE)
+	@$(call PRINTLINE, Writting configuration.)
+	@$(call PRINTLINE, profile = $(profile))> $(CONFIGFILE)
+	@$(call PRINTLINE, comp = $(comp))>> $(CONFIGFILE)
+	@$(call PRINTLINE, scomp = $(scomp))>> $(CONFIGFILE)
+	@$(call PRINTLINE, mode = $(mode))>> $(CONFIGFILE)
 endef
 
 define CHECKPARAM
@@ -64,6 +48,7 @@ $(CONFIGFILE)::
 	$(GEN-CONFIG)
 
 .PHONY: resetconfig reset_config delete_config gen_config
+.PHONY: $(FARMENUFILE)
 
 resetconfig reset_config:: delete_config gen_config
 
@@ -74,7 +59,18 @@ gen_config::
 	$(GEN-CONFIG)
 
 $(FARMENUFILE)::
-	$(GEN-FARMENU)
+	@$(call PRINTLINE,C:  Продолжить) > $@
+	@$(call PRINTLINE,    set COMP-SHORT=$(comp)) >> $@
+	@$(call PRINTLINE,    set PROFILE-SHORT=$(profile)) >> $@
+	@$(call PRINTLINE,    set PROFILE-ACRO=.cppsr.exe) >> $@
+	@$(call PRINTLINE,    set SCOMP-SHORT=$(scomp)) >> $@
+	@$(call PRINTLINE,    set MODE=$(mode)) >> $@
+	@$(call PRINTLINE,    .Config\change_window default) >> $@
+	@$(call PRINTLINE,--:) >> $@
+	@$(call PRINTLINE,:   Компилятор $(comp)) >> $@
+	@$(call PRINTLINE,:   Профиль $(profile)) >> $@
+	@$(call PRINTLINE,:   Стабильный компилятор $(scomp)) >> $@
+	@$(call PRINTLINE,:   Режим $(mode)) >> $@
 
 comp-R5 = $(call BATEXE, ../Bin/start-r5)
 comp-R5T = $(call BATEXE, ../Bin/start-r5-t)

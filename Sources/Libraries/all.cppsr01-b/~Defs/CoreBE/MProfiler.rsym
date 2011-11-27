@@ -1,0 +1,7 @@
+$module CoreBE::MProfiler;
+
+
+$entry PrintResults;
+$entry Quantify;
+
+$end CoreBE::MProfiler.

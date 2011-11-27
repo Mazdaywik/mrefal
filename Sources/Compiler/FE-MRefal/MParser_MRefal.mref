@@ -7,6 +7,8 @@ $IMPORT MQualifiedName;
 $IMPORT MStrings;
 $IMPORT MVarTable = FE-MRefal::MVarTable;
 
+$IMPORT MProfiler;
+
 /**
   <SrcModule t.hErrorList t.QualifiedName e.FileName>
     == t.hErrorList Success s.Result t.IModule
@@ -14,6 +16,12 @@ $IMPORT MVarTable = FE-MRefal::MVarTable;
   s.Result ::= Success | Warnings | Errors
 */
 $ENTRY SrcModule
+  t.hErrorList t.QualifiedName e.FileName =
+    <MProfiler::Quantify
+      &Profiling-SrcModule t.hErrorList t.QualifiedName e.FileName
+    >;
+
+Profiling-SrcModule
   t.hErrorList t.QualifiedName e.FileName =
     <MParser_Common::GeneralizeInfo
       t.hErrorList

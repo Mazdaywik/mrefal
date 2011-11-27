@@ -9,13 +9,22 @@ $IMPORT MLambda;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 
+$IMPORT MProfiler;
+
 /**
   <LoadModule s.Type t.Config t.hTables t.hErrorList t.ModuleName>
     == t.hTables t.hErrorList Success s.ParseResult t.hRawIModule
     == t.hTables t.hErrorList Fails
   s.ParseResult ::= Success | Warnings | Errors
 */
-$ENTRY LoadModule {
+$ENTRY LoadModule
+  s.Type t.Config t.hTables t.hErrorList t.ModuleName =
+    <MProfiler::Quantify
+      &Profiling-LoadModule
+      s.Type t.Config t.hTables t.hErrorList t.ModuleName
+    >;
+
+Profiling-LoadModule {
   Recompile t.Config t.hTables t.hErrorList t.ModuleName =
     <LoadModule-SelectFE
       t.Config t.hErrorList t.ModuleName

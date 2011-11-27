@@ -9,12 +9,20 @@ $IMPORT MLambda;
 $IMPORT MOutModuleStatus;
 $IMPORT MQualifiedName;
 
+$IMPORT MProfiler;
+
 /**
   <Generate t.Config t.hContext t.hIModule t.ModuleName>
     == t.hContext t.hIModule Success
     == t.hContext t.hIModule Fails
 */
 $ENTRY Generate
+  t.Config t.hContext t.hIModule t.ModuleName =
+    <MProfiler::Quantify
+      &Profiling-Generate t.Config t.hContext t.hIModule t.ModuleName
+    >;
+
+Profiling-Generate
   t.Config t.hContext t.hIModule t.ModuleName =
     <DoGenerate
       Success t.hContext t.hIModule t.ModuleName
@@ -79,7 +87,13 @@ GenerateBy-Aux {
     == t.hContext Success
     == t.hContext Fails
 */
-$ENTRY Link {
+$ENTRY Link
+  t.Config t.hContext t.RootModuleName =
+    <MProfiler::Quantify
+      &Profiling-Link t.Config t.hContext t.RootModuleName
+    >;
+
+Profiling-Link {
   t.Config t.hContext t.RootModuleName =
     <Link-Aux-Target
       t.Config t.RootModuleName
@@ -206,7 +220,14 @@ MakeObjName-Aux
     == t.hErrorList t.hContext Success s.Status s.Type
     == t.hErrorList t.hContext Fails MismatchCase
 */
-$ENTRY CheckNeedCompile {
+$ENTRY CheckNeedCompile
+  t.hErrorList t.hContext t.Config t.ModuleName =
+    <MProfiler::Quantify
+      &Profiling-CheckNeedCompile
+      t.hErrorList t.hContext t.Config t.ModuleName
+    >;
+
+Profiling-CheckNeedCompile {
   t.hErrorList t.hContext t.Config t.ModuleName =
     <CheckNeedCompile-Aux
       <Config::MConfig::GetMakeMode t.Config>

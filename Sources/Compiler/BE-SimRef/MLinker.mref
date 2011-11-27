@@ -12,12 +12,20 @@ $IMPORT MHelpers = Config::MHelpers;
 
 $IMPORT C-Link = C-Link::MLinker;
 
+$IMPORT MProfiler;
+
 /**
   <Link t.L-Config (e.PtProgName) (t.ModuleName e.PathToModule)*>
     == Success
     == Fails
 */
-$ENTRY Link {
+$ENTRY Link
+  t.L-Config (e.PtProgName) e.Modules =
+    <MProfiler::Quantify
+      &Profiling-Link t.L-Config (e.PtProgName) e.Modules
+    >;
+
+Profiling-Link {
   t.L-Config (e.PtProgName) e.Modules =
     Success
     <MakeHeadFile
@@ -172,7 +180,13 @@ MakeCppRunTime-Sref {
   e.CExt (e.FileName '.sref') = (e.FileName '.' e.CExt);
 }
 
-CallSRefC {
+CallSRefC
+  t.Config (e.ErrorFlag) e.InputFileNames =
+    <MProfiler::Quantify
+      &Profiling-CallSRefC t.Config (e.ErrorFlag) e.InputFileNames
+    >;
+
+Profiling-CallSRefC {
   t.Config (e.ErrorFlag) e.InputFileNames =
     <MOS::System
       '"' <MHelpers::ConfigExtract t.Config SRCompiler> '"'

@@ -72,7 +72,7 @@ Make-Aux
   s.Type ::= Recompile | Updated | Library
   t.Interface_ ::= t.ModuleIF | CantLoadInterface
 */
-$ENTRY ExternalName {
+ExternalName {
   s.Type (e.Stack-B t.ImportName e.Stack-E)
   t.Config t.hTables t.hErrorList t.SrcPos t.ImportName =
     t.hTables

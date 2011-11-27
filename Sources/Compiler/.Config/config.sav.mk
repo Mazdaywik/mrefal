@@ -1,5 +1,4 @@
-
-profile = C++/SR
-comp = C++/SR
-scomp = C++/SR
-mode = MAKE
+ profile = CPPSR
+ comp = CPPSR
+ scomp = CPPSR
+ mode = BUILD

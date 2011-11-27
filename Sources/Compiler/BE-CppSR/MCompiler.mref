@@ -9,11 +9,19 @@ $IMPORT MLambda;
 $IMPORT MStrings;
 $IMPORT MQualifiedName;
 
+$IMPORT MProfiler;
+
 /**
   <Generate t.hIModule e.OutName>
     == t.hIModule
 */
 $ENTRY Generate
+  t.hIModule e.OutName =
+    <MProfiler::Quantify
+      &Profiling-Generate t.hIModule e.OutName
+    >;
+
+Profiling-Generate
   t.hIModule e.OutName =
     <Generate-EntryCode
       (e.OutName)

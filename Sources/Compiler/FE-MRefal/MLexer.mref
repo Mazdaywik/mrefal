@@ -7,6 +7,8 @@ $IMPORT MOrder;
 $IMPORT MSymStream = FE-MRefal::MSymStream;
 $IMPORT MStrings;
 
+$IMPORT MProfiler;
+
 /*
   Внутреннее устройство:
   [Lexer t.SymStream t.NextToken*]
@@ -23,7 +25,10 @@ $ENTRY Destroy
   [Lexer t.SymStream e.Returned] =
     <MSymStream::Destroy t.SymStream>;
 
-$ENTRY NextToken {
+$ENTRY NextToken
+  t.Lexer = <MProfiler::Quantify &Profiling-NextToken t.Lexer>;
+
+Profiling-NextToken {
   [Lexer t.SymStream t.NextToken e.ReturnedTokens] =
     [Lexer t.SymStream e.ReturnedTokens] t.NextToken;
 

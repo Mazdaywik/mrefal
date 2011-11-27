@@ -9,12 +9,20 @@ $IMPORT MOutModuleStatus;
 $IMPORT MStrings;
 $IMPORT MXXIO;
 
+$IMPORT MProfiler;
+
 /**
   <Link (e.PtOutName) (t.ModuleName e.FileName)*>
     == Success
     == Fails
 */
 $ENTRY Link
+  (e.PtOutName) e.OutFileNames =
+    <MProfiler::Quantify
+      &Profiling-Link (e.PtOutName) e.OutFileNames
+    >;
+
+Profiling-Link
   (e.PtOutName) e.OutFileNames =
     <MOutModuleStatus::XLinx
       <MFileSystem::StrFromPath e.PtOutName>

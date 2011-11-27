@@ -12,12 +12,18 @@ $IMPORT MOS;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
+$IMPORT MProfiler;
+
 /**
   <Link (e.PtProgName) (t.ModuleName e.ROutName)*>
     == Success
     == Fails
 */
-$ENTRY Link {
+$ENTRY Link
+  (e.ProgName) e.Modules =
+    <MProfiler::Quantify &Profiled-Link (e.ProgName) e.Modules>;
+
+Profiled-Link {
   (e.PtProgName) e.ROutFiles =
     <StartLinkLoop
       <MExeTyper::Create

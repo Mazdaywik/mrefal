@@ -8,11 +8,17 @@ $IMPORT MQualifiedName;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
+$IMPORT MProfiler;
+
 /**
   <Generate t.IModule e.OutName>
     == t.IModule
 */
 $ENTRY Generate
+  t.IModule e.OutName =
+    <MProfiler::Quantify &Profiled-Generate t.IModule e.OutName>;
+
+Profiled-Generate
   t.IModule e.OutName =
     <SaveModule
       (e.OutName)

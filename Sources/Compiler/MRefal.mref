@@ -15,6 +15,8 @@ $IMPORT MOS;
 $IMPORT MSrcPos;
 $IMPORT MVersion;
 
+$IMPORT MProfiler;
+
 $ENTRY Go =
   <MVersion::Show>
   <CompileList
@@ -27,7 +29,8 @@ $ENTRY Go =
       <MError::CreateErrList>
       <MOS::ArgList>
     >
-  >;
+  >
+  <MProfiler::PrintResults '_MRefal_profiler.log'>;
 
 DestroyContext {
   t.hContext =

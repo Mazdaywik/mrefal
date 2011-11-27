@@ -4,6 +4,12 @@ ifndef UNAME
   UNAME := Windows
 endif
 
+# Почему-то в качестве версии Windows утилита uname в составе QNX 650
+# возвращает Workstation, грязный хак.
+ifeq ($(findstring Workstation, $(UNAME)),Workstation)
+  UNAME := Windows
+endif
+
 ifneq ($(findstring Windows, $(UNAME)),)
   OS=Windows
   CMD=cmd.exe

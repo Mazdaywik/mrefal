@@ -44,6 +44,10 @@ Profiling-Link
     Success;
 
 Link-Aux
+ (e.PtOutName) e.Modules =
+   <MProfiler::Quantify &Profiling-Link-Aux (e.PtOutName) e.Modules>;
+
+Profiling-Link-Aux
   (e.PtOutName) e.Modules =
     <Link-Aux-2
       (e.PtOutName)
@@ -154,6 +158,12 @@ XLinx-FileNamePt {
 }
 
 Link-Aux-2
+  (e.PtOutName) (e.Inverted) e.Results =
+    <MProfiler::Quantify
+      &Profiling-Link-Aux-2 (e.PtOutName) (e.Inverted) e.Results
+    >;
+
+Profiling-Link-Aux-2
   (e.PtOutName) (e.Inverted) e.Results =
     <MFileIO::Save
       (<XLinx-FileNamePt (e.PtOutName) '.module_list.txt'>)

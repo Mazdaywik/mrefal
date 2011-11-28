@@ -273,7 +273,7 @@ Generate-Aux
   (e.OutName) t.hIModule e.EntityInfo =
     t.hIModule
     <GuardSuccess
-      <MXXIO::Save
+      <MProfiler::Quantify &MXXIO.Save
         (e.OutName)
         <MLambda::Map & GenerateEntity e.EntityInfo>
       >

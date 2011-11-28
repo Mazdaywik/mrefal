@@ -6,6 +6,8 @@ $IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 
 $IMPORT C-Link = C-Link::MLinker;
+$IMPORT C-Make = C-Link::MMake;
+$IMPORT C-Part = C-Link::MPartialLinker;
 
 /**
   <Link t.L-Config (e.PtProgName) (t.ModuleName e.OutName)>
@@ -39,6 +41,71 @@ $ENTRY Link
       (Output
         <C-LinkOption t.Config ExecutableFile>
         <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
+      )
+      <MLambda::Map & PrepareName e.Modules>
+      <GetRunTimeFiles t.Config>
+    >
+    <C-Make::C-Link
+      (Compiler
+        (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
+        (Prologue <MHelpers::ConfigExtract t.Config Prologue>)
+        (Epilogue <MHelpers::ConfigExtract t.Config Epilogue>)
+      )
+      (Include
+        <C-LinkOption t.Config IncludeOpt>
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            & MFileSystem.StrFromPath
+            & MLambda.Bracket
+          >
+          <MHelpers::ConfigExtract t.Config RunTimeDirs>
+        >
+      )
+      (Define
+        <C-LinkOption t.Config DefineOpt>
+        ('MODULE_REFAL')
+      )
+      (Output-Exe
+        <C-LinkOption t.Config ExecutableFile>
+        <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
+      )
+      (Output-Obj
+        (Option '-o') (Option 'obj') (Option '-c')
+        (Option 'compile-and-link.mak')
+        (Option 'make')
+        (Option 'objects.tmp')
+      )
+      <MLambda::Map & PrepareName e.Modules>
+      <GetRunTimeFiles t.Config>
+    >
+    <C-Part::C-Link
+      (Compiler
+        (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
+        (Prologue <MHelpers::ConfigExtract t.Config Prologue>)
+        (Epilogue <MHelpers::ConfigExtract t.Config Epilogue>)
+      )
+      (Include
+        <C-LinkOption t.Config IncludeOpt>
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            & MFileSystem.StrFromPath
+            & MLambda.Bracket
+          >
+          <MHelpers::ConfigExtract t.Config RunTimeDirs>
+        >
+      )
+      (Define
+        <C-LinkOption t.Config DefineOpt>
+        ('MODULE_REFAL')
+      )
+      (Output-Exe
+        <C-LinkOption t.Config ExecutableFile>
+        <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
+      )
+      (Output-Obj
+        (Option '-o') (Option 'bcc.obj') (Option '-c')
       )
       <MLambda::Map & PrepareName e.Modules>
       <GetRunTimeFiles t.Config>

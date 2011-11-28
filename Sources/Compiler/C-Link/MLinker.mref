@@ -30,10 +30,12 @@ $ENTRY C-Link
     <MProfiler::Quantify &Profiling-C-Link e.ManyOptions>;
 
 Profiling-C-Link {
-  (Compiler (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue))
+  (Compiler
+    (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue)
+  )
   (Include e.IncludeInfo) (Define e.DefineInfo) (Output e.OutputInfo)
   e.FileNames =
-    <C-Link-Aux
+    <MProfiler::Quantify &C-Link-Aux
       (Prologue
         e.ProgName ' ' e.Prologue ' '
         <ProcessListOption &IncludeName e.IncludeInfo>

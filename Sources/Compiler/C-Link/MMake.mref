@@ -1,0 +1,383 @@
+$MODULE C-Link::MMake;
+
+$IMPORT MCreateDirIfNeed;
+$IMPORT MFileIO;
+$IMPORT MFileSystem;
+$IMPORT MInOut;
+$IMPORT MLambda;
+$IMPORT MMath;
+$IMPORT MOS;
+$IMPORT MStrings;
+
+$IMPORT MProfiler;
+
+/**
+  <C-Link
+    (Compiler
+      (ProgName e.ProgName)
+      (Prologue e.Prologue)
+      (Epilogue e.Epilogue)
+    )
+    (Include     (Option e.Option) (e.StrIncludeFolder)*)
+    (Define      (Option e.Option) (e.Definition)*)
+    (Output-Exe  (Option e.Option) e.OutputFile)
+    (Output-Obj
+      (Option e.OutputObject)
+      (Option e.Extension)
+      (Option e.CompileOnly)
+      (Option e.Makefile)
+      (Option e.MakePrg)
+      (Option e.ObjectDirectory)
+    )
+    (e.StrFileName)*
+  >
+    == пусто
+
+  e.Option = char* | NotSupport
+*/
+$ENTRY C-Link
+  e.ManyOptions =
+    <MProfiler::Quantify &Profiling-C-Link e.ManyOptions>;
+
+Profiling-C-Link {
+  (Compiler
+    (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue)
+  )
+  (Include e.IncludeInfo) (Define e.DefineInfo) (Output-Exe e.OutputInfo)
+  (Output-Obj
+    (Option e.OutputObject)
+    (Option e.Extension)
+    (Option e.CompileOnly)
+    (Option e.Makefile)
+    (Option e.MakePrg)
+    (Option e.ObjectDirectory)
+  )
+  e.FileNames =
+    <C-Link-Aux
+      (CompilerInfo
+        (StartCompilerCmdLine e.ProgName ' ' e.Prologue ' ')
+        (Epilogue e.Epilogue)
+        (Include e.IncludeInfo) (Define e.DefineInfo)
+        (Output-Exe e.OutputInfo)
+        (OutputObjectOption e.OutputObject)
+        (CompileOnlyOption e.CompileOnly)
+      )
+      (MakeInfo
+        (ObjectExtension e.Extension)
+        (Makefile e.Makefile) (MakePrg e.MakePrg)
+        (ObjectDirectory e.ObjectDirectory)
+      )
+      e.FileNames
+    >;
+}
+
+C-Link-Aux {
+  t.CompilerInfo t.MakeInfo e.FileNames =
+    <C-Link-PerformDeleteAndCompile
+      t.MakeInfo
+      <CreateSourceObjectMap
+        t.CompilerInfo t.MakeInfo
+        (<LoadOldMapInfo t.MakeInfo>)
+        e.FileNames
+      >
+    >;
+}
+
+/*
+  Генерируемый make-файл имеет следующий формат:
+
+  target.exe : objects/1.obj objects/3.obj
+        call linker
+
+  # OBJECT
+  objects/1.obj : ~SomeOutput/SomePacket/SomeModule.cpp
+        call compiler
+
+  # OBJECT
+  objects/3.obj : some_runtime_dir/some_runtame_file.cpp
+        call compiler
+
+  Всем объектникам даются однотипные имена: папка/число.расширение,
+  строчки предварены комментарием # OBJECT. При формировании нового
+  make-файла может оказаться, что (а) появились новые модули
+  и (б) некоторые модули уже отсутствуют.
+  В первом случае надо новым объектникам дать новые имена, во втором
+  случае — удалить неиспользуемые объектники.
+*/
+
+LoadOldMapInfo {
+  t.MakeInfo =
+      <LoadOldMapInfo-SwExist
+        <MFileSystem::ExistFile-T <GetMakefileName t.MakeInfo>>
+      >;
+}
+
+GetMakefileName {
+  (MakeInfo
+    (ObjectExtension e.Extension)
+    (Makefile e.Makefile) (MakePrg e.MakePrg)
+    (ObjectDirectory e.ObjectDirectory)
+  ) =
+    e.ObjectDirectory '/' e.Makefile;
+}
+
+LoadOldMapInfo-SwExist {
+  True e.FullMakefileName =
+    <LoadOldMapInfo-Parse
+      <MFileIO::Load e.FullMakefileName>
+    >;
+
+  False e.FullMakefileName =
+    /* пусто */;
+}
+
+LoadOldMapInfo-Parse {
+  e.Lines-B ('# OBJECT') (e.Object ':' e.Source) e.Lines-E =
+    ((<MStrings::Trim e.Object>) (<MStrings::Trim e.Source>))
+    <LoadOldMapInfo-Parse e.Lines-E>;
+
+  e.Lines = /* пусто */;
+}
+
+CreateSourceObjectMap {
+  t.CompilerInfo t.MakeInfo (e.OldMap) e.FileNames =
+    <CreateSourceObjectMap-SelectKnown
+      t.CompilerInfo t.MakeInfo
+      <SelectKnownNames (e.OldMap) e.FileNames>
+    >;
+}
+
+SelectKnownNames {
+  (e.OldMap) e.FileNames =
+    <DoSelectKnownNames
+      (/* known */) (e.OldMap) (/* new */) e.FileNames
+    >;
+}
+
+DoSelectKnownNames {
+  (e.Known)
+  (e.Map-B ((e.Object) (e.FileName)) e.Map-E)
+  (e.New)
+  (e.FileName) e.FileNames =
+    <DoSelectKnownNames
+      (e.Known ((e.Object) (e.FileName)))
+      (e.Map-B e.Map-E)
+      (e.New)
+      e.FileNames
+    >;
+
+  (e.Known) (e.Map) (e.New) (e.FileName) e.FileNames =
+    <DoSelectKnownNames
+      (e.Known) (e.Map) (e.New (e.FileName)) e.FileNames
+    >;
+
+  (e.Known) (e.Map) (e.New) /* всё */ =
+    (e.Known) (e.Map) e.New;
+}
+
+CreateSourceObjectMap-SelectKnown {
+  t.CompilerInfo t.MakeInfo
+  (e.KnownNamesMap) (e.ForDeleteMap) e.NewFiles =
+    <CreateSourceObjectMap-SetObjectsForNewFiles
+      t.CompilerInfo t.MakeInfo
+      (ForDelete <MLambda::Map &Object e.ForDeleteMap>)
+      e.KnownNamesMap
+      <SetObjectsForNewFiles
+        t.MakeInfo
+        (Known <MLambda::Map &Object e.KnownNamesMap>)
+        (Avail <MLambda::Map &Object e.ForDeleteMap>)
+        e.NewFiles
+      >
+    >;
+}
+
+Object {
+  ((e.Object) (e.Source)) = (e.Object);
+}
+
+SetObjectsForNewFiles {
+  t.MakeInfo
+  (Known e.KnownObjects) (Avail e.AvailObjects) e.NewFiles =
+    <SetObjectsForNewFiles-DoAvail
+      t.MakeInfo
+      (e.KnownObjects) (e.AvailObjects) e.NewFiles
+    >;
+}
+
+SetObjectsForNewFiles-DoAvail {
+  t.MakeInfo
+  (e.KnownObjects) ((e.NextAvail) e.AvailObjects)
+  (e.NextFile) e.NewFiles =
+    ((e.NextAvail) (e.NextFile))
+    <SetObjectsForNewFiles-DoAvail
+      t.MakeInfo
+      (e.KnownObjects (e.NextAvail)) (e.AvailObjects) e.NewFiles
+    >;
+
+  t.MakeInfo
+  (e.KnownObjects) (e.AvailObjects) /* кончились файлы */ =
+    /* пусто */;
+
+  (MakeInfo
+    (ObjectExtension e.Extension)
+    (Makefile e.Makefile) (MakePrg e.MakePrg)
+    (ObjectDirectory e.ObjectDirectory)
+  )
+  (e.KnownObjects) (/* кончились свободные */) e.NewFiles =
+    <SetObjectsForNewFiles-DoEnumerate
+      (e.ObjectDirectory) (e.Extension)
+      1 (e.KnownObjects) e.NewFiles
+    >;
+}
+
+SetObjectsForNewFiles-DoEnumerate {
+  (e.Directory) (e.Ext) s.Next (e.Known)
+  (e.NextSource) e.NewFiles =
+    <SetObjectsForNewFiles-DoEnumerate-SwKnown
+      (e.Directory) (e.Ext) s.Next (e.Known)
+      (e.NextSource) e.NewFiles
+      (<ConstructObject (e.Directory) s.Next e.Ext>)
+    >;
+
+  (e.Directory) (e.Ext) s.Next (e.Known) /* кончились файлы */ =
+    /* пусто */;
+}
+
+ConstructObject {
+  (e.Directory) s.Next e.Ext =
+    e.Directory '/' <MStrings::Symb s.Next> '.' e.Ext;
+}
+
+SetObjectsForNewFiles-DoEnumerate-SwKnown {
+  (e.Directory) (e.Ext) s.NextNum
+  (e.Known-B (e.NextObject) e.Known-E) e.NewFiles
+  (e.NextObject) =
+    <SetObjectsForNewFiles-DoEnumerate
+      (e.Directory) (e.Ext) <MMath::Inc s.NextNum>
+      (e.Known-B (e.NextObject) e.Known-E) e.NewFiles
+    >;
+
+  (e.Directory) (e.Ext) s.NextNum (e.Known) (e.NextSource) e.NewFiles
+  (e.NextObject) =
+    ((e.NextObject) (e.NextSource))
+    <SetObjectsForNewFiles-DoEnumerate
+      (e.Directory) (e.Ext) <MMath::Inc s.NextNum> (e.Known) e.NewFiles
+    >;
+}
+
+CreateSourceObjectMap-SetObjectsForNewFiles {
+  t.CompilerInfo t.MakeInfo (ForDelete e.ObjectsForDelete)
+  e.ObjectsMap =
+    (ForDelete e.ObjectsForDelete)
+    <GenNewMakefile
+      t.CompilerInfo
+      (<GetMakefileName t.MakeInfo>)
+      e.ObjectsMap
+    >;
+}
+
+GenNewMakefile {
+  t.CompilerInfo (e.MakefileName) e.ObjectsMap =
+    (Makefile e.MakefileName)
+    <MFileIO::Save
+      (<MCreateDirIfNeed::CreatePathToFile e.MakefileName>)
+      <GenLinkCommand t.CompilerInfo e.ObjectsMap>
+      <GenCompileCommand t.CompilerInfo e.ObjectsMap>
+    >;
+}
+
+GenLinkCommand {
+  (CompilerInfo
+    (StartCompilerCmdLine e.StartCmdLine)
+    (Epilogue e.Epilogue)
+    t.Include t.Define
+    (Output-Exe (Option e.OEOption) e.OutputFile)
+    t.OutputObjectOption t.CompileOnlyOption
+  )
+  e.ObjectsMap =
+    <GenLinkCommand-Aux
+      (e.StartCmdLine) (e.Epilogue) (e.OEOption) (e.OutputFile '!.exe')
+      <MLambda::Map &Link-Object e.ObjectsMap>
+    >;
+}
+
+Link-Object {
+  ((e.Object) (e.Source)) = ' ' e.Object;
+}
+
+GenLinkCommand-Aux {
+  (e.StartCmdLine) (e.Epilogue) (e.OEOpt) (e.OutputFile)
+  e.Objects =
+    (e.OutputFile ' :' e.Objects)
+    ('\t' e.StartCmdLine e.OEOpt e.OutputFile e.Objects ' ' e.Epilogue);
+}
+
+GenCompileCommand {
+  (CompilerInfo
+    (StartCompilerCmdLine e.StartCmdLine)
+    (Epilogue e.Epilogue)
+    t.Include t.Define t.Output-Exe t.OutputObject t.CompileOnly
+  )
+  e.ObjectsMap =
+    <MLambda::Map
+      <MLambda::BindLeft
+        &GenCompileCommand-EachObject
+        (
+          e.StartCmdLine
+          <MakeCmdLineOptions t.Include t.Define t.CompileOnly>
+        )
+        (e.Epilogue)
+        t.OutputObject
+      >
+      e.ObjectsMap
+    >;
+}
+
+MakeCmdLineOptions {
+  (Include (Option e.IncludeOption) e.IncludeList)
+  (Define (Option e.DefineOption) e.DefineList)
+  (CompileOnlyOption e.CompileOnly) =
+    e.CompileOnly
+    <AttachOption (e.IncludeOption) e.IncludeList>
+    <AttachOption (e.DefineOption) e.DefineList>;
+}
+
+AttachOption {
+  (e.Option) (e.NextParam) e.List =
+    ' ' e.Option e.NextParam <AttachOption (e.Option) e.List>;
+
+  (e.Option) = /* пусто */;
+}
+
+GenCompileCommand-EachObject {
+  (e.StartCmdLine) (e.Epilogue) (OutputObjectOption e.OO)
+  ((e.Object) (e.Source)) =
+    ()
+    ('# OBJECT')
+    (e.Object ' : ' e.Source)
+    ('\t' e.StartCmdLine ' ' e.OO e.Object ' ' e.Source e.Epilogue);
+}
+
+C-Link-PerformDeleteAndCompile {
+  t.MakeInfo
+  (ForDelete e.ObjectsForDelete)
+  (Makefile e.MakefileName) =
+    <MLambda::Map &DeleteFile e.ObjectsForDelete>
+    <MOS::System <MakePrg t.MakeInfo> ' -f ' e.MakefileName>;
+}
+
+MakePrg {
+  (MakeInfo
+    t.ObjectExtension t.Makefile (MakePrg e.MakePrg) t.ObjectDirectory
+  ) =
+    e.MakePrg;
+}
+
+DeleteFile {
+  (e.FileName) =
+    <MInOut::WriteLine 'Deleteing file ' e.FileName>
+    <MFileSystem::RemoveFile e.FileName>;
+}
+
+$END C-Link::MMake.
+

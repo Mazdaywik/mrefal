@@ -1,12 +1,12 @@
 C:  Продолжить
-    set COMP-SHORT=R5
-    set PROFILE-SHORT=SR
+    set COMP-SHORT=CPPSR
+    set PROFILE-SHORT=CPPSR
     set PROFILE-ACRO=.cppsr.exe
     set SCOMP-SHORT=CPPSR
-    set MODE=BUILD
+    set MODE=MAKE
     .Config\change_window default
 --:
-:   Компилятор R5
-:   Профиль SR
+:   Компилятор CPPSR
+:   Профиль CPPSR
 :   Стабильный компилятор CPPSR
-:   Режим BUILD
+:   Режим MAKE

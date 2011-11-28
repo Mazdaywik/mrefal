@@ -1,0 +1,176 @@
+$MODULE C-Link::MPartialLinker;
+
+$IMPORT MFileSystem;
+$IMPORT MLambda;
+$IMPORT MOS;
+$IMPORT MOrder;
+
+$IMPORT MProfiler;
+
+/**
+  <C-Link
+    (Compiler
+      (ProgName e.ProgName)
+      (Prologue e.Prologue)
+      (Epilogue e.Epilogue)
+    )
+    (Include     (Option e.Option) (e.StrIncludeFolder)*)
+    (Define      (Option e.Option) (e.Definition)*)
+    (Output-Exe  (Option e.Option) e.OutputFile)
+    (Output-Obj
+      (Option e.OutputObject)
+      (Option e.Extension)
+      (Option e.CompileOnly)
+    )
+    (e.StrFileName)*
+  >
+    == пусто
+
+  e.Option = char* | NotSupport
+*/
+$ENTRY C-Link
+  e.ManyOptions =
+    <MProfiler::Quantify &Profiling-C-Link e.ManyOptions>;
+
+Profiling-C-Link {
+  (Compiler
+    (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue)
+  )
+  (Include e.IncludeInfo) (Define e.DefineInfo) (Output-Exe e.OutputInfo)
+  (Output-Obj
+    (Option e.OutputObject)
+    (Option e.Extension)
+    (Option e.CompileOnly)
+  )
+  e.FileNames =
+    <C-Link-Aux
+      (StartCompilerCmdLine
+        e.ProgName ' ' e.Prologue ' '
+        <CreateOption e.IncludeInfo>
+        <CreateOption e.DefineInfo>
+      )
+      (Epilogue e.Epilogue)
+      (Output-Exe e.OutputInfo)
+      (CompileOnlyOption e.CompileOnly)
+      (OutputObjectOption e.OutputObject)
+      (ObjectExtension e.Extension)
+      e.FileNames
+    >;
+}
+
+CreateOption {
+  (Option e.Prefix) (e.NextValue) e.List =
+    e.Prefix e.NextValue ' ' <CreateOption (Option e.Prefix) e.List>;
+
+  (Option e.Prefix) /* пусто */ = /* пусто */;
+}
+
+C-Link-Aux {
+  (StartCompilerCmdLine e.StartCompilerCmdLine)
+  (Epilogue e.Epilogue)
+  (Output-Exe (Option e.ExeOpt) e.ExeName)
+  (CompileOnlyOption e.CompileOnlyOption)
+  (OutputObjectOption e.OutputObjectOption)
+  (ObjectExtension e.Extension)
+  e.FileNames =
+    <MLambda::Map
+      <MLambda::BindLeft
+        &CompileFile
+        (e.StartCompilerCmdLine) (e.Epilogue)
+        (e.CompileOnlyOption) (e.OutputObjectOption)
+        (e.Extension)
+      >
+      e.FileNames
+    >
+    <LinkFiles
+      (e.StartCompilerCmdLine) (e.Epilogue)
+      (e.ExeOpt) (e.ExeName) (e.Extension)
+      e.FileNames
+    >;
+}
+
+CompileFile {
+  (e.StartCompilerCmdLine) (e.Epilogue)
+  (e.CompileOnlyOption) (e.OutputObjectOption)
+  (e.Extension)
+  (e.FileName) =
+    <CompileFile-FetchTimes
+      (e.StartCompilerCmdLine e.CompileOnlyOption) (e.Epilogue)
+      (e.OutputObjectOption)
+      (Source e.FileName)
+      (Object <ConstructObjectName (e.FileName) e.Extension>)
+    >;
+}
+
+ConstructObjectName {
+  (e.FileName) e.Extension =
+    <ConstructObjectName-Aux
+      (e.Extension) <MFileSystem::ParseFileName e.FileName>
+    >;
+}
+
+ConstructObjectName-Aux {
+  (e.Extension) (e.Directory) e.Filename (e.Ext) =
+    e.Directory e.Filename '.' e.Extension;
+}
+
+CompileFile-FetchTimes {
+  (e.StartCompilerCmdLine) (e.Epilogue) (e.OutputObjectOption)
+  (Source e.Source) (Object e.Object) =
+    <CompileFile-FetchTimes-Aux
+      (<FileTimeChanged e.Source>)
+      (<FileTimeChanged e.Object>)
+      e.StartCompilerCmdLine ' '
+      e.OutputObjectOption e.Object ' ' e.Source
+      e.Epilogue
+    >;
+}
+
+FileTimeChanged {
+  e.File = <MFileSystem::FileAttribute DateTime e.File>;
+}
+
+CompileFile-FetchTimes-Aux {
+  (e.SourceTime) FileNotFound e.CommandLine =
+    <Perform e.CommandLine>;
+
+  (e.SourceTime) (e.ObjectTime) e.CommandLine =
+    <CompileFile-CompareTimes
+      <MOrder::Compare (e.SourceTime) (e.ObjectTime)>
+      e.CommandLine
+    >;
+}
+
+CompileFile-CompareTimes {
+  '<' e.CommandLine = ;
+
+  s.Other e.CommandLine =
+    <Perform e.CommandLine>;
+}
+
+Perform {
+  e.CommandLine =
+    <MOS::System e.CommandLine>;
+}
+
+LinkFiles {
+  (e.StartCompilerCmdLine) (e.Epilogue)
+  (e.ExeOpt) (e.ExeName) (e.Extension)
+  e.FileNames =
+    <Perform
+      e.StartCompilerCmdLine e.ExeOpt e.ExeName '@.exe '
+      <MLambda::Map
+        <MLambda::BindLeft &ObjectForLinking e.Extension>
+        e.FileNames
+      >
+      e.Epilogue
+    >;
+}
+
+ObjectForLinking {
+  e.Extension (e.SourceName) =
+    <ConstructObjectName (e.SourceName) e.Extension> ' ';
+}
+
+$END C-Link::MPartialLinker.
+

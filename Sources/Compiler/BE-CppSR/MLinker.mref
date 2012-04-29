@@ -17,6 +17,25 @@ $IMPORT C-Part = C-Link::MPartialLinker;
 $ENTRY Link
   t.Config (e.PtProgName) e.Modules =
     Success
+    <MLambda::Apply
+      <Link-SwitchMode <MHelpers::ConfigExtract t.Config LinkerType>>
+      t.Config (e.PtProgName) e.Modules
+    >;
+
+Link-SwitchMode {
+  'none' = &Link-With-C-Link;
+  'genmake' = &Link-With-C-Make;
+  'partial' = &Link-With-C-Part;
+
+  e.Other =
+    <MError::LinkError
+      'Option -accelerate-link:' e.Other ' is invalid.\n'
+      'Valid options is \"none\", \"genmake\" or \"partial\"'
+    >;
+}
+
+Link-With-C-Link
+  t.Config (e.PtProgName) e.Modules =
     <C-Link::C-Link
       (Compiler
         (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
@@ -44,7 +63,10 @@ $ENTRY Link
       )
       <MLambda::Map & PrepareName e.Modules>
       <GetRunTimeFiles t.Config>
-    >
+    >;
+
+Link-With-C-Make
+  t.Config (e.PtProgName) e.Modules =
     <C-Make::C-Link
       (Compiler
         (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
@@ -78,7 +100,10 @@ $ENTRY Link
       )
       <MLambda::Map & PrepareName e.Modules>
       <GetRunTimeFiles t.Config>
-    >
+    >;
+
+Link-With-C-Part
+  t.Config (e.PtProgName) e.Modules =
     <C-Part::C-Link
       (Compiler
         (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)

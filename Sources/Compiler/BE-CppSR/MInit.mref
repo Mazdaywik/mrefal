@@ -30,6 +30,7 @@ Tunings =
   (Single DefineOpt ('define') '-D')
   (Single Prologue ('prologue') /* пусто */)
   (Single Epilogue ('epilogue') /* пусто */)
-  (Single ExecutableFile ('exec') '-o');
+  (Single ExecutableFile ('exec') '-o')
+  (Single LinkerType ('accelerate-link') 'genmake');
 
 $END BE-CppSR::MInit.

@@ -158,7 +158,7 @@ LinkFiles {
   (e.ExeOpt) (e.ExeName) (e.Extension)
   e.FileNames =
     <Perform
-      e.StartCompilerCmdLine e.ExeOpt e.ExeName '@.exe '
+      e.StartCompilerCmdLine e.ExeOpt e.ExeName
       <MLambda::Map
         <MLambda::BindLeft &ObjectForLinking e.Extension>
         e.FileNames

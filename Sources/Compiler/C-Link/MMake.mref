@@ -296,7 +296,7 @@ GenLinkCommand {
   )
   e.ObjectsMap =
     <GenLinkCommand-Aux
-      (e.StartCmdLine) (e.Epilogue) (e.OEOption) (e.OutputFile '!.exe')
+      (e.StartCmdLine) (e.Epilogue) (e.OEOption) (e.OutputFile)
       <MLambda::Map &Link-Object e.ObjectsMap>
     >;
 }

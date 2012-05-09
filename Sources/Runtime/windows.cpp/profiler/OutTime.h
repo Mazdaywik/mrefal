@@ -6,4 +6,4 @@
 
 std::string outtime(double total_seconds, char *buffer);
 
-#endif OutTime_H
+#endif // OutTime_H

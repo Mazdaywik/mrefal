@@ -389,7 +389,7 @@ REFAL_FUNC(implement_fileio::write) {
   }
 }
 
-refalrts::FnResult implement_fileio::std_handle(
+static refalrts::FnResult std_handle(
   FILE *file, refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   /*
@@ -420,6 +420,21 @@ refalrts::FnResult implement_fileio::std_handle(
 
   return cSuccess;
 }
+
+refalrts::FnResult
+implement_fileio::get_stdin(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return std_handle(stdin, arg_begin, arg_end);
+}
+
+refalrts::FnResult
+implement_fileio::get_stdout(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return std_handle(stdout, arg_begin, arg_end);
+}
+
 
 refalrts::FnResult implement_strings::convert(
   implement_strings::SymConverter conv,
@@ -686,7 +701,7 @@ REFAL_FUNC(implement_order::symb_compare) {
 }
 
 refalrts::FnResult implement_selfdiag::log(
-  FILE *flog,
+  void *flog,
   bool transparent,
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
@@ -719,15 +734,17 @@ refalrts::FnResult implement_selfdiag::log(
   Iter close_call = arg_end;
   move_right( arg_begin, arg_end );
 
+  FILE *fileLOG = (FILE*) flog;
+
   // Вывод дампа:
-  if( (0 == flog) || (stderr == flog) ) {
+  if( (0 == fileLOG) || (stderr == fileLOG) ) {
     fprintf(stderr, "<Log>: ");
-    flog = stderr;
+    fileLOG = stderr;
   }
 
-  refalrts::debug_print_expr(flog, arg_begin, arg_end);
-  fprintf(flog, "\n");
-  fflush(flog);
+  refalrts::debug_print_expr(fileLOG, arg_begin, arg_end);
+  fprintf(fileLOG, "\n");
+  fflush(fileLOG);
 
   // Очистка поля зрения
   if( transparent ) {
@@ -813,11 +830,15 @@ REFAL_FUNC(implement_selfdiag::close_log) {
   return cSuccess;
 }
 
-FILE *implement_selfdiag::get_log_handle() {
+void *implement_selfdiag::get_log_handle() {
   if( 0 == g_log_file ) {
     g_log_file = fopen("__log", "wt");
   }
 
   return g_log_file;
+}
+
+void *implement_selfdiag::get_stderror_handle() {
+  return stderr;
 }
 

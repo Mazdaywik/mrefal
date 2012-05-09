@@ -1,6 +1,8 @@
 #include "refalrts.h"
 #include "mr_common.h"
 
+#ifndef InitDEFINED_R_
+#define InitDEFINED_R_
 
 //$LABEL Init
 template <typename T>
@@ -10,6 +12,11 @@ struct Init {
   }
 };
 
+#endif // InitDEFINED_R_
+
+#ifndef FinalDEFINED_R_
+#define FinalDEFINED_R_
+
 //$LABEL Final
 template <typename T>
 struct Final {
@@ -17,6 +24,8 @@ struct Final {
     return "Final";
   }
 };
+
+#endif // FinalDEFINED_R_
 
 refalrts::FnResult CoreBEP_MFileIOP_InitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
   refalrts::this_is_generated_function();
@@ -62,13 +71,13 @@ refalrts::FnResult CoreBEP_MFileIOP_InitE_(refalrts::Iter arg_begin, refalrts::I
 refalrts::FnResult CoreBEP_MFileIOP_StdOut(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
-  return implement_fileio::std_handle(stdout, arg_begin, arg_end);
+  return implement_fileio::get_stdout(arg_begin, arg_end);
 }
 
 refalrts::FnResult CoreBEP_MFileIOP_StdIn(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
-  return implement_fileio::std_handle(stdin, arg_begin, arg_end);
+  return implement_fileio::get_stdin(arg_begin, arg_end);
 }
 
 refalrts::FnResult CoreBEP_MFileIOP_ReadLine(

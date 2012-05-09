@@ -2,7 +2,7 @@
 #define MR_OSLib_H_
 
 #include "refalrts.h"
-#include "refalapi.h"
+#include "refalmacro.h"
 
 namespace implement_os {
 

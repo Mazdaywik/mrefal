@@ -2,7 +2,7 @@
 #define MR_PROFILER_H_
 
 #include "refalrts.h"
-#include "refalapi.h"
+#include "refalmacro.h"
 
 namespace implement_profiler
 {

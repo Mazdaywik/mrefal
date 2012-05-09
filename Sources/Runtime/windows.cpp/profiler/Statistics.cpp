@@ -56,7 +56,7 @@ double statistics::Statistics::StDeviationN_1() const
 	return std::sqrt( (sqrSum - sum * sum / count) / (count - 1) );
 }
 
-const char* statistics::Statistics::DivisingByZero::what() const
+const char* statistics::Statistics::DivisingByZero::what() const throw()
 {
 	return "Divising by zero at class Statistics";
 }

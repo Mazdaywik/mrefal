@@ -1,0 +1,295 @@
+$MODULE MPredeclGenerator;
+
+$IMPORT MFileIO;
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MQualifiedName;
+
+/**
+  Generate-Properties {
+    GenFunction-Code = & GenFunction-Code;
+  }
+
+  <Generate-Generic s.FnProperties t.hIModule e.OutName>
+    == t.hIModule
+
+  <<s.FnProperties GenSwap> t.AbsolutName> == e.Lines
+  <<s.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName> == e.Lines
+  s.ScopeClass ::= Entry | Local
+  <s.FnProperties GenCommonHeaders> == e.Lines
+  <s.FnProperties GenerateLabelForFunction>
+    == Yes s.FnGenLabelForFunction
+    == No
+    <s.FnGenLabelForFunction t.AbsolutName> == e.Lines
+  <<s.FnProperties GenIdent> e.Name> == e.Lines
+  <<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName>
+    == e.Lines
+  <<s.FnProperties Generate-EntryCode-Go>
+    s.FnProperties t.ModuleName (e.Result) e.Imports
+  >
+    == e.GenFunctionResult
+  <<s.FnProperties Generate-EntryCode-InitFinal>
+    s.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports
+  >
+    == e.GenFunctionResult
+  <<s.FnProperties GenFunction-Code>
+    t.AbsolutName s.ScopeClass e.Sentences
+  >
+    == e.Lines
+
+  e.Lines ::= (char*)*
+  e.GenFunctionResult — результат выполнения функции GenFunction
+*/
+$ENTRY Generate-Generic
+  s.FnProperties t.hIModule e.OutName =
+    <Generate-Aux
+      s.FnProperties
+      (e.OutName)
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft & GenerateFunctions s.FnProperties>
+          <MLambda::BindLeft & GenerateEntryCode s.FnProperties>
+        >
+        t.hIModule
+      >
+    >;
+
+GenerateFunctions
+  s.FnProperties t.hIModule =
+    <MLambda::MapReduce
+      <MLambda::Composite
+        <MLambda::Parallel-H
+          & MLambda.Identity
+          & MIModule.AbsolutName
+        >
+        <MLambda::BindLeft & GenerateFunction s.FnProperties>
+      >
+      <MIModule::GetFunctionList t.hIModule>
+    >;
+
+/*
+  <GenerateFunction s.FnProperties t.hIModule t.RelativeName t.AbsolutName>
+    == t.hIModule ( (e.Definitions) (e.FunctionCode) )
+*/
+GenerateFunction
+  s.FnProperties t.hIModule t.RelativeName t.AbsolutName =
+    <GenerateFunction-Aux
+      s.FnProperties
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+          >
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute Body t.RelativeName
+          >
+        >
+        t.hIModule
+      >
+      t.AbsolutName
+    >;
+
+GenerateFunction-Aux {
+  s.FnProperties t.hIModule Found Swap NoAttrib t.AbsolutName =
+    t.hIModule
+    (Define Function t.AbsolutName (<s.FnProperties GenSwap> t.AbsolutName));
+
+  s.FnProperties t.hIModule Found s.ScopeClass Found (/* пусто */) t.AbsolutName =
+    t.hIModule
+    (Define
+      Function t.AbsolutName (<s.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName)
+    );
+
+  s.FnProperties t.hIModule Found s.ScopeClass Found (e.Sentences) t.AbsolutName =
+    t.hIModule
+    <GenFunction s.FnProperties t.AbsolutName s.ScopeClass e.Sentences>;
+}
+
+GenerateEntryCode
+  s.FnProperties t.hIModule =
+    <Generate-EntryCode-Aux
+      s.FnProperties
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          & MIModule.GetModuleName
+          <MLambda::Composite
+            & MIModule.GetEntryPoint
+            & MLambda.Bracket-H
+          >
+          & MIModule.GetImportList-RealNames
+        >
+        t.hIModule
+      >
+    >;
+
+Generate-Aux
+  s.FnProperties (e.OutName) t.hIModule e.FunctionsEntries =
+    t.hIModule
+    <MFileIO::Save
+      (e.OutName)
+      <s.FnProperties GenCommonHeaders>
+      <FilterDecls e.FunctionsEntries>
+    >;
+
+Generate-EntryCode-Aux {
+  s.FnProperties t.hIModule t.ModuleName (Go (Result e.Result)) e.Imports =
+    t.hIModule
+    <MLambda::Apply
+      <s.FnProperties Generate-EntryCode-Go>
+      s.FnProperties t.ModuleName (e.Result) e.Imports
+    >;
+
+  s.FnProperties t.hIModule t.ModuleName (Regular t.InitSeq t.FinalSeq) e.Imports =
+    t.hIModule
+    <MLambda::Apply
+      <s.FnProperties Generate-EntryCode-InitFinal>
+      s.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports
+    >;
+}
+
+FilterDecls {
+  e.Info = <DoFilterDecls () e.Info>;
+}
+
+DoFilterDecls {
+  (e.Known-B (s.Known s.Type t.Name t.Gen) e.Known-E)
+  (Declare s.Type t.Name t.Gen2) e.Tail =
+    <DoFilterDecls
+      (e.Known-B (s.Known s.Type t.Name t.Gen) e.Known-E) e.Tail
+    >;
+
+  (e.Known) (Declare s.Type t.Name t.Gen) e.Tail =
+    <DoFilterDecls
+      (e.Known (Declare s.Type t.Name t.Gen)) e.Tail
+    >;
+
+  (e.Known) (Define s.Type t.Name t.Gen) e.Tail =
+    <DoFilterDecls
+      (e.Known (Define s.Type t.Name t.Gen)) e.Tail
+    >;
+
+  (e.Known) =
+    <MLambda::Map & GenerateElem e.Known>;
+}
+
+GenerateElem {
+  (s.DeclareDefine s.Type t.Name (s.Generator e.Arguments)) =
+    <s.Generator e.Arguments>;
+}
+
+//----------------------------------------------------------------------
+
+/**
+  <GenFunction s.FnProperties t.AbsolutName s.ScopeClass e.Sentences>
+    == e.GenFunctionResult
+
+  Эту функцию можно использовать только для генерации кода точек входа.
+*/
+$ENTRY GenFunction {
+  s.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
+    <FilterSelf
+      t.AbsolutName
+      <GenFunction-Declarations s.FnProperties e.Sentences>
+    >
+    (Define
+      Function
+      t.AbsolutName
+      (<s.FnProperties GenFunction-Code>
+        t.AbsolutName s.ScopeClass e.Sentences
+      )
+    );
+}
+
+FilterSelf {
+  t.FnName e.Decls-Begin (Declare Function t.FnName t.Gen) e.Decls-End =
+    e.Decls-Begin
+    <FilterSelf t.FnName e.Decls-End>;
+
+  t.FnName e.Decls = e.Decls;
+}
+
+GenFunction-Declarations {
+  s.FnProperties ( (Pattern e.PatternExpr) (Result e.ResultExpr) ) e.Tail =
+    <Declarations-Expr s.FnProperties e.PatternExpr>
+    <Declarations-Expr s.FnProperties e.ResultExpr>
+    <GenFunction-Declarations s.FnProperties e.Tail>;
+
+  s.FnProperties = ;
+}
+
+Declarations-Expr {
+  s.FnProperties (Structure e.InBrackets) e.Tail =
+    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+
+  s.FnProperties (Abstract t.Callable e.InBrackets) e.Tail =
+    <Declarations-Callable s.FnProperties t.Callable>
+    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+
+  s.FnProperties (Function t.Callable e.InBrackets) e.Tail =
+    <Declarations-Callable s.FnProperties t.Callable>
+    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+
+  s.FnProperties (IndirectCall (SVar e.Index) e.InBrackets) e.Tail =
+    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+
+  s.FnProperties (EntryCode s.CodeType e.InBracket) e.Tail =
+    <Declarations-Expr s.FnProperties e.InBracket e.Tail>;
+
+  s.FnProperties t.SimpleTerm e.Tail =
+    <Declarations-Term s.FnProperties t.SimpleTerm>
+    <Declarations-Expr s.FnProperties e.Tail>;
+
+  s.FnProperties = ;
+}
+
+Declarations-Callable {
+  s.FnProperties (s.CallType t.SrcPos t.QualifiedName) =
+    <Declarations-Callable-Aux
+      s.FnProperties
+      <s.FnProperties GenerateLabelForFunction>
+      s.CallType t.SrcPos t.QualifiedName
+    >;
+}
+
+Declarations-Callable-Aux {
+  s.FnProperties
+  Yes s.GenIdent-FuncName s.CallType t.SrcPos t.QualifiedName =
+    (Declare
+      Identifier t.QualifiedName
+      (s.GenIdent-FuncName t.QualifiedName)
+    )
+    (Declare
+      Function
+      t.QualifiedName
+      (<s.FnProperties GenFunction-Decl> s.CallType t.QualifiedName)
+    );
+
+  s.FnProperties
+  No s.CallType t.SrcPos t.QualifiedName =
+    (Declare
+      Function
+      t.QualifiedName
+      (<s.FnProperties GenFunction-Decl> s.CallType t.QualifiedName)
+    );
+}
+
+Declarations-Term {
+  s.FnProperties (Identifier t.SrcPos e.Name) =
+    (Declare
+      Identifier <MQualifiedName::Create (e.Name)>
+      (<s.FnProperties GenIdent> e.Name)
+    );
+
+  s.FnProperties (EVar e.Index) = ;
+  s.FnProperties (TVar e.Index) = ;
+  s.FnProperties (SVar e.Index) = ;
+
+  s.FnProperties (Literal e.Content) = ;
+  s.FnProperties (Macro s.Value) = ;
+
+  s.FnProperties (FnPtr t.Callable) =
+    <Declarations-Callable s.FnProperties t.Callable>;
+}
+
+$END MPredeclGenerator.
+

@@ -1,13 +1,12 @@
 $MODULE BE-CppSR::MCompiler;
 
 $IMPORT Algorithm = BE-CppSR::Algorithm;
-$IMPORT FileIO = MFileIO;
 $IMPORT Generator = BE-CppSR::Generator;
-$IMPORT Math = MMath;
-$IMPORT MIModule;
 $IMPORT MLambda;
-$IMPORT MStrings;
+$IMPORT MMath;
+$IMPORT MPredeclGenerator;
 $IMPORT MQualifiedName;
+$IMPORT MStrings;
 
 $IMPORT MProfiler;
 
@@ -17,211 +16,29 @@ $IMPORT MProfiler;
 */
 $ENTRY Generate
   t.hIModule e.OutName =
-    <MProfiler::Quantify
-      &Profiling-Generate t.hIModule e.OutName
-    >;
+    <MProfiler::Quantify &Profiling-Generate t.hIModule e.OutName>;
 
 Profiling-Generate
   t.hIModule e.OutName =
-    <Generate-EntryCode
-      (e.OutName)
-      <MLambda::MapReduce
-        <MLambda::Composite
-          <MLambda::Parallel-H
-            & MLambda.Identity
-            & MIModule.AbsolutName
-          >
-          & GenerateFunction
-        >
-        <MIModule::GetFunctionList t.hIModule>
-      >
+    <MPredeclGenerator::Generate-Generic
+      & Generate-Properties t.hIModule e.OutName
     >;
 
-/*
-  <GenerateFunction t.hIModule t.RelativeName t.AbsolutName>
-    == t.hIModule ( (e.Definitions) (e.FunctionCode) )
-*/
-GenerateFunction
-  t.hIModule t.RelativeName t.AbsolutName =
-    <GenerateFunction-Aux
-      <MLambda::Apply
-        <MLambda::Parallel-H
-          <MLambda::BindLeft-H
-            & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
-          >
-          <MLambda::BindLeft-H
-            & MIModule.GetFunctionAttribute Body t.RelativeName
-          >
-        >
-        t.hIModule
-      >
-      t.AbsolutName
-    >;
-
-GenerateFunction-Aux {
-  t.hIModule Found Swap NoAttrib t.AbsolutName =
-    t.hIModule
-    (Define Function t.AbsolutName (& Generator.GenSwap t.AbsolutName));
-
-  t.hIModule Found s.ScopeClass Found () t.AbsolutName =
-    t.hIModule
-    (Define Function t.AbsolutName (<SwitchEnum s.ScopeClass> t.AbsolutName));
-
-  t.hIModule Found s.ScopeClass Found (e.Sentences) t.AbsolutName =
-    t.hIModule
-    <GenFunction t.AbsolutName s.ScopeClass e.Sentences>;
+Generate-Properties {
+  GenSwap = & Generator.GenSwap;
+  SwitchEnum Entry = & Generator.GenEEnum;
+  SwitchEnum Local = & Generator.GenEnum;
+  GenCommonHeaders = <Generator::GenCommonHeaders>;
+  GenerateLabelForFunction = Yes & Generator.GenIdent-FuncName;
+  GenIdent = & GenIdent;
+  GenFunction-Decl = & GenFunction-Decl;
+  Generate-EntryCode-Go = & Generate-EntryCode-Go;
+  Generate-EntryCode-InitFinal = & Generate-EntryCode-InitFinal;
+  GenFunction-Code = & GenFunction-Code;
 }
 
-SwitchEnum {
-  Entry = & Generator.GenEEnum;
-  Local = & Generator.GenEnum;
-}
-
-Generate-EntryCode
-  (e.OutName) t.hIModule e.Info =
-    <Generate-Aux
-      (e.OutName)
-      <Generate-EntryCode-Aux
-        <MLambda::Apply
-          <MLambda::Parallel-H
-            & MIModule.GetModuleName
-            <MLambda::Composite
-              & MIModule.GetEntryPoint
-              & MLambda.Bracket-H
-            >
-            & MIModule.GetImportList-RealNames
-          >
-          t.hIModule
-        >
-      >
-      e.Info
-    >;
-
-Generate-Aux
-  (e.OutName) t.hIModule e.Info =
-    t.hIModule
-    <FileIO::Save
-      (e.OutName)
-      <Generator::GenCommonHeaders>
-      <FilterDecls e.Info>
-    >;
-
-FilterDecls {
-  e.Info = <DoFilterDecls () e.Info>;
-}
-
-DoFilterDecls {
-  (e.Known-B (s.Known s.Type t.Name t.Gen) e.Known-E)
-  (Declare s.Type t.Name t.Gen2) e.Tail =
-    <DoFilterDecls
-      (e.Known-B (s.Known s.Type t.Name t.Gen) e.Known-E) e.Tail
-    >;
-
-  (e.Known) (Declare s.Type t.Name t.Gen) e.Tail =
-    <DoFilterDecls
-      (e.Known (Declare s.Type t.Name t.Gen)) e.Tail
-    >;
-
-  (e.Known) (Define s.Type t.Name t.Gen) e.Tail =
-    <DoFilterDecls
-      (e.Known (Define s.Type t.Name t.Gen)) e.Tail
-    >;
-
-  (e.Known) =
-    <MLambda::Map & GenerateElem e.Known>;
-}
-
-GenerateElem {
-  (s.DeclareDefine s.Type t.Name (s.Generator e.Arguments)) =
-    <s.Generator e.Arguments>;
-}
-
-//------------------------------------------------------------------------------
-
-GenFunction {
-  t.AbsolutName s.ScopeClass e.Sentences =
-    <FilterSelf
-      t.AbsolutName
-      <GenFunction-Declarations e.Sentences>
-    >
-    (Define
-      Function
-      t.AbsolutName
-      (& GenFunction-Code t.AbsolutName s.ScopeClass e.Sentences)
-    );
-}
-
-FilterSelf {
-  t.FnName e.Decls-Begin (Declare Function t.FnName t.Gen) e.Decls-End =
-    e.Decls-Begin
-    <FilterSelf t.FnName e.Decls-End>;
-
-  t.FnName e.Decls = e.Decls;
-}
-
-GenFunction-Declarations {
-  ( (Pattern e.PatternExpr) (Result e.ResultExpr) ) e.Tail =
-    <Declarations-Expr e.PatternExpr>
-    <Declarations-Expr e.ResultExpr>
-    <GenFunction-Declarations e.Tail>;
-
-  = ;
-}
-
-Declarations-Expr {
-  (Structure e.InBrackets) e.Tail =
-    <Declarations-Expr e.InBrackets e.Tail>;
-
-  (Abstract t.Callable e.InBrackets) e.Tail =
-    <Declarations-Callable t.Callable>
-    <Declarations-Expr e.InBrackets e.Tail>;
-
-  (Function t.Callable e.InBrackets) e.Tail =
-    <Declarations-Callable t.Callable>
-    <Declarations-Expr e.InBrackets e.Tail>;
-
-  (IndirectCall (SVar e.Index) e.InBrackets) e.Tail =
-    <Declarations-Expr e.InBrackets e.Tail>;
-
-  (EntryCode s.CodeType e.InBracket) e.Tail =
-    <Declarations-Expr e.InBracket e.Tail>;
-
-  t.SimpleTerm e.Tail =
-    <Declarations-Term t.SimpleTerm>
-    <Declarations-Expr e.Tail>;
-
-  = ;
-}
-
-Declarations-Callable {
-  (s.CallType t.SrcPos t.QualifiedName) =
-    (Declare
-      Identifier t.QualifiedName
-      (& Generator.GenIdent-FuncName t.QualifiedName)
-    )
-    (Declare
-      Function
-      t.QualifiedName
-      (& GenFunction-Decl s.CallType t.QualifiedName)
-    );
-}
-
-Declarations-Term {
-  (Identifier t.SrcPos e.Name) =
-    (Declare
-      Identifier <MQualifiedName::Create (e.Name)>
-      (& Generator.GenIdent <MQualifiedName::Create (e.Name)>)
-    );
-
-  (EVar e.Index) = ;
-  (TVar e.Index) = ;
-  (SVar e.Index) = ;
-
-  (Literal e.Content) = ;
-  (Macro s.Value) = ;
-
-  (FnPtr t.Callable) = <Declarations-Callable t.Callable>;
-}
+GenIdent
+  e.Name = <Generator::GenIdent <MQualifiedName::Create (e.Name)>>;
 
 GenFunction-Decl {
   Entry t.FunctionName =
@@ -283,7 +100,8 @@ DoPrepareExpr {
     (TkNumber s.Value)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
-  s.BracketNum (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail t.MultiBracket =
+  s.BracketNum (FnPtr (s.CallType t.SrcPos t.Name))
+  e.Tail t.MultiBracket =
     (TkName t.Name)
     <DoPrepareExpr s.BracketNum e.Tail t.MultiBracket>;
 
@@ -291,7 +109,8 @@ DoPrepareExpr {
     Фокус! При генерации кода порядок команд инвертируется.
     Для скобок это безразлично, а вот для кода инициализации ...
   */
-  s.BracketNum (EntryCode s.CodeType e.InBrackets) e.Tail t.MultiBracket =
+  s.BracketNum (EntryCode s.CodeType e.InBrackets)
+  e.Tail t.MultiBracket =
     (EndEntryCode)
     <DoPrepareExpr
       s.BracketNum
@@ -302,7 +121,7 @@ DoPrepareExpr {
   s.BracketNum (Structure e.InBrackets) e.Tail t.MultiBracket =
     (TkOpenBracket s.BracketNum)
     <DoPrepareExpr
-      <Math::Inc s.BracketNum>
+      <MMath::Inc s.BracketNum>
       e.InBrackets
       ((TkCloseBracket s.BracketNum) e.Tail t.MultiBracket)
     >;
@@ -313,7 +132,7 @@ DoPrepareExpr {
     (TkOpenADT s.BracketNum)
     (TkName t.Name)
     <DoPrepareExpr
-      <Math::Inc s.BracketNum>
+      <MMath::Inc s.BracketNum>
       e.InBrackets
       ((TkCloseADT s.BracketNum) e.Tail t.MultiBracket)
     >;
@@ -324,7 +143,7 @@ DoPrepareExpr {
     (TkOpenCall s.BracketNum)
     (TkName t.Name)
     <DoPrepareExpr
-      <Math::Inc s.BracketNum>
+      <MMath::Inc s.BracketNum>
       e.InBrackets
       ((TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
     >;
@@ -335,7 +154,7 @@ DoPrepareExpr {
     (TkOpenCall s.BracketNum)
     (TkVariable 's' e.Index)
     <DoPrepareExpr
-      <Math::Inc s.BracketNum>
+      <MMath::Inc s.BracketNum>
       e.InBrackets
       ((TkCloseCall s.BracketNum) e.Tail t.MultiBracket)
     >;
@@ -365,20 +184,18 @@ OptimizeStrings {
 OptimizeStrings-Collect {
   (s.Len e.String) (TkChar s.Char) e.Tail =
     <OptimizeStrings-Collect
-      (<Math::Inc s.Len> e.String s.Char) e.Tail
+      (<MMath::Inc s.Len> e.String s.Char) e.Tail
     >;
 
   (s.Len e.String) e.Tail =
     (TkString s.Len e.String) <OptimizeStrings e.Tail>;
 }
 
-//------------------------------------------------------------------------------
-
-Generate-EntryCode-Aux {
-  t.hIModule t.ModuleName (Go (Result e.Result)) e.Imports =
-    t.hIModule
-    <GenFunction
-      <MQualifiedName::Create ('Go')>
+Generate-EntryCode-Go
+  s.FnProperties t.ModuleName (e.Result) e.Imports =
+    <MPredeclGenerator::GenFunction
+      s.FnProperties
+      <MQualifiedName::Create (Go)>
       Entry
       (
         (Pattern)
@@ -392,7 +209,8 @@ Generate-EntryCode-Aux {
         )
       )
     >
-    <GenFunction
+    <MPredeclGenerator::GenFunction
+      s.FnProperties
       <MQualifiedName::Create ('Exit' Entry)>
       Entry
       (
@@ -410,9 +228,10 @@ Generate-EntryCode-Aux {
       )
     >;
 
-  t.hIModule t.ModuleName (Regular t.InitSeq t.FinalSeq) e.Imports =
-    t.hIModule
-    <GenFunction
+Generate-EntryCode-InitFinal
+  s.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports =
+    <MPredeclGenerator::GenFunction
+      s.FnProperties
       <MQualifiedName::AddSubName t.ModuleName 'Init' Entry>
       InitFinal
       (
@@ -433,7 +252,6 @@ Generate-EntryCode-Aux {
         )
       )
     >;
-}
 
 GenEntry {
   s.CodeType None = ;
@@ -444,7 +262,10 @@ GenEntry {
 GenInitImport {
   t.ImportName =
     (Function
-      (Entry NoPos <MQualifiedName::AddSubName t.ImportName 'Init' Entry>)
+      (
+        Entry NoPos
+        <MQualifiedName::AddSubName t.ImportName 'Init' Entry>
+      )
       (Identifier NoPos 'Init')
     );
 }
@@ -452,9 +273,13 @@ GenInitImport {
 GenFinalImport {
   t.ImportName =
     (Function
-      (Entry NoPos <MQualifiedName::AddSubName t.ImportName 'Init' Entry>)
+      (
+        Entry NoPos
+        <MQualifiedName::AddSubName t.ImportName 'Init' Entry>
+      )
       (Identifier NoPos 'Final')
     );
 }
 
 $END BE-CppSR::MCompiler.
+

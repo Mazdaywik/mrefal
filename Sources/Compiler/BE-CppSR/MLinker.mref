@@ -1,13 +1,15 @@
 $MODULE BE-CppSR::MLinker;
 
 $IMPORT MError;
+$IMPORT MFileIO;
 $IMPORT MFileSystem;
 $IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
+$IMPORT MStrings;
 
-$IMPORT C-Link = C-Link::MLinker;
-$IMPORT C-Make = C-Link::MMake;
-$IMPORT C-Part = C-Link::MPartialLinker;
+$IMPORT C-Link::MLinker;
+$IMPORT C-Link::MMake;
+$IMPORT C-Link::MPartialLinker;
 
 /**
   <Link t.L-Config (e.PtProgName) (t.ModuleName e.OutName)>
@@ -25,116 +27,92 @@ $ENTRY Link
 Link-SwitchMode {
   'none' = &Link-With-C-Link;
   'genmake' = &Link-With-C-Make;
+  'make' = &Link-With-C-Make;
   'partial' = &Link-With-C-Part;
+  'cojoint' = &Link-Cojoint;
 
   e.Other =
     <MError::LinkError
       'Option -accelerate-link:' e.Other ' is invalid.\n'
-      'Valid options is \"none\", \"genmake\" or \"partial\"'
+      'Valid options is \"none\", \"genmake\",'
+      ' \"partial\" or \"cojoint\"'
     >;
 }
 
 Link-With-C-Link
   t.Config (e.PtProgName) e.Modules =
-    <C-Link::C-Link
-      (Compiler
-        (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
-        (Prologue <MHelpers::ConfigExtract t.Config Prologue>)
-        (Epilogue <MHelpers::ConfigExtract t.Config Epilogue>)
-      )
-      (Include
-        <C-LinkOption t.Config IncludeOpt>
-        <MLambda::Map
-          <MLambda::Composite
-            & MLambda.UnBracket
-            & MFileSystem.StrFromPath
-            & MLambda.Bracket
-          >
-          <MHelpers::ConfigExtract t.Config RunTimeDirs>
-        >
-      )
-      (Define
-        <C-LinkOption t.Config DefineOpt>
-        ('MODULE_REFAL')
-      )
+    <Link-With-Generic
+      &C-Link.MLinker.C-Link t.Config (e.PtProgName) (e.Modules)
       (Output
         <C-LinkOption t.Config ExecutableFile>
         <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
       )
-      <MLambda::Map & PrepareName e.Modules>
-      <GetRunTimeFiles t.Config>
     >;
 
 Link-With-C-Make
   t.Config (e.PtProgName) e.Modules =
-    <C-Make::C-Link
-      (Compiler
-        (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
-        (Prologue <MHelpers::ConfigExtract t.Config Prologue>)
-        (Epilogue <MHelpers::ConfigExtract t.Config Epilogue>)
-      )
-      (Include
-        <C-LinkOption t.Config IncludeOpt>
-        <MLambda::Map
-          <MLambda::Composite
-            & MLambda.UnBracket
-            & MFileSystem.StrFromPath
-            & MLambda.Bracket
-          >
-          <MHelpers::ConfigExtract t.Config RunTimeDirs>
-        >
-      )
-      (Define
-        <C-LinkOption t.Config DefineOpt>
-        ('MODULE_REFAL')
-      )
+    <Link-With-Generic
+      &C-Link.MMake.C-Link t.Config (e.PtProgName) (e.Modules)
       (Output-Exe
         <C-LinkOption t.Config ExecutableFile>
         <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
       )
       (Output-Obj
-        (Option '-o') (Option 'obj') (Option '-c')
-        (Option 'compile-and-link.mak')
-        (Option 'make')
-        (Option 'objects.tmp')
+        <C-LinkOption t.Config ObjectFile>
+        <C-LinkOption t.Config ObjectExt>
+        <C-LinkOption t.Config CompileOnly>
+        <C-LinkOption t.Config GenMakeMakefile>
+        <C-LinkOption t.Config GenMakeMake>
+        <C-LinkOption t.Config GenMakeFolder>
       )
-      <MLambda::Map & PrepareName e.Modules>
-      <GetRunTimeFiles t.Config>
     >;
 
 Link-With-C-Part
   t.Config (e.PtProgName) e.Modules =
-    <C-Part::C-Link
-      (Compiler
-        (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
-        (Prologue <MHelpers::ConfigExtract t.Config Prologue>)
-        (Epilogue <MHelpers::ConfigExtract t.Config Epilogue>)
-      )
-      (Include
-        <C-LinkOption t.Config IncludeOpt>
-        <MLambda::Map
-          <MLambda::Composite
-            & MLambda.UnBracket
-            & MFileSystem.StrFromPath
-            & MLambda.Bracket
-          >
-          <MHelpers::ConfigExtract t.Config RunTimeDirs>
-        >
-      )
-      (Define
-        <C-LinkOption t.Config DefineOpt>
-        ('MODULE_REFAL')
-      )
+    <Link-With-Generic
+      &C-Link.MPartialLinker.C-Link t.Config (e.PtProgName) (e.Modules)
       (Output-Exe
         <C-LinkOption t.Config ExecutableFile>
         <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
       )
       (Output-Obj
-        (Option '-o') (Option 'bcc.obj') (Option '-c')
+        <C-LinkOption t.Config ObjectFile>
+        <C-LinkOption t.Config ObjectExt>
+        <C-LinkOption t.Config CompileOnly>
       )
+    >;
+
+Link-With-Generic
+  s.FnLink t.Config (e.PtProgName) (e.Modules) e.Outputs =
+    <s.FnLink
+      <Compiler-Include-Define-Options t.Config>
+      e.Outputs
       <MLambda::Map & PrepareName e.Modules>
       <GetRunTimeFiles t.Config>
     >;
+
+Compiler-Include-Define-Options
+  t.Config =
+    (Compiler
+      (ProgName <MHelpers::ConfigExtract t.Config CCompiler>)
+      (Prologue <MHelpers::ConfigExtract t.Config Prologue>)
+      (Epilogue <MHelpers::ConfigExtract t.Config Epilogue>)
+    )
+    (Include
+      <C-LinkOption t.Config IncludeOpt>
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          & MFileSystem.StrFromPath
+          & MLambda.Bracket
+        >
+        <MHelpers::ConfigExtract t.Config RunTimeDirs>
+      >
+    )
+    (Define
+      <C-LinkOption t.Config DefineOpt>
+      ('MODULE_REFAL')
+    );
 
 C-LinkOption
   t.Config s.OptName =
@@ -153,7 +131,7 @@ PrepareName
 GetRunTimeFiles
   t.Config =
     <GetRunTimeFiles-SwFound
-      <C-Link::LookupRuntimeFiles
+      <C-Link::MLinker::LookupRuntimeFiles
         (('cpp'))
         (<MHelpers::ConfigExtract t.Config RunTimeDirs>)
         <MHelpers::ConfigExtract t.Config RunTimeFiles>
@@ -175,5 +153,35 @@ GetRunTimeFiles-SwFound {
 PrepareRtsName
   (Found (e.Ext) e.PtFullPath) =
     (<MFileSystem::StrFromPath e.PtFullPath>);
+
+Link-Cojoint
+  t.Config (e.PtProgName) e.Modules =
+    <Link-Cojoint-Aux
+      t.Config (e.PtProgName)
+      (<MFileSystem::StrFromPath e.PtProgName> '.cojoint-cppsr.cpp')
+      <MLambda::Map & PrepareName e.Modules>
+    >;
+
+Link-Cojoint-Aux {
+  t.Config (e.PtProgName) (e.StrCojoint) e.SourceFiles =
+    <MFileIO::Save
+     (e.StrCojoint)
+     <MLambda::Map & GenIncludeLine
+       <MStrings::Reverse e.SourceFiles>
+     >
+    >
+    <C-Link.MLinker.C-Link
+      <Compiler-Include-Define-Options t.Config>
+      (Output
+        <C-LinkOption t.Config ExecutableFile>
+        <MFileSystem::StrFromPath e.PtProgName>
+      )
+      (e.StrCojoint) <GetRunTimeFiles t.Config>
+    >;
+}
+
+GenIncludeLine {
+  (e.FileName) = ('#include \"' e.FileName '\"');
+}
 
 $END BE-CppSR::MLinker.

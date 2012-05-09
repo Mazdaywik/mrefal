@@ -2,6 +2,8 @@
 #include "refalrts.h"
 #include "mr_oslib.h"
 
+#ifndef InitDEFINED_R_
+#define InitDEFINED_R_
 
 //$LABEL Init
 template <typename T>
@@ -11,6 +13,11 @@ struct Init {
   }
 };
 
+#endif // InitDEFINED_R_
+
+#ifndef FinalDEFINED_R_
+#define FinalDEFINED_R_
+
 //$LABEL Final
 template <typename T>
 struct Final {
@@ -18,6 +25,8 @@ struct Final {
     return "Final";
   }
 };
+
+#endif // FinalDEFINED_R_
 
 refalrts::FnResult CoreBEP_OSP_MFileSystemP_InitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
   refalrts::this_is_generated_function();

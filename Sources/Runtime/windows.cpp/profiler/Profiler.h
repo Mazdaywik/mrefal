@@ -23,7 +23,7 @@ public:
 	class ProfilerInfo;
 	typedef ProfilerInfo value_type;
 private:
-	friend ProfilerIterator;
+	friend class ProfilerIterator;
 
 	typedef struct {
 		statistics::Statistics m_totalTime;
@@ -86,7 +86,7 @@ public:
 		const statistics::Statistics *m_pStat;
 		double m_progTime;
 
-		friend Profiler::ProfilerInfo;
+		friend class Profiler::ProfilerInfo;
 		StatInfo(
 			const statistics::Statistics& stat,
 			double progTime
@@ -159,7 +159,7 @@ class Profiler::ProfilerIterator
 		const Profiler::ProfilerInfo*,
 		const Profiler::ProfilerInfo&
 	> {
-	friend Profiler;
+	friend class Profiler;
 
 	typedef Profiler::MapTimes::const_iterator Position;
 	Position m_pos;

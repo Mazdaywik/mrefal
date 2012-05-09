@@ -42,13 +42,13 @@ refalrts::FnResult MR_IO_Write(
 refalrts::FnResult MR_IO_StdIn(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
-  return implement_fileio::std_handle(stdin, arg_begin, arg_end);
+  return implement_fileio::get_stdin(arg_begin, arg_end);
 }
 
 refalrts::FnResult MR_IO_StdOut(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
-  return implement_fileio::std_handle(stdout, arg_begin, arg_end);
+  return implement_fileio::get_stdout(arg_begin, arg_end);
 }
 
 refalrts::FnResult MR_Strings_Chr(
@@ -109,7 +109,9 @@ refalrts::FnResult MR_SelfDiag_PrintMessage(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   return implement_selfdiag::log(
-    stderr, false, arg_begin, arg_end
+    implement_selfdiag::get_stderror_handle(),
+    false, // Непрозрачный режим
+    arg_begin, arg_end
   );
 }
 

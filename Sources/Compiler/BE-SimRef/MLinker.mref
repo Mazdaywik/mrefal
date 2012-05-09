@@ -59,7 +59,7 @@ Profiling-Link {
 }
 
 HeadFileNamePt {
-  e.PtProgName = <MFileSystem::StrFromPath e.PtProgName> '.main';
+  e.PtProgName = <MFileSystem::StrFromPath e.PtProgName> '.sr_main';
 }
 
 ModuleName {

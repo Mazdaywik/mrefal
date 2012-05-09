@@ -7,15 +7,12 @@ $IMPORT MQualifiedName;
 
 $ENTRY MakeAlgorithm {
   (e.Pattern) (e.Result) =
-    <GeneralizeResult
+    <MakeAlgorithm-Result
       <GenPattern
         (LeftPtr 0) e.Pattern (RightPtr 0)
         (/* vars */) (/* commands */)
       >
-      <GenResult
-        (/* vars */) (/* commands */) 0 // счётчик новых элементов
-        e.Result
-      >
+      e.Result
     >;
 }
 
@@ -23,9 +20,9 @@ $ENTRY MakeAlgorithm {
   e.Vars ::= (s.Count s.Mode e.Index)*
 */
 
-//==============================================================================
+//=======================================================================
 // Генерация образца
-//==============================================================================
+//=======================================================================
 
 /*
 Команды распознавания
@@ -160,15 +157,21 @@ GenPattern {
     <GenPattern
       e.Pattern_B (TkVariable s.Mode e.Index) (LeftPtr s.Num) e.Pattern_E
       (e.Vars_B (<Math::Inc s.Count> s.Mode e.Index) e.Vars_E)
-      (e.Commands (CmdRepeated AlgLeft s.Num <Math::Inc s.Count> s.Mode e.Index))
+      (e.Commands
+        (CmdRepeated AlgLeft s.Num <Math::Inc s.Count> s.Mode e.Index)
+      )
     >;
 
   e.Pattern_B (TkVariable s.Mode e.Index) (RightPtr s.Num) e.Pattern_E
   (e.Vars_B (s.Count s.Mode e.Index) e.Vars_E) (e.Commands) =
     <GenPattern
-      e.Pattern_B (RightPtr s.Num) (TkVariable s.Mode e.Index) e.Pattern_E
+      e.Pattern_B
+      (RightPtr s.Num) (TkVariable s.Mode e.Index)
+      e.Pattern_E
       (e.Vars_B (<Math::Inc s.Count> s.Mode e.Index) e.Vars_E)
-      (e.Commands (CmdRepeated AlgRight s.Num <Math::Inc s.Count> s.Mode e.Index))
+      (e.Commands
+        (CmdRepeated AlgRight s.Num <Math::Inc s.Count> s.Mode e.Index)
+      )
     >;
 
   // Указатели аннигилируют через закрытую e-переменную
@@ -185,28 +188,32 @@ GenPattern {
   (e.Vars) (e.Commands) =
     <GenPattern
       e.Pattern_B (TkVariable 's' e.Index) (LeftPtr s.Num) e.Pattern_E
-      (e.Vars (1 's' e.Index)) (e.Commands (CmdVar AlgLeft s.Num 's' e.Index))
+      (e.Vars (1 's' e.Index))
+      (e.Commands (CmdVar AlgLeft s.Num 's' e.Index))
     >;
 
   e.Pattern_B (LeftPtr s.Num) (TkVariable 't' e.Index) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
       e.Pattern_B (TkVariable 't' e.Index) (LeftPtr s.Num) e.Pattern_E
-      (e.Vars (1 't' e.Index)) (e.Commands (CmdVar AlgLeft s.Num 't' e.Index))
+      (e.Vars (1 't' e.Index))
+      (e.Commands (CmdVar AlgLeft s.Num 't' e.Index))
     >;
 
   e.Pattern_B (TkVariable 's' e.Index) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
       e.Pattern_B (RightPtr s.Num) (TkVariable 's' e.Index) e.Pattern_E
-      (e.Vars (1 's' e.Index)) (e.Commands (CmdVar AlgRight s.Num 's' e.Index))
+      (e.Vars (1 's' e.Index))
+      (e.Commands (CmdVar AlgRight s.Num 's' e.Index))
     >;
 
   e.Pattern_B (TkVariable 't' e.Index) (RightPtr s.Num) e.Pattern_E
   (e.Vars) (e.Commands) =
     <GenPattern
       e.Pattern_B (RightPtr s.Num) (TkVariable 't' e.Index) e.Pattern_E
-      (e.Vars (1 't' e.Index)) (e.Commands (CmdVar AlgRight s.Num 't' e.Index))
+      (e.Vars (1 't' e.Index))
+      (e.Commands (CmdVar AlgRight s.Num 't' e.Index))
     >;
 
   e.Pattern_B (LeftPtr s.Num) (TkVariable 'e' e.Index) e.Pattern_E
@@ -393,7 +400,8 @@ TextFromPattern {
     ' ' s.Mode '.' e.Index <TextFromPattern e.Tail>;
 
   (TkIdentifier t.Name) e.Tail =
-    ' # ' <MQualifiedName::ToPrintable-Dot t.Name> <TextFromPattern e.Tail>;
+    ' # ' <MQualifiedName::ToPrintable-Dot t.Name>
+    <TextFromPattern e.Tail>;
 
   = ;
 }
@@ -418,9 +426,19 @@ TextFromPattern_Char {
   e.Other = <TextFromPattern e.Other>;
 }
 
-//==============================================================================
+//=======================================================================
 // Генерация результата
-//==============================================================================
+//=======================================================================
+
+MakeAlgorithm-Result
+  (e.PatternVars) (e.PatternCommands) e.Result =
+    <GeneralizeResult
+      (e.PatternVars) (e.PatternCommands)
+      <GenResult
+        (/* vars */) (/* commands */) 0 // счётчик новых элементов
+        e.Result
+      >
+    >;
 
 // Тип команды
 // CtAlloc { } CtInsert { } CtBrackets { } CtInsertVar { }
@@ -663,7 +681,8 @@ Reverse {
 
 // Спецификаторы команд (элементы)
 
-//  $ENTRY ElChar { } $ENTRY ElName { } $ENTRY ElNumber { } $ENTRY ElIdent { }
+//  $ENTRY ElChar { } $ENTRY ElName { } $ENTRY ElNumber { }
+//  $ENTRY ElIdent { }
 //  $ENTRY ElOpenADT { } $ENTRY ElCloseADT { }
 //  $ENTRY ElOpenBracket { } $ENTRY ElCloseBracket { }
 //  $ENTRY ElOpenCall { } $ENTRY ElCloseCall { }
@@ -696,7 +715,8 @@ ConvertCommand {
   (CtInsertString s.NumBegin s.NumEnd) =
     (CmdInsertString s.NumBegin s.NumEnd);
 
-  (CtInsertVar s.Usings 'e' e.Index) = (CmdInsertEVar s.Usings 'e' e.Index);
+  (CtInsertVar s.Usings 'e' e.Index) =
+    (CmdInsertEVar s.Usings 'e' e.Index);
 
   (CtInsertVar s.Usings s.STMode e.Index) =
     (CmdInsertElem ElSTVar s.Usings s.STMode e.Index);
@@ -713,10 +733,10 @@ ConvertCommand {
     (CmdEndEntryCode);
 }
 
-//==============================================================================
+//=======================================================================
 // Обобщение информации -- уничтожение ненужных переменных,
 // копирование повторных.
-//==============================================================================
+//=======================================================================
 
 GeneralizeResult {
   (e.PatternVars) (e.PatternCommands)
@@ -791,3 +811,4 @@ MakeCopyVar {
 }
 
 $END BE-CppSR::Algorithm.
+

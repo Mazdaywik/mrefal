@@ -1,10 +1,8 @@
 #ifndef MR_Common_H_
 #define MR_Common_H_
 
-#include <stdio.h>
-
 #include "refalrts.h"
-#include "refalapi.h"
+#include "refalmacro.h"
 
 namespace implement_math {
 
@@ -21,7 +19,10 @@ extern REFAL_FUNC(read_line);
 extern REFAL_FUNC(write);
 
 refalrts::FnResult
-std_handle(FILE *handle, refalrts::Iter arg_begin, refalrts::Iter arg_end);
+get_stdin(refalrts::Iter arg_begin, refalrts::Iter arg_end);
+
+refalrts::FnResult
+get_stdout(refalrts::Iter arg_begin, refalrts::Iter arg_end);
 
 } // namespace implement_fileio
 
@@ -54,14 +55,15 @@ extern REFAL_FUNC(symb_compare);
 namespace implement_selfdiag {
 
 extern refalrts::FnResult log(
-  FILE *f,
+  void *f,
   bool transparent,
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 );
 
 extern REFAL_FUNC(exit_failure);
 extern REFAL_FUNC(close_log);
-extern FILE* get_log_handle();
+extern void* get_log_handle();
+extern void* get_stderror_handle();
 
 } // namespace implement_selfdiag
 

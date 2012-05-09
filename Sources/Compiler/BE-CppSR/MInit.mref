@@ -31,6 +31,12 @@ Tunings =
   (Single Prologue ('prologue') /* пусто */)
   (Single Epilogue ('epilogue') /* пусто */)
   (Single ExecutableFile ('exec') '-o')
-  (Single LinkerType ('accelerate-link') 'genmake');
+  (Single ObjectFile ('object') '-o')
+  (Single CompileOnly ('compile-only') '-c')
+  (Single ObjectExt ('object-ext') 'obj')
+  (Single LinkerType ('accelerate-link') 'genmake')
+  (Single GenMakeMake ('genmake-make') 'make')
+  (Single GenMakeFolder ('genmake-folder') 'objects.tmp')
+  (Single GenMakeMakefile ('genmake-makefile') 'compile-and-link.mak');
 
 $END BE-CppSR::MInit.

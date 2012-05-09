@@ -31,6 +31,7 @@ NameCodeChar {
   '-' = 'D_';
   Entry = 'E_';
   FuncName = 'N_';
+  Go = 'Entry_Go';
   s.Other = s.Other;
 }
 
@@ -123,7 +124,10 @@ GenSwap-Aux {
     ('  refalrts::move_left( info_b, info_e );')
     ('  refalrts::move_right( info_b, info_e );')
     ()
-    ('  static refalrts::Iter s_head = refalrts::initialize_swap_head( func_name );')
+    (
+      '  static refalrts::Iter s_head = '
+      'refalrts::initialize_swap_head( func_name );'
+    )
     ()
     ('  refalrts::Iter saved_b;')
     ('  refalrts::Iter saved_e;')
@@ -156,6 +160,9 @@ $ENTRY GenIdent-FuncName {
 
 GenIdent-Aux {
   (e.ExternalName) e.InternalName =
+    ('#ifndef ' e.InternalName 'DEFINED_R_')
+    ('#define ' e.InternalName 'DEFINED_R_')
+    ()
     ('//$LABEL ' e.ExternalName)
     ('template <typename refal_param_int>')
     ('struct ' e.InternalName ' {')
@@ -163,6 +170,8 @@ GenIdent-Aux {
     ('    return "' e.ExternalName '";')
     ('  }')
     ('};')
+    ()
+    ('#endif // ' e.InternalName 'DEFINED_R_')
     ();
 }
 
@@ -177,9 +186,18 @@ $ENTRY GenSentence {
     ('  do {')
     ('    refalrts::Iter ' <BracketsVar-B 0 0> ' = arg_begin;')
     ('    refalrts::Iter ' <BracketsVar-E 0 0> ' = arg_end;')
-    ('    refalrts::move_left( ' <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );')
-    ('    refalrts::move_left( ' <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );')
-    ('    refalrts::move_right( ' <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );')
+    (
+      '    refalrts::move_left( '
+      <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );'
+    )
+    (
+      '    refalrts::move_left( '
+      <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );'
+    )
+    (
+      '    refalrts::move_right( '
+      <BracketsVar-B 0 0> ', ' <BracketsVar-E 0 0> ' );'
+    )
     <GenSentence_Aux
       <MLambda::MapReduce
         & GenCommand
@@ -211,7 +229,8 @@ BracketsVar-OE {
 
 /*
   Величина отступа также определяет режим работы. Отступ в 4 пробела --
-  вне цикла по открытой e-переменной, отступ больше -- внутри оного цикла.
+  вне цикла по открытой e-переменной, отступ больше -- внутри оного
+  цикла.
 */
 
 PrintStkBracket {
@@ -247,7 +266,9 @@ GenCommand {
 
   (e.Indent) (CmdNumber s.Direction s.BracketNum s.Nested s.Number) =
     (e.Indent)
-    <PrintMatchNumber (e.Indent) s.Direction s.BracketNum s.Nested s.Number>;
+    <PrintMatchNumber
+      (e.Indent) s.Direction s.BracketNum s.Nested s.Number
+    >;
 
   (e.Indent) (CmdName s.Direction s.BracketNum s.Nested t.Name) =
     (e.Indent)
@@ -255,20 +276,36 @@ GenCommand {
 
   (e.Indent) (CmdIdent s.Direction s.BracketNum s.Nested t.Name) =
     (e.Indent)
-    <PrintMatchIdent (e.Indent) s.Direction s.BracketNum s.Nested t.Name>;
+    <PrintMatchIdent
+      (e.Indent) s.Direction s.BracketNum s.Nested t.Name
+    >;
 
-  (e.Indent) (CmdBrackets s.Direction s.BracketNum s.Nested s.InnerBrackets) =
+  (e.Indent)
+  (CmdBrackets s.Direction s.BracketNum s.Nested s.InnerBrackets) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <BracketsVar-B s.InnerBrackets 0> ' = 0;')
-    (e.Indent 'refalrts::Iter ' <BracketsVar-E s.InnerBrackets 0> ' = 0;')
+    (
+      e.Indent 'refalrts::Iter '
+      <BracketsVar-B s.InnerBrackets 0> ' = 0;'
+    )
+    (
+      e.Indent 'refalrts::Iter '
+      <BracketsVar-E s.InnerBrackets 0> ' = 0;'
+    )
     <PrintMatchBrackets
       (e.Indent) s.Direction s.BracketNum s.Nested s.InnerBrackets
     >;
 
-  (e.Indent) (CmdADT s.Direction s.BracketNum s.Nested s.InnerBrackets e.Name) =
+  (e.Indent)
+  (CmdADT s.Direction s.BracketNum s.Nested s.InnerBrackets e.Name) =
     (e.Indent)
-    (e.Indent 'refalrts::Iter ' <BracketsVar-B s.InnerBrackets 0> ' = 0;')
-    (e.Indent 'refalrts::Iter ' <BracketsVar-E s.InnerBrackets 0> ' = 0;')
+    (
+      e.Indent 'refalrts::Iter '
+        <BracketsVar-B s.InnerBrackets 0> ' = 0;'
+    )
+    (
+      e.Indent 'refalrts::Iter '
+      <BracketsVar-E s.InnerBrackets 0> ' = 0;'
+    )
     <PrintMatchADT
       (e.Indent) s.Direction s.BracketNum s.Nested s.InnerBrackets e.Name
     >;
@@ -279,25 +316,33 @@ GenCommand {
 
   (e.Indent) (CmdVar s.Direction s.BracketNum s.Nested s.Mode e.Info) =
     (e.Indent)
-    <PrintMatchSTVar (e.Indent) s.Direction s.BracketNum s.Nested s.Mode e.Info>;
+    <PrintMatchSTVar
+      (e.Indent) s.Direction s.BracketNum s.Nested s.Mode e.Info
+    >;
 
   (e.Indent) (CmdRepeated s.Direction s.BracketNum s.Nested e.VarInfo) =
     (e.Indent)
-    <PrintMatchRepeated (e.Indent) s.Direction s.BracketNum s.Nested e.VarInfo>;
+    <PrintMatchRepeated
+      (e.Indent) s.Direction s.BracketNum s.Nested e.VarInfo
+    >;
 
   (e.Indent) (CmdClosedE AlgLeft s.BracketNum s.Nested 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      <PrintEVar-B 1 'e' e.Index> ' = ' <BracketsVar-B s.BracketNum s.Nested> ';'
+      <PrintEVar-B 1 'e' e.Index> ' = '
+      <BracketsVar-B s.BracketNum s.Nested> ';'
     )
     (e.Indent 'refalrts::use( ' <PrintEVar-B 1 'e' e.Index> ' );')
     (e.Indent
-      <PrintEVar-E 1 'e' e.Index> ' = ' <BracketsVar-E s.BracketNum s.Nested> ';'
+      <PrintEVar-E 1 'e' e.Index> ' = '
+      <BracketsVar-E s.BracketNum s.Nested> ';'
     )
     (e.Indent 'refalrts::use( ' <PrintEVar-E 1 'e' e.Index> ' );');
 
   (e.Indent)
-  (CmdOpenedE AlgLeft s.BracketNum s.Nested 'e' e.Index (e.BracketsForSave)) =
+  (CmdOpenedE
+    AlgLeft s.BracketNum s.Nested 'e' e.Index (e.BracketsForSave)
+  ) =
     (e.Indent '  ')
     (e.Indent 'for(')
     (e.Indent
@@ -315,12 +360,12 @@ GenCommand {
     (e.Indent ') {')
     /*
       Объявление и инициализация "внутренних" переменных для цикла.
-      Эти переменные (с индексом вложенности на единицу бОльшим) используются
-      внутри цикла как границы распознавания подвыражений.
-      Поскольку при неудачном сопоставлении в рамках заданной итерации нужно
-      попробовать следующий вариант сопоставления, т.е. необходимо
-      восстановить предыдущее до сопоставления, мы создаём копию состояния,
-      с которой и работаем в рамках итерации.
+      Эти переменные (с индексом вложенности на единицу бОльшим)
+      используются внутри цикла как границы распознавания подвыражений.
+      Поскольку при неудачном сопоставлении в рамках заданной итерации
+      нужно попробовать следующий вариант сопоставления, т.е. необходимо
+      восстановить предыдущее до сопоставления, мы создаём копию
+      состояния, с которой и работаем в рамках итерации.
     */
     <MLambda::Map
       <MLambda::BindLeft & PrintStkBracket e.Indent '  '>
@@ -352,7 +397,8 @@ GenCommand {
   (e.Indent) (CmdCopyEVar s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      'if( ! refalrts::copy_evar( ' <PrintEVar-B s.Usings 'e' e.Index> ', '
+      'if( ! refalrts::copy_evar( '
+      <PrintEVar-B s.Usings 'e' e.Index> ', '
       <PrintEVar-E s.Usings 'e' e.Index> ', '
       <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
       <PrintEVar-E <Math::Dec s.Usings> 'e' e.Index>
@@ -363,7 +409,8 @@ GenCommand {
   (e.Indent) (CmdCopyVar s.Usings s.Mode e.Index) =
     (e.Indent)
     (e.Indent
-      'if( ! refalrts::copy_stvar( ' <PrintVar s.Usings s.Mode e.Index> ', '
+      'if( ! refalrts::copy_stvar( '
+      <PrintVar s.Usings s.Mode e.Index> ', '
       <PrintVar <Math::Dec s.Usings> s.Mode e.Index> ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
@@ -373,13 +420,15 @@ GenCommand {
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
     <PrintAllocateElem (e.Indent) s.ElemNumber e.ElemInfo>;
 
-  (e.Indent) (CmdAllocateString s.BeginNumber s.EndNumber s.Len e.String) =
+  (e.Indent)
+  (CmdAllocateString s.BeginNumber s.EndNumber s.Len e.String) =
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.BeginNumber> ' = 0;')
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.EndNumber> ' = 0;')
     (e.Indent 'if( ! refalrts::alloc_chars( '
       <PrintElemVar s.BeginNumber> ', ' <PrintElemVar s.EndNumber> ', '
-      '\"' <MLambda::Map & MEscape.EscapeChar-Oct e.String> '\", ' <MStrings::Symb s.Len> ' ) )'
+      '\"' <MLambda::Map & MEscape.EscapeChar-Oct e.String> '\", '
+      <MStrings::Symb s.Len> ' ) )'
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
@@ -393,12 +442,16 @@ GenCommand {
 
   (e.Indent) (CmdPushStack s.ElemNumber) =
     (e.Indent)
-    (e.Indent 'refalrts::push_stack( ' <PrintElemVar s.ElemNumber> ' );');
+    (
+      e.Indent
+      'refalrts::push_stack( ' <PrintElemVar s.ElemNumber> ' );'
+    );
 
   (e.Indent) (CmdInsertElem ElElem s.ElemNumber) =
     (e.Indent)
     (e.Indent
-      'res = refalrts::splice_elem( res, ' <PrintElemVar s.ElemNumber> ' );'
+      'res = refalrts::splice_elem( res, '
+      <PrintElemVar s.ElemNumber> ' );'
     );
 
   (e.Indent) (CmdInsertElem ElSTVar s.Usings s.Mode e.Index) =
@@ -629,3 +682,4 @@ GenCloseBrackets {
 }
 
 $END BE-CppSR::Generator.
+

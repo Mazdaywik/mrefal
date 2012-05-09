@@ -32,7 +32,7 @@ public:
 class Statistics::DivisingByZero: public std::exception
 {
 public:
-	virtual const char* what() const;
+	virtual const char* what() const throw();
 };
 
 } //namespace statistics

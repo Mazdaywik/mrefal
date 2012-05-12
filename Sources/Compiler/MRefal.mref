@@ -19,6 +19,10 @@ $IMPORT MProfiler;
 
 $ENTRY Go =
   <MVersion::Show>
+  <MProfiler::Quantify & Profiling-Go>
+  <MProfiler::PrintResults '_MRefal_profiler.log'>;
+
+Profiling-Go =
   <CompileList
     <Driver::MTables::Create
       &Driver.Tables.MLookup.Create
@@ -29,8 +33,7 @@ $ENTRY Go =
       <MError::CreateErrList>
       <MOS::ArgList>
     >
-  >
-  <MProfiler::PrintResults '_MRefal_profiler.log'>;
+  >;
 
 DestroyContext {
   t.hContext =

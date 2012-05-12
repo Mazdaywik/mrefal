@@ -33,7 +33,7 @@ Tunings =
   (Single ExecutableFile ('exec') '-o')
   (Single ObjectFile ('object') '-o')
   (Single CompileOnly ('compile-only') '-c')
-  (Single ObjectExt ('object-ext') 'obj')
+  (Single ObjectExt ('object-ext') 'o')
   (Single LinkerType ('accelerate-link') 'genmake')
   (Single GenMakeMake ('genmake-make') 'make')
   (Single GenMakeFolder ('genmake-folder') 'objects.tmp')

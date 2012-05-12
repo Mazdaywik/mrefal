@@ -58,16 +58,27 @@ GenFunction-Code {
   t.FuncName s.ScopeClass e.Sentences =
     <Generator::GenFnStart s.ScopeClass t.FuncName>
     <Generator::GenInitCounter s.ScopeClass>
-    <MLambda::Map & GenSentence e.Sentences>
+    <MProfiler::Quantify & GenSentences e.Sentences>
     <Generator::GenFnEnd>;
 }
 
+GenSentences
+  e.Sentences = <MLambda::Map & GenSentence e.Sentences>;
+
 GenSentence
   ((Pattern e.Pattern) (Result e.Result)) =
-    <Generator::GenSentence
-      <Algorithm::MakeAlgorithm
-        ( <PrepareExpr e.Pattern> )
-        ( <OptimizeStrings <PrepareExpr e.Result>> )
+    <GenSentence-Aux
+      ( <PrepareExpr e.Pattern> )
+      ( <OptimizeStrings <PrepareExpr e.Result>> )
+    >;
+
+GenSentence-Aux
+  (e.PatternExpr) (e.ResultExpr) =
+    <MProfiler::Quantify
+      & Generator.GenSentence
+      <MProfiler::Quantify
+        & Algorithm.MakeAlgorithm
+        (e.PatternExpr) (e.ResultExpr)
       >
     >;
 

@@ -24,7 +24,7 @@ REFAL_FUNC(end_quantify)
 
   // Образец: <end_quantify s.Function s.ProfilerObject>
   refalrts::Iter function_name = 0;
-  bool function_mathed =
+  bool function_matched =
     refalrts::svar_left(function_name, arg_begin, arg_end)
     && (refalrts::cDataFunction == function_name->tag);
 
@@ -34,7 +34,7 @@ REFAL_FUNC(end_quantify)
     && (refalrts::cDataFile == profiler_object->tag);
 
   bool matched =
-    function_mathed && object_matched &&
+    function_matched && object_matched &&
     refalrts::empty_seq(arg_begin, arg_end);
 
   if (!matched)
@@ -74,44 +74,49 @@ REFAL_FUNC(implement_profiler::quantify)
   if( ! matched )
     return refalrts::cRecognitionImpossible;
 
-  //refalrts::Iter func_args_b = arg_begin; // не используется
-  refalrts::Iter func_args_e = arg_end;
-
+  // Аргумент: <Quantify s.Func e.Args>
   // Результат: <s.Fucn e.Args> <end_quantify s.Func s.ProfilerObject>
 
   // Запуск профилировщика осуществляется конструктором класса
   // Profiler, остановка — деструктором. В этой функции создаётся
   // объект класса Profiler, который уничтожается в end_quantify.
 
-  // Стратегия: распределяем < и > для s.Func e.Args, остальные
-  // элементы размещаем между родными угловыми скобками.
+  // Стратегия:
+  //   1. Распределяем ><end_quantify s.Func s.ProfilerObject
+  //   2. Помещаем распределённое в п.1. перед закрывающей
+  //      угловой скобкой.
+  //   3. Удаляем вызов Quantify
 
   // Распределение памяти
-  refalrts::Iter new_open_call = 0;
   refalrts::Iter new_close_call = 0;
-
+  refalrts::Iter new_open_call = 0;
+  refalrts::Iter end_quantify_func = 0;
   refalrts::Iter copy_func = 0;
   refalrts::Iter profiler_object = 0;
 
   refalrts::reset_allocator();
 
   bool allocated =
-    refalrts::alloc_open_call(new_open_call)
-    && refalrts::alloc_close_call(new_close_call)
+    refalrts::alloc_close_call(new_close_call)
+    && refalrts::alloc_open_call(new_open_call)
+    && refalrts::alloc_name(
+        end_quantify_func, end_quantify,
+#ifdef MODULE_REFAL
+        REFAL_IDENT(endQualityName)
+#else
+        PROFILE_STOP_FUNCTION_NAME
+#endif
+       )
     && refalrts::copy_stvar(copy_func, func)
     && refalrts::alloc_char(profiler_object, '?');
 
+  refalrts::Iter func_open_call = open_call;
+  refalrts::Iter func_close_call = new_close_call;
+  refalrts::Iter stop_open_call = new_open_call;
+  refalrts::Iter stop_close_call = close_call;
+
   if ( ! allocated )
     return refalrts::cNoMemory;
-
-  // Переинициализация имени функции
-  this_func_name->function_info.ptr = end_quantify;
-  this_func_name->function_info.name =
-#ifdef MODULE_REFAL
-    REFAL_IDENT(endQualityName);
-#else
-    PROFILE_STOP_FUNCTION_NAME;
-#endif
 
   const char *func_name =
 #ifdef MODULE_REFAL
@@ -124,21 +129,16 @@ REFAL_FUNC(implement_profiler::quantify)
   profiler_object->tag = refalrts::cDataFile;
   profiler_object->file_info = new Profiler(func_name);
 
-  // Сборка поля зрения
-  refalrts::Iter res = open_call;
-  res = refalrts::splice_elem(res, new_close_call);
-  // Пользуемся тем, что func и func_args_? идут последовательно
-  res = refalrts::splice_evar(res, func, func_args_e);
-  refalrts::splice_elem(res, new_open_call);
+  // Перемещаем аллоцированный кусок перед закрывающей скобкой
+  refalrts::splice_evar(close_call, new_close_call, profiler_object);
 
-  res = close_call;
-  res = refalrts::splice_elem(res, profiler_object);
-  refalrts::splice_elem(res, copy_func);
+  // Удаляем вызов Quantify
+  refalrts::splice_to_freelist(this_func_name, this_func_name);
 
-  refalrts::push_stack(close_call);
-  refalrts::push_stack(open_call);
-  refalrts::push_stack(new_close_call);
-  refalrts::push_stack(new_open_call);
+  refalrts::push_stack(stop_close_call);
+  refalrts::push_stack(stop_open_call);
+  refalrts::push_stack(func_close_call);
+  refalrts::push_stack(func_open_call);
 
   return refalrts::cSuccess;
 }

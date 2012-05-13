@@ -432,6 +432,28 @@ GenCommand {
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
+  (e.Indent) (CmdAllocCopyEVar s.Usings 'e' e.Index) =
+    (e.Indent)
+    (e.Indent
+      'if( ! refalrts::alloc_copy_evar( '
+      <PrintEVar-B s.Usings 'e' e.Index> ', '
+      <PrintEVar-E s.Usings 'e' e.Index> ', '
+      <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
+      <PrintEVar-E <Math::Dec s.Usings> 'e' e.Index>
+      ' ) )'
+    )
+    (e.Indent '  return refalrts::cNoMemory;');
+
+  (e.Indent) (CmdCorrectAllocCopyEVar s.Usings 'e' e.Index s.AltPrev) =
+    (e.Indent)
+    (e.Indent
+      'if ( ' <PrintPrev (s.Usings 'e' e.Index)> ' == 0 )'
+    )
+    (e.Indent
+      '  ' <PrintPrev (s.Usings 'e' e.Index)> ' ='
+      ' ' <PrintPrev s.AltPrev> '; // CORRECT'
+    );
+
   (e.Indent) (CmdLinkBrackets s.Left s.Right) =
     (e.Indent)
     (e.Indent
@@ -475,6 +497,25 @@ GenCommand {
       <PrintEVar-B s.Usings 'e' e.Index> ', '
       <PrintEVar-E s.Usings 'e' e.Index> ' );'
     );
+
+  (e.Indent) (CmdInsertEVarBefore t.Prev s.Usings 'e' e.Index) =
+    (e.Indent)
+    (e.Indent
+      'refalrts::splice_evar( ' <PrintPrev t.Prev> ', '
+      <PrintEVar-B s.Usings 'e' e.Index> ', '
+      <PrintEVar-E s.Usings 'e' e.Index> ' );'
+    );
+
+  (e.Indent) (CmdInsertSTVarBefore t.Prev s.Usings s.Mode e.Index) =
+    (e.Indent)
+    (e.Indent
+      'refalrts::splice_stvar( ' <PrintPrev t.Prev> ', '
+      <PrintVar s.Usings s.Mode e.Index> ' );'
+    );
+
+  (e.Indent) (CmdSpliceFromFreeList) =
+    (e.Indent)
+    (e.Indent 'refalrts::splice_from_freelist( arg_begin );');
 
   (e.Indent) (CmdReturnResult) =
     (e.Indent)
@@ -679,6 +720,13 @@ GenCloseBrackets {
 
   '  ' e.Indent =
     (e.Indent '}') <GenCloseBrackets e.Indent>;
+}
+
+PrintPrev {
+  BEGIN = 'arg_begin';
+  s.Counter = <PrintElemVar s.Counter>;
+  (s.Usings 'e' e.Index) = <PrintEVar-B s.Usings 'e' e.Index>;
+  (s.Usings s.Mode e.Index) = <PrintVar s.Usings s.Mode e.Index>;
 }
 
 $END BE-CppSR::Generator.

@@ -16,10 +16,6 @@ $IMPORT MProfiler;
 */
 $ENTRY Generate
   t.hIModule e.OutName =
-    <MProfiler::Quantify &Profiling-Generate t.hIModule e.OutName>;
-
-Profiling-Generate
-  t.hIModule e.OutName =
     <MPredeclGenerator::Generate-Generic
       & Generate-Properties t.hIModule e.OutName
     >;
@@ -58,12 +54,9 @@ GenFunction-Code {
   t.FuncName s.ScopeClass e.Sentences =
     <Generator::GenFnStart s.ScopeClass t.FuncName>
     <Generator::GenInitCounter s.ScopeClass>
-    <MProfiler::Quantify & GenSentences e.Sentences>
+    <MLambda::Map & GenSentence e.Sentences>
     <Generator::GenFnEnd>;
 }
-
-GenSentences
-  e.Sentences = <MLambda::Map & GenSentence e.Sentences>;
 
 GenSentence
   ((Pattern e.Pattern) (Result e.Result)) =

@@ -51,16 +51,20 @@ Profiling-Link-Aux
   (e.PtOutName) e.Modules =
     <Link-Aux-2
       (e.PtOutName)
-      <MLambda::MapReduce
-        & AddInvertedInfo
-        (
-          <InvertInfo
-            <MLambda::Map & MLambda.UnBracket e.Modules>
-          >
-        )
-        <CollectDirectInfo
-          <MLambda::Map & ModulesUnBracket e.Modules>
+      <CreateBidirectionalTable e.Modules>
+    >;
+
+CreateBidirectionalTable
+  e.Modules =
+    <MLambda::MapReduce
+      & AddInvertedInfo
+      (
+        <InvertInfo
+          <MLambda::Map & MLambda.UnBracket e.Modules>
         >
+      )
+      <CollectDirectInfo
+        <MLambda::Map & ModulesUnBracket e.Modules>
       >
     >;
 
@@ -164,7 +168,7 @@ Link-Aux-2
     >;
 
 Profiling-Link-Aux-2
-  (e.PtOutName) (e.Inverted) e.Results =
+  (e.PtOutName) (e.OrphanInverted) e.Results =
     <MFileIO::Save
       (<XLinx-FileNamePt (e.PtOutName) '.module_list.txt'>)
       <PrintModuleList
@@ -183,7 +187,7 @@ Profiling-Link-Aux-2
         & PrintResult
         <SkipParser e.Results>
         (Parser)
-        <MLambda::Map & InvertedToResults e.Inverted>
+        <MLambda::Map & InvertedToResults e.OrphanInverted>
       >
     >
     <MFileIO::Save

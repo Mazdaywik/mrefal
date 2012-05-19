@@ -1,7 +1,5 @@
 #include <windows.h>
 
-#pragma hdrstop
-
 #include "Secundomer.h"
 
 //------------------------------------------------------------------------------

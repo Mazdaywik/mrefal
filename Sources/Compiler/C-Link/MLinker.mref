@@ -25,17 +25,13 @@ $IMPORT MProfiler;
 
   e.Option = char* | NotSupport
 */
-$ENTRY C-Link
-  e.ManyOptions =
-    <MProfiler::Quantify &Profiling-C-Link e.ManyOptions>;
-
-Profiling-C-Link {
+$ENTRY C-Link {
   (Compiler
     (ProgName e.ProgName) (Prologue e.Prologue) (Epilogue e.Epilogue)
   )
   (Include e.IncludeInfo) (Define e.DefineInfo) (Output e.OutputInfo)
   e.FileNames =
-    <MProfiler::Quantify &C-Link-Aux
+    <C-Link-Aux
       (Prologue
         e.ProgName ' ' e.Prologue ' '
         <ProcessListOption &IncludeName e.IncludeInfo>
@@ -70,10 +66,14 @@ ProcessOption {
 
 C-Link-Aux
   (Prologue e.Prologue) (Epilogue e.Epilogue) e.Renames =
-    <MOS::System
+    <MProfiler::Quantify
+      & Profiling-Call-Cpp-Compiler
       e.Prologue <MLambda::Map & InputName e.Renames> e.Epilogue
     >
     <MLambda::Map & DeleteFile e.Renames>;
+
+Profiling-Call-Cpp-Compiler
+  e.CmdLine = <MOS::System e.CmdLine>;
 
 InputName
   (s.Type e.FileName) = '"' e.FileName '" ';

@@ -26,7 +26,7 @@ $DATA CaseTable;
     | (Module (e.KeyName) (e.OrigName))
 */
 
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 
 /*
   <Explode t.QualifiedName> == e.ExplodedName
@@ -45,28 +45,14 @@ ExplodeSegment {
     ((<MStrings::Lower e.Segment>) (e.Segment));
 }
 
-/*
-  <Implode e.ExplodeName> == t.QualifiedName
-*/
-Implode {
-  e.ExplodeName =
-    <MQualifiedName::Create
-      <MLambda::Map &ImplodeSegment e.ExplodeName>
-    >;
-}
-
-ImplodeSegment {
-  ((e.KeyName) (e.OrigName)) = (e.OrigName);
-}
-
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 
 /**
   <Create> == t.CaseTable
 */
 $ENTRY Create = [CaseTable];
 
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 
 /**
   <Destroy t.CaseTable> == пусто
@@ -84,7 +70,7 @@ DestroyEntity {
     /* пусто */;
 }
 
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 
 /**
   <CheckSpace t.CaseTable t.ModuleName>

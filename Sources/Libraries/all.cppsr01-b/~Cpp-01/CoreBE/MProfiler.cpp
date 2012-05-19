@@ -70,8 +70,6 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
   return refalrts::cRecognitionImpossible;
 }
 
-static refalrts::FnResult CoreBEP_MProfilerP_EndQuantify(refalrts::Iter arg_begin, refalrts::Iter arg_end);
-
 refalrts::FnResult CoreBEP_MProfilerP_Quantify(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {

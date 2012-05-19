@@ -391,29 +391,11 @@ GenCommand {
   (e.Indent) (CmdEmptyResult) =
     (e.Indent)
     ()
-    (e.Indent 'refalrts::reset_allocator();')
-    (e.Indent 'refalrts::Iter res = arg_begin;');
+    (e.Indent 'refalrts::reset_allocator();');
 
-  (e.Indent) (CmdCopyEVar s.Usings 'e' e.Index) =
+  (e.Indent) (CmdCopyVar s.ElemNumber s.Mode e.Index) =
     (e.Indent)
-    (e.Indent
-      'if( ! refalrts::copy_evar( '
-      <PrintEVar-B s.Usings 'e' e.Index> ', '
-      <PrintEVar-E s.Usings 'e' e.Index> ', '
-      <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
-      <PrintEVar-E <Math::Dec s.Usings> 'e' e.Index>
-      ' ) )'
-    )
-    (e.Indent '  return refalrts::cNoMemory;');
-
-  (e.Indent) (CmdCopyVar s.Usings s.Mode e.Index) =
-    (e.Indent)
-    (e.Indent
-      'if( ! refalrts::copy_stvar( '
-      <PrintVar s.Usings s.Mode e.Index> ', '
-      <PrintVar <Math::Dec s.Usings> s.Mode e.Index> ' ) )'
-    )
-    (e.Indent '  return refalrts::cNoMemory;');
+    <PrintAllocateCopyVar (e.Indent) s.ElemNumber s.Mode e.Index>;
 
   (e.Indent) (CmdAllocateElem s.ElemNumber e.ElemInfo) =
     (e.Indent)
@@ -432,25 +414,11 @@ GenCommand {
     )
     (e.Indent '  return refalrts::cNoMemory;');
 
-  (e.Indent) (CmdAllocCopyEVar s.Usings 'e' e.Index) =
+  (e.Indent) (CmdCorrectAllocCopyEVar s.ElemNumber s.AltPrev) =
     (e.Indent)
     (e.Indent
-      'if( ! refalrts::alloc_copy_evar( '
-      <PrintEVar-B s.Usings 'e' e.Index> ', '
-      <PrintEVar-E s.Usings 'e' e.Index> ', '
-      <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
-      <PrintEVar-E <Math::Dec s.Usings> 'e' e.Index>
-      ' ) )'
-    )
-    (e.Indent '  return refalrts::cNoMemory;');
-
-  (e.Indent) (CmdCorrectAllocCopyEVar s.Usings 'e' e.Index s.AltPrev) =
-    (e.Indent)
-    (e.Indent
-      'if ( ' <PrintPrev (s.Usings 'e' e.Index)> ' == 0 )'
-    )
-    (e.Indent
-      '  ' <PrintPrev (s.Usings 'e' e.Index)> ' ='
+      'if ( ' <PrintElemVar s.ElemNumber> ' == 0 )'
+      ' ' <PrintElemVar s.ElemNumber> ' ='
       ' ' <PrintPrev s.AltPrev> '; // CORRECT'
     );
 
@@ -469,47 +437,18 @@ GenCommand {
       'refalrts::push_stack( ' <PrintElemVar s.ElemNumber> ' );'
     );
 
-  (e.Indent) (CmdInsertElem ElElem s.ElemNumber) =
+  (e.Indent) (CmdInsertEVarBefore s.Prev s.Usings 'e' e.Index) =
     (e.Indent)
     (e.Indent
-      'res = refalrts::splice_elem( res, '
-      <PrintElemVar s.ElemNumber> ' );'
-    );
-
-  (e.Indent) (CmdInsertElem ElSTVar s.Usings s.Mode e.Index) =
-    (e.Indent)
-    (e.Indent
-      'res = refalrts::splice_stvar( res, '
-      <PrintVar s.Usings s.Mode e.Index> ' );'
-    );
-
-  (e.Indent) (CmdInsertString s.NumBegin s.NumEnd) =
-    (e.Indent)
-    (e.Indent
-      'res = refalrts::splice_evar( res, '
-      <PrintElemVar s.NumBegin> ', ' <PrintElemVar s.NumEnd> ' );'
-    );
-
-  (e.Indent) (CmdInsertEVar s.Usings 'e' e.Index) =
-    (e.Indent)
-    (e.Indent
-      'res = refalrts::splice_evar( res, '
+      'refalrts::splice_evar( ' <PrintPrev s.Prev> ', '
       <PrintEVar-B s.Usings 'e' e.Index> ', '
       <PrintEVar-E s.Usings 'e' e.Index> ' );'
     );
 
-  (e.Indent) (CmdInsertEVarBefore t.Prev s.Usings 'e' e.Index) =
+  (e.Indent) (CmdInsertSTVarBefore s.Prev s.Usings s.Mode e.Index) =
     (e.Indent)
     (e.Indent
-      'refalrts::splice_evar( ' <PrintPrev t.Prev> ', '
-      <PrintEVar-B s.Usings 'e' e.Index> ', '
-      <PrintEVar-E s.Usings 'e' e.Index> ' );'
-    );
-
-  (e.Indent) (CmdInsertSTVarBefore t.Prev s.Usings s.Mode e.Index) =
-    (e.Indent)
-    (e.Indent
-      'refalrts::splice_stvar( ' <PrintPrev t.Prev> ', '
+      'refalrts::splice_stvar( ' <PrintPrev s.Prev> ', '
       <PrintVar s.Usings s.Mode e.Index> ' );'
     );
 
@@ -519,7 +458,6 @@ GenCommand {
 
   (e.Indent) (CmdReturnResult) =
     (e.Indent)
-    (e.Indent 'refalrts::use( res );')
     (e.Indent 'refalrts::splice_to_freelist( arg_begin, arg_end );')
     (e.Indent 'return refalrts::cSuccess;');
 
@@ -666,6 +604,33 @@ PrintElemVar {
   s.Number = 'n' <MStrings::Symb s.Number>;
 }
 
+PrintPrev {
+  BEGIN = 'arg_begin';
+  s.Counter = <PrintElemVar s.Counter>;
+}
+
+PrintAllocateCopyVar {
+  (e.Indent) s.ElemNumber 'e' e.Index =
+    (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
+    (e.Indent
+      'if( ! refalrts::alloc_copy_evar( '
+      <PrintElemVar s.ElemNumber> ', '
+      <PrintEVar-B 1 'e' e.Index> ', '
+      <PrintEVar-E 1 'e' e.Index>
+      ' ) )'
+    )
+    (e.Indent '  return refalrts::cNoMemory;');
+
+  (e.Indent) s.ElemNumber s.Mode e.Index =
+    (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
+    (e.Indent
+      'if( ! refalrts::alloc_copy_' s.Mode 'var( '
+      <PrintElemVar s.ElemNumber> ', '
+      <PrintVar 1 s.Mode e.Index> ' ) )'
+    )
+    (e.Indent '  return refalrts::cNoMemory;');
+}
+
 PrintAllocateElem {
   (e.Indent) s.ElemNumber s.ElementType e.Info =
     <PrintAllocate_Aux
@@ -720,13 +685,6 @@ GenCloseBrackets {
 
   '  ' e.Indent =
     (e.Indent '}') <GenCloseBrackets e.Indent>;
-}
-
-PrintPrev {
-  BEGIN = 'arg_begin';
-  s.Counter = <PrintElemVar s.Counter>;
-  (s.Usings 'e' e.Index) = <PrintEVar-B s.Usings 'e' e.Index>;
-  (s.Usings s.Mode e.Index) = <PrintVar s.Usings s.Mode e.Index>;
 }
 
 $END BE-CppSR::Generator.

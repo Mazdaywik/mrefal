@@ -1,7 +1,5 @@
 #include <cmath>
 
-#pragma hdrstop
-
 #include "Statistics.h"
 
 statistics::Statistics::Statistics()

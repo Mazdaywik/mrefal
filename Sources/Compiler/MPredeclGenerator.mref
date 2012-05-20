@@ -44,13 +44,6 @@ $IMPORT MProfiler;
 */
 $ENTRY Generate-Generic
   s.FnProperties t.hIModule e.OutName =
-    <MProfiler::Quantify
-      & Profiling-Generate-Generic
-      s.FnProperties t.hIModule e.OutName
-    >;
-
-Profiling-Generate-Generic
-  s.FnProperties t.hIModule e.OutName =
     <Generate-Aux
       s.FnProperties
       (e.OutName)
@@ -142,11 +135,14 @@ GenerateEntryCode
 Generate-Aux
   s.FnProperties (e.OutName) t.hIModule e.FunctionsEntries =
     t.hIModule
-    <MFileIO::Save
+    <MProfiler::Quantify & Profiling-MFileIO-Save
       (e.OutName)
       <s.FnProperties GenCommonHeaders>
       <FilterDecls e.FunctionsEntries>
     >;
+
+Profiling-MFileIO-Save
+  (e.OutName) e.Lines = <MFileIO::Save (e.OutName) e.Lines>;
 
 Generate-EntryCode-Aux {
   s.FnProperties
@@ -188,8 +184,14 @@ DoFilterDecls {
     >;
 
   (e.Known) =
-    <MLambda::Map & GenerateElem e.Known>;
+    <GenerateElems e.Known>;
 }
+
+GenerateElems
+  e.Known = <MProfiler::Quantify & Profiling-GenerateElems e.Known>;
+
+Profiling-GenerateElems
+  e.Known = <MLambda::Map & GenerateElem e.Known>;
 
 GenerateElem {
   (s.DeclareDefine s.Type t.Name (s.Generator e.Arguments)) =
@@ -205,13 +207,6 @@ GenerateElem {
   Эту функцию можно использовать только для генерации кода точек входа.
 */
 $ENTRY GenFunction
-  s.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
-    <MProfiler::Quantify
-      &Profiling-GenFunction
-      s.FnProperties t.AbsolutName s.ScopeClass e.Sentences
-    >;
-
-Profiling-GenFunction
   s.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
     <FilterSelf
       t.AbsolutName

@@ -7,8 +7,151 @@ $IMPORT MQualifiedName;
 $IMPORT MStrings;
 
 $ENTRY MakeAlgorithm {
-  (e.Pattern) (e.Result) =
-    <MakeAlgorithm-Result <GenPattern e.Pattern> e.Result>;
+  e.Sentences =
+    <MakeAlgorithm-Sentences
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          & PrepareSentence
+        >
+        e.Sentences
+      >
+    >;
+}
+
+PrepareSentence
+  (Pattern e.Pattern) (Result e.Result) =
+    ((e.Pattern) (<PrepareExpr e.Result>));
+
+PrepareExpr
+  e.Expr = <DoPrepareExpr e.Expr>;
+
+DoPrepareExpr {
+  (Identifier t.SrcPos e.Name) e.Tail =
+    (TkIdentifier <MQualifiedName::Create (e.Name)>)
+    <DoPrepareExpr e.Tail>;
+
+  (EVar e.Index) e.Tail =
+    (TkVariable 'e' e.Index) <DoPrepareExpr e.Tail>;
+
+  (TVar e.Index) e.Tail =
+    (TkVariable 't' e.Index) <DoPrepareExpr e.Tail>;
+
+  (SVar e.Index) e.Tail =
+    (TkVariable 's' e.Index) <DoPrepareExpr e.Tail>;
+
+  (Literal e.Content) e.Tail =
+    <PrepareLiteral e.Content> <DoPrepareExpr e.Tail>;
+
+  (Macro s.Value) e.Tail =
+    (TkNumber s.Value) <DoPrepareExpr e.Tail>;
+
+  (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail =
+    (TkName t.Name) <DoPrepareExpr e.Tail>;
+
+  (EntryCode s.CodeType e.InBrackets) e.Tail =
+    (Brackets EntryCode s.CodeType <DoPrepareExpr e.InBrackets>)
+    <DoPrepareExpr e.Tail>;
+
+  (Structure e.InBrackets) e.Tail =
+    (Brackets Structure <DoPrepareExpr e.InBrackets>)
+    <DoPrepareExpr e.Tail>;
+
+  (Abstract (s.CallType t.SrcPos t.Name) e.InBrackets) e.Tail =
+    (Brackets Abstract (TkName t.Name) <DoPrepareExpr e.InBrackets>)
+    <DoPrepareExpr e.Tail>;
+
+  (Function (s.CallType t.SrcPos t.Name) e.InBrackets) e.Tail =
+    (Brackets Function (TkName t.Name) <DoPrepareExpr e.InBrackets>)
+    <DoPrepareExpr e.Tail>;
+
+  (IndirectCall (SVar e.Index) e.InBrackets)
+  e.Tail =
+    (Brackets Function
+      (TkVariable 's' e.Index) <DoPrepareExpr e.InBrackets>
+    )
+    <DoPrepareExpr e.Tail>;
+
+   = ;
+}
+
+PrepareLiteral {
+  s.First e.Tail = (TkChar s.First) <PrepareLiteral e.Tail>;
+
+  = ;
+}
+
+MakeAlgorithm-Sentences
+  e.Sentences = <MakeAlgorithm-Sentences-Old e.Sentences>;
+
+MakeAlgorithm-Sentences-Old
+  e.Sentences =
+    <MLambda::Map & MakeAlgorithm-Sentence e.Sentences>;
+
+MakeAlgorithm-Sentence {
+  ((e.Pattern) (e.Result)) =
+    <MakeAlgorithm-Result
+      <GenPattern <PrepareExpr-Pattern e.Pattern>> e.Result
+    >;
+}
+
+PrepareExpr-Pattern
+  e.Expr = <DoPrepareExpr-Pattern 1 e.Expr '$'>;
+
+DoPrepareExpr-Pattern {
+  s.BracketNum (Identifier t.SrcPos e.Name) e.Tail t.MultiBracket =
+    (TkIdentifier <MQualifiedName::Create (e.Name)>)
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (EVar e.Index) e.Tail t.MultiBracket =
+    (TkVariable 'e' e.Index)
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (TVar e.Index) e.Tail t.MultiBracket =
+    (TkVariable 't' e.Index)
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (SVar e.Index) e.Tail t.MultiBracket =
+    (TkVariable 's' e.Index)
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (Literal e.Content) e.Tail t.MultiBracket =
+    <PrepareLiteral e.Content>
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (Macro s.Value) e.Tail t.MultiBracket =
+    (TkNumber s.Value)
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (FnPtr (s.CallType t.SrcPos t.Name))
+  e.Tail t.MultiBracket =
+    (TkName t.Name)
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum (Structure e.InBrackets) e.Tail t.MultiBracket =
+    (TkOpenBracket s.BracketNum)
+    <DoPrepareExpr-Pattern
+      <MMath::Inc s.BracketNum>
+      e.InBrackets
+      ((TkCloseBracket s.BracketNum) e.Tail t.MultiBracket)
+    >;
+
+  s.BracketNum
+  (Abstract (s.CallType t.SrcPos t.Name) e.InBrackets)
+  e.Tail t.MultiBracket =
+    (TkOpenADT s.BracketNum)
+    (TkName t.Name)
+    <DoPrepareExpr-Pattern
+      <MMath::Inc s.BracketNum>
+      e.InBrackets
+      ((TkCloseADT s.BracketNum) e.Tail t.MultiBracket)
+    >;
+
+  s.BracketNum (t.CloseBracket e.Tail t.MultiBracket) =
+    t.CloseBracket
+    <DoPrepareExpr-Pattern s.BracketNum e.Tail t.MultiBracket>;
+
+  s.BracketNum '$' = ;
 }
 
 MakeAlgorithm-Result
@@ -22,11 +165,25 @@ MakeAlgorithm-Result
 GeneralizeResult {
   (e.PatternVars) (e.PatternCommands)
   e.ResultCommands =
+    (CmdStartSentence)
     <MLambda::Map & MakeDeclaration <MOrder::Sort e.PatternVars>>
-    e.PatternCommands
-    (CmdEmptyResult)
-    e.ResultCommands
-    (CmdReturnResult);
+    <GenOpenedEEndCycle
+      e.PatternCommands
+      (CmdEmptyResult)
+      e.ResultCommands
+      (CmdReturnResult)
+    >
+    (CmdEndSentence);
+}
+
+GenOpenedEEndCycle {
+  e.Commands-B (CmdOpenedE e.Params) e.Commands-E =
+    e.Commands-B
+    (CmdOpenedE e.Params)
+    <GenOpenedEEndCycle e.Commands-E>
+    (CmdOpenedE-EndCycle);
+
+  e.Commands = e.Commands;
 }
 
 MakeDeclaration {
@@ -473,50 +630,82 @@ GenResult
     <DoGenResult
       (e.PatternVars)
       (/* commands */) 0 // счётчик новых элементов
-      e.Result
+      <OptimizeStrings e.Result> '$'
     >;
+
+OptimizeStrings {
+  (TkChar s.First) (TkChar s.Second) e.Tail =
+    <OptimizeStrings-Collect (2 s.First s.Second) e.Tail>;
+
+  (Brackets s.Type e.Expr) e.Tail =
+    (Brackets s.Type <OptimizeStrings e.Expr>)
+    <OptimizeStrings e.Tail>;
+
+  t.Other e.Tail = t.Other <OptimizeStrings e.Tail>;
+
+  = ;
+}
+
+OptimizeStrings-Collect {
+  (s.Len e.String) (TkChar s.Char) e.Tail =
+    <OptimizeStrings-Collect
+      (<MMath::Inc s.Len> e.String s.Char) e.Tail
+    >;
+
+  (s.Len e.String) e.Tail =
+    (TkString s.Len e.String) <OptimizeStrings e.Tail>;
+}
 
 DoGenResult {
   // Создаём литералы
-  (e.Vars) (e.Commands) s.Counter (TkChar s.Value) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkChar s.Value) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
         (CtAlloc StChar s.Counter s.Value)
       )
       <MMath::Inc s.Counter> e.Result
+      t.MultiBracket
     >;
 
-  (e.Vars) (e.Commands) s.Counter (TkName e.Name) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkName e.Name) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
         (CtAlloc StName s.Counter e.Name)
       )
       <MMath::Inc s.Counter> e.Result
+      t.MultiBracket
     >;
 
-  (e.Vars) (e.Commands) s.Counter (TkNumber s.Number) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkNumber s.Number) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
         (CtAlloc StNumber s.Counter s.Number)
       )
       <MMath::Inc s.Counter> e.Result
+      t.MultiBracket
     >;
 
   (e.Vars)
-  (e.Commands) s.Counter (TkIdentifier t.Name) e.Result =
+  (e.Commands) s.Counter (TkIdentifier t.Name) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
         (CtAlloc StIdent s.Counter t.Name)
       )
       <MMath::Inc s.Counter> e.Result
+      t.MultiBracket
     >;
 
   (e.Vars)
-  (e.Commands) s.Counter (TkString s.Len e.String) e.Result =
+  (e.Commands) s.Counter (TkString s.Len e.String) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
@@ -525,56 +714,59 @@ DoGenResult {
         )
       )
       <MMath::Add s.Counter 2> e.Result
+      t.MultiBracket
     >;
 
-  /*
-    Обработка открывающих скобок обоих типов ничем не отличается
-    от обработки литералов.
-  */
   (e.Vars)
-  (e.Commands) s.Counter (TkOpenBracket s.Num) e.Result =
+  (e.Commands) s.Counter (Brackets Structure e.InBrackets) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
-        (CtAlloc StOpenBracket s.Counter s.Num)
+        (CtAlloc StOpenBracket s.Counter)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.InBrackets
+      (Structure s.Counter e.Result t.MultiBracket)
     >;
 
-  (e.Vars) (e.Commands) s.Counter (TkOpenCall s.Num) e.Result =
+  (e.Vars) (e.Commands) s.Counter (Brackets Abstract e.InBrackets)
+  e.Result t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
-        (CtAlloc StOpenCall s.Counter s.Num)
+        (CtAlloc StOpenADT s.Counter)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.InBrackets
+      (Abstract s.Counter e.Result t.MultiBracket)
     >;
 
-  (e.Vars) (e.Commands) s.Counter (TkOpenADT s.Num) e.Result =
+  (e.Vars) (e.Commands) s.Counter (Brackets Function e.InBrackets)
+  e.Result t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
-        (CtAlloc StOpenADT s.Counter s.Num)
+        (CtAlloc StOpenCall s.Counter)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.InBrackets
+      (Function s.Counter e.Result t.MultiBracket)
     >;
 
-  /*
-    Специальный тип команд -- маркер инициализации и финализации.
-    Результатное выражение, предварённое таким маркером,
-    выполняется только один раз.
-  */
-
-  (e.Vars) (e.Commands) s.Counter (EntryCode s.CodeType) e.Result =
+  (e.Vars) (e.Commands) s.Counter
+  (Brackets EntryCode s.CodeType e.InBrackets) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
-      (e.Commands (CtEntryCode s.CodeType)) s.Counter e.Result
+      (e.Commands (CtEndEntryCode))
+      s.Counter e.InBrackets
+      (EntryCode s.CodeType e.Result t.MultiBracket)
     >;
 
-  (e.Vars) (e.Commands) s.Counter (EndEntryCode) e.Result =
+  (e.Vars) (e.Commands) s.Counter
+  (EntryCode s.CodeType e.Result t.MultiBracket) =
     <DoGenResult
       (e.Vars)
-      (e.Commands (CtEndEntryCode)) s.Counter e.Result
+      (e.Commands (CtEntryCode s.CodeType)) s.Counter
+      e.Result t.MultiBracket
     >;
 
   /*
@@ -584,85 +776,89 @@ DoGenResult {
   */
   (e.Vars)
   (e.Commands-B
-    (CtAlloc StOpenBracket s.OpenCounter s.Num)
+    (CtAlloc StOpenBracket s.OpenCounter)
     e.Commands-E
   )
-  s.Counter (TkCloseBracket s.Num) e.Result =
+  s.Counter (Structure s.OpenCounter e.Result t.MultiBracket) =
     <DoGenResult
       (e.Vars)
       (
         e.Commands-B
-        (CtAlloc StOpenBracket s.OpenCounter s.Num)
+        (CtAlloc StOpenBracket s.OpenCounter)
         e.Commands-E
-        (CtAlloc StCloseBracket s.Counter s.Num)
+        (CtAlloc StCloseBracket s.Counter)
         (CtBrackets StLink s.OpenCounter s.Counter)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.Result t.MultiBracket
     >;
 
   (e.Vars)
-  (e.Commands-B (CtAlloc StOpenADT s.OpenCounter s.Num) e.Commands-E)
-  s.Counter (TkCloseADT s.Num) e.Result =
+  (e.Commands-B (CtAlloc StOpenADT s.OpenCounter) e.Commands-E)
+  s.Counter (Abstract s.OpenCounter e.Result t.MultiBracket) =
     <DoGenResult
       (e.Vars)
       (
         e.Commands-B
-        (CtAlloc StOpenADT s.OpenCounter s.Num)
+        (CtAlloc StOpenADT s.OpenCounter)
         e.Commands-E
-        (CtAlloc StCloseADT s.Counter s.Num)
+        (CtAlloc StCloseADT s.Counter)
         (CtBrackets StLink s.OpenCounter s.Counter)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.Result t.MultiBracket
     >;
 
   (e.Vars)
-  (e.Commands-B (CtAlloc StOpenCall s.OpenCounter s.Num) e.Commands-E)
-  s.Counter (TkCloseCall s.Num) e.Result =
+  (e.Commands-B (CtAlloc StOpenCall s.OpenCounter) e.Commands-E)
+  s.Counter (Function s.OpenCounter e.Result t.MultiBracket) =
     <DoGenResult
       (e.Vars)
       (
         e.Commands-B
-        (CtAlloc StOpenCall s.OpenCounter s.Num)
+        (CtAlloc StOpenCall s.OpenCounter)
         e.Commands-E
-        (CtAlloc StCloseCall s.Counter s.Num)
+        (CtAlloc StCloseCall s.Counter)
         (CtBrackets StStack s.OpenCounter)
         (CtBrackets StStack s.Counter)
       )
       <MMath::Inc s.Counter> e.Result
+      t.MultiBracket
     >;
 
   // Обработка переменных
   (e.Vars)
-  (e.Commands) s.Counter (TkVariable 's' e.Index) e.Result =
+  (e.Commands) s.Counter (TkVariable 's' e.Index) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
         (CtAllocCopyVar s.Counter 's' e.Index)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.Result t.MultiBracket
     >;
 
   (e.Vars-B (s.Mode e.Index s.Count) e.Vars-E)
-  (e.Commands) s.Counter (TkVariable s.Mode e.Index) e.Result =
+  (e.Commands) s.Counter (TkVariable s.Mode e.Index) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars-B <ReturnVar s.Mode e.Index s.Count> e.Vars-E)
       (e.Commands
         (CtInsertVarBefore s.Count s.Mode e.Index)
       )
-      s.Counter e.Result
+      s.Counter e.Result t.MultiBracket
     >;
 
-  (e.Vars) (e.Commands) s.Counter (TkVariable s.Mode e.Index) e.Result =
+  (e.Vars) (e.Commands) s.Counter (TkVariable s.Mode e.Index) e.Result
+  t.MultiBracket =
     <DoGenResult
       (e.Vars)
       (e.Commands
         (CtAllocCopyVar s.Counter s.Mode e.Index)
       )
-      <MMath::Inc s.Counter> e.Result
+      <MMath::Inc s.Counter> e.Result t.MultiBracket
     >;
 
   // Завершение просмотра
-  (e.Vars) (e.Commands) s.Counter =
+  (e.Vars) (e.Commands) s.Counter '$' =
     <GenResult2_Commands
       <CalcBefores <FillAltPtr e.Commands BEGIN> BEGIN>
     >;
@@ -804,12 +1000,12 @@ ElemType {
   StName e.Name = ElName e.Name;
   StNumber s.Number = ElNumber s.Number;
   StIdent t.Name = ElIdent t.Name;
-  StOpenADT s.Num = ElOpenADT;
-  StCloseADT s.Num = ElCloseADT;
-  StOpenBracket s.Num = ElOpenBracket;
-  StCloseBracket s.Num = ElCloseBracket;
-  StOpenCall s.Num = ElOpenCall;
-  StCloseCall s.Num = ElCloseCall;
+  StOpenADT = ElOpenADT;
+  StCloseADT = ElCloseADT;
+  StOpenBracket = ElOpenBracket;
+  StCloseBracket = ElCloseBracket;
+  StOpenCall = ElOpenCall;
+  StCloseCall = ElCloseCall;
 }
 
 CorrectAllocates {

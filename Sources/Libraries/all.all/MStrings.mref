@@ -35,6 +35,17 @@ $ENTRY Symb s.Num = <Core::Symb s.Num>;
 $ENTRY Ord e.Line = <Core::Ord e.Line>;
 $ENTRY Chr e.Line = <Core::Chr e.Line>;
 
+/**
+  <SerializeAtom s.Atom>
+    == Char e.CharRep
+    == Number e.StrNumber
+    == IsntSerializable s.Atom
+  e.CharRep ::= s.Atom | s.Digit1 s.Digit2 s.Digit3
+  e.StrNumber — десятичная запись числа
+*/
+$ENTRY SerializeAtom
+  s.Atom = <Core::SerializeAtom s.Atom>;
+
 //------------------------------------------------------------------------------
 
 UpperLowerTable =

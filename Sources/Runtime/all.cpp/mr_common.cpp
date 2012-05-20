@@ -155,7 +155,8 @@ REFAL_FUNC(implement_fileio::open) {
   if( binary )
   {
     mode_parsed =
-      svar_left( sMode, arg_begin, arg_end ) && ( cDataChar == sMode->tag );
+      svar_left( sMode, arg_begin, arg_end )
+      && ( cDataChar == sMode->tag );
 
     if( mode_parsed == false ) return cRecognitionImpossible;
   }
@@ -170,7 +171,8 @@ REFAL_FUNC(implement_fileio::open) {
 
   CharArray file_name;
 
-  FnResult name_parse = CharArray::from_sequence( file_name, arg_begin, arg_end );
+  FnResult name_parse =
+    CharArray::from_sequence( file_name, arg_begin, arg_end );
 
   if( cSuccess != name_parse ) return name_parse;
 
@@ -592,6 +594,92 @@ REFAL_FUNC(implement_strings::numb) {
   splice_to_freelist( func_name, close_call );
 
   return cSuccess;
+}
+
+DECL_REFAL_IDENT(Char, "Char");
+DECL_REFAL_IDENT(Number, "Number");
+DECL_REFAL_IDENT(IsntSerializable, "IsntSerializable");
+DECL_REFAL_IDENT(Symb, "Symb");
+
+REFAL_FUNC(implement_strings::serialize_atom) {
+  // Формат
+  // <SerializeAtom s.Atom>
+  //   == Char e.CharRep
+  //   == Number e.StrNumber
+  //   == IsntSerializable s.Atom
+  // e.CharRep ::= s.Atom | s.Digit1 s.Digit2 s.Digit3
+  // e.StrNumber — десятичная запись числа
+
+  using namespace refalrts;
+
+  // Скобки вызова и имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+   Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  Iter sAtom = 0;
+  bool pattern =
+    svar_left(sAtom, arg_begin, arg_end)
+    && empty_seq(arg_begin, arg_end);
+
+  if( pattern == false ) return cRecognitionImpossible;
+
+  if( cDataChar == sAtom->tag ) {
+    if( (32 <= sAtom->char_info) && (sAtom->char_info < 127) ) {
+      func_name->tag = cDataIdentifier;
+      func_name->ident_info = REFAL_IDENT(Char);
+
+      splice_to_freelist(open_call, open_call);
+      splice_to_freelist(close_call, close_call);
+
+      return cSuccess;
+    } else {
+      open_call->tag = cDataIdentifier;
+      open_call->ident_info = REFAL_IDENT(Char);
+
+      unsigned code = static_cast<unsigned char>(sAtom->char_info);
+
+      func_name->tag = cDataChar;
+      func_name->char_info = (code / 100 % 10) + '0';
+
+      sAtom->char_info = (code / 10 % 10) + '0';
+
+      close_call->tag = cDataChar;
+      close_call->char_info = (code % 10) + '0';
+
+      return cSuccess;
+    }
+  } else if( cDataNumber == sAtom->tag ) {
+    Iter number_ident = 0;
+    if( ! alloc_ident(number_ident, REFAL_IDENT(Number)) )
+      return cNoMemory;
+
+    splice_stvar(open_call, number_ident);
+
+    // Необычный ход для не-рефальной функции:
+    // формирование в результатном выражении вызова другой функции
+    func_name->function_info.ptr = symb;
+#ifdef MODULE_REFAL
+    func_name->function_info.name = REFAL_IDENT(Symb);
+#else
+    func_name->function_info.name = "Symb";
+#endif
+    push_stack(close_call);
+    push_stack(open_call);
+
+    return cSuccess;
+  } else {
+      func_name->tag = cDataIdentifier;
+      func_name->ident_info = REFAL_IDENT(IsntSerializable);
+
+      splice_to_freelist(open_call, open_call);
+      splice_to_freelist(close_call, close_call);
+
+      return cSuccess;
+  }
 }
 
 REFAL_FUNC(Exit) {

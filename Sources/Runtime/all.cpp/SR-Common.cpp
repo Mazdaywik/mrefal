@@ -73,6 +73,12 @@ refalrts::FnResult MR_Strings_Symb(
   return implement_strings::symb(arg_begin, arg_end);
 }
 
+refalrts::FnResult MR_Strings_SerializeAtom(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return implement_strings::serialize_atom(arg_begin, arg_end);
+}
+
 refalrts::FnResult MR_Strings_Numb(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {

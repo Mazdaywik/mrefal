@@ -102,3 +102,9 @@ refalrts::FnResult CoreBEP_MStringsP_Numb(
   return implement_strings::numb(arg_begin, arg_end);
 }
 
+refalrts::FnResult CoreBEP_MStringsP_SerializeAtom(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return implement_strings::serialize_atom(arg_begin, arg_end);
+}
+

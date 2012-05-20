@@ -39,6 +39,8 @@ convert(SymConverter conv, refalrts::Iter arg_begin, refalrts::Iter arg_end);
 extern REFAL_FUNC(symb);
 extern REFAL_FUNC(numb);
 
+extern REFAL_FUNC(serialize_atom);
+
 } // namespace implement_strings
 
 // Эта функция генерится автоматически вместе с Go ...

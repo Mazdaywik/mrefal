@@ -485,7 +485,7 @@ void implement_strings::ord(refalrts::Iter ptr) {
   using namespace refalrts;
 
   if( cDataChar == ptr->tag ) {
-    char value = ptr->char_info;
+    unsigned char value = ptr->char_info;
     ptr->tag = cDataNumber;
     ptr->number_info = static_cast<RefalNumber>( value );
   } else {

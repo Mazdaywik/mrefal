@@ -1,0 +1,357 @@
+v ROUT3 Module Refal 0.1
+
+b Entry::CoreBE::OS::MFileSystem::FileAttributes
+c $Entry::CoreBE::OS::MFileSystem::FileAttributes$ {
+c   e.$Index::FileName$ =
+c     <$Local::CoreBE::OS::MFileSystem::Call$
+c       ('FileAttributes') e.$Index::FileName$
+c     >;
+c }
+
+b Entry::CoreBE::OS::MFileSystem::FindFiles
+c $Entry::CoreBE::OS::MFileSystem::FindFiles$ {
+c   e.$Index::Mask$ =
+c     <$Local::CoreBE::OS::MFileSystem::Call$
+c       ('FindFiles') e.$Index::Mask$
+c     >;
+c }
+
+b Entry::CoreBE::OS::MFileSystem::FullName
+c $Entry::CoreBE::OS::MFileSystem::FullName$ {
+c   e.$Index::FileName$ =
+c     <$Local::CoreBE::OS::MFileSystem::Call$
+c       ('FullName') e.$Index::FileName$
+c     >;
+c }
+
+b Entry::CoreBE::OS::MFileSystem::MakeDir
+c $Entry::CoreBE::OS::MFileSystem::MakeDir$ {
+c   e.$Index::DirName$ =
+c     <$Local::CoreBE::OS::MFileSystem::Call$
+c       ('MakeDir') e.$Index::DirName$
+c     >;
+c }
+
+b Entry::CoreBE::OS::MFileSystem::RemoveDir
+c $Entry::CoreBE::OS::MFileSystem::RemoveDir$ {
+c   e.$Index::DirName$ =
+c     <$Local::CoreBE::OS::MFileSystem::Call$
+c       ('RemoveDir') e.$Index::DirName$
+c     >;
+c }
+
+b Entry::CoreBE::OS::MFileSystem::RemoveFile
+c $Entry::CoreBE::OS::MFileSystem::RemoveFile$ {
+c   e.$Index::FileName$ =
+c     <$Local::CoreBE::OS::MFileSystem::Call$
+c       ('RemoveFile') e.$Index::FileName$
+c     >;
+c }
+
+b Local::CoreBE::OS::MFileSystem::Call
+c $Local::CoreBE::OS::MFileSystem::Call$ {
+c   (e.$Index::FuncName$) e.$Index::Argument$
+
+c       , <$Local::CoreBE::OS::MFileSystem::Serialize$ e.$Index::Argument$ >
+c       : e.$Index::SerializedArgument$
+
+c       , <$Local::CoreBE::OS::MFileSystem::GetExtentExe$>
+c       : e.$Index::ExtentName$
+
+c       , <System
+c           e.$Index::ExtentName$ ' '
+c           e.$Index::FuncName$ ' '
+c           e.$Index::SerializedArgument$ ' ~$fs_extent.tmp >NUL 2>NUL'
+c         >
+c       : s.$Index::RetCode1$
+
+c       , <ExistFile '~$fs_extent.tmp' > :
+c       {
+c         True
+c           , <Open 'r' 18 '~$fs_extent.tmp' >
+c           :
+
+c           , <Get 18 > <Close 18 >
+c           : e.$Index::LoadedLine$
+
+c          , <System 'del ~$fs_extent.tmp' >
+c          : s.$Index::RetCode2$
+
+c           , <$Local::CoreBE::OS::MFileSystem::UnSerialize$ e.$Index::LoadedLine$ > :
+c           {
+c             s.$Index::ConvertResult$ = $Ident::Fails$ ;
+
+c             Success e.$Index::FunctionResult$ =
+c               e.$Index::FunctionResult$ ;
+c           };
+
+c         False = $Ident::Fails$;
+c       };
+c }
+
+b Local::CoreBE::OS::MFileSystem::Serialize
+c $Local::CoreBE::OS::MFileSystem::Serialize$ {
+c   ( $ADT::__StructureBrackets$ e.$Index::InBrackets$ )
+c   e.$Index::Tail$ =
+c     '('
+c       <$Local::CoreBE::OS::MFileSystem::Serialize$
+c         e.$Index::InBrackets$
+c       >
+c     ')'
+c     <$Local::CoreBE::OS::MFileSystem::Serialize$
+c       e.$Index::Tail$
+c     >;
+
+c   s.$Index::Atom$ e.$Index::Tail$ =
+c   <$Local::CoreBE::OS::MFileSystem::DumpAtom$ s.$Index::Atom$ >
+c   <$Local::CoreBE::OS::MFileSystem::Serialize$ e.$Index::Tail$ > ;
+
+c   = ;
+c }
+
+
+b Local::CoreBE::OS::MFileSystem::DumpAtom
+c $Local::CoreBE::OS::MFileSystem::DumpAtom$ {
+c   s.$Index::Atom$
+c     , <Type s.$Index::Atom$ >
+c     :
+c     {
+r       // Печатные символы
+c       'L' e.1 = s.$Index::Atom$ ;
+c       'D' e.1 = s.$Index::Atom$ ;
+
+r       // Идентификатор
+c       'W' e.1
+c          , s.$Index::Atom$ :
+c          {
+c            $Ident::Success$ = '#iSuccess+' ;
+c            $Ident::Fails$ = '#iFails+' ;
+c            $Ident::A-DateTime$ = '#iA-DateTime+' ;
+c            $Ident::C-DateTime$ = '#iC-DateTime+' ;
+c            $Ident::M-DateTime$ = '#iM-DateTime+' ;
+c            $Ident::Size$ = '#iSize+' ;
+c            $Ident::Dir$ = '#iDir+' ;
+c            s.$Index::Other$ = '#iError+' ;
+c          };
+
+r       // Число
+c       'N' e.1 = '#n' <Symb s.$Index::Atom$ > '+' ;
+r       // Непечатные символы
+c       'P' e.1 = '#c' <Symb <Ord s.$Index::Atom$ > > '+' ;
+c       'O' e.1 = '#c' <Symb <Ord s.$Index::Atom$ > > '+' ;
+c     };
+c }
+
+b Local::CoreBE::OS::MFileSystem::GetExtentExe
+c $Local::CoreBE::OS::MFileSystem::GetExtentExe$ {
+c   , <Dg FS-Extent > :
+c     {
+c        Loaded e.$Index::Extent$ = e.$Index::Extent$ ;
+c        =
+c          <$Local::CoreBE::OS::MFileSystem::FindExtent$
+c            2 <Arg 1 >
+c          >;
+c     };
+c }
+
+
+b Local::CoreBE::OS::MFileSystem::FindExtent
+c $Local::CoreBE::OS::MFileSystem::FindExtent$ {
+c   s.$Index::Next$
+c     , <Br FS-Extent '=' Loaded 'FS-Extent.cpp.exe' >
+c     :
+c     = 'FS-Extent.cpp.exe' ;
+
+c   s.$Index::Next$ '++extent:' e.$Index::Extent$
+c     , <Br FS-Extent '=' Loaded e.$Index::Extent$ >
+c     :
+c     = e.$Index::Extent$;
+
+c   s.$Index::Next$ e.$Index::Arg$ =
+c     <$Local::CoreBE::OS::MFileSystem::FindExtent$
+c       <Add s.$Index::Next$ 1 >
+c       <Arg s.$Index::Next$ >
+c     >;
+c }
+
+b Local::CoreBE::OS::MFileSystem::UnSerialize
+c $Local::CoreBE::OS::MFileSystem::UnSerialize$ {
+c   e.$Index::String$ =
+c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c       '$' () e.$Index::String$
+c     >;
+c }
+
+
+b Local::CoreBE::OS::MFileSystem::DoUnSerialize
+c $Local::CoreBE::OS::MFileSystem::DoUnSerialize$ {
+c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
+c   '#' e.$Index::Tail$ =
+c     <$Local::CoreBE::OS::MFileSystem::Escaped$
+c       t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) e.$Index::Tail$
+c     >;
+
+c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
+c   '(' e.$Index::Tail$ =
+c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c       ( t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) ) ( )
+c       e.$Index::Tail$
+c     >;
+
+c   ( t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) )
+c   ( e.$Index::Inner$ ) ')' e.$Index::Tail$ =
+c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c       t.$Index::MultiBracket$
+c       ( e.$Index::Scanned$ ( $ADT::__StructureBrackets$ e.$Index::Inner$ ) )
+c       e.$Index::Tail$
+c     >;
+
+r   // Нормальное завершение
+c   '$' ( e.$Index::Scanned$ ) = Success e.$Index::Scanned$;
+
+r   // Ненормальное завершение
+c   '$' ( e.$Index::Scanned$ ) ')' e.$Index::Tail$ = Fails;
+
+c   ( t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) )
+c   ( e.$Index::Inner$ ) =
+c     Fails;
+
+c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
+c   s.$Index::Char$ e.$Index::Tail$ =
+c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c       t.$Index::MultiBracket$
+c       ( e.$Index::Scanned$ s.$Index::Char$ )
+c       e.$Index::Tail$
+c     >;
+c }
+
+
+b Local::CoreBE::OS::MFileSystem::Escaped
+c $Local::CoreBE::OS::MFileSystem::Escaped$ {
+c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
+c   s.$Index::Next$ e.$Index::Tail$
+c     , s.$Index::Next$ :
+c     {
+c       'c'
+c         , <$Local::CoreBE::OS::MFileSystem::EscapedSeq$
+c             ('0123456789')
+c             e.$Index::Tail$
+c           >
+c         :
+c         {
+c           ( ) e.$Index::NewTail$ = Fails;
+
+c           ( e.$Index::CharCode$ ) e.$Index::NewTail$
+c             , <Chr <Numb e.$Index::CharCode$ > >
+c             : s.$Index::Char$
+c             =
+c               <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c                 t.$Index::MultiBracket$
+c                 ( e.$Index::Scanned$ s.$Index::Char$ )
+c                 e.$Index::NewTail$
+c               >;
+c         };
+
+c       'n'
+c         , <$Local::CoreBE::OS::MFileSystem::EscapedSeq$
+c             ('0123456789')
+c             e.$Index::Tail$
+c           >
+c         :
+c         {
+c           ( ) e.$Index::NewTail$ = Fails;
+
+c           ( e.$Index::StrNumber$ ) e.$Index::NewTail$
+c             , <Numb e.$Index::StrNumber$ >
+c             : s.$Index::Number$
+c             =
+c               <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c                 t.$Index::MultiBracket$
+c                 ( e.$Index::Scanned$ s.$Index::Number$ )
+c                 e.$Index::NewTail$
+c               >;
+c         };
+
+c       'i'
+c         , <$Local::CoreBE::OS::MFileSystem::EscapedSeq$
+c             (
+c               '0123456789-_'
+c               'abcdefghijklmnopqrstuvwxyz'
+c               'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+c             )
+c             e.$Index::Tail$
+c           >
+c         :
+c         {
+c           ( ) e.$Index::NewTail$ = Fails;
+
+c           ( e.$Index::StrIdent$ ) e.$Index::NewTail$
+c             , <$Local::CoreBE::OS::MFileSystem::Implode$ e.$Index::StrIdent$ > :
+c             {
+c               Valid s.$Index::Ident$ =
+c                 <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c                   t.$Index::MultiBracket$
+c                   ( e.$Index::Scanned$ s.$Index::Ident$ )
+c                   e.$Index::NewTail$
+c                 >;
+
+c               Invalid = Fails;
+c             };
+c         };
+
+c       '_' =
+c         <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c           t.$Index::MultiBracket$
+c           ( e.$Index::Scanned$ ' ' )
+c           e.$Index::Tail$
+c         >;
+
+c       s.$Index::Escaped$ =
+c         <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
+c           t.$Index::MultiBracket$
+c           ( e.$Index::Scanned$ s.$Index::Escaped$ )
+c           e.$Index::Tail$
+c         >;
+c     };
+
+c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) = Fails;
+c }
+
+b Local::CoreBE::OS::MFileSystem::EscapedSeq
+c $Local::CoreBE::OS::MFileSystem::EscapedSeq$ {
+c   ( e.$Index::Valid$ ) e.$Index::Tail$ =
+c     <$Local::CoreBE::OS::MFileSystem::DoEscapedSeq$
+c       ( e.$Index::Valid$ ) ( ) e.$Index::Tail$
+c     >;
+c }
+
+b Local::CoreBE::OS::MFileSystem::DoEscapedSeq
+c $Local::CoreBE::OS::MFileSystem::DoEscapedSeq$ {
+c   ( e.$Index::Valid$ ) ( e.$Index::Scanned$ )
+c   ' ' e.$Index::Tail$ =
+c     ( e.$Index::Scanned$ ) e.$Index::Tail$ ;
+
+c   ( e.$Index::Valid$ ) ( e.$Index::Scanned$ )
+c   '+' e.$Index::Tail$ =
+c     ( e.$Index::Scanned$ ) e.$Index::Tail$ ;
+
+c   ( e.$Index::Valid-B$ s.$Index::Next$ e.$Index::Valid-E$ )
+c   ( e.$Index::Scanned$ ) s.$Index::Next$ e.$Index::Tail$ =
+c     <$Local::CoreBE::OS::MFileSystem::DoEscapedSeq$
+c       ( e.$Index::Valid-B$ s.$Index::Next$ e.$Index::Valid-E$ )
+c       ( e.$Index::Scanned$ s.$Index::Next$ ) e.$Index::Tail$
+c     >;
+c }
+
+b Local::CoreBE::OS::MFileSystem::Implode
+c $Local::CoreBE::OS::MFileSystem::Implode$ {
+r   // Ага, хуйня на постном масле
+c   'Success'        = Valid   $Ident::Success$    ;
+c   'Fails'          = Valid   $Ident::Fails$      ;
+c   'A-DateTime'     = Valid   $Ident::A-DateTime$ ;
+c   'C-DateTime'     = Valid   $Ident::C-DateTime$ ;
+c   'M-DateTime'     = Valid   $Ident::M-DateTime$ ;
+c   'Size'           = Valid   $Ident::Size$       ;
+c   'Dir'            = Valid   $Ident::Dir$        ;
+c   e.$Index::Other$ = Invalid                     ;
+c }

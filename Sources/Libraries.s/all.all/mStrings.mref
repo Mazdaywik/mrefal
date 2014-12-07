@@ -1,20 +1,50 @@
 $MODULE MStrings;
 
 $IMPORT Core = CoreBE::MStrings;
-$IMPORT MLambda;
 $IMPORT MMath;
+$IMPORT MLambda;
 
 //------------------------------------------------------------------------------
 
 // Вызовы встроенных функций.
 
+/**
+  <Numb e.Digits e.Tail>
+    == s.Number
+  e.Digits ::= ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9')*
+
+  Число символов в e.Digits может быть равно нулю.
+  В этом случае s.Number == 0
+*/
 $ENTRY Numb e.Digits = <Core::Numb e.Digits>;
 
+/**
+  <Symb s.Number> == e.TextRep
+  Преобразует число в его десятичную запись.
+*/
 $ENTRY Symb s.Num = <Core::Symb s.Num>;
 
-$ENTRY Ord e.Line = <Core::Ord e.Line>;
+/**
+  <Ord e.Line> == e.Line'
+  <Chr e.Line> == e.Line'
 
+  Функции предназначены для превращения символов в их числовые коды и обратно.
+  ВНИМАНИЕ! Обработка строки e.Line ведётся рекурсивно,
+  включая не только структурные, но и абстрактные скобки!
+*/
+$ENTRY Ord e.Line = <Core::Ord e.Line>;
 $ENTRY Chr e.Line = <Core::Chr e.Line>;
+
+/**
+  <SerializeAtom s.Atom>
+    == Char e.CharRep
+    == Number e.StrNumber
+    == IsntSerializable s.Atom
+  e.CharRep ::= s.Atom | s.Digit1 s.Digit2 s.Digit3
+  e.StrNumber — десятичная запись числа
+*/
+$ENTRY SerializeAtom
+  s.Atom = <Core::SerializeAtom s.Atom>;
 
 //------------------------------------------------------------------------------
 

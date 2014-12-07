@@ -1,0 +1,65 @@
+$MODULE MInOut;
+
+$IMPORT Core = CoreBE::MFileIO;
+
+/**
+  <Write e.Text> == пусто
+  <Write-T e.Text> == e.Text
+
+  Записывает e.Text на stdout.
+*/
+$ENTRY Write
+  e.Text =
+    <Core::Write <Core::StdOut> e.Text>;
+
+$ENTRY Write-T
+  e.Text = <Write e.Text> e.Text;
+
+/**
+  <WriteLine e.Line> == пусто
+  <WriteLine-T e.Line> == e.Line
+
+  Записывает e.Line на stdout, добавляя в конце символ возврата строки.
+*/
+$ENTRY WriteLine
+  e.Line =
+    <Core::Write <Core::StdOut> e.Line '\n'>;
+
+$ENTRY WriteLine-T
+  e.Line = <WriteLine e.Line> e.Line;
+
+/**
+  <ReadLine> == e.Line
+
+  Считывает со stdin строку до ближайшего \n или конца потока.
+  Символ \n или символ конца потока в e.Line не добавляется.
+*/
+$ENTRY ReadLine
+  = <Core::ReadLine <Core::StdIn>>;
+
+/**
+  <WriteText (e.Line)*> == пусто
+  <WriteText (e.Line)*> == (e.Line)*
+
+  Записывает текст как последовательность строк на stdout.
+  После каждой из строк, включая последнюю, выводится символ \n.
+*/
+$ENTRY WriteText {
+  (e.Line) e.Tail =
+    <WriteLine e.Line>
+    <WriteText e.Tail>;
+
+  = ;
+}
+
+$ENTRY WriteText-T {
+  (e.Line) e.Tail =
+    ( <WriteLine-T e.Line> )
+    <WriteText-T e.Tail>;
+
+  = ;
+}
+
+$ENTRY Final = <Core::FlushIO>;
+
+$END MInOut.

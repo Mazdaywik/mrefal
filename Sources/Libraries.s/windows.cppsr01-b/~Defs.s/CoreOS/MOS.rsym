@@ -1,9 +1,0 @@
-$module CoreOS::MOS;
-
-
-$entry CommandLine;
-$entry CreateProcess;
-$entry EnvList;
-$entry ForseExit;
-
-$end CoreOS::MOS.

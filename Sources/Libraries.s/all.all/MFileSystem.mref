@@ -1,0 +1,156 @@
+$MODULE MFileSystem;
+
+$IMPORT MLambda;
+$IMPORT MStrings;
+
+$IMPORT CoreBE = CoreBE::MFileSystem;
+$IMPORT Path = CoreOS::MFSPath;
+
+/**
+  Путь может быть представлен двумя способами: как обычная строка s.Char*,
+  так и в специальном формате. Для представления путей в первой форме будет
+  использоваться префикс Str, для вторых -- Pt.
+
+  e.StrFileName = s.Char*
+
+  e.PtFileName ::=
+    t.RootMode (e.Segment)*
+  e.Segment ::= s.Char*
+  t.RootMode ::=
+    (Relative)              // Dir\File
+    (Relative-Disk s.Disk)  // C:Dir\File
+    (Absolut)               // \Dir\File
+    (Absolut-Disk s.Disk)   // C:\Dir\File
+    (Absolut-Net e.Server)  // \\Server\Dir\File
+*/
+
+//------------------------------------------------------------------------------
+
+/**
+  <StrFromPath e.PtFileName> == e.StrFileName
+*/
+$ENTRY StrFromPath {
+  e.PtPath = <Path::StrFromPath e.PtPath>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <PathFromStr e.StrFileName>
+    == Success e.PtFileName
+    == Fails
+*/
+$ENTRY PathFromStr {
+  e.StrPath = <Path::PathFromStr e.StrPath>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <ConcatPath (e.PtDirectory) e.PtFileName>
+    == Success e.PtFileName
+    == Fails
+*/
+$ENTRY ConcatPath {
+  (e.PtDirectory) e.PtFileName =
+    <Path::Concat (e.PtDirectory) e.PtFileName>;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <ExistFile e.StrFileName> == True | False
+*/
+$ENTRY ExistFile e.StrFileName = <CoreBE::ExistFile e.StrFileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <ExistFile-T e.StrFileName>
+    == True e.StrFileName
+    == False e.StrFileName
+*/
+$ENTRY ExistFile-T
+  e.StrFileName = <CoreBE::ExistFile e.StrFileName> e.StrFileName;
+
+//------------------------------------------------------------------------------
+
+/**
+  <MakeDir e.StrDirectory> == empty
+*/
+$ENTRY MakeDir
+  e.Directory = <CoreBE::MakeDir e.Directory>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveDir e.StrDirectory> == empty
+*/
+$ENTRY RemoveDir
+  e.Directory = <CoreBE::RemoveDir e.Directory>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <RemoveFile e.StrFileName> == empty
+*/
+$ENTRY RemoveFile
+  e.FileName = <CoreBE::RemoveFile e.FileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <FileAttribute s.Attribute e.StrFileName>
+    == FileNotFound
+    == (e.Value)
+
+  s.Attribute ::= DateTime | Size | LongName
+*/
+$ENTRY FileAttribute
+  s.Attribute e.FileName =
+    <CoreBE::FileAttribute s.Attribute e.FileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <DirList e.StrDirectoryName>
+    == Success (e.StrFileName)*
+    == Fails
+*/
+$ENTRY DirList
+  e.DirectoryName =
+    /*
+      Пути возвращаются относительно папки e.DirectoryName.
+      Надо переписать.
+    */
+    <CoreBE::DirList e.DirectoryName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <ParseFileName e.StrFileName>
+    == (e.StrDirectory) e.FileNameNoExt (e.Ext)
+  Пример:
+  <ParseFileName 'c:\\Directory\\Document.doc'>
+    == ('c:\\Directory\\') 'Document' ('doc')
+*/
+$ENTRY ParseFileName
+  e.FileName = <Path::ParseFileName e.FileName>;
+
+//------------------------------------------------------------------------------
+
+/**
+  <CanonicalPath-Str e.StrPath>
+    == e.StrCanonical
+*/
+$ENTRY CanonicalPath-Str
+  e.StrPath = <Path::CanonicalPath-Str e.StrPath>;
+
+/**
+  <CanonicalPath-Pt e.PtPath>
+    == e.PtCanonical
+*/
+$ENTRY CanonicalPath-Pt
+  e.PtPath = <Path::CanonicalPath-Pt e.PtPath>;
+
+$END MFileSystem.

@@ -1,6 +1,5 @@
 $module CoreBE::MOrder;
 
-
 $entry SymbCompare;
 
 $end CoreBE::MOrder.

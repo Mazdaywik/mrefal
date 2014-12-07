@@ -1,0 +1,51 @@
+$MODULE MOS;
+
+$IMPORT Core = CoreBE::MOS;
+$IMPORT MStrings;
+
+/**
+  <System e.Command>
+    == empty
+*/
+$ENTRY System
+  e.Command = <Core::System e.Command>;
+
+/**
+  <Arg s.Number>
+    == e.Arg
+    == empty
+*/
+$ENTRY Arg s.Num = <Core::Arg s.Num>;
+
+/**
+  <ArgList>
+    == (e.Argument)*
+*/
+$ENTRY ArgList = <Core::ArgList>;
+
+/**
+  <ProgName> == e.ProgName
+*/
+$ENTRY ProgName = <Arg 0>;
+
+/**
+  <Exit s.RetCode>
+    завершение программы
+*/
+$ENTRY Exit s.RetCode = <Core::Exit s.RetCode>;
+
+/**
+  <EnvList>
+    == (e.VariableName)*
+*/
+$ENTRY EnvList = <Core::EnvList>;
+
+/**
+  <Env e.Name>
+    == e.Value
+    == empty
+*/
+$ENTRY Env
+  e.Name = <Core::Env e.Name>;
+
+$END MOS.

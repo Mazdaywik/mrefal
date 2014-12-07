@@ -175,31 +175,7 @@ SwIsDigit {
   s.Char e.Dig = (False);
 }
 
-//------------------------------------------------------------------------------
-
-AtomType
-  s.Atom =
-    <SwAtomType
-      s.Atom
-      <Str::Chr s.Atom>
-      <Str::Ord s.Atom>
-    >;
-
-SwAtomType {
-  s.Atom s.Atom s.Atom =
-    // Атом не является ни макроцифрой, ни символом -- это идентификатор
-    Ident s.Atom;
-
-  s.Num s.Char s.Num =
-    // Это число
-    Number s.Num;
-
-  s.Char s.Char s.Num =
-    // Это символ
-    Char s.Char;
-}
-
-//------------------------------------------------------------------------------
+//------------------------------------------------------------------------
 
 /**
   <Save (e.FileName) e.Expr>
@@ -240,14 +216,22 @@ Serialize
 
 DoSerialize {
   ( e.Scanned ) '(' e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned '#(' ) e.ForSave t.MultiBracket
-    >;
+    <DoSerialize ( e.Scanned '#(' ) e.ForSave t.MultiBracket>;
 
   ( e.Scanned ) ')' e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned '#)' ) e.ForSave t.MultiBracket
-    >;
+    <DoSerialize ( e.Scanned '#)' ) e.ForSave t.MultiBracket>;
+
+  ( e.Scanned ) '\n' e.ForSave t.MultiBracket =
+    <DoSerialize ( e.Scanned '\\n' ) e.ForSave t.MultiBracket>;
+
+  ( e.Scanned ) '\t' e.ForSave t.MultiBracket =
+    <DoSerialize ( e.Scanned '\\t' ) e.ForSave t.MultiBracket>;
+
+  ( e.Scanned ) '\\' e.ForSave t.MultiBracket =
+    <DoSerialize ( e.Scanned '\\\\' ) e.ForSave t.MultiBracket>;
+
+  ( e.Scanned ) '#' e.ForSave t.MultiBracket =
+    <DoSerialize ( e.Scanned '##' ) e.ForSave t.MultiBracket>;
 
   ( e.Scanned ) s.Other e.ForSave t.MultiBracket =
     <SerializeAtom
@@ -272,88 +256,28 @@ DoSerialize {
     Fails;
 }
 
-SerializeAtom
+SerializeAtom {
   ( e.Scanned ) s.Atom e.ForSave t.MultiBracket =
     <SwSerializeAtom
-      ( e.Scanned ) <AtomType s.Atom> e.ForSave t.MultiBracket
+      ( e.Scanned )
+      (<Str::SerializeAtom s.Atom>) e.ForSave t.MultiBracket
     >;
+}
 
 SwSerializeAtom {
-  ( e.Scanned ) Number s.Number e.ForSave t.MultiBracket =
+  ( e.Scanned ) (Number e.StrNumber) e.ForSave t.MultiBracket =
     <DoSerialize
-      ( e.Scanned '#' <Str::Symb s.Number> ' ' ) e.ForSave t.MultiBracket
+      ( e.Scanned '#' e.StrNumber ' ' ) e.ForSave t.MultiBracket
     >;
 
-  ( e.Scanned ) Char s.Char e.ForSave t.MultiBracket =
-    <SerializeChar
-      ( e.Scanned ) s.Char e.ForSave t.MultiBracket
-    >;
+  ( e.Scanned ) (Char s.Char) e.ForSave t.MultiBracket =
+    <DoSerialize ( e.Scanned s.Char ) e.ForSave t.MultiBracket>;
 
-  ( e.Scanned ) Ident s.Char e.ForSave t.MultiBracket =
+  ( e.Scanned ) (Char e.DecRep ) e.ForSave t.MultiBracket =
+    <DoSerialize ( e.Scanned '\\d' e.DecRep ) e.ForSave t.MultiBracket>;
+
+  ( e.Scanned ) (IsntSerializable s.Atom) e.ForSave t.MultiBracket =
     Fails;
-}
-
-SerializeChar
-  ( e.Scanned ) s.Char e.ForSave t.MultiBracket =
-    <SwSerializeChar
-      ( e.Scanned ) <CharRep s.Char> e.ForSave t.MultiBracket
-    >;
-
-SwSerializeChar {
-  ( e.Scanned ) ( Normal s.Char ) e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned s.Char ) e.ForSave t.MultiBracket
-    >;
-
-  ( e.Scanned ) ( NewLine ) e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned '\\n' ) e.ForSave t.MultiBracket
-    >;
-
-  ( e.Scanned ) ( Tab ) e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned '\\t' ) e.ForSave t.MultiBracket
-    >;
-
-  ( e.Scanned ) ( BS ) e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned '\\\\' ) e.ForSave t.MultiBracket
-    >;
-
-  ( e.Scanned ) ( ForCoding s.AsciiCode ) e.ForSave t.MultiBracket =
-    <DoSerialize
-      ( e.Scanned '\\d' <Numb3 s.AsciiCode> ) e.ForSave t.MultiBracket
-    >;
-}
-
-Numb3
-  s.AsciiCode = <Numb3-Aux <Str::Symb s.AsciiCode>>;
-
-Numb3-Aux {
-  s.1 = '00' s.1;
-  s.1 s.2 = '0' s.1 s.2;
-  s.1 s.2 s.3 e.NeVlezlo = s.1 s.2 s.3;
-}
-
-CharRep {
-  '\n' = ( NewLine );
-  '\t' = ( Tab );
-  '\\' = ( BS );
-  s.Other =
-    <CharRep-Aux s.Other <Str::Ord s.Other>>;
-}
-
-CharRep-Aux
-  s.Other s.AsciiCode =
-    <SwCharRep
-      s.Other s.AsciiCode
-      <MMath::Compare 31 s.AsciiCode> <MMath::Compare s.AsciiCode 127>
-    >;
-
-SwCharRep {
-  s.Char s.AsciiCode '<' '<' = ( Normal s.Char );
-
-  s.Char s.AsciiCode s.Other1 s.Other2 = ( ForCoding s.AsciiCode );
 }
 
 $END MXXIO.

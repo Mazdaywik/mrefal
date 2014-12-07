@@ -1,0 +1,49 @@
+$MODULE MMath;
+
+$IMPORT Core = CoreBE::Math;
+
+/**
+  <Add s.X s.Y>, <Sub s.X s.Y>, <Mul s.X s.Y>
+  <Div s.X s.Y>, <Mod s.X s.Y> ==
+    s.Result
+
+  <Div s.X 0>, <Mod s.X 0> == fail down
+
+  При целочисленном переполнении результат не определён.
+*/
+$ENTRY Add s.X s.Y = <Core::Binary '+' s.X s.Y>;
+$ENTRY Sub s.X s.Y = <Core::Binary '-' s.X s.Y>;
+$ENTRY Mul s.X s.Y = <Core::Binary '*' s.X s.Y>;
+$ENTRY Div s.X s.Y = <Core::Binary '/' s.X s.Y>;
+$ENTRY Mod s.X s.Y = <Core::Binary '%' s.X s.Y>;
+
+/**
+  <Inc s.X> == <Add s.X 1>
+  <Dec s.X> == <Sub s.X 1>
+
+  Для <Inc <MaxNum>> и <Dec 0> результат не определён.
+*/
+$ENTRY Inc s.Num = <Add s.Num 1>;
+$ENTRY Dec s.Num = <Sub s.Num 1>;
+
+/**
+  <MaxNum> == s.MaxNum
+  Возвращает наибольшее целое число,
+  поддерживаемое Модульным Рефалом.
+*/
+$ENTRY MaxNum = 4294967295;
+
+/**
+  <Compare s.X s.Y> == s.Compare
+  <Compare-T s.X s.Y> == s.Compare s.X s.Y
+  s.Compare ::= '<' | '=' | '>'
+
+  Сравнивает два числа s.X и s.Y. s.X и s.Y должны быть атомами-числами.
+*/
+$ENTRY Compare
+  s.Left s.Rigth = <Core::NumberCompare s.Left s.Rigth>;
+
+$ENTRY Compare-T
+  s.Left s.Rigth = <Compare s.Left s.Rigth> s.Left s.Rigth;
+
+$END MMath.

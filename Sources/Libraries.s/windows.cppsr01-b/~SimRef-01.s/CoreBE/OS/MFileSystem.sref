@@ -1,0 +1,38 @@
+
+//FROM MR-BaseLib
+$EXTERN
+  MR-FS-FindFiles,
+  MR-FS-FileAttributes,
+  MR-FS-FullName,
+  MR-FS-MakeDir,
+  MR-FS-RemoveDir,
+  MR-FS-RemoveFile;
+
+$ENTRY CoreBEP_OSP_MFileSystemP_RemoveFile {
+  e.FileName = <MR-FS-RemoveFile e.FileName>;
+}
+
+$ENTRY CoreBEP_OSP_MFileSystemP_RemoveDir {
+  e.DirName = <MR-FS-RemoveDir e.DirName>;
+}
+
+$ENTRY CoreBEP_OSP_MFileSystemP_MakeDir {
+  e.DirName = <MR-FS-MakeDir e.DirName>;
+}
+
+$ENTRY CoreBEP_OSP_MFileSystemP_FullName {
+  e.FileName = <MR-FS-FullName e.FileName>;
+}
+
+$ENTRY CoreBEP_OSP_MFileSystemP_FileAttributes {
+  e.FileName = <MR-FS-FileAttributes e.FileName>;
+}
+
+$ENTRY CoreBEP_OSP_MFileSystemP_FindFiles {
+  e.FileMask = <MR-FS-FindFiles e.FileMask>;
+}
+
+$ENTRY CoreBEP_OSP_MFileSystemP_EntryPointE_ {
+  = /* пусто */;
+}
+

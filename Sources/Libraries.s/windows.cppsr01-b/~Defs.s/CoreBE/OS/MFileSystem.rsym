@@ -1,0 +1,11 @@
+$module CoreBE::OS::MFileSystem;
+
+
+$entry FileAttributes;
+$entry FindFiles;
+$entry FullName;
+$entry MakeDir;
+$entry RemoveDir;
+$entry RemoveFile;
+
+$end CoreBE::OS::MFileSystem.

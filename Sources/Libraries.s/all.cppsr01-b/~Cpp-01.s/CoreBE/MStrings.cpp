@@ -1,22 +1,31 @@
 #include "refalrts.h"
-#include "baselib.h"
+#include "mr_common.h"
 
+#ifndef InitDEFINED_R_
+#define InitDEFINED_R_
 
 //$LABEL Init
 template <typename T>
-struct InitL_ {
+struct Init {
   static const char *name() {
     return "Init";
   }
 };
 
+#endif // InitDEFINED_R_
+
+#ifndef FinalDEFINED_R_
+#define FinalDEFINED_R_
+
 //$LABEL Final
 template <typename T>
-struct FinalL_ {
+struct Final {
   static const char *name() {
     return "Final";
   }
 };
+
+#endif // FinalDEFINED_R_
 
 refalrts::FnResult CoreBEP_MStringsP_InitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
   refalrts::this_is_generated_function();
@@ -30,7 +39,7 @@ refalrts::FnResult CoreBEP_MStringsP_InitE_(refalrts::Iter arg_begin, refalrts::
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Init
     //(0 0 )
-    if( ! refalrts::ident_left(  & InitL_<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) ) 
       break;
     if( ! empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -50,7 +59,7 @@ refalrts::FnResult CoreBEP_MStringsP_InitE_(refalrts::Iter arg_begin, refalrts::
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Final
     //(0 0 )
-    if( ! refalrts::ident_left(  & FinalL_<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) ) 
       break;
     if( ! empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -91,5 +100,11 @@ refalrts::FnResult CoreBEP_MStringsP_Numb(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   return implement_strings::numb(arg_begin, arg_end);
+}
+
+refalrts::FnResult CoreBEP_MStringsP_SerializeAtom(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return implement_strings::serialize_atom(arg_begin, arg_end);
 }
 

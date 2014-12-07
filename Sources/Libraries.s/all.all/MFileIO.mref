@@ -1,0 +1,132 @@
+$MODULE MFileIO;
+
+$IMPORT CoreBE::MFileIO;
+
+/**
+  <Open s.Mode e.FileName> == t.Handle
+
+  s.Mode ::= 'r' | 'w' | 'a'
+  e.FileName ::= char*
+
+  Открывает текстовый файл с именем e.FileName в заданном режиме.
+  Режимы: 'r' --- чтение, 'w' --- запись, 'a' --- дозапись в конец.
+*/
+$ENTRY Open {
+  'r' e.FileName = <Open-Aux 'r' e.FileName>;
+  'w' e.FileName = <Open-Aux 'w' e.FileName>;
+  'a' e.FileName = <Open-Aux 'a' e.FileName>;
+  'br' e.FileName = <Open-Aux 'br' e.FileName>;
+  'bw' e.FileName = <Open-Aux 'bw' e.FileName>;
+  'ba' e.FileName = <Open-Aux 'ba' e.FileName>;
+}
+
+Open-Aux
+  s.Mode e.FileName =
+    <SwOpen
+      <CoreBE::MFileIO::Open s.Mode e.FileName>
+      s.Mode e.FileName
+    >;
+
+SwOpen {
+  Fails s.Mode e.FileName =
+    <Open-CantOpenFile s.Mode e.FileName>;
+
+  s.Handle s.Mode e.FileName = s.Handle;
+}
+
+Open-CantOpenFile { }
+
+/**
+  <Close t.Handle> ==  пусто
+  <NulClose t.Handle> ==  пусто
+  Закрывает файл с данным дескриптором.
+*/
+$ENTRY Close
+  s.Handle = <CoreBE::MFileIO::Close s.Handle>;
+
+$ENTRY NulClose
+  s.Handle = <CoreBE::MFileIO::Close s.Handle>;
+
+/**
+  <ReadLine t.Handle> == t.Handle e.Line
+
+  Считывает строку из файла до ближайшего \n или конца файла.
+  Символ \n или символ конца файла в e.Line не добавляются.
+*/
+$ENTRY ReadLine
+  s.Handle = s.Handle <CoreBE::MFileIO::ReadLine s.Handle>;
+
+/**
+  <Write t.Handle e.Line> == t.Handle
+
+  Записывает строку e.Line в файл.
+*/
+$ENTRY Write
+  s.Handle e.Line =
+    s.Handle <CoreBE::MFileIO::Write s.Handle e.Line>;
+
+/**
+  <Write-T t.Handle e.Line> == t.Handle e.Line
+
+  Прозрачный эквивалент Write.
+*/
+$ENTRY Write-T
+  s.Handle e.Line = <Write s.Handle e.Line> e.Line;
+
+/**
+  <WriteLine t.Handle e.Line> == t.Handle
+
+  Записывает строку e.Line в файл, завершая её символом \n.
+  Эквивалентенр <Write t.Handle e.Line '\n'>
+*/
+$ENTRY WriteLine
+  s.Handle e.Line =
+    s.Handle <CoreBE::MFileIO::Write s.Handle e.Line '\n'>;
+
+/**
+  <WriteLine-T t.Handle e.Line> == t.Handle e.Line
+
+  Прозрачный эквивалент функции WriteLine.
+*/
+$ENTRY WriteLine-T
+  s.Handle e.Line = <WriteLine s.Handle e.Line> e.Line;
+
+/**
+  <Load e.FileName> == (e.Line)*
+
+  Загружает построчно текстовый файл как последовательность строк.
+  Обратна функции Save.
+*/
+$ENTRY Load
+  e.FileName =
+    <DoLoad
+      <ReadLine <Open 'r' e.FileName> >
+    >;
+
+DoLoad {
+  t.File 0 = <NulClose t.File>;
+  t.File e.Line 0 = (e.Line) <NulClose t.File>;
+  t.File e.Line = (e.Line) <DoLoad <ReadLine t.File>>;
+}
+
+/**
+  <Save (e.FileName) (e.Line)*> == пусто
+
+  Сохраняет последовательность строк в текстовый файл.
+  Обратна функции Load.
+*/
+$ENTRY Save
+  (e.FileName) e.Content =
+    <DoSave <Open 'w' e.FileName> e.Content>;
+
+DoSave {
+  t.File (e.NextLine) e.Tail =
+    <DoSave
+      <WriteLine t.File e.NextLine>
+      e.Tail
+    >;
+
+  t.File = <NulClose t.File>;
+}
+
+$END MFileIO.

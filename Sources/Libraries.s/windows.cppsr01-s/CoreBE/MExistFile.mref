@@ -1,6 +1,6 @@
 $MODULE CoreBE::MExistFile;
 
-$IMPORT Core = CoreOS::MFileSystem;
+$IMPORT Core = CoreBE::OS::MFileSystem;
 
 //------------------------------------------------------------------------------
 

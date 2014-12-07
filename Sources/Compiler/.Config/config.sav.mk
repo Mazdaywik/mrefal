@@ -1,4 +1,4 @@
- profile = CPPSR
- comp = CPPSR
+ profile = R5
+ comp = SR
  scomp = CPPSR
- mode = BUILD
+ mode = MAKE

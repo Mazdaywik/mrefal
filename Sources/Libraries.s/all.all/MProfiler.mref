@@ -1,5 +1,7 @@
 $MODULE MProfiler;
 
+$IMPORT Core = CoreBE::MProfiler;
+
 /**
   <Quantify s.Function e.Arguments>
     === <s.Function e.Arguments>
@@ -7,7 +9,7 @@ $MODULE MProfiler;
   Запускает профилировку функции с аргументами.
 */
 $ENTRY Quantify {
-  s.Function e.Arguments = <s.Function e.Arguments>;
+  s.Function e.Arguments = <Core::Quantify s.Function e.Arguments>;
 }
 
 /**
@@ -18,7 +20,7 @@ $ENTRY Quantify {
   Печатает результат профилирования в файл или на stdout.
 */
 $ENTRY PrintResults {
-  e.OptionalFileName = /* пусто */;
+  e.OptionalFileName = <Core::PrintResults e.OptionalFileName>;
 }
 
 $END MProfiler.

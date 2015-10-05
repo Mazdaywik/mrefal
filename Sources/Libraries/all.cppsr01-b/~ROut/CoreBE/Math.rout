@@ -6,7 +6,7 @@ c   '+' s.Left s.Right = <Add s.Left s.Right >;
 c   '-' s.Left s.Right = <Sub s.Left s.Right >;
 c   '*' s.Left s.Right = <Mul s.Left s.Right >;
 c   '/' s.Left s.Right = <Div s.Left s.Right >;
-c   '%' s.Left s.Right = <Div s.Left s.Right >;
+c   '%' s.Left s.Right = <Mod s.Left s.Right >;
 c }
 
 b Entry::CoreBE::Math::NumberCompare

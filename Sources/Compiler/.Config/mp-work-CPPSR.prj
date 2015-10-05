@@ -1,5 +1,5 @@
 -cfg:.Config/config-work-CPPSR.cfg
-#-xlinx
+-xlinx
 MRefal
 (
   -target:../Bin/MRefal.cppsr.exe

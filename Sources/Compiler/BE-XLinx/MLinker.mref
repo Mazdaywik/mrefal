@@ -6,6 +6,7 @@ $IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MOrder;
 $IMPORT MOutModuleStatus;
+$IMPORT MMath;
 $IMPORT MStrings;
 $IMPORT MXXIO;
 
@@ -36,6 +37,17 @@ Profiling-Link
           <MLambda::BindLeft & MStrings.Skip 1>
           & MXXIO.Load
           <MLambda::BindLeft & MStrings.Skip 1>
+          <MLambda::BindLeft
+            & MLambda.Map
+            <MLambda::Composite
+              & MLambda.UnBracket
+              <MLambda::BindLeft
+                & MLambda.Map
+                & CalcEntityHash
+              >
+              & MLambda.Bracket
+            >
+          >
           & MLambda.Bracket
         >
         <MStrings::Reverse e.OutFileNames>
@@ -43,11 +55,23 @@ Profiling-Link
     >
     Success;
 
-Link-Aux
- (e.PtOutName) e.Modules =
-   <MProfiler::Quantify &Profiling-Link-Aux (e.PtOutName) e.Modules>;
+CalcEntityHash {
+  (s.Sign (e.ScopeClass) (e.Name) (e.SrcPos)) =
+    (s.Sign (e.ScopeClass) (<Hash e.Name 43>) (e.SrcPos));
+}
 
-Profiling-Link-Aux
+Hash {
+  s.Hash = <MMath::Mod s.Hash 37>;
+
+  s.Initial e.NotScanned s.Hash =
+    s.Initial
+    <Hash
+      e.NotScanned
+      <MMath::Add <MMath::Mul s.Hash 31> <MStrings::Ord s.Initial>>
+    >;
+}
+
+Link-Aux
   (e.PtOutName) e.Modules =
     <Link-Aux-2
       (e.PtOutName)
@@ -63,7 +87,8 @@ CreateBidirectionalTable
           <MLambda::Map & MLambda.UnBracket e.Modules>
         >
       )
-      <CollectDirectInfo
+      <CollectRuntimeCalls
+        (/* записи рантайма */) (/* просканированные записи */)
         <MLambda::Map & ModulesUnBracket e.Modules>
       >
     >;
@@ -72,29 +97,57 @@ ModulesUnBracket
   (t.ModuleHeader e.Entities) =
     (Parser) t.ModuleHeader <MOrder::Sort e.Entities>;
 
-/*
-  Данная функция нужна для того, чтобы объединить сведения
-  о использовании функций поддержкой времени выполнения
-  (runtime).
-*/
-CollectDirectInfo {
-  e.Info-B ((e.Header) e.SubInfo-1)
-  e.Info-M ((e.Header) e.SubInfo-2) e.Info-E =
-    e.Info-B
-    <CollectDirectInfo
-      ((e.Header) e.SubInfo-1 e.SubInfo-2) e.Info-M e.Info-E
+CollectRuntimeCalls {
+  () ()
+  e.Info-B ((s.Sign t.Scope ('RunTime' s.Hash) t.Pos) e.SubInfo) e.Info-E =
+    <CollectRuntimeCalls
+      ((s.Sign t.Scope ('RunTime' s.Hash) t.Pos) e.SubInfo) (e.Info-B) e.Info-E
     >;
 
-  e.Info = e.Info;
+  (e.Runtimes) (e.Scanned)
+  e.Info-B ((s.Sign t.Scope ('RunTime' s.Hash) t.Pos) e.SubInfo) e.Info-E =
+    <CollectRuntimeCalls
+      (e.Runtimes e.SubInfo) (e.Scanned e.Info-B) e.Info-E
+    >;
+
+  () () (Parser) e.Tail = e.Tail;
+
+  (e.Runtimes) (e.Scanned) e.Tail =
+    (e.Runtimes) e.Scanned e.Tail;
 }
 
-InvertInfo
+InvertInfo {
   e.Entities =
-    <InvertInfo-Aux
-      <MOrder::Sort
-        <MLambda::Map & InvertEntity e.Entities>
+    <MLambda::Map
+      <MLambda::Composite
+        & MLambda.UnBracket
+        <MLambda::BindLeft & MStrings.Skip 1>
+        & InvertInfo-Collect
+      >
+      <CollectByHash
+        <MLambda::Map & MakeHashGroup
+          <MLambda::Map & InvertEntity e.Entities>
+        >
       >
     >;
+}
+
+MakeHashGroup {
+  (t.ScopeClass (e.Name s.Hash) t.SubEntity) =
+    (s.Hash (t.ScopeClass (e.Name s.Hash) t.SubEntity));
+}
+
+CollectByHash {
+  (s.Hash e.Info1) e.Begin (s.Hash e.Info2) e.End =
+    <CollectByHash
+      e.Begin (s.Hash e.Info1 e.Info2) e.End
+    >;
+
+  (s.Hash e.Info) e.Tail =
+    (s.Hash e.Info) <CollectByHash e.Tail>;
+
+  /* пусто */ = /* пусто */;
+}
 
 InvertEntity
   ((e.Header) e.SubEntities) =
@@ -107,34 +160,44 @@ InvertSubEntity
   (s.MainEntitySign (e.MainScopeClass) (e.MainName) (e.MainSrcPos))
   (s.SubEntitySign (e.SubScopeClass) (e.SubName) (e.SubSrcPos)) =
     ((e.SubScopeClass) (e.SubName)
-      '>' (e.MainScopeClass) (e.MainName) (e.SubSrcPos)
+      ('>' (e.MainScopeClass) (e.MainName) (e.SubSrcPos))
     );
 
-InvertInfo-Aux {
-  (t.ScopeClass t.SubName e.OtherInfo1)
-  (t.ScopeClass t.SubName e.OtherInfo2) e.Tail =
-    <InvertInfo-Collect
+InvertInfo-Collect {
+  (t.ScopeClass t.SubName (e.OtherInfo1))
+  e.OtherEntities
+  (t.ScopeClass t.SubName (e.OtherInfo2)) e.Tail =
+    <InvertInfo-DoCollect
       (t.ScopeClass t.SubName (e.OtherInfo1) (e.OtherInfo2))
+      (e.OtherEntities)
       e.Tail
     >;
 
-  (t.ScopeClass t.SubName e.OtherInfo) e.Tail =
+  (t.ScopeClass t.SubName (e.OtherInfo)) e.Tail =
     (t.ScopeClass t.SubName (e.OtherInfo))
-    <InvertInfo-Aux e.Tail>;
+    <InvertInfo-Collect e.Tail>;
 
   = ;
 }
 
-InvertInfo-Collect {
+InvertInfo-DoCollect {
   (t.ScopeClass t.SubName e.Collected)
-  (t.ScopeClass t.SubName e.Info) e.Tail =
-    <InvertInfo-Collect
-      (t.ScopeClass t.SubName e.Collected (e.Info)) e.Tail
+  (e.OtherEntities) e.Other
+  (t.ScopeClass t.SubName (e.Info)) e.Tail =
+    <InvertInfo-DoCollect
+      (t.ScopeClass t.SubName e.Collected (e.Info))
+      (e.OtherEntities e.Other)
+      e.Tail
     >;
 
-  (t.ScopeClass t.SubName e.Collected) e.Tail =
+  (t.ScopeClass t.SubName e.Collected)
+  (e.OtherEntities)
+  e.Tail =
     (t.ScopeClass t.SubName e.Collected)
-    <InvertInfo-Aux e.Tail>;
+    <InvertInfo-Collect
+      e.OtherEntities
+      e.Tail
+    >;
 }
 
 AddInvertedInfo {
@@ -162,48 +225,58 @@ XLinx-FileNamePt {
 }
 
 Link-Aux-2
-  (e.PtOutName) (e.Inverted) e.Results =
-    <MProfiler::Quantify
-      &Profiling-Link-Aux-2 (e.PtOutName) (e.Inverted) e.Results
-    >;
-
-Profiling-Link-Aux-2
   (e.PtOutName) (e.OrphanInverted) e.Results =
-    <MFileIO::Save
-      (<XLinx-FileNamePt (e.PtOutName) '.module_list.txt'>)
-      <PrintModuleList
-        <RemoveParsers e.Results>
-      >
-    >
-    <MFileIO::Save
-      (<XLinx-FileNamePt (e.PtOutName) '.tree.txt'>)
-      <PrintTree
-        <MLambda::Map & FilterModules e.Results>
-      >
-    >
-    <MFileIO::Save
-      (<XLinx-FileNamePt (e.PtOutName) '.xlinx.txt'>)
+    <Link-Aux-2-FileNames
       <MLambda::Map
-        & PrintResult
-        <SkipParser e.Results>
-        (Parser)
-        <MLambda::Map & InvertedToResults e.OrphanInverted>
+        <MLambda::Composite
+          & MLambda.UnBracket
+          <MLambda::BindLeft & XLinx-FileNamePt (e.PtOutName)>
+          & MLambda.Bracket
+        >
+        ('.module_list.txt')
+        ('.tree.txt')
+        ('.xlinx.txt')
+        ('.not linked.txt')
       >
-    >
-    <MFileIO::Save
-      (<XLinx-FileNamePt (e.PtOutName) '.not linked.txt'>)
-      <FindNotUsed e.Results>
+      (e.OrphanInverted)
+      <SelectModules () () e.Results>
     >;
 
-RemoveParsers {
-  e.Entities-B (Parser) e.Entities-E =
-    e.Entities-B <RemoveParsers e.Entities-E>;
+SelectModules {
+  (e.Modules) (e.Scanned)
+  e.NotAModules (('!' ('Module') t.Name t.Pos) e.SubEntities) e.UnScanned =
+    <SelectModules
+      (e.Modules (('!' ('Module') t.Name t.Pos) e.SubEntities))
+      (e.Scanned e.NotAModules (('!' ('Module') t.Name t.Pos) e.SubEntities))
+      e.UnScanned
+    >;
 
-  e.Entities = e.Entities;
+  (e.Modules) (e.Scanned) e.NotAModules =
+    (e.Modules) e.Scanned e.NotAModules;
 }
+
+Link-Aux-2-FileNames
+  (e.ModuleListName) (e.TreeName) (e.XLinxName) (e.NotLinkedName)
+  (e.OrphanInverted) (e.Modules) e.Results =
+    <SaveModuleList (e.ModuleListName) e.Modules>
+    <SaveModuleTree (e.TreeName) e.Modules>
+    <SaveNotLinked
+      (e.NotLinkedName)
+      <SaveXLinx-T (e.XLinxName) (e.Results) e.OrphanInverted>
+    >;
 
 //------------------------------------------------------------------------------
 // Вывод простого списка модулей
+
+SaveModuleList {
+  (e.ModuleListName) e.Results =
+    <MOutModuleStatus::XLinx e.ModuleListName>
+    <MOutModuleStatus::Flush>
+    <MFileIO::Save
+      (e.ModuleListName)
+      <PrintModuleList e.Results>
+    >;
+}
 
 PrintModuleList
   e.Entities =
@@ -212,7 +285,7 @@ PrintModuleList
     >;
 
 PrintModuleList-FilterModule {
-  (('!' ('Module') (e.EntityName) (e.SrcPos)) e.ResultInfo) =
+  (('!' ('Module') (e.EntityName s.Hash) (e.SrcPos)) e.ResultInfo) =
     ((<Dot e.EntityName>) e.SrcPos);
 
   t.Other = /* пусто */;
@@ -243,12 +316,6 @@ CalcPadding {
 ModuleNameLen
   ((e.ModuleName) e.SrcPos) = <MStrings::Length e.ModuleName>;
 
-//Last
-//  s.N e.Line =
-//    <MStrings::Reverse
-//      <MStrings::First s.N <MStrings::Reverse e.Line>>
-//    >;
-
 Padding
   s.PadLen ((e.ModuleName) e.SrcPos) =
     (
@@ -261,95 +328,174 @@ Padding
 //------------------------------------------------------------------------------
 // Печать таблицы перекрёстных связей.
 
+SaveXLinx-T {
+  (e.XLinxName) (e.Results) e.OrphanInverted =
+    <MOutModuleStatus::XLinx e.XLinxName>
+    <MOutModuleStatus::Flush>
+    <SaveXLinx-T-WriteResults-T
+      <MLambda::MapReduce
+        & PrintResult-T
+        <MFileIO::Open 'w' e.XLinxName>
+        e.Results
+      >
+      (e.OrphanInverted)
+    >;
+}
+
+SaveXLinx-T-WriteResults-T {
+  t.hFile e.Results (e.OrphanInverted) =
+    e.Results
+    <SaveXLinx-T-WriteOrphans
+      <MLambda::MapReduce
+        & PrintResult-T
+        t.hFile
+        (Parser)
+        <MLambda::Map & InvertedToResults e.OrphanInverted>
+      >
+    >;
+}
+
+
+SaveXLinx-T-WriteOrphans {
+  t.hFile e.OrphanInverted = <MFileIO::Close t.hFile>;
+}
+
 InvertedToResults {
   (t.ScopeClass t.SubName e.Info) =
     (('!' t.ScopeClass t.SubName ('UNKNOWN')) e.Info);
 }
 
-SkipParser {
-  (Parser) e.Tail = <SkipParser e.Tail>;
-
-  e.Tail = e.Tail;
-}
-
-PrintResult {
-  (Parser) = <PrintParser>;
-
-  (e.Info) =
-    <MLambda::Map & PrintResult-Aux <MOrder::Sort e.Info>> ();
-}
-
 PrintParser = (<MStrings::Repeat 80 '='>) ();
 
-PrintResult-Aux {
-  ('!' (e.ScopeClass) (e.EntityName) (e.SrcPos) ) =
-    ('{' e.ScopeClass ' [/' <Dot e.EntityName> '/] (' e.SrcPos ')}');
+PrintResult-T {
+  t.hFile (Parser) =
+    <MLambda::Reduce
+      <MLambda::Composite
+        & MLambda.UnBracket-H
+        & MFileIO.WriteLine
+      >
+      t.hFile
+      <PrintParser>
+    >
+    (Parser);
 
-  ('?' (e.ScopeClass) (e.EntityName) (e.SrcPos) ) =
-    ('  use     ' e.ScopeClass ' [' e.EntityName '] (' e.SrcPos')');
+  t.hFile (t.Init e.Info) =
+    <MFileIO::WriteLine
+      <MLambda::Reduce
+        & PrintResult-T-Aux
+        t.hFile <Sort-PrintResult-T t.Init e.Info>
+      >
+    >
+    (t.Init e.Info);
+}
 
-  ('>' (e.ScopeClass) (e.EntityName) (e.SrcPos) ) =
-    ('  used in ' e.ScopeClass ' [' e.EntityName '] (' e.SrcPos')');
+Sort-PrintResult-T {
+  e.Info = <MOrder::Sort e.Info>;
+}
+
+PrintResult-T-Aux {
+  t.hFile
+  ('!' (e.ScopeClass) (e.EntityName s.Hash) (e.SrcPos) ) =
+    <MFileIO::WriteLine
+      t.hFile '{' e.ScopeClass ' [/' <Dot e.EntityName> '/] (' e.SrcPos ')}'
+    >;
+
+  t.hFile
+  ('?' (e.ScopeClass) (e.EntityName s.Hash) (e.SrcPos) ) =
+    <MFileIO::WriteLine
+      t.hFile '  use     ' e.ScopeClass ' [' e.EntityName '] (' e.SrcPos')'
+    >;
+
+  t.hFile
+  ('>' (e.ScopeClass) (e.EntityName s.Hash) (e.SrcPos) ) =
+    <MFileIO::WriteLine
+      t.hFile '  used in ' e.ScopeClass ' [' e.EntityName '] (' e.SrcPos')'
+    >;
 }
 
 //------------------------------------------------------------------------------
 // Печать дерева зависимостей модулей
 
-FilterModules {
-  (('!' ('Module') t.Name t.SrcPos) e.SubEntities) =
-    (('!'('Module') t.Name t.SrcPos) e.SubEntities);
+SaveModuleTree {
+  (e.TreeName) e.Results =
+    <MOutModuleStatus::XLinx e.TreeName>
+    <MOutModuleStatus::Flush>
+    <MFileIO::Save
+      (e.TreeName)
+      <PrintTree
+        <MLambda::MapReduce
+          & FilterModules
+          (0 /* Таблица число -> имя модуля */)
+          e.Results
+        >
+      >
+    >;
+}
 
-  t.OtherInfo = ;
+FilterModules {
+  (s.Next e.Table)
+  (('!' ('Module') (e.Name s.Hash) t.SrcPos) e.SubEntities) =
+    (<MMath::Inc s.Next> e.Table (s.Next e.Name))
+    (s.Next e.SubEntities);
+
+  (s.Next e.Table) t.OtherInfo = (s.Next e.Table);
 }
 
 
 PrintTree
-  e.Modules =
+  (s.Next e.Table) e.Modules =
     <PrintTree-Aux
-      <MLambda::Map & UsingsModules e.Modules>
+      <MLambda::MapReduce & UsingsModules (e.Table) e.Modules>
     >
     <PrintParser>
     <PrintTree-Aux
-      <MLambda::Map & UsedsModules e.Modules>
+      <MLambda::MapReduce & UsedsModules (e.Table) e.Modules>
     >;
 
 UsingsModules
-  (
-    ('!' ('Module') t.Name t.SrcPos)
-    e.SubEntities
-  ) =
-    (
-      t.Name
-      <MLambda::Map
+  (e.Table)
+  (s.ModuleId e.SubEntities) =
+    <MakeTreeGroup
+      s.ModuleId
+      <MLambda::MapReduce
         <MLambda::BindLeft & FilterDependences '?'>
+        (e.Table)
         e.SubEntities
       >
-    );
+    >;
 
 UsedsModules
-  (
-    ('!' ('Module') t.Name t.SrcPos)
-    e.SubEntities
-  ) =
-    (
-      t.Name
-      <MLambda::Map
+  (e.Table)
+  (s.ModuleId e.SubEntities) =
+    <MakeTreeGroup
+      s.ModuleId
+      <MLambda::MapReduce
         <MLambda::BindLeft & FilterDependences '>'>
+        (e.Table)
         e.SubEntities
       >
-    );
+    >;
 
 FilterDependences {
-  s.Sign (s.Sign ('Module') t.Name t.SrcPos) =
-    (t.Name t.SrcPos);
+  s.L-Sign (e.Table-B (s.Id e.Name) e.Table-E)
+  (s.L-Sign ('Module') (e.Name s.Hash) (e.SrcPos)) =
+    ((s.Id e.Name) e.Table-B e.Table-E)
+    (s.Id e.SrcPos);
 
-  s.Sign t.OtherEntity = ;
+  s.L-Sign (e.Table)
+  (s.OtherSign ('Module') (e.Name s.Hash) t.SrcPos) =
+    (e.Table);
+}
+
+MakeTreeGroup {
+  s.ModuleID (e.Table) e.SubEntities =
+    (e.Table) (s.ModuleID e.SubEntities);
 }
 
 PrintTree-Aux
-  e.Modules =
+  (e.Table) e.Modules =
     <CreateTrees
-      ( <FindRoots e.Modules> ) e.Modules
+      (e.Table) ( <FindRoots e.Modules> ) e.Modules
     >;
 
 FindRoots
@@ -367,32 +513,34 @@ FindRoots
 
 IsRoot {
   e.Modules-B
-  (t.SuperName e.SubModules-B (t.SubName t.SrcPos) e.SubModules-E)
-  e.Modules-E t.SubName =
+  (s.IdSuperName e.SubModules-B (s.IdSubName e.SrcPos) e.SubModules-E)
+  e.Modules-E
+  s.IdSubName =
     /* пусто */;
 
-  e.Modules t.RootName = t.RootName;
+  e.Modules s.IdRootName = s.IdRootName;
 }
 
 CreateTrees
-  (e.Roots) e.Modules =
+  (e.Table) (e.Roots) e.Modules =
     <MLambda::Map
-      <MLambda::BindLeft & CreateTree e.Modules>
+      <MLambda::BindLeft & CreateTree (e.Table) e.Modules>
       e.Roots
     >;
 
 CreateTree
-  e.Modules (e.RootName) =
+  (e.Table-B (s.IdRootName e.RootName) e.Table-E) e.Modules s.IdRootName =
     (e.RootName ' =>')
     <PrintUses
-      <DoCreateTree () () (e.RootName) e.Modules>
+      e.Table-B (s.IdRootName e.RootName) e.Table-E
+      <DoCreateTree () () s.IdRootName e.Modules>
     >;
 
 DoCreateTree {
   (e.Printed)
   (e.Indent)
-  (e.RootName)
-  e.Modules-B ((e.RootName) e.SubNames) e.Modules-E =
+  s.IdRootName
+  e.Modules-B (s.IdRootName e.SubNames) e.Modules-E =
     <MLambda::Reduce
       <MLambda::BindLeft
         & DoCreateTree-Aux
@@ -402,57 +550,72 @@ DoCreateTree {
       e.SubNames
     >;
 
-  (e.Printed) (e.Indent) (e.RootName) e.Modules =
+  (e.Printed) (e.Indent) s.IdRootName e.Modules =
     (e.Printed);
 }
 
 DoCreateTree-Aux {
   (e.L-Indent) e.L-Modules
   (
-     e.Printed-B
-    (s.Sign (e.Name) (e.OtherIndent) (e.OtherSrcPos))
+    e.Printed-B
+    (s.Sign s.IdName (e.OtherIndent) (e.OtherSrcPos))
     e.Printed-E
   )
-  ((e.Name) (e.SrcPos)) =
+  (s.IdName e.SrcPos) =
     (
       e.Printed-B
-      (s.Sign (e.Name) (e.OtherIndent) (e.OtherSrcPos))
+      (s.Sign s.IdName (e.OtherIndent) (e.OtherSrcPos))
       e.Printed-E
-      ('@' (e.Name) (e.L-Indent) (e.SrcPos))
+      ('@' s.IdName (e.L-Indent) (e.SrcPos))
     );
 
   (e.L-Indent) e.L-Modules
-  (e.Printed) ((e.Name) (e.SrcPos)) =
+  (e.Printed) (s.IdName e.SrcPos) =
     <DoCreateTree
       (
         e.Printed
-        ('*' (e.Name) (e.L-Indent) (e.SrcPos))
+        ('*' s.IdName (e.L-Indent) (e.SrcPos))
       )
       (e.L-Indent '  ')
-      (e.Name) e.L-Modules
+      s.IdName e.L-Modules
     >;
 }
 
 PrintUses {
-  (e.Printed) =
-    <MLambda::Map & PrintUses-Elem e.Printed>
+  e.Table (e.Printed) =
+    <MLambda::TerminateAccumulator
+      & MLambda.Nil
+      <MLambda::MapReduce
+        & PrintUses-Elem (e.Table) e.Printed
+      >
+    >
     <PrintParser>;
 }
 
 PrintUses-Elem
-  (s.Sign (e.Name) (e.Indent) (e.SrcPos)) =
+  (e.Table-B (s.IdName e.Name) e.Table-E)
+  (s.Sign s.IdName (e.Indent) (e.SrcPos)) =
+    ((s.IdName e.Name) e.Table-B e.Table-E)
     (e.Indent ' ' s.Sign ' ' e.Name ', (' e.SrcPos ')');
 
 
 //------------------------------------------------------------------------------
 // Поиск и печать нелинкованных элементов
 
-FindNotUsed
-  e.Results =
-    <SeparateUseds
-      (('RunTime')) (/* накопление запросов */)
-      <MLambda::Map & FilterFunction e.Results>
+SaveNotLinked {
+  (e.NotLinkedName) e.Results =
+    <MOutModuleStatus::XLinx e.NotLinkedName>
+    <MOutModuleStatus::Flush>
+    <MFileIO::Save
+      (e.NotLinkedName)
+      <SeparateUseds
+        ((<Hash 'RunTime' 43>)) (/* накопление запросов */)
+        <CollectByHash
+          <MLambda::Map & FilterFunction e.Results>
+        >
+      >
     >;
+}
 
 FilterFunction {
   (
@@ -473,12 +636,14 @@ IsFunctionScopeClass {
 }
 
 SwFilterFunction {
-  Function (e.Name) (e.ScopeClass) (e.SrcPos) e.SubEntities =
-    (
-      (e.Name) (e.ScopeClass) (e.SrcPos)
-      <MLambda::Map
-        & FilterFunction-SubEntity e.SubEntities
-      >
+  Function (e.Name s.Hash) (e.ScopeClass) (e.SrcPos) e.SubEntities =
+    (s.Hash
+      (
+        (e.Name) (e.ScopeClass) (e.SrcPos)
+        <MLambda::Map
+          & FilterFunction-SubEntity e.SubEntities
+        >
+      )
     );
 
   NotFunction (e.Name) (e.SrcPos) e.SubEntities =
@@ -486,21 +651,25 @@ SwFilterFunction {
 }
 
 FilterFunction-SubEntity {
-  ('?' (e.ScopeClass) (e.Name) (e.SrcPos)) =
-    (e.Name);
+  ('?' (e.ScopeClass) (e.Name s.Hash) (e.SrcPos)) =
+    (e.Name s.Hash);
 
   ('>' (e.ScopeClass) (e.Name) (e.SrcPos)) =
     /* пусто */;
 }
 
 SeparateUseds {
-  ((e.NextRequest) e.Requests) (e.SubRequests)
+  ((e.NextRequest s.Hash) e.Requests) (e.SubRequests)
   e.Entities-B
-  ((e.NextRequest) (e.ScopeClass) (e.SrcPos) e.SubEntities)
+  (s.Hash
+    e.HashGroup-B
+    ((e.NextRequest) (e.ScopeClass) (e.SrcPos) e.SubEntities)
+    e.HashGroup-E
+  )
   e.Entities-E =
     <SeparateUseds
       (e.Requests) (e.SubRequests e.SubEntities)
-      e.Entities-B e.Entities-E
+      e.Entities-B <RestoreHashGroup s.Hash e.HashGroup-B e.HashGroup-E> e.Entities-E
     >;
 
   ((e.NextRequest) e.Requests) (e.SubRequests)
@@ -510,7 +679,15 @@ SeparateUseds {
     >;
 
   () () e.NotLinkedEntities =
-    <PrintNotLinked e.NotLinkedEntities>;
+    <PrintNotLinked
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          <MLambda::BindLeft & MStrings.Skip 1>
+        >
+        e.NotLinkedEntities
+      >
+    >;
 
   () (e.SubRequests) e.Entities =
     <SeparateUseds
@@ -518,6 +695,12 @@ SeparateUseds {
       ()
       e.Entities
     >;
+}
+
+RestoreHashGroup {
+  s.Hash = /* пусто */;
+
+  s.Hash e.HashGroup = (s.Hash e.HashGroup);
 }
 
 PrintNotLinked

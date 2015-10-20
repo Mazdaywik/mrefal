@@ -64,7 +64,7 @@ FlushCompilingRecompiled =
 
 //------------------------------------------------------------------------------
 
-$SWAP G_OldStatus, G_Buffer;
+$SWAP G_CurrentStatus, G_Buffer;
 
 Out-Q
  s.NewStatus t.QualifiedName =
@@ -73,21 +73,21 @@ Out-Q
 Out
   s.NewStatus e.ModuleName =
     <SwOut
-      s.NewStatus <G_OldStatus>
+      s.NewStatus <G_CurrentStatus>
       '`' e.ModuleName '\''
     >;
 
 SwOut {
   s.NewStatus Startup e.ModuleName =
-    <WriteLine s.NewStatus e.ModuleName>;
+    <BeginNewStatus s.NewStatus e.ModuleName>;
 
   s.OldStatus s.OldStatus e.ModuleName =
-    <G_OldStatus s.OldStatus>
-    <Write e.ModuleName>;
+    <G_CurrentStatus s.OldStatus>
+    <AppendCurrentStatus e.ModuleName>;
 
   s.NewStatus s.OldStatus e.ModuleName =
     <NewLine>
-    <WriteLine s.NewStatus e.ModuleName>;
+    <BeginNewStatus s.NewStatus e.ModuleName>;
 }
 
 StatusStr {
@@ -121,10 +121,10 @@ DoCheckLength {
     >;
 }
 
-WriteLine {
+BeginNewStatus {
   s.Status e.Name =
     <NewLine>
-    <MSwapSupport::Write & G_OldStatus s.Status>
+    <MSwapSupport::Write & G_CurrentStatus s.Status>
     <MSwapSupport::Write
       & G_Buffer
       <StatusStr s.Status> e.Name
@@ -138,26 +138,26 @@ SwNewLine {
   e.Line = <InOut::WriteLine e.Line '.'>;
 }
 
-Write
+AppendCurrentStatus
   e.Name =
-    <Write-CheckLength (<G_Buffer>) e.Name>;
+    <AppendCurrentStatus-CheckLength (<G_Buffer>) e.Name>;
 
-Write-CheckLength {
-  () e.Name = <WriteLine <G_OldStatus> e.Name>;
-  (e.Buffer) e.Line =
-    <SwWrite-CheckLength
-      <CheckLength e.Buffer e.Line>
-      <G_OldStatus> (e.Buffer) e.Line
+AppendCurrentStatus-CheckLength {
+  () e.Name = <BeginNewStatus <G_CurrentStatus> e.Name>;
+  (e.Buffer) e.Name =
+    <SwAppendCurrentStatus-CheckLength
+      <CheckLength e.Buffer ', ' e.Name>
+      <G_CurrentStatus> (e.Buffer) e.Name
     >;
 }
 
-SwWrite-CheckLength {
+SwAppendCurrentStatus-CheckLength {
   Short s.Status (e.Buffer) e.Name =
-    <G_OldStatus s.Status> <G_Buffer e.Buffer ', ' e.Name>;
+    <G_CurrentStatus s.Status> <G_Buffer e.Buffer ', ' e.Name>;
 
   Long s.Status (e.Buffer) e.Name =
     <G_Buffer e.Buffer>
-    <WriteLine s.Status e.Name>;
+    <BeginNewStatus s.Status e.Name>;
 }
 
 $ENTRY Flush = <SwFlush <G_Buffer>>;
@@ -168,7 +168,7 @@ SwFlush {
 }
 
 
-$ENTRY Init = <G_OldStatus Starting>;
+$ENTRY Init = <G_CurrentStatus Starting>;
 $ENTRY Final = <Flush>;
 
 $END MOutModuleStatus.

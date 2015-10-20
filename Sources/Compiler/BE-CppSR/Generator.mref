@@ -368,7 +368,7 @@ GenCommand {
       ' = ' <BracketsVar-B s.BracketNum s.Nested> ';'
     )
     (<Indent t.Indent> '  '
-      '! empty_seq( ' <BracketsVar-OE s.BracketNum s.Nested> ', '
+      '! refalrts::empty_seq( ' <BracketsVar-OE s.BracketNum s.Nested> ', '
       <BracketsVar-E s.BracketNum s.Nested> ' );'
     )
     (<Indent t.Indent> '  '
@@ -615,7 +615,7 @@ BreakerFromIndent-Aux {
 PrintMatchEmpty {
   t.Indent s.BracketNum s.Nested =
     (<Indent t.Indent>
-      'if( ! empty_seq( ' <BracketsVar-B s.BracketNum s.Nested> ', '
+      'if( ! refalrts::empty_seq( ' <BracketsVar-B s.BracketNum s.Nested> ', '
       <BracketsVar-E s.BracketNum s.Nested> ' ) )'
     )
     <BreakerFromIndent t.Indent>;

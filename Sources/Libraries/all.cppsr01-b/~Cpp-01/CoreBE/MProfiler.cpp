@@ -41,7 +41,7 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
     //(0 0 )
     if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) )
       break;
-    if( ! empty_seq( bb_0_0, be_0_0 ) )
+    if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
 
     refalrts::reset_allocator();
@@ -59,7 +59,7 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
     //(0 0 )
     if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) )
       break;
-    if( ! empty_seq( bb_0_0, be_0_0 ) )
+    if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
 
     refalrts::reset_allocator();

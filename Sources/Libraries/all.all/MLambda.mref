@@ -20,20 +20,22 @@ $DATA L-Lambda, LH-Lambda, R-Lambda, C-Lambda, H-Lambda, P-Lambda, PH-Lambda,
     == e.Result
 */
 $ENTRY Apply {
+  s.FnPtr e.Argument = <s.FnPtr e.Argument>;
+
   [L-Lambda t.Lambda e.LeftLinked] e.Argument =
     <Apply t.Lambda e.LeftLinked e.Argument>;
-
-  [LH-Lambda t.Lambda e.LeftLinked] t.Handle e.Argument =
-    <Apply t.Lambda t.Handle e.LeftLinked e.Argument>;
-
-  [R-Lambda t.Lambda e.RightLinked] e.Argument =
-    <Apply t.Lambda e.Argument e.RightLinked>;
 
   [C-Lambda t.InnerLambda t.OuterLambda] e.Argument =
     <Apply
       t.OuterLambda
       <Apply t.InnerLambda e.Argument>
     >;
+
+  [LH-Lambda t.Lambda e.LeftLinked] t.Handle e.Argument =
+    <Apply t.Lambda t.Handle e.LeftLinked e.Argument>;
+
+  [R-Lambda t.Lambda e.RightLinked] e.Argument =
+    <Apply t.Lambda e.Argument e.RightLinked>;
 
   [H-Lambda t.Lambda] t.Handle e.Argument =
     t.Handle <Apply t.Lambda e.Argument>;
@@ -52,8 +54,6 @@ $ENTRY Apply {
     >;
 
   [Const-Lambda e.Value] e.Argument = e.Value;
-
-  s.FnPtr e.Argument = <s.FnPtr e.Argument>;
 }
 
 Applies-PH

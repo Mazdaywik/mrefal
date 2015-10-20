@@ -5,3 +5,5 @@ Profiler.log
 .Info/Not linked.txt
 .Config/list_make_param.wnd
 __dump
+objects.s.tmp
+objects.tmp

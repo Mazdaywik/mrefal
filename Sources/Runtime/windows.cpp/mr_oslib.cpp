@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <assert.h>
 
+// Для Watcom
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 #include "refalrts.h"
 #include "refalapi.h"
 #include "mr_oslib.h"
@@ -233,10 +242,8 @@ REFAL_FUNC(implement_os::create_process) {
   return cSuccess;
 }
 
-namespace {
-
 // Функция, порождающая атрибутную информацию (объявление)
-bool add_attribute_record(
+static bool add_attribute_record(
   AllocArray& allocs,
   const FILETIME& creation_time,
   const FILETIME& last_access_time,
@@ -244,8 +251,6 @@ bool add_attribute_record(
   DWORD file_attributes,
   DWORD size
 );
-
-} // безымянное namespace
 
 REFAL_FUNC(implement_fs::find_files) {
   /*
@@ -383,16 +388,14 @@ DECL_REFAL_IDENT(MD_DateTime, "M-DateTime");
 DECL_REFAL_IDENT(Size, "Size");
 DECL_REFAL_IDENT(Dir, "Dir");
 
-namespace {
-
-bool append_filetime(
+static bool append_filetime(
   AllocArray& allocs,
   refalrts::RefalIdentifier ident,
   const FILETIME& time
 );
 
 // Функция, порождающая атрибутную информацию (определение)
-bool add_attribute_record(
+static bool add_attribute_record(
   AllocArray& allocs,
   const FILETIME& creation_time,
   const FILETIME& last_access_time,
@@ -435,7 +438,7 @@ bool add_attribute_record(
   return true;
 }
 
-bool append_filetime(
+static bool append_filetime(
   AllocArray& allocs,
   refalrts::RefalIdentifier ident,
   const FILETIME& time
@@ -483,8 +486,6 @@ bool append_filetime(
 
   return true;
 }
-
-} // безымянное namespace
 
 REFAL_FUNC(implement_fs::file_attributes) {
   /*

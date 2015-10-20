@@ -11,6 +11,7 @@ for %%i in (~Defs ~ROut ~XLinx ~SimRef-01 ~Cpp-01) do (
     xcopy /S /I /Y Sources\Libraries\%%p.all\%%i       Libraries\%%p.all\%%i
     xcopy /S /I /Y Sources\Libraries\%%p.cppsr01-b\%%i Libraries\%%p.cppsr01\%%i
     xcopy /S /I /Y Sources\Libraries\%%p.cppsr01-s\%%i Libraries\%%p.cppsr01\%%i
+    xcopy /S /I /Y Sources\Libraries\%%p.r5-b\%%i      Libraries\%%p.r5\%%i
   )
 )
 

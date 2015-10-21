@@ -19,8 +19,8 @@ $IMPORT MProfiler;
 
 $ENTRY Go =
   <MVersion::Show>
-  <MProfiler::Quantify & Profiling-Go>
-  <MProfiler::PrintResults '_MRefal_profiler.log'>;
+  <MProfiler::SetOutputName '_MRefal_profiler.log'>
+  <MProfiler::Quantify-Flush & Profiling-Go>;
 
 Profiling-Go =
   <CompileList

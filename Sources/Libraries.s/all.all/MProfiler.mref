@@ -12,6 +12,14 @@ $ENTRY Quantify {
   s.Function e.Arguments = <Core::Quantify s.Function e.Arguments>;
 }
 
+$ENTRY Quantify-Flush {
+  s.Function e.Arguments = <Core::Quantify s.Function e.Arguments>;
+}
+
+$ENTRY SetOutputName {
+  e.OutputName = /* пусто */;
+}
+
 /**
   <PrintResults e.FileName>
   <PrintResults пусто>

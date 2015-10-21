@@ -239,6 +239,7 @@ GenCommand {
   t.Indent (CmdStartSentence) =
     <IncrementFusedIndent t.Indent>
     (<Indent t.Indent> 'do {')
+    (<Indent t.Indent> '  refalrts::start_sentence();')
     (
       <Indent t.Indent> '  refalrts::Iter '
       <BracketsVar-B 0 0> ' = arg_begin;'
@@ -362,6 +363,7 @@ GenCommand {
     AlgLeft s.BracketNum s.Nested 'e' e.Index (e.BracketsForSave)
   ) =
     <IncrementEvarIndent t.Indent>
+    (<Indent t.Indent> 'refalrts::start_e_loop();')
     (<Indent t.Indent> 'for(')
     (<Indent t.Indent>
       '  refalrts::Iter ' <BracketsVar-OE s.BracketNum s.Nested>

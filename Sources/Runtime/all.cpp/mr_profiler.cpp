@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include <fstream>
 #include "refalrts.h"
 #include "refalapi.h"
@@ -43,10 +43,10 @@ REFAL_FUNC(end_quantify)
   // Останавливаем профилировку
   Profiler *profiler =
     reinterpret_cast<Profiler*>(profiler_object->file_info);
-  delete profiler;
+  Profiler::destroy(profiler);
 
   refalrts::reset_allocator();
-  splice_to_freelist(open_call, close_call);
+  refalrts::splice_to_freelist(open_call, close_call);
   return refalrts::cSuccess;
 }
 
@@ -127,7 +127,7 @@ REFAL_FUNC(implement_profiler::quantify)
 
   profiler_object->char_info = 0;
   profiler_object->tag = refalrts::cDataFile;
-  profiler_object->file_info = new Profiler(func_name);
+  profiler_object->file_info = Profiler::create(func_name);
 
   // Перемещаем аллоцированный кусок перед закрывающей скобкой
   refalrts::splice_evar(close_call, new_close_call, profiler_object);
@@ -151,9 +151,10 @@ REFAL_FUNC(implement_profiler::print_results)
   refalrts::move_left( arg_begin, arg_end );
   refalrts::move_right( arg_begin, arg_end );
 
-  if (empty_seq(arg_begin, arg_end))
+  if (refalrts::empty_seq(arg_begin, arg_end))
   {
-    Profiler::OutToStream(std::cout);
+    using namespace std;
+    Profiler::OutToStream(stdout);
   }
   else
   {
@@ -166,8 +167,10 @@ REFAL_FUNC(implement_profiler::print_results)
       return refalrts::cRecognitionImpossible;
     }
 
-    std::ofstream fout(file_name.c_str());
-    Profiler::OutToStream(fout);
+    if (std::FILE *fout = std::fopen(file_name.c_str(), "wt")) {
+      Profiler::OutToStream(fout);
+      std::fclose(fout);
+    }
   }
 
   refalrts::reset_allocator();
@@ -175,4 +178,42 @@ REFAL_FUNC(implement_profiler::print_results)
   return refalrts::cSuccess;
 }
 
+REFAL_FUNC(implement_profiler::set_output_name) {
+  refalrts::Iter open_call = arg_begin;
+  refalrts::Iter close_call = arg_end;
+  refalrts::move_left( arg_begin, arg_end );
+  refalrts::move_left( arg_begin, arg_end );
+  refalrts::move_right( arg_begin, arg_end );
 
+  CharArray file_name;
+  refalrts::FnResult match_filename =
+    CharArray::from_sequence(file_name, arg_begin, arg_end);
+
+  if (refalrts::cSuccess != match_filename) {
+    return refalrts::cRecognitionImpossible;
+  }
+
+  Profiler::set_output_name(file_name.c_str());
+
+  refalrts::reset_allocator();
+  refalrts::splice_to_freelist(open_call, close_call);
+  return refalrts::cSuccess;
+}
+
+REFAL_FUNC(implement_profiler::flush) {
+  refalrts::Iter open_call = arg_begin;
+  refalrts::Iter close_call = arg_end;
+  refalrts::move_left( arg_begin, arg_end );
+  refalrts::move_left( arg_begin, arg_end );
+  refalrts::move_right( arg_begin, arg_end );
+
+  if (! refalrts::empty_seq(arg_begin, arg_end)) {
+    return refalrts::cRecognitionImpossible;
+  }
+
+  Profiler::flush();
+
+  refalrts::reset_allocator();
+  refalrts::splice_to_freelist(open_call, close_call);
+  return refalrts::cSuccess;
+}

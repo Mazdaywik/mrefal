@@ -9,6 +9,8 @@ namespace implement_profiler
 
 extern REFAL_FUNC(quantify);
 extern REFAL_FUNC(print_results);
+extern REFAL_FUNC(set_output_name);
+extern REFAL_FUNC(flush);
 
 } // namespace implement_profiler
 

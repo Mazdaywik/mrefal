@@ -19,7 +19,7 @@ $IMPORT MProfiler;
 */
 $ENTRY Link
   (e.PtOutName) e.OutFileNames =
-    <MProfiler::Quantify
+    <MProfiler::Quantify-Flush
       &Profiling-Link (e.PtOutName) e.OutFileNames
     >;
 
@@ -29,7 +29,7 @@ Profiling-Link
       <MFileSystem::StrFromPath e.PtOutName>
     >
     <MOutModuleStatus::Flush>
-    <Link-Aux
+    <MProfiler::Quantify-Flush & Link-Aux
       ( e.PtOutName )
       <MLambda::Map
         <MLambda::Composite
@@ -73,9 +73,9 @@ Hash {
 
 Link-Aux
   (e.PtOutName) e.Modules =
-    <Link-Aux-2
+    <MProfiler::Quantify-Flush & Link-Aux-2
       (e.PtOutName)
-      <CreateBidirectionalTable e.Modules>
+      <MProfiler::Quantify-Flush & CreateBidirectionalTable e.Modules>
     >;
 
 CreateBidirectionalTable
@@ -83,7 +83,7 @@ CreateBidirectionalTable
     <MLambda::MapReduce
       & AddInvertedInfo
       (
-        <InvertInfo
+        <MProfiler::Quantify-Flush & InvertInfo
           <MLambda::Map & MLambda.UnBracket e.Modules>
         >
       )
@@ -258,11 +258,11 @@ SelectModules {
 Link-Aux-2-FileNames
   (e.ModuleListName) (e.TreeName) (e.XLinxName) (e.NotLinkedName)
   (e.OrphanInverted) (e.Modules) e.Results =
-    <SaveModuleList (e.ModuleListName) e.Modules>
-    <SaveModuleTree (e.TreeName) e.Modules>
-    <SaveNotLinked
+    <MProfiler::Quantify-Flush & SaveModuleList (e.ModuleListName) e.Modules>
+    <MProfiler::Quantify-Flush & SaveModuleTree (e.TreeName) e.Modules>
+    <MProfiler::Quantify-Flush & SaveNotLinked
       (e.NotLinkedName)
-      <SaveXLinx-T (e.XLinxName) (e.Results) e.OrphanInverted>
+      <MProfiler::Quantify-Flush & SaveXLinx-T (e.XLinxName) (e.Results) e.OrphanInverted>
     >;
 
 //------------------------------------------------------------------------------

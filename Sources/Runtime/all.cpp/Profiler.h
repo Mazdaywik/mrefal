@@ -461,7 +461,6 @@ private:
 
 class Profiler
 {
-// Поля экземпляра
 public:
   Profiler(const std::string& name, bool lifetime = false);
   ~Profiler();
@@ -471,6 +470,7 @@ private:
   Profiler(const Profiler&);
   Profiler& operator=(const Profiler&);
 
+// Поля экземпляра
   std::string m_name;
   Secundomer m_total;
   Secundomer m_pure;

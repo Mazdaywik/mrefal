@@ -52,13 +52,23 @@ Lexicon {
     <Lexicon ( e.Expr1 ) ( e.Expr2 )>;
 
   ( t.First1 e.Expr1 ) ( t.First2 e.Expr2 ) =
-    <Compare t.First1 t.First2>;
+    <Lexicon-SwCompare
+      <Compare t.First1 t.First2> ( e.Expr1 ) ( e.Expr2 )
+    >;
 
   () (t.First2 e.Expr2) = '<';
 
   (t.First1 e.Expr1) () = '>';
 
   () () = '=';
+}
+
+Lexicon-SwCompare {
+  '=' ( e.Expr1 ) ( e.Expr2 ) =
+    <Lexicon ( e.Expr1 ) ( e.Expr2 )>;
+
+  s.Other ( e.Expr1 ) ( e.Expr2 ) =
+    s.Other;
 }
 
 Lexicon-T

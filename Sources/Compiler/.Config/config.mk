@@ -10,6 +10,7 @@ define PRINT-CONFIG
 	@$(call PRINTLINE, Work compiler.....$(comp))
 	@$(call PRINTLINE, Stable compiler...$(scomp))
 	@$(call PRINTLINE, Mode..............$(mode))
+	@$(call PRINTLINE, XLinx.............$(xlinx))
 endef
 
 define GEN-CONFIG
@@ -18,6 +19,7 @@ define GEN-CONFIG
 	@$(call PRINTLINE, comp = $(comp))>> $(CONFIGFILE)
 	@$(call PRINTLINE, scomp = $(scomp))>> $(CONFIGFILE)
 	@$(call PRINTLINE, mode = $(mode))>> $(CONFIGFILE)
+	@$(call PRINTLINE, xlinx = $(xlinx))>> $(CONFIGFILE)
 endef
 
 define CHECKPARAM
@@ -65,12 +67,14 @@ $(FARMENUFILE)::
 	@$(call PRINTLINE,    set PROFILE-ACRO=.cppsr.exe) >> $@
 	@$(call PRINTLINE,    set SCOMP-SHORT=$(scomp)) >> $@
 	@$(call PRINTLINE,    set MODE=$(mode)) >> $@
+	@$(call PRINTLINE,    set XLINX=$(xlinx)) >> $@
 	@$(call PRINTLINE,    .Config\change_window default) >> $@
 	@$(call PRINTLINE,--:) >> $@
 	@$(call PRINTLINE,:   Компилятор $(comp)) >> $@
 	@$(call PRINTLINE,:   Профиль $(profile)) >> $@
 	@$(call PRINTLINE,:   Стабильный компилятор $(scomp)) >> $@
 	@$(call PRINTLINE,:   Режим $(mode)) >> $@
+	@$(call PRINTLINE,:   XLinx $(xlinx)) >> $@
 
 comp-R5 = $(call BATEXE, ../Bin/start-r5)
 comp-R5T = $(call BATEXE, ../Bin/start-r5-t)
@@ -99,6 +103,9 @@ mode-BUILD = +build
 mode-FULL = +build
 mode-LINKONLY = +linkonly
 
+xlinx-ON = +xlinx
+xlinx-OFF =
+
 sprofile = $(comp)
 
 comp_tr = $(comp-$(comp))
@@ -106,3 +113,4 @@ profile_tr = $(profile-$(profile))
 scomp_tr = $(scomp-$(scomp))
 sprofile_tr = $(sprofile-$(sprofile))
 mode_tr = $(mode-$(mode))
+xlinx_tr = $(xlinx-$(xlinx))

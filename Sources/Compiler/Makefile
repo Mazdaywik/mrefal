@@ -9,13 +9,13 @@ work:
 	$(call CHECKPARAM, comp)
 	$(call CHECKPARAM, profile)
 	$(call CHECKPARAM, mode)
-	$(comp_tr) $(mode_tr) +cfg:.Config/$(profile_tr).prj
+	$(comp_tr) $(mode_tr) $(xlinx_tr) +cfg:.Config/$(profile_tr).prj
 
 stable:
 	$(call CHECKPARAM, scomp)
 	$(call CHECKPARAM, sprofile)
 	$(call CHECKPARAM, mode)
-	$(scomp_tr) $(mode_tr) +cfg:.Config/$(sprofile_tr).cfg
+	$(scomp_tr) $(mode_tr) $(xlinx_tr) +cfg:.Config/$(sprofile_tr).cfg
 
 check:
 	$(MAKE) work

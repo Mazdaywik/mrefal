@@ -1,9 +1,8 @@
 $MODULE BE-Refal5::MLinkerAliasTable;
 
-$IMPORT MCreateDirIfNeed;
 $IMPORT MFileIO;
-$IMPORT MStrings;
 $IMPORT MOrder;
+$IMPORT MStrings;
 
 /*------------------------------------------------------------------------------
  Таблица псевдонимов для замены имён функций и индексов переменных на более
@@ -24,26 +23,70 @@ $ENTRY Create {
   = [AliasTable () ];
 }
 
+/**
+  <Lookup t.AliasTable e.Name s.Hash> == t.AliasTable e.Alias
+*/
 $ENTRY Lookup {
-  [AliasTable t.Num e.Aliases-B ( e.Name (e.Alias) ) e.Aliases-E ]
-  e.Name =
-    [AliasTable t.Num ( e.Name (e.Alias) ) e.Aliases-B e.Aliases-E ]
+  [AliasTable
+    t.Num
+    e.HashGroup-B
+    (s.Hash e.Aliases-B (e.Name (e.Alias)) e.Aliases-E)
+    e.HashGroup-E
+  ]
+  e.Name s.Hash =
+    [AliasTable
+      t.Num
+      (s.Hash (e.Name (e.Alias)) e.Aliases-B e.Aliases-E)
+      e.HashGroup-B e.HashGroup-E
+    ]
     e.Alias;
 
-  [AliasTable t.Num e.Aliases ] e.Name =
+  [AliasTable t.Num e.HashGroups]
+  e.Name s.Hash =
+    <Lookup-Hashed-AddNew
+      <NewAlias t.Num e.Name> s.Hash e.HashGroups
+    >;
+}
+
+Lookup-Hashed-AddNew {
+  t.Num (e.Name) (e.Alias) s.Hash
+  e.HashGroup-B (s.Hash e.Aliases) e.HashGroup-E =
     <Lookup
-      [AliasTable <NewAlias t.Num e.Name> e.Aliases ]
-      e.Name
+      [AliasTable
+        t.Num
+        (s.Hash (e.Name (e.Alias)) e.Aliases) e.HashGroup-B e.HashGroup-E
+      ]
+      e.Name s.Hash
+    >;
+
+  t.Num (e.Name) (e.Alias) s.Hash e.HashGroups =
+    <Lookup
+      [AliasTable t.Num (s.Hash (e.Name (e.Alias))) e.HashGroups]
+      e.Name s.Hash
     >;
 }
 
 /**
-  <AddBuiltIn t.AliasTable (e.MRefalName) e.Refal5Name>
+  <AddBuiltIn t.AliasTable (e.MRefalName s.Hash) e.Refal5Name>
     == t.AliasTable
 */
-$ENTRY AddBuiltIn
-  [AliasTable t.Num e.Aliases] (e.Name) e.RealName =
-    [AliasTable t.Num e.Aliases (e.Name (e.RealName))];
+$ENTRY AddBuiltIn {
+  [AliasTable
+    t.Num
+    e.HashGroup-B (s.Hash e.Aliases) e.HashGroup-E
+  ]
+  (e.Name s.Hash) e.RealName =
+    [AliasTable
+      t.Num
+      (s.Hash e.Aliases (e.Name (e.RealName)))
+      e.HashGroup-B e.HashGroup-E
+    ];
+
+  [AliasTable t.Num e.HashGroups] (e.Name s.Hash) e.RealName =
+    [AliasTable
+      t.Num (s.Hash (e.Name (e.RealName))) e.HashGroups
+    ];
+}
 
 CategChar {
   'Index' = 'i'; 'Local' = 'L'; 'Entry' = 'E';
@@ -69,8 +112,7 @@ NewAliasAux
 
 NewAliasAuxWithNumber
   s.CategChar t.Num e.AliasNumber (e.NameInRout) =
-    t.Num
-    (e.NameInRout (s.CategChar e.AliasNumber));
+    t.Num (e.NameInRout) (s.CategChar e.AliasNumber);
 
 // <IncCateg t.Num s.Categ> == t.UpdatedNum s.CatNumber
 IncCateg {
@@ -108,60 +150,53 @@ IncStringIndexAux {
   () s.First e.Seq-E = s.First;
 }
 
-$ENTRY OutAliases {
-  [AliasTable t.Num e.Aliases ] =
-    [AliasTable t.Num e.Aliases ]
+$ENTRY OutAliases-D {
+  [AliasTable t.Num e.Aliases] e.TargetFileName =
     <UserTypeAliases
-      <MFileIO::Open 'w' <MCreateDirIfNeed::InfoDir> '/Aliases.als'>
+      <MFileIO::Open 'w' e.TargetFileName '-Aliases.txt'>
       <SortAliases e.Aliases>
     >;
 }
 
 SortAliases
-  e.Aliases =
-    <DoDecode <MOrder::Sort <DoCode e.Aliases>>>;
+  e.HashGroups =
+    <MOrder::Sort <Code e.HashGroups>>;
 
-DoCode {
-  t.Next e.Tail =
-    <Code t.Next> <DoCode e.Tail>;
+Code {
+  (s.Hash e.Items) e.HashGroups =
+    <Code-HashGroup e.Items> <Code e.HashGroups>;
 
-  = ;
+  /* пусто */ = /* всё */;
 }
 
-Code
-  ( e.Name (s.Categ e.Index) ) =
-    ( (s.Categ <MStrings::Length-T e.Index>) e.Name );
+Code-HashGroup {
+  //Пропускаем индексы переменных.
+  ('Index::' e.Name ('i' e.Index)) e.Items =
+    <Code-HashGroup e.Items>;
 
-DoDecode {
-  t.Next e.Tail =
-    <Decode t.Next> <DoDecode e.Tail>;
+  (e.Name (s.Categ e.Index)) e.Items =
+    (s.Categ <Length-T e.Index> (e.Name))
+    <Code-HashGroup e.Items>;
 
-  = ;
+  /* пусто */ = /* всё */;
 }
 
-Decode
-  ( (s.Categ s.Length e.Index) e.Name ) =
-    ( e.Name (s.Categ e.Index) );
+Length-T {
+  s.1 = 1 s.1;
+  s.1 s.2 = 2 s.1 s.2;
+  s.1 s.2 s.3 = 3 s.1 s.2 s.3;
+  e.Index = <MStrings::Length-T e.Index>;
+}
 
 UserTypeAliases {
-  //Пропускаем индексы переменных.
-  t.FAli ('Index::' e.Name ('i' e.Alias)) e.Tail =
+  t.FAli (s.CategChar s.Length e.Alias (e.CategStr '::' e.Name)) e.Tail =
     <UserTypeAliases
-      t.FAli e.Tail
-    >;
-
-  t.FAli (e.Categ '::' e.Name (e.Alias)) e.Tail =
-    <UserTypeAliases
-      <MFileIO::WriteLine t.FAli e.Alias ' --> ' e.Name>
+      <MFileIO::WriteLine t.FAli s.CategChar e.Alias ' --> ' e.Name>
       e.Tail
     >;
 
   t.FAli =
     <MFileIO::Close t.FAli>;
-}
-
-$ENTRY Destroy {
-  [AliasTable t.Num e.Aliases ] = ;
 }
 
 $END BE-Refal5::MLinkerAliasTable.

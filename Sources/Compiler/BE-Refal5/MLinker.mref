@@ -1,10 +1,10 @@
 $MODULE BE-Refal5::MLinker;
 
-$IMPORT MCreateDirIfNeed;
 $IMPORT MError;
 $IMPORT MExeTyper = BE-Refal5::MExeTyper;
 $IMPORT MFileIO;
 $IMPORT MFileSystem;
+$IMPORT MHash = BE-Refal5::MHash;
 $IMPORT MLambda;
 $IMPORT MLinkerAliasTable = BE-Refal5::MLinkerAliasTable;
 $IMPORT MOrder;
@@ -24,27 +24,8 @@ $ENTRY Link
     <MProfiler::Quantify &Profiled-Link (e.ProgName) e.Modules>;
 
 Profiled-Link {
-  (e.PtProgName) e.ROutFiles =
+  (e.PtProgName) e.Modules =
     <StartLinkLoop
-      <MExeTyper::Create
-        <DefLim> <MFileSystem::StrFromPath e.PtProgName> '.ref'
-      >
-      <CreateUnitStorage>
-      e.ROutFiles
-    >
-
-    <MOS::System 'refc ' <MFileSystem::StrFromPath e.PtProgName> '.ref'>
-    Success;
-}
-
-DefLim = 64;
-
-StartLinkLoop
-  t.hExeTyper t.UnitStorage e.Modules =
-    <StartLinkLoop-Aux
-      t.UnitStorage
-      <MLinkerAliasTable::Create>
-      t.hExeTyper
       <MLambda::Reduce
         & SortUnits
         ( (/* builtins */) (/* inits */) (/* functions */) )
@@ -53,7 +34,20 @@ StartLinkLoop
           <MStrings::Reverse e.Modules>
         >
       >
-    >;
+      <MFileSystem::StrFromPath e.PtProgName>
+    >
+
+    <MProfiler::Quantify & CallRefc e.PtProgName>
+    Success;
+}
+
+LoadUnitsFromModule
+  (t.ModuleName e.ObjName) = <LoadUnits e.ObjName>;
+
+CallRefc {
+  e.PtProgName =
+    <MOS::System 'refc ' <MFileSystem::StrFromPath e.PtProgName> '.ref'>;
+}
 
 SortUnits {
   ( (e.Builtins) (e.Inits) (e.Functions) )
@@ -71,133 +65,118 @@ SortUnits {
     ( (e.Builtins) (e.Inits) (e.Functions t.OtherUnit) );
 }
 
-LoadUnitsFromModule
-  (t.ModuleName e.ObjName) = <LoadUnits e.ObjName>;
-
-StartLinkLoop-Aux {
-  t.UnitStorage t.AliasTable t.hExeTyper
-  ( (e.BuiltIns) (e.InitCode) (e.Units) ) =
-    <LinkLoop
-      Continue
-      <MLambda::Reduce
-        & AddUnit
-        <AddRequest
-          <MLambda::Reduce
-            & AddLinkedBuiltIn t.UnitStorage e.BuiltIns
-          >
-          'Starter'
+StartLinkLoop {
+  ( (e.BuiltIns) (e.InitCode) (e.Units) )
+  e.TargetFileName =
+    <StopLinkLoop
+      <LinkLoop
+        <CreateAliasTable e.BuiltIns>
+        <CreateExeTyper e.TargetFileName>
+        <CreateUnitStorage
+          (<MLambda::Map & SelectBuiltInMRName e.BuiltIns>)
+          <ExitFunctionCode> e.Units
         >
         <RuntimeCode e.InitCode>
-        e.Units
       >
-      <MLambda::Reduce
-        & AddBuiltIn t.AliasTable e.BuiltIns
-      >
-      t.hExeTyper
+      e.TargetFileName
     >;
+}
+
+SelectBuiltInMRName {
+  (RealName (e.MR-Name) e.R5-Name) = (e.MR-Name);
+}
+
+CreateAliasTable {
+  e.BuiltIns =
+    <MLambda::Reduce
+      & AddBuiltIn <MLinkerAliasTable::Create> e.BuiltIns
+    >;
+}
+
+AddBuiltIn {
+  t.AliasTable (RealName (e.MR-Name s.Hash) e.R5-Name) =
+    <MLinkerAliasTable::AddBuiltIn
+      t.AliasTable (e.MR-Name s.Hash) e.R5-Name
+    >;
+}
+
+CreateExeTyper {
+  e.TargetFileName =
+    <MExeTyper::Create <DefLim> e.TargetFileName '.ref'>;
+}
+
+DefLim = 64;
+
+Hash {
+  e.Line = <MHash::Hash e.Line>;
 }
 
 RuntimeCode {
   e.InitCode =
     // Starter
-    (('Starter')
-      ('$$ENTRY Go { = ' e.InitCode '<$Entry::__Exit$ 0 >; }')
-    )
-    // Entry::__Exit
-    <ExitFunctionCode>;
+    ((<Hash 'Starter'>)
+      ('$ENTRY Go { = ' e.InitCode '<'('$' <Hash 'Entry::__Exit'>)' 0 >; }')
+    );
 }
 
 ExitFunctionCode =
+  // Entry::__Exit
   (
     // Баннер
-    ('Entry::__Exit')
+    (<Hash 'Entry::__Exit'>)
     // Код
-    ('$$ENTRY $Entry::__Exit$ {')
-    ('  s.$Index::RetCode$ , <Dg Finalizers >: {')
-    ('    s.$Index::NextFinalizer$ =')
-    ('      <Mu s.$Index::NextFinalizer$ >')
-    ('      <$Entry::__Exit$ s.$Index::RetCode$ >;')
-    ('    = <Exit s.$Index::RetCode$ >;')
+    ('$ENTRY ' ('$' <Hash 'Entry::__Exit'>)' {')
+    ('  s.'('$' <Hash 'Index::RetCode'>)' , <Dg Finalizers >: {')
+    ('    s.'('$' <Hash 'Index::NextFinalizer'>)' =')
+    ('      <Mu s.'('$' <Hash 'Index::NextFinalizer'>)' >')
+    ('      <'('$' <Hash 'Entry::__Exit'>)' s.'('$' <Hash 'Index::RetCode'>)' >;')
+    ('    = <Exit s.'('$' <Hash 'Index::RetCode'>)' >;')
     ('  };')
     ('}')
   );
 
-AddLinkedBuiltIn {
-  t.UnitStorage (RealName (e.MR-Name) e.R5-Name) =
-    <AddLinked t.UnitStorage e.MR-Name>;
-}
-
-AddBuiltIn {
-  t.AliasTable (RealName (e.MR-Name) e.R5-Name) =
-    <MLinkerAliasTable::AddBuiltIn
-      t.AliasTable (e.MR-Name) e.R5-Name
-    >;
+StopLinkLoop {
+  t.AliasTable t.ExeTyper t.UnitStorage e.TargetFileName =
+    <PrintNotLinkedUnits t.UnitStorage e.TargetFileName>
+    <MLinkerAliasTable::OutAliases-D t.AliasTable e.TargetFileName>
+    <MExeTyper::Destroy t.ExeTyper>;
 }
 
 LinkLoop {
-  Continue t.UnitStorage t.AliasTable t.ExeTyper =
-    <LinkLoop
-      <SwLinkNextUnit
-        <GetNextUnit t.UnitStorage>
-        t.AliasTable t.ExeTyper
+  t.AliasTable t.ExeTyper t.UnitStorage (e.Unit) =
+    <LinkLoop-GetNextUnit
+      <TypeUnit
+        t.UnitStorage t.AliasTable t.ExeTyper e.Unit
       >
     >;
 
-  Finish t.UnitStorage t.AliasTable t.ExeTyper =
-    <PrintUnresolvedUnits t.UnitStorage>
-    <MLinkerAliasTable::Destroy
-      <MLinkerAliasTable::OutAliases t.AliasTable>
-    >
-    <MExeTyper::Destroy t.ExeTyper>;
+  t.AliasTable t.ExeTyper t.UnitStorage Finish =
+    t.AliasTable t.ExeTyper t.UnitStorage;
 
-  LoadModule t.UnitStorage t.AliasTable t.ExeTyper =
-    <MError::LinkError
-      'Unresolved name '
-      <NextRequestedName-D t.UnitStorage>
+  t.AliasTable t.ExeTyper t.UnitStorage UnresolvedName e.Name =
+    <MError::LinkError 'Unresolved name ' e.Name>;
+}
+
+LinkLoop-GetNextUnit {
+  t.AliasTable t.ExeTyper t.UnitStorage =
+    <LinkLoop
+      t.AliasTable t.ExeTyper <GetNextUnit t.UnitStorage>
     >;
 }
 
-SwLinkNextUnit {
-  t.UnitStorage Finish t.AliasTable t.ExeTyper =
-    Finish t.UnitStorage t.AliasTable t.ExeTyper;
-
-  t.UnitStorage None t.AliasTable t.ExeTyper =
-    LoadModule t.UnitStorage t.AliasTable t.ExeTyper;
-
-  t.UnitStorage (e.Unit) t.AliasTable t.ExeTyper =
-    Continue
-    <TypeUnit
-      t.UnitStorage t.AliasTable t.ExeTyper e.Unit
-    >;
-}
-
-PrintUnresolvedUnits
-  t.UnitStorage =
-    //<DestroyUnitStorage t.UnitStorage>;
-    <CreateNotLinkedFile
-      <NotLinkedList t.UnitStorage>
-    >;
-
-CreateNotLinkedFile
-  t.UnitStorage e.UnitNames =
-    <DestroyUnitStorage t.UnitStorage>
+PrintNotLinkedUnits
+  t.UnitStorage e.TargetFileName =
     <MFileIO::Save
-      (<MCreateDirIfNeed::InfoDir> '/Not linked.txt')
+      (e.TargetFileName '-Not linked.txt')
       ('Not linked units')
-      <ListNames e.UnitNames>
+      <MLambda::Map
+        <MLambda::Composite
+          & MLambda.UnBracket
+          <MLambda::BindLeft & MLambda.Bracket '  '>
+        >
+        <MOrder::Sort <NotLinkedList-D t.UnitStorage>>
+      >
     >;
-
-ListNames
-  e.Names =
-    <DoListNames <MOrder::Sort e.Names>>;
-
-DoListNames {
-  (e.Name) e.Tail =
-    ('  ' e.Name)
-    <DoListNames e.Tail>;
-
-  = ;
-}
 
 /*------------------------------------------------------------------------------
  Хранилище единиц компоновки.
@@ -206,28 +185,35 @@ DoListNames {
  t.UnitStorage ::=
   [UnitStorage (Requests e.Requests) (Units e.Units) (Linked e.Linked)]
  e.Requests ::= (e.UnitName)*
- e.Units ::= t.LinkUnit*
- e.Linked ::= (e.UnitName)*
+ e.Units ::= (s.Hash t.LinkUnit*)*
+ e.Linked ::= (s.Hash (e.UnitName)*)*
 ------------------------------------------------------------------------------*/
 
 $DATA UnitStorage;
 
 /**
-  <CreateUnitStorage> == t.UnitStorage
-*/
-CreateUnitStorage =
-  [UnitStorage (Requests) (Units) (Linked)];
-
-/**
-  <AddUnit t.UnitStorage t.Unit>
+  <CreateUnitStorage
+    ((e.BuiltInName)*) t.Unit*
+  >
     == t.UnitStorage
 */
-AddUnit
-  [UnitStorage t.Request (Units e.Units) t.Linked]
-  t.Unit =
+CreateUnitStorage {
+  (e.BuiltIns) e.Units =
     [UnitStorage
-      t.Request (Units e.Units t.Unit) t.Linked
+      (Requests)
+      <MLambda::Reduce & AddUnit (Units) e.Units>
+      <MLambda::Reduce & AddLinked-Aux (Linked) e.BuiltIns>
     ];
+}
+
+AddUnit {
+  (Units e.HashGroups-B (s.Hash e.Units) e.HashGroups-E)
+  ((e.Name s.Hash) e.Body) =
+    (Units e.HashGroups-B (s.Hash e.Units ((e.Name) e.Body)) e.HashGroups-E);
+
+  (Units e.HashGroups) ((e.Name s.Hash) e.Body) =
+    (Units e.HashGroups (s.Hash ((e.Name) e.Body)));
+}
 
 /**
   <AddRequest t.UnitStorage e.Name>
@@ -243,27 +229,30 @@ AddRequest {
   t.UnitStorage 'Swap::' e.Name =
     <AddRequestAux t.UnitStorage 'Swap::' e.Name>;
 
-  t.UnitStorage 'Starter' =
-    <AddRequestAux t.UnitStorage 'Starter'>;
-
   t.UnitStorage e.OtherName =
     t.UnitStorage;
 }
 
 AddRequestAux {
   [UnitStorage
-    t.Request t.Units (Linked e.Linked-B (e.Name) e.Linked-E)
-  ] e.Name =
+    t.Request t.Units
+    (Linked
+      e.HashGroups-B (s.Hash e.Names-B (e.Name) e.Names-E) e.HashGroups-E
+    )
+  ] e.Name s.Hash =
     [UnitStorage
       t.Request t.Units
-      (Linked e.Linked-B (e.Name) e.Linked-E)
+      (Linked
+        (s.Hash (e.Name) e.Names-B e.Names-E)
+        e.HashGroups-B e.HashGroups-E
+      )
     ];
 
   [UnitStorage
     (Requests e.Requests-B (e.Name) e.Requests-E) t.Units t.Linked
   ] e.Name =
     [UnitStorage
-      (Requests e.Requests-B (e.Name) e.Requests-E)
+      (Requests (e.Name) e.Requests-B e.Requests-E)
       t.Units t.Linked
     ];
 
@@ -272,7 +261,7 @@ AddRequestAux {
   ]
   e.Name =
     [UnitStorage
-      (Requests e.Requests (e.Name)) t.Units t.Linked
+      (Requests (e.Name) e.Requests) t.Units t.Linked
     ];
 }
 
@@ -280,17 +269,29 @@ AddRequestAux {
   <AddLinked t.UnitStorage e.Name>
     == t.UnitStorage
 */
-AddLinked
+AddLinked {
   [UnitStorage t.Requests t.Units (Linked e.Linked)]
-  e.Name =
+  e.Name s.Hash =
     [UnitStorage
-      t.Requests t.Units (Linked e.Linked (e.Name))
+      t.Requests t.Units <AddLinked-Aux (Linked e.Linked) (e.Name s.Hash)>
     ];
+}
+
+AddLinked-Aux {
+  (Linked e.HashGroups-B (s.Hash e.Names) e.HashGroups-E)
+  (e.Name s.Hash) =
+    (Linked
+      (s.Hash (e.Name) e.Names) e.HashGroups-B e.HashGroups-E
+    );
+
+  (Linked e.HashGroups) (e.Name s.Hash) =
+    (Linked (s.Hash (e.Name)) e.HashGroups);
+}
 
 /**
   <GetNextUnit t.UnitStorage>
     == t.UnitStorage t.Unit
-    == t.UnitStorage None
+    == t.UnitStorage UnresolvedName e.Name
     == t.UnitStorage Finish
 */
 GetNextUnit {
@@ -299,54 +300,44 @@ GetNextUnit {
     Finish;
 
   [UnitStorage
-    (Requests e.Requests-B (e.NextName) e.Requests-E)
-    (Units e.Units-B ((e.NextName) e.Body) e.Units-E)
+    (Requests (e.NextName s.Hash) e.Requests)
+    (Units
+      e.HashGroups-B
+      (s.Hash e.Units-B ((e.NextName) e.Body) e.Units-E)
+      e.HashGroups-E
+    )
     t.Linked
   ] =
     [UnitStorage
-      (Requests e.Requests-B e.Requests-E)
-      (Units e.Units-B e.Units-E)
+      (Requests e.Requests)
+      (Units
+        e.HashGroups-B
+        (s.Hash e.Units-B e.Units-E)
+        e.HashGroups-E
+      )
       t.Linked
-    ] ((e.NextName) e.Body);
+    ] ((e.NextName s.Hash) e.Body);
 
-  [UnitStorage t.Requests t.Units t.Linked] =
-    [UnitStorage t.Requests t.Units t.Linked] None;
+  [UnitStorage (Requests (e.NextName s.Hash) e.Requests) t.Units t.Linked] =
+    [UnitStorage (Requests (e.NextName s.Hash) e.Requests) t.Units t.Linked]
+    UnresolvedName e.NextName;
 }
 
 /**
-  <DestroyUnitStorage t.UnitStorage> == empty
-*/
-DestroyUnitStorage
-  [UnitStorage
-    (Requests e.Requests)
-    (Units e.Units)
-    (Linked e.Linked)
-  ] = ;
-
-/**
-  <NextRequestedName-D t.UnitStorage>
-    == e.Name
-*/
-NextRequestedName-D {
-  [UnitStorage
-    (Requests (e.NextName) e.Requests) t.Units t.Linked
-  ] = e.NextName;
-
-  t.UnitStorage = 'Unknown';
-}
-
-/**
-  <NotLinkedList t.UnitStorage>
+  <NotLinkedList-D t.UnitStorage>
     == t.UnitStorage (e.NotLinkedUnitName)*
 */
-NotLinkedList
+NotLinkedList-D
   [UnitStorage t.Requests (Units e.Units) t.Linked] =
-    [UnitStorage t.Requests (Units e.Units) t.Linked]
     <NameFromUnit e.Units>;
 
 NameFromUnit {
-  ((e.Name) e.Content) e.Tail =
-    (e.Name) <NameFromUnit e.Tail>;
+  (s.Hash ((e.Name) e.Body) e.Units) e.HashGroups =
+    (e.Name)
+    <NameFromUnit (s.Hash e.Units) e.HashGroups>;
+
+  (s.Hash /* пусто */) e.HashGroups =
+    <NameFromUnit e.HashGroups>;
 
   = ;
 }
@@ -424,7 +415,7 @@ DoLoadUnits {
 AnalyseLine {
   ('v ' e.Version) = (Version e.Version);
 
-  ('b ' e.BannerLine) = (Banner e.BannerLine);
+  ('b ' e.BannerLine) = (Banner <GetHash e.BannerLine>);
 
   ('r ' e.?RemarkLine) = ;
 
@@ -432,39 +423,24 @@ AnalyseLine {
 
   ('p ' e.RealName) = (RealName e.RealName);
 
-  ('e ' e.EntryPointCode) = (EntryPoint e.EntryPointCode);
+  ('e ' e.EntryPointCode) = (EntryPoint <HideQuotes e.EntryPointCode>);
 
   () = ;
-}
-
-TypeUnit {
-  t.UnitStorage t.Aliases t.ExeTyper (e.Banner) e.Lines =
-    <DoTypeUnits
-      <AddLinked t.UnitStorage e.Banner>
-      t.Aliases
-      <MExeTyper::TypeComment t.ExeTyper e.Banner>
-      e.Lines
-    >;
-}
-
-DoTypeUnits {
-  t.UnitStorage t.Aliases t.ExeTyper =
-    //<DestroyUnitStorage t.UnitStorage>
-    t.UnitStorage
-    t.Aliases t.ExeTyper;
-
-  t.UnitStorage t.Aliases t.ExeTyper (e.NextLine) e.Lines =
-    <DoTypeUnits
-      <TypeLine t.UnitStorage t.Aliases t.ExeTyper e.NextLine>
-      e.Lines
-    >;
 }
 
 HideQuotes {
   '\'' e.Tail = <StartHidingQuote ('\'') e.Tail>;
   '\"' e.Tail = <StartHidingQuote ('\"') e.Tail>;
+  '$$' e.Tail = '$' <HideQuotes e.Tail>;
+  '$' e.Name '$' e.Tail = ('$' <GetHash e.Name>) <HideQuotes e.Tail>;
   s.Other e.Tail = s.Other <HideQuotes e.Tail>;
   = ;
+}
+
+GetHash {
+  e.Name '#' e.Hash = e.Name <MStrings::Numb e.Hash>;
+
+  e.Name = <MHash::Hash e.Name>;
 }
 
 StartHidingQuote {
@@ -483,39 +459,53 @@ StartHidingQuote {
     >;
 }
 
-TypeLine {
-  t.UnitStorage t.Aliases t.ExeTyper =
-    t.UnitStorage t.Aliases t.ExeTyper;
-
-  t.UnitStorage t.Aliases t.ExeTyper e.Line =
-    <TypeLine
-      <SwTypeContent
-        t.UnitStorage t.Aliases t.ExeTyper e.Line
-      >
+TypeUnit {
+  t.UnitStorage t.Aliases t.ExeTyper (e.Banner s.Hash) e.Lines =
+    <DoTypeUnit
+      <AddLinked t.UnitStorage e.Banner s.Hash>
+      t.Aliases
+      <MExeTyper::TypeComment t.ExeTyper e.Banner '#' <MStrings::Symb s.Hash>>
+      e.Lines
     >;
 }
 
-SwTypeContent {
-  t.UnitStorage t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
-    t.UnitStorage t.Aliases
-    <MExeTyper::TypeQuoted
-      t.ExeTyper s.Quote e.HiddenQuote
-    > e.Raw;
+DoTypeUnit {
+  t.UnitStorage t.Aliases t.ExeTyper =
+    t.Aliases t.ExeTyper t.UnitStorage;
 
-  t.UnitStorage t.Aliases t.ExeTyper '$$' e.Raw =
-    t.UnitStorage t.Aliases <MExeTyper::TypeChar t.ExeTyper '$'> e.Raw;
+  t.UnitStorage t.Aliases t.ExeTyper (e.NextLine) e.Lines =
+    <DoTypeUnit
+      <TypeLine t.UnitStorage t.Aliases t.ExeTyper e.NextLine>
+      e.Lines
+    >;
+}
 
-  t.UnitStorage t.Aliases t.ExeTyper '$' e.FnName '$' e.Raw =
-    <AddRequest t.UnitStorage e.FnName>
-    <TypeRenamed
-      ( <MLinkerAliasTable::Lookup t.Aliases e.FnName> )
-      t.ExeTyper e.Raw
+TypeLine {
+  t.UnitStorage t.Aliases t.ExeTyper s.Char e.Raw =
+    <TypeLine
+      t.UnitStorage t.Aliases
+      <MExeTyper::TypeChar t.ExeTyper s.Char>
+      e.Raw
     >;
 
-  t.UnitStorage t.Aliases t.ExeTyper s.Char e.Raw =
-    t.UnitStorage t.Aliases
-    <MExeTyper::TypeChar t.ExeTyper s.Char>
-    e.Raw;
+  t.UnitStorage t.Aliases t.ExeTyper ('$' e.FnName s.Hash) e.Raw =
+    <TypeLine
+      <AddRequest t.UnitStorage e.FnName s.Hash>
+      <TypeRenamed
+        ( <MLinkerAliasTable::Lookup t.Aliases e.FnName s.Hash> )
+        t.ExeTyper e.Raw
+      >
+    >;
+
+  t.UnitStorage t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
+    <TypeLine
+      t.UnitStorage t.Aliases
+      <MExeTyper::TypeQuoted t.ExeTyper s.Quote e.HiddenQuote>
+      e.Raw
+    >;
+
+  t.UnitStorage t.Aliases t.ExeTyper =
+    t.UnitStorage t.Aliases t.ExeTyper;
 }
 
 TypeRenamed

@@ -1,0 +1,20 @@
+﻿$MODULE BE-Refal5::MHash;
+
+$IMPORT MMath;
+$IMPORT MStrings;
+
+$ENTRY Hash {
+  e.Chars = e.Chars <DoHash <MStrings::Ord e.Chars> 43>;
+}
+
+DoHash {
+  s.Hash = <MMath::Mod s.Hash 37>;
+
+  s.Initial e.NotScanned s.Hash =
+    <DoHash
+      e.NotScanned
+      <MMath::Add <MMath::Mul s.Hash 31> s.Initial>
+    >;
+}
+
+$END BE-Refal5::MHash.

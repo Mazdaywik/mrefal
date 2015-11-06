@@ -40,7 +40,7 @@ L:  Удалить промежуточные файлы
 I:  Статистика и информация
 {
 A:  Псевдонимы (Рефал 5)
-    view:.Info\Aliases.als
+    view:..\Bin\MRefal.r5-Aliases.txt
 I:  Интерфейсы
     view:interfaces.txt
 U:  Обновить интерфейсы
@@ -51,17 +51,18 @@ U:  Обновить интерфейсы
     del mrefs.tmp
     view:interfaces.txt
 --:  
-L:  Список нескомпонованных элементов
-    cd .Info
-    unlib.bat
-    cd ..
-    view:.Info/"Not linked.txt
-K:  Список нескомпонованных элементов
-    view:"../bin/.Info/MRefal%PROFILE-ACRO%.not linked.txt"
+L:  Список нескомпонованных элементов (R5+unlib)
+    ..\Bin\unlib.bat
+    view:..\Bin\MRefal.r5-Not linked.txt
+N:  Список нескомпонованных элементов (R5)
+    view:..\Bin\MRefal.r5-Not linked.txt
+--:  
+K:  Список нескомпонованных элементов (XLinx)
+    view:"../Bin/.Info/MRefal%PROFILE-ACRO%.not linked.txt"
 T:  Показ дерева модулей
-    view:../bin/.Info/MRefal%PROFILE-ACRO%.tree.txt
+    view:../Bin/.Info/MRefal%PROFILE-ACRO%.tree.txt
 X:  Перекрёстные связи
-    view:../bin/.Info/MRefal%PROFILE-ACRO%.xlinx.txt
+    view:../Bin/.Info/MRefal%PROFILE-ACRO%.xlinx.txt
 }
 --:  
 E:  Декодировать файл дампа !.! (6 Кбайт/с)

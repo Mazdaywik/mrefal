@@ -2,6 +2,7 @@ $MODULE BE-Refal5::MCompiler;
 
 $IMPORT MEscape;
 $IMPORT MFileIO;
+$IMPORT MHash = BE-Refal5::MHash;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
@@ -65,7 +66,7 @@ GenFinalizer {
   t.hIModule t.ModuleName t.InitCode (Result e.FinalCode) =
     <GenerateElements t.hIModule>
     <GenFinalizer-Aux
-      ('Entry' <QualifiedToLine t.ModuleName> '::__Finalizer')
+      (<HashedName 'Entry' <QualifiedToLine t.ModuleName> '::__Finalizer'>)
       t.InitCode e.FinalCode
     >;
 }
@@ -170,8 +171,18 @@ GenerateFnHeader
 
 XQualifiedToLine
   s.ScopeClass t.QualifiedName =
-    <ScopeClassToPrefix s.ScopeClass>
-    <QualifiedToLine t.QualifiedName>;
+    <HashedName
+      <ScopeClassToPrefix s.ScopeClass>
+      <QualifiedToLine t.QualifiedName>
+    >;
+
+HashedName {
+  e.Name = <HashedName-Aux <MHash::Hash e.Name>>;
+}
+
+HashedName-Aux {
+  e.Name s.Hash = e.Name '#' <MStrings::Symb s.Hash>;
+}
 
 QualifiedToLine
   t.QualifiedFnName =
@@ -223,16 +234,16 @@ GenerateExpression {
 
 GenerateTerm {
   (Identifier t.SrcPos e.Name) =
-    '$Ident::' e.Name '$';
+    '$' <HashedName  'Ident::' e.Name> '$';
 
   (EVar e.Name) =
-    'e.$Index::' e.Name '$';
+    'e.$' <HashedName  'Index::' e.Name> '$';
 
   (SVar e.Name) =
-    's.$Index::' e.Name '$';
+    's.$' <HashedName  'Index::' e.Name> '$';
 
   (TVar e.Name) =
-    't.$Index::' e.Name '$';
+    't.$' <HashedName  'Index::' e.Name> '$';
 
   (Literal e.Content) =
     '\'' <EscapeText e.Content> '\'';
@@ -244,7 +255,7 @@ GenerateTerm {
     <MStrings::Symb s.Value>;
 
   (Structure e.InBrackets) =
-    '( $ADT::__StructureBrackets$ '
+    '( $' <HashedName 'ADT::__StructureBrackets'> '$ '
     <GenerateExpression e.InBrackets>
     ')';
 
@@ -258,7 +269,7 @@ GenerateTerm {
     <GenerateExpression e.Argument> '>';
 
   (IndirectCall (SVar e.Index) e.Argument) =
-    '<Mu s.$Index::' e.Index '$ '
+    '<Mu s.$' <HashedName  'Index::' e.Index> '$ '
     <GenerateExpression e.Argument> '>';
 
   (FnPtr (e.Callable)) =

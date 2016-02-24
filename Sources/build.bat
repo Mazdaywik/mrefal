@@ -3,37 +3,11 @@ set PATH=%PATH%;..\MR-Extent;..\..\Bin
 
 set VERFILE=..\Version.txt
 set VERSRC-MR=Compiler\MVersion.mref
-set VERSRC-SR=Compiler.sr\Version.sref
 set /P CURVER=<%VERFILE%
 set LOGFILE=~rebuild.log
 
 echo Rebuilding Module and Simple Refal (start version %CURVER%)>%LOGFILE%
 echo.>>%LOGFILE%
-
-rem ===========================================================================
-rem Тестовая сборка Простого Рефала
-rem ===========================================================================
-
-pushd Compiler.sr
-setlocal
-set LOGFILE=..\%LOGFILE%
-
-call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
-call :SUB_DUAL_PRINT "======= Test for errors Simple Refal. =======" %LOGFILE%
-call :SUB_DUAL_PRINT "=============================================" %LOGFILE%
-echo.>>%LOGFILE%
-
-del __has_errors__
-call :SUB_CALL_AND_SAVE_OUTPUT "..\..\Bin\LexGen.exe Lexer.sref" %LOGFILE%
-copy srefc.exe srefc_.exe
-call :SUB_CALL_AND_SAVE_OUTPUT "srefc_ @srefc_e.prj" %LOGFILE%
-if exist *.obj del *.obj
-if exist *.tds del *.tds
-
-if exist __has_errors__ goto ERRORS
-
-endlocal
-popd
 
 
 pushd Compiler
@@ -69,37 +43,8 @@ echo.>>%LOGFILE%
 
 copy %VERFILE% %VERFILE%.new
 copy %VERSRC-MR% %VERSRC-MR%.bak
-copy %VERSRC-SR% %VERSRC-SR%.bak
 
-set VERSOURCES=/srcfile:%VERSRC-MR% /srcfile:%VERSRC-SR%
-
-refgo ../Bin/VersionUpdater /verfile:%VERFILE%.new %VERSOURCES% > nul
-
-rem ===========================================================================
-rem Рабочая пересборка Простого Рефала
-rem ===========================================================================
-pushd Compiler.sr
-setlocal
-set LOGFILE=..\%LOGFILE%
-
-call :SUB_DUAL_PRINT "==============================================" %LOGFILE%
-call :SUB_DUAL_PRINT "== Final recompiling Simple Refal, 2 times. ==" %LOGFILE%
-call :SUB_DUAL_PRINT "==============================================" %LOGFILE%
-echo.>>%LOGFILE%
-
-del __has_errors__
-call :SUB_CALL_AND_SAVE_OUTPUT "..\..\Bin\LexGen.exe Lexer.sref" %LOGFILE%
-copy srefc.exe srefc_.exe
-call :SUB_CALL_AND_SAVE_OUTPUT "srefc_ @srefc_e.prj" %LOGFILE%
-copy srefc.exe srefc_.exe
-call :SUB_CALL_AND_SAVE_OUTPUT "srefc_ @srefc_e.prj" %LOGFILE%
-if exist *.obj del *.obj
-if exist *.tds del *.tds
-
-if exist __has_errors__ goto UNEXPECTED_ERROR
-
-endlocal
-popd 
+refgo ../Bin/VersionUpdater /verfile:%VERFILE%.new /srcfile:%VERSRC-MR% > nul
 
 rem ===========================================================================
 rem Рабочая пересборка Модульного Рефала
@@ -141,7 +86,6 @@ popd
 del %VERFILE%
 move %VERFILE%.new %VERFILE%
 del %VERSRC-MR%.bak
-del %VERSRC-SR%.bak
 
 call :SUB_DUAL_PRINT "===========================================" %LOGFILE%
 call :SUB_DUAL_PRINT "========== Rebuilding successed. ==========" %LOGFILE%
@@ -170,8 +114,6 @@ goto :EOF
 del %VERFILE%.new
 del %VERSRC-MR%
 move %VERSRC-MR%.bak %VERSRC-MR%
-del %VERSRC-SR%
-move %VERSRC-SR%.bak %VERSRC-SR%
 
 call :SUB_DUAL_PRINT "================================================" %LOGFILE%
 call :SUB_DUAL_PRINT "== INTERNAL ERROR WHILE RECOMPILING! EXITING! ==" %LOGFILE%

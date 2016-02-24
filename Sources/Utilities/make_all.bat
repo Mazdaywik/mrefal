@@ -3,10 +3,7 @@ set MR-PROGRAMS=Grab_info Text-To-HTML TODO_list Recoder VersionUpdater
 set MR-PROGRAMS=%MR-PROGRAMS% MergeFindResults ErrorDecoder DocConverter
 set MR-PROGRAMS=%MR-PROGRAMS% DocConverter-wp ClearXLinx UnStructure
 
-set SR-PROGRAMS=SRMake.sref LexGen.sref
-set SR-PROGRAMS-TAIL=SRMake_FileScanner.sref SRMake_ParseCmdLine.sref
-
-set VERSRC=/srcfile:mUtilitiesBanner.mref /srcfile:sUtilitiesBanner.sref
+set VERSRC=/srcfile:mUtilitiesBanner.mref
 
 refgo ..\..\Bin\VersionUpdater.rsl /verfile:Utilities_version.txt %VERSRC%
 
@@ -14,10 +11,6 @@ if exist _compilation.log del _compilation.log
 if exist __err del __err
 
 echo y | call compile_mr %MR-PROGRAMS% 2>>__err >> _compilation.log
-
-for %%p in (%SR-PROGRAMS%) do (
-  call compile_sr %%p %SR-PROGRAMS-TAIL% 2>>__err >> _compilation.log
-)
 
 echo.>>_compilation.log
 echo STDERR:>>_compilation.log

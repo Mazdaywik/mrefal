@@ -1,5 +1,7 @@
 all: work
 
+PATH:=$(PATH):../../Bin
+
 include ../Include/platform.mk
 include .Config/config.mk
 

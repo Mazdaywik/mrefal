@@ -1,7 +1,7 @@
 @echo off
 
 setlocal
-  set mrefal=C:\Users\Mazdaywik\Documents\Projects\MRefal
+  set mrefal=%~dp0
   set PATH=%PATH%;%mrefal%\Bin
-  "%mrefal%\Bin\mrefal.exe" +cfg:C:\Users\Mazdaywik\Documents\Projects\MRefal\compile_mr.cfg %*
+  "%mrefal%\Bin\mrefal.exe" +cfg:%mrefal%\compile_mr.cfg %*
 endlocal

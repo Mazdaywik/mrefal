@@ -63,7 +63,7 @@ DoUnBlank
 SwDoUnBlank {
   // Просмотр следующей строки на предмет наличия Рефал-комментария
   t.SymStream CrLf =
-    <UnBlankNewLine t.SymStream>;
+    <SwRefalComment <MSymStream::NextChar t.SymStream>>;
 
   // Вероятно, далее следует C- или C++-комментарий
   t.SymStream '/' =
@@ -149,23 +149,12 @@ SwDoEatC-Comment {
     <DoEatC-Comment t.SymStream s.Other>;
 }
 
-UnBlankNewLine
-  t.SymStream =
-    <DeleteStartSpaces
-      <MSymStream::ExtractsFromSet t.SymStream (' \t\r')>
-    >;
-
-DeleteStartSpaces
-  t.SymStream e.StartSpaces =
-    <SwRefalComment <MSymStream::NextChar t.SymStream>>;
-
 SwRefalComment {
   t.SymStream '*' =
     <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
 
-  /* В новой строке после нескольких пробелов не обязательно должен
-  находиться Рефал-комментарий, там могут быть и другие комментарии,
-  и другие переводы строки */
+  /* В новой строке находиться Рефал-комментарий, там могут быть
+  и другие комментарии, переводы строки и пробельные символы */
   t.SymStream s.Other =
     <UnBlank-Chain
       <MSymStream::ReturnChar t.SymStream s.Other>

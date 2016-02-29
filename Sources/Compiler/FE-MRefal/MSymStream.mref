@@ -169,6 +169,14 @@ $ENTRY ExtractsFromSet-N {
 
 DoExtractsFromSet-N {
   (e.Extracted) (e.Set-B s.Char e.Set-E)
+  Unlim t.SymStream s.Char =
+    <DoExtractsFromSet-N
+      (e.Extracted s.Char)
+      (e.Set-B s.Char e.Set-E)
+      Unlim <NextChar t.SymStream>
+    >;
+
+  (e.Extracted) (e.Set-B s.Char e.Set-E)
   0 t.SymStream s.Char =
     t.SymStream e.Extracted;
 
@@ -177,16 +185,12 @@ DoExtractsFromSet-N {
     <DoExtractsFromSet-N
       (e.Extracted s.Char)
       (e.Set-B s.Char e.Set-E)
-      <Dec s.NChars>
+      <Math::Dec s.NChars>
       <NextChar t.SymStream>
     >;
 
   (e.Extracted) (e.Set) s.NChars t.SymStream s.OtherChar =
     <ReturnChar t.SymStream s.OtherChar> e.Extracted;
-}
-
-Dec {
-  Unlim = Unlim; s.Num = <Math::Dec s.Num>;
 }
 
 $END FE-MRefal::MSymStream.

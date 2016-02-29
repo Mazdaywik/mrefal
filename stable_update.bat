@@ -20,6 +20,6 @@ xcopy /S /I /Y Sources\Runtime\all.cpp          Runtime\all.cpp
 
 copy /Y Sources\Bin\mrefal.cppsr.exe            Bin\mrefal.cpp.exe
 copy /Y Sources\Bin\mrefal.sr.exe               Bin\mrefal.exe
-copy /Y Sources\Bin\mrefal.rsl                  Bin\mrefal.rsl
+copy /Y Sources\Bin\MRefal.r5.rsl               Bin\mrefal.rsl
 copy /Y Sources\Compiler.sr\srefc.exe           Bin\srefc.exe
 copy /Y Sources\Utilities\exe\FS-Extent.cpp.exe Bin\FS-Extent.cpp.exe

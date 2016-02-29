@@ -22,24 +22,16 @@ $ENTRY Create
   e.FileName = [Lexer <MSymStream::Create e.FileName>];
 
 $ENTRY Destroy
-  [Lexer t.SymStream e.Returned] =
+  [Lexer t.SymStream] =
     <MSymStream::Destroy t.SymStream>;
 
 $ENTRY NextToken
   t.Lexer = <MProfiler::Quantify &Profiling-NextToken t.Lexer>;
 
 Profiling-NextToken {
-  [Lexer t.SymStream t.NextToken e.ReturnedTokens] =
-    [Lexer t.SymStream e.ReturnedTokens] t.NextToken;
-
   [Lexer t.SymStream] =
-    <MakeLexer
-      <UnBlank-Chain t.SymStream>
-    >;
+    <UnBlank-Chain t.SymStream>;
 }
-
-MakeLexer
-  t.SymStream t.NextToken = [Lexer t.SymStream] t.NextToken;
 
 /*
   UnBlank-Chain удаляет пробельные символы и комментарии. Дополнительная
@@ -188,8 +180,7 @@ RealMakeErrorAndPutPosition
 
 PutPosition
   t.SrcPos t.SymStream (s.Type e.Info) =
-    t.SymStream
-    (s.Type t.SrcPos e.Info);
+    [Lexer t.SymStream] (s.Type t.SrcPos e.Info);
 
 RealExtract
   t.SymStream =

@@ -169,7 +169,7 @@ $ENTRY ExtractsFromSet-N {
 
 DoExtractsFromSet-N {
   (e.Extracted) (e.Set-B s.Char e.Set-E)
-  1 t.SymStream s.Char =
+  0 t.SymStream s.Char =
     t.SymStream e.Extracted;
 
   (e.Extracted) (e.Set-B s.Char e.Set-E)

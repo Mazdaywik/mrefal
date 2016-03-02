@@ -30,7 +30,11 @@ $ENTRY NextToken
 
 Profiling-NextToken {
   [Lexer t.SymStream] =
-    <UnBlank-Chain t.SymStream>;
+    <NextToken-Aux
+      <MSymStream::GetSrcPos
+        <UnBlank-Chain t.SymStream>
+      >
+    >;
 }
 
 /*
@@ -39,9 +43,6 @@ Profiling-NextToken {
 (начинающийся со * в отдельной строке), который удобен при построчном
 синтаксическом анализе и неудобен при использовании свободного стиля
 (когда перевод строки считается пробельным символом).
-  При успешном завершении разбора вызывает ExtractToken, предусловием
-которой является отсутствие пробелов и комментариев перед лексемой,
-при неуспехе генерируется ошибочная лексема.
 */
 
 UnBlank-Chain
@@ -63,7 +64,17 @@ SwDoUnBlank {
 
   // Далее уже не комментарий -- действительная лексема
   t.SymStream s.Other =
-    <ExtractToken
+    <MSymStream::ReturnChar t.SymStream s.Other>;
+}
+
+SwRefalComment {
+  t.SymStream '*' =
+    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
+
+  /* В новой строке находиться Рефал-комментарий, там могут быть
+  и другие комментарии, переводы строки и пробельные символы */
+  t.SymStream s.Other =
+    <UnBlank-Chain
       <MSymStream::ReturnChar t.SymStream s.Other>
     >;
 }
@@ -98,9 +109,7 @@ DoEatCPP-Refal-Comment {
   // C++- и Рефал-комментарии могут находиться в конце файла
   // -- в этом нет никакого криминала.
   t.SymStream EOF =
-    <ExtractToken
-      <MSymStream::ReturnChar t.SymStream EOF>
-    >;
+    <MSymStream::ReturnChar t.SymStream EOF>;
 
   t.SymStream s.Other =
     <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
@@ -141,29 +150,15 @@ SwDoEatC-Comment {
     <DoEatC-Comment t.SymStream s.Other>;
 }
 
-SwRefalComment {
-  t.SymStream '*' =
-    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
-
-  /* В новой строке находиться Рефал-комментарий, там могут быть
-  и другие комментарии, переводы строки и пробельные символы */
-  t.SymStream s.Other =
-    <UnBlank-Chain
-      <MSymStream::ReturnChar t.SymStream s.Other>
-    >;
-}
-
-ExtractToken
-  t.SymStream =
-    <RealExtractAndPutPosition
-      <MSymStream::GetSrcPos t.SymStream>
-    >;
-
-RealExtractAndPutPosition
+NextToken-Aux
   t.SymStream t.SrcPos =
-    <PutPosition
+    <PutPosition-RestoreLexer
       t.SrcPos <RealExtract t.SymStream>
     >;
+
+PutPosition-RestoreLexer
+  t.SrcPos t.SymStream (s.Type e.Info) =
+    [Lexer t.SymStream] (s.Type t.SrcPos e.Info);
 
 MakeError
   t.SymStream e.Message =
@@ -174,13 +169,7 @@ MakeError
 
 RealMakeErrorAndPutPosition
   t.SymStream t.SrcPos e.Message =
-    <PutPosition
-      t.SrcPos t.SymStream (Error e.Message)
-    >;
-
-PutPosition
-  t.SrcPos t.SymStream (s.Type e.Info) =
-    [Lexer t.SymStream] (s.Type t.SrcPos e.Info);
+    [Lexer t.SymStream] (Error t.SrcPos e.Message);
 
 RealExtract
   t.SymStream =

@@ -246,7 +246,7 @@ Identifier-Tail
     t.SymStream (Identifier s.First e.Tail);
 
 ValidIdentSymbols =
-  <MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '?!-_';
+  <MStrings::LoAlph> <MStrings::UpAlph> <MStrings::Digits> '?!-_';
 
 Quoted
   t.SymStream s.Quote =
@@ -475,7 +475,7 @@ SwVarIndex {
       s.VarType
       <MSymStream::ExtractsFromSet
         t.SymStream
-	(<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '-_?!')
+	(<MStrings::LoAlph> <MStrings::UpAlph> <MStrings::Digits> '-_?!')
       >
     >;
 

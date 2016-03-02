@@ -172,7 +172,7 @@ DoExtractsFromSet-N {
   Unlim t.SymStream s.Char =
     <DoExtractsFromSet-N
       (e.Extracted s.Char)
-      (e.Set-B s.Char e.Set-E)
+      (s.Char e.Set-B e.Set-E)
       Unlim <NextChar t.SymStream>
     >;
 
@@ -184,7 +184,7 @@ DoExtractsFromSet-N {
   s.NChars t.SymStream s.Char =
     <DoExtractsFromSet-N
       (e.Extracted s.Char)
-      (e.Set-B s.Char e.Set-E)
+      (s.Char e.Set-B e.Set-E)
       <Math::Dec s.NChars>
       <NextChar t.SymStream>
     >;

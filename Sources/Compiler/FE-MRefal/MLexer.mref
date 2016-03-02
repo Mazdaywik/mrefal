@@ -10,10 +10,7 @@ $IMPORT MStrings;
 $IMPORT MProfiler;
 
 /*
-  Внутреннее устройство:
-  [Lexer t.SymStream t.NextToken*]
-  Лексемы t.NextToken* следуют слева направо в том порядке, в котором они
-будут затем извлекаться.
+  Внутреннее устройство: [Lexer t.SymStream]
 */
 
 $DATA Lexer;

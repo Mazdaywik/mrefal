@@ -9,6 +9,7 @@ for /L %%i in (1,1,11) do (
   echo %%i
   mingw32-make profile=R5 mode=BUILD
   call :SCAN_LOG >> log.tmp
+  copy _MRefal_profiler.log _MRefal_profiler.log-%LOG%
 )
 
 sort log.tmp > %LOG%

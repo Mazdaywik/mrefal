@@ -44,7 +44,7 @@ Profiling-NextToken {
 
 UnBlank-Chain
   t.SymStream =
-    <DoUnBlank <MSymStream::ExtractsFromSet t.SymStream (' \t')> >;
+    <DoUnBlank <MSymStream::ExtractsFromSet t.SymStream & G_Space> >;
 
 DoUnBlank
   t.SymStream e.Blanks =
@@ -233,9 +233,7 @@ Identifier
   t.SymStream s.FirstChar =
     <Identifier-Tail
       s.FirstChar
-      <MSymStream::ExtractsFromSet
-        t.SymStream (<ValidIdentSymbols>)
-      >
+      <MSymStream::ExtractsFromSet t.SymStream & G_IdentTail>
     >;
 
 Identifier-Tail
@@ -339,10 +337,7 @@ Escaped {
   s.Quote (e.Scanned) t.SymStream 'x' =
     <DoQuoted-Hex
       s.Quote (e.Scanned)
-      <MSymStream::ExtractsFromSet
-        t.SymStream
-        ('0123456789ABCDEFabcdef')
-      >
+      <MSymStream::ExtractsFromSet t.SymStream & G_Hex>
     >;
 
   s.Quote (e.Scanned) t.SymStream s.Other =
@@ -356,9 +351,7 @@ DoQuoted-TestOct {
     <DoQuoted-Oct
       s.Quote (e.Scanned)
       s.Oct
-      <MSymStream::ExtractsFromSet-N
-        t.SymStream ('01234567') 2
-      >
+      <MSymStream::ExtractsFromSet-N t.SymStream & G_Oct 2>
     >;
 
   s.Quote (e.Scanned) t.SymStream s.Other (e.Octs) =
@@ -422,9 +415,7 @@ AppendDigit {
 
 Directive t.SymStream =
   <SwDirective
-    <MSymStream::ExtractsFromSet
-      t.SymStream (<MStrings::UpAlph> <MStrings::LoAlph>)
-    >
+    <MSymStream::ExtractsFromSet t.SymStream & G_Directive>
   >;
 
 SwDirective {
@@ -460,20 +451,14 @@ Variable
   s.VarType t.SymStream =
     <SwVarIndex
       s.VarType
-      <MSymStream::ExtractFromSet
-        t.SymStream
-	(<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '.')
-      >
+      <MSymStream::ExtractFromSet t.SymStream & G_VariableIndexStart>
     >;
 
 SwVarIndex {
   s.VarType t.SymStream '.' =
     <LongIndex
       s.VarType
-      <MSymStream::ExtractsFromSet
-        t.SymStream
-	(<MStrings::LoAlph> <MStrings::UpAlph> <MStrings::Digits> '-_?!')
-      >
+      <MSymStream::ExtractsFromSet t.SymStream & G_VariableIndex>
     >;
 
   s.VarType t.SymStream s.ShortIndex =
@@ -493,7 +478,7 @@ Macro
     <SwMacro
       s.First
       <MSymStream::ExtractsFromSet-N
-        t.SymStream (<MStrings::Digits>) 9
+        t.SymStream & G_Digits 9
       >
     >;
 
@@ -622,5 +607,27 @@ EscapeText {
     <EscapeText e.Tail>;
   = ;
 }
+
+$SWAP
+  G_Space,
+  G_IdentTail,
+  G_Hex,
+  G_Oct,
+  G_Directive,
+  G_VariableIndexStart,
+  G_VariableIndex,
+  G_Digits;
+
+Letters = <MStrings::LoAlph> <MStrings::UpAlph>;
+
+$ENTRY Init =
+  <G_Space ' \t'>
+  <G_IdentTail <Letters> <MStrings::Digits> '?!-_'>
+  <G_Hex '0123456789ABCDEFabcdef'>
+  <G_Oct '01234567'>
+  <G_Directive <Letters>>
+  <G_VariableIndexStart <Letters> <MStrings::Digits> '.-_?!'>
+  <G_VariableIndex <Letters> <MStrings::Digits> '-_?!'>
+  <G_Digits <MStrings::Digits>>;
 
 $END FE-MRefal::MLexer.

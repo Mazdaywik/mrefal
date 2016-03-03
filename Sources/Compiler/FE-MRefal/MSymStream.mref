@@ -141,55 +141,60 @@ $ENTRY ReturnChar {
 }
 
 $ENTRY ExtractFromSet {
-  t.SymStream (e.Set) =
+  t.SymStream s.SwSet =
     <SwExtractFromSet
-      (e.Set) <NextChar t.SymStream>
+      s.SwSet (<s.SwSet>) <NextChar t.SymStream>
     >;
 }
 
 SwExtractFromSet {
-  (e.Set-B s.Char e.Set-E) t.SymStream s.Char =
+  s.SwSet (e.Set-B s.Char e.Set-E) t.SymStream s.Char =
+    <s.SwSet s.Char e.Set-B e.Set-E>
     t.SymStream s.Char;
-  (e.Set) t.SymStream s.Char =
+
+  s.SwSet (e.Set) t.SymStream s.Char =
+    <s.SwSet e.Set>
     <ReturnChar t.SymStream s.Char>;
 }
 
 $ENTRY ExtractsFromSet
-  t.SymStream (e.Set) =
-    <ExtractsFromSet-N t.SymStream (e.Set) Unlim>;
+  t.SymStream s.SwSet =
+    <ExtractsFromSet-N t.SymStream s.SwSet Unlim>;
 
 $ENTRY ExtractsFromSet-N {
-  t.SymStream (e.Set) 0 = t.SymStream;
+  t.SymStream s.SwSet 0 = t.SymStream;
 
-  t.SymStream (e.Set) s.NChars =
+  t.SymStream s.SwSet s.NChars =
     <DoExtractsFromSet-N
-      ( /*Extracted*/ ) (e.Set) s.NChars <NextChar t.SymStream>
+      ( /*Extracted*/ ) s.SwSet (<s.SwSet>) s.NChars <NextChar t.SymStream>
     >;
 }
 
 DoExtractsFromSet-N {
-  (e.Extracted) (e.Set-B s.Char e.Set-E)
+  (e.Extracted) s.SwSet (e.Set-B s.Char e.Set-E)
   Unlim t.SymStream s.Char =
     <DoExtractsFromSet-N
       (e.Extracted s.Char)
-      (s.Char e.Set-B e.Set-E)
+      s.SwSet (s.Char e.Set-B e.Set-E)
       Unlim <NextChar t.SymStream>
     >;
 
-  (e.Extracted) (e.Set-B s.Char e.Set-E)
+  (e.Extracted) s.SwSet (e.Set-B s.Char e.Set-E)
   0 t.SymStream s.Char =
+    <s.SwSet s.Char e.Set-B e.Set-E>
     t.SymStream e.Extracted;
 
-  (e.Extracted) (e.Set-B s.Char e.Set-E)
+  (e.Extracted) s.SwSet (e.Set-B s.Char e.Set-E)
   s.NChars t.SymStream s.Char =
     <DoExtractsFromSet-N
       (e.Extracted s.Char)
-      (s.Char e.Set-B e.Set-E)
+      s.SwSet (s.Char e.Set-B e.Set-E)
       <Math::Dec s.NChars>
       <NextChar t.SymStream>
     >;
 
-  (e.Extracted) (e.Set) s.NChars t.SymStream s.OtherChar =
+  (e.Extracted) s.SwSet (e.Set) s.NChars t.SymStream s.OtherChar =
+    <s.SwSet e.Set>
     <ReturnChar t.SymStream s.OtherChar> e.Extracted;
 }
 

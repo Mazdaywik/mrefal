@@ -1,45 +1,42 @@
 $MODULE FE-MRefal::MLexer;
 
-$IMPORT Math = MMath;
 $IMPORT MEscape;
+$IMPORT MFileIO;
 $IMPORT MLambda;
 $IMPORT MOrder;
-$IMPORT MSymStream = FE-MRefal::MSymStream;
+$IMPORT MSrcPos;
 $IMPORT MStrings;
+$IMPORT MMath;
 
 $IMPORT MProfiler;
 
 /*
   Внутреннее устройство:
-  [Lexer t.SymStream t.NextToken*]
-  Лексемы t.NextToken* следуют слева направо в том порядке, в котором они
-будут затем извлекаться.
+  [Lexer (t.Token*) (s.LineNumber e.FileName) t.hFile e.Line]
+  e.Line ::= char* | EOF
 */
 
 $DATA Lexer;
 
 $ENTRY Create
-  e.FileName = [Lexer <MSymStream::Create e.FileName>];
+  e.FileName = [Lexer () (0 e.FileName) <MFileIO::Open 'br' e.FileName>];
 
 $ENTRY Destroy
-  [Lexer t.SymStream e.Returned] =
-    <MSymStream::Destroy t.SymStream>;
+  [Lexer (e.Tokens) t.Pos t.hFile e.Line] = <MFileIO::Close t.hFile>;
 
 $ENTRY NextToken
   t.Lexer = <MProfiler::Quantify &Profiling-NextToken t.Lexer>;
 
 Profiling-NextToken {
-  [Lexer t.SymStream t.NextToken e.ReturnedTokens] =
-    [Lexer t.SymStream e.ReturnedTokens] t.NextToken;
-
-  [Lexer t.SymStream] =
-    <MakeLexer
-      <UnBlank-Chain t.SymStream>
+  [Lexer () t.Pos t.hFile e.Line] =
+    <NextToken-Aux
+      <UnBlank-Chain (/* no errors */) t.Pos t.hFile e.Line>
     >;
-}
 
-MakeLexer
-  t.SymStream t.NextToken = [Lexer t.SymStream] t.NextToken;
+  [Lexer (t.NextToken e.Tokens) t.Pos t.hFile e.Line] =
+    [Lexer (e.Tokens) t.Pos t.hFile e.Line]
+    t.NextToken;
+}
 
 /*
   UnBlank-Chain удаляет пробельные символы и комментарии. Дополнительная
@@ -47,363 +44,357 @@ MakeLexer
 (начинающийся со * в отдельной строке), который удобен при построчном
 синтаксическом анализе и неудобен при использовании свободного стиля
 (когда перевод строки считается пробельным символом).
-  При успешном завершении разбора вызывает ExtractToken, предусловием
-которой является отсутствие пробелов и комментариев перед лексемой,
-при неуспехе генерируется ошибочная лексема.
 */
 
-UnBlank-Chain
-  t.SymStream =
-    <DoUnBlank <MSymStream::ExtractsFromSet t.SymStream (' \t')> >;
+NewLine {
+  (0 e.FileName) t.hFile =
+    (1 e.FileName) <NewLine-Skip-UTF8-BOM <MFileIO::ReadLine t.hFile>>;
 
-DoUnBlank
-  t.SymStream e.Blanks =
-    <SwDoUnBlank <MSymStream::NextChar t.SymStream>>;
-
-SwDoUnBlank {
-  // Просмотр следующей строки на предмет наличия Рефал-комментария
-  t.SymStream CrLf =
-    <SwRefalComment <MSymStream::NextChar t.SymStream>>;
-
-  // Вероятно, далее следует C- или C++-комментарий
-  t.SymStream '/' =
-    <SwC-CPP-Comment <MSymStream::NextChar t.SymStream>>;
-
-  // Далее уже не комментарий -- действительная лексема
-  t.SymStream s.Other =
-    <ExtractToken
-      <MSymStream::ReturnChar t.SymStream s.Other>
-    >;
+  (s.LineNumber e.FileName) t.hFile =
+    (<MMath::Inc s.LineNumber> e.FileName) <MFileIO::ReadLine t.hFile>;
 }
 
-SwC-CPP-Comment {
-  t.SymStream '/' =
-    <EatCPP-Comment t.SymStream>;
+NewLine-Skip-UTF8-BOM {
+  t.hFile '\xEF\xBB\xBF' e.Line = t.hFile e.Line;
 
-  t.SymStream '*' =
-    <EatC-Comment t.SymStream>;
-
-  t.SymStream s.Other =
-    <MakeError
-      <MSymStream::ReturnChar t.SymStream s.Other>
-      'unexpected \"/\"'
-    >;
+  t.hFile e.Other = t.hFile e.Other;
 }
 
-EatCPP-Comment
-  t.SymStream =
-    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
+UnBlank-Chain {
+  (e.Errors) t.Pos t.hFile ' ' e.Line =
+    <UnBlank-Chain (e.Errors) t.Pos t.hFile e.Line>;
 
-/* Комментарии C++ и Рефал продлеваются до конца строки, поэтому они
-обрабатываются одинаково */
-DoEatCPP-Refal-Comment {
-  // За комментарием может следовать другой комментарий
-  t.SymStream CrLf =
-    <UnBlank-Chain
-      <MSymStream::ReturnChar t.SymStream CrLf>
-    >;
+  (e.Errors) t.Pos t.hFile '\t' e.Line =
+    <UnBlank-Chain (e.Errors) t.Pos t.hFile e.Line>;
 
-  // C++- и Рефал-комментарии могут находиться в конце файла
-  // -- в этом нет никакого криминала.
-  t.SymStream EOF =
-    <ExtractToken
-      <MSymStream::ReturnChar t.SymStream EOF>
-    >;
+  (e.Errors) t.Pos t.hFile '\r' e.Line =
+    <UnBlank-Chain (e.Errors) t.Pos t.hFile e.Line>;
 
-  t.SymStream s.Other =
-    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
+  // Комментарий C++ в конце файла
+  (e.Errors) t.Pos t.hFile '//' e.RestOfLine 0 =
+    (e.Errors) t.Pos t.hFile 0;
+
+  // Комментарий C++
+  (e.Errors) t.Pos t.hFile '//' e.RestOfLine =
+    <UnBlank-NewLine (e.Errors) t.Pos t.hFile>;
+
+  // Комментарий C
+  (e.Errors) t.Pos t.hFile '/*' e.Line =
+    <UnBlank-C (e.Errors) t.Pos t.hFile e.Line>;
+
+  (e.Errors) t.Pos t.hFile /* пусто */ =
+    <UnBlank-NewLine (e.Errors) t.Pos t.hFile>;
+
+  // Уже символ начала лексемы
+  (e.Errors) t.Pos t.hFile e.Line =
+    (e.Errors) t.Pos t.hFile e.Line;
 }
 
-/* С-комментарии, так же как и в языке C не могут быть вложенными */
-EatC-Comment
-  t.SymStream = <DoEatC-Comment <MSymStream::NextChar t.SymStream>>;
-
-DoEatC-Comment {
-  t.SymStream '*' =
-    <SwDoEatC-Comment <MSymStream::NextChar t.SymStream>>;
-
-  t.SymStream EOF =
-    <MakeError
-      <MSymStream::ReturnChar t.SymStream EOF>
-      'unclosed c-comment'
-    >;
-
-  t.SymStream s.Other =
-    <DoEatC-Comment <MSymStream::NextChar t.SymStream>>;
+UnBlank-NewLine {
+  (e.Errors) t.Pos t.hFile =
+    <UnBlank-SwNewLine (e.Errors) <NewLine t.Pos t.hFile>>;
 }
 
-SwDoEatC-Comment {
-  // После комментария могут быть другие комментарии
-  // и символы свободного пространства
-  t.SymStream '/' =
-    <UnBlank-Chain t.SymStream>;
+UnBlank-SwNewLine {
+* Классический комментарий в конце файла
+  (e.Errors) t.Pos t.hFile '*' e.RestOfLine 0 =
+    (e.Errors) t.Pos t.hFile 0;
 
-  t.SymStream EOF =
-    <MakeError
-      <MSymStream::ReturnChar t.SymStream EOF>
-      'unclosed c-comment'
-    >;
+* Просто классический комментарий
+  (e.Errors) t.Pos t.hFile '*' e.RestOfLine =
+    <UnBlank-NewLine (e.Errors) t.Pos t.hFile>;
 
-  // Здесь также проверяется случай типа '****/'
-  t.SymStream s.Other =
-    <DoEatC-Comment t.SymStream s.Other>;
+  // Пропускаем пробельные символы и комментарии C/C++
+  (e.Errors) t.Pos t.hFile e.Line =
+    <UnBlank-Chain (e.Errors) t.Pos t.hFile e.Line>;
 }
 
-SwRefalComment {
-  t.SymStream '*' =
-    <DoEatCPP-Refal-Comment <MSymStream::NextChar t.SymStream>>;
-
-  /* В новой строке находиться Рефал-комментарий, там могут быть
-  и другие комментарии, переводы строки и пробельные символы */
-  t.SymStream s.Other =
-    <UnBlank-Chain
-      <MSymStream::ReturnChar t.SymStream s.Other>
+UnBlank-C {
+  (e.Errors) t.Pos t.hFile '/*' e.Comment =
+    <UnBlank-C
+      (e.Errors <MakeError t.Pos 'Nested comments is forbidden'>)
+      t.Pos t.hFile '*' e.Comment
     >;
+
+  (e.Errors) t.Pos t.hFile '*/' e.Line =
+    <UnBlank-Chain (e.Errors) t.Pos t.hFile e.Line>;
+
+  (e.Errors) t.Pos t.hFile 0 =
+    (e.Errors <MakeError t.Pos 'Unclosed C comment'>)
+    t.Pos t.hFile 0;
+
+  (e.Errors) t.Pos t.hFile s.Next e.Line =
+    <UnBlank-C (e.Errors) t.Pos t.hFile e.Line>;
+
+  (e.Errors) t.Pos t.hFile /* пусто */ =
+    <UnBlank-C (e.Errors) <NewLine t.Pos t.hFile>>;
 }
 
-ExtractToken
-  t.SymStream =
-    <RealExtractAndPutPosition
-      <MSymStream::GetSrcPos t.SymStream>
-    >;
-
-RealExtractAndPutPosition
-  t.SymStream t.SrcPos =
-    <PutPosition
-      t.SrcPos <RealExtract t.SymStream>
-    >;
-
-MakeError
-  t.SymStream e.Message =
-    <RealMakeErrorAndPutPosition
-      <MSymStream::GetSrcPos t.SymStream>
+MakeError {
+  (s.LineNumber e.FileName) e.Message =
+    (Error
+      <MSrcPos::Create-FilePos s.LineNumber e.FileName>
       e.Message
-    >;
+    );
+}
 
-RealMakeErrorAndPutPosition
-  t.SymStream t.SrcPos e.Message =
-    <PutPosition
-      t.SrcPos t.SymStream (Error e.Message)
-    >;
+NextToken-Aux {
+  (e.Errors) t.Pos t.hFile 0 =
+    <ReturnToken (e.Errors) t.Pos t.hFile 0 (EndOfText)>;
 
-PutPosition
-  t.SrcPos t.SymStream (s.Type e.Info) =
-    t.SymStream
-    (s.Type t.SrcPos e.Info);
+  (e.Errors) t.Pos t.hFile '{' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (OpenBlock)>;
+  (e.Errors) t.Pos t.hFile '}' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (CloseBlock)>;
 
-RealExtract
-  t.SymStream =
-    <RealExtract-SwFirst <MSymStream::NextChar t.SymStream>>;
+  (e.Errors) t.Pos t.hFile '<' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (OpenFnCall)>;
+  (e.Errors) t.Pos t.hFile '>' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (CloseFnCall)>;
 
-RealExtract-SwFirst {
-  t.SymStream EOF = t.SymStream (EndOfText);
+  (e.Errors) t.Pos t.hFile '(' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (OpenBrac)>;
+  (e.Errors) t.Pos t.hFile ')' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (CloseBrac)>;
 
-  t.SymStream '{' = t.SymStream (OpenBlock);
-  t.SymStream '}' = t.SymStream (CloseBlock);
+  (e.Errors) t.Pos t.hFile '[' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (OpenSquare)>;
+  (e.Errors) t.Pos t.hFile ']' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (CloseSquare)>;
 
-  t.SymStream '<' = t.SymStream (OpenFnCall);
-  t.SymStream '>' = t.SymStream (CloseFnCall);
+  (e.Errors) t.Pos t.hFile '&' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Ampersand)>;
+  (e.Errors) t.Pos t.hFile '::' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (DoubleColon)>;
+  (e.Errors) t.Pos t.hFile ':' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Colon)>;
+  (e.Errors) t.Pos t.hFile ',' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Comma)>;
+  (e.Errors) t.Pos t.hFile '.' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Dot)>;
+  (e.Errors) t.Pos t.hFile ';' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (EndSent)>;
+  (e.Errors) t.Pos t.hFile '=' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Replaces)>;
 
-  t.SymStream '(' = t.SymStream (OpenBrac);
-  t.SymStream ')' = t.SymStream (CloseBrac);
+  (e.Errors) t.Pos t.hFile '\'\'' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Literal '\'')>;
+  (e.Errors) t.Pos t.hFile '\'' e.Line =
+    <Quoted (e.Errors) t.Pos t.hFile e.Line>;
 
-  t.SymStream '[' = t.SymStream (OpenSquare);
-  t.SymStream ']' = t.SymStream (CloseSquare);
+  (e.Errors) t.Pos t.hFile '$' e.Line =
+    <Directive (e.Errors) t.Pos t.hFile e.Line>;
 
-  t.SymStream '&' = t.SymStream (Ampersand);
-  t.SymStream '*' = t.SymStream (Asterisk);
-  t.SymStream ':' = <Colon <MSymStream::NextChar t.SymStream>>;
-  t.SymStream ',' = t.SymStream (Comma);
-  t.SymStream '.' = t.SymStream (Dot);
-  t.SymStream ';' = t.SymStream (EndSent);
-  t.SymStream '=' = t.SymStream (Replaces);
-
-  t.SymStream '\'' = <Quoted t.SymStream '\''>;
-  //t.SymStream '\"' = <Quoted t.SymStream '\"'>;
-
-  t.SymStream '$' = <Directive t.SymStream>;
-
-  t.SymStream 'e' = <Variable EVar t.SymStream>;
-  t.SymStream 's' = <Variable SVar t.SymStream>;
-  t.SymStream 't' = <Variable TVar t.SymStream>;
+  (e.Errors) t.Pos t.hFile 'e' e.Line =
+    <Variable EVar (e.Errors) t.Pos t.hFile e.Line>;
+  (e.Errors) t.Pos t.hFile 's' e.Line =
+    <Variable SVar (e.Errors) t.Pos t.hFile e.Line>;
+  (e.Errors) t.Pos t.hFile 't' e.Line =
+    <Variable TVar (e.Errors) t.Pos t.hFile e.Line>;
 
   // Разрешим идентификаторы начинать с '?' и '!'
-  t.SymStream '?' = <Identifier t.SymStream '?'>;
-  t.SymStream '!' = <Identifier t.SymStream '!'>;
+  (e.Errors) t.Pos t.hFile '?' e.Line =
+    <Identifier (e.Errors) t.Pos t.hFile '?' e.Line>;
+  (e.Errors) t.Pos t.hFile '!' e.Line =
+    <Identifier (e.Errors) t.Pos t.hFile '!' e.Line>;
 
-  t.SymStream s.First =
-    <SwFirstChar t.SymStream <MStrings::CharType s.First>>;
+  (e.Errors) t.Pos t.hFile s.First e.Line =
+    <SwFirstChar (e.Errors) t.Pos t.hFile <MStrings::CharType s.First> e.Line>;
 }
 
-Colon {
-  t.SymStream ':' = t.SymStream (DoubleColon);
-  t.SymStream s.Other =
-    <MSymStream::ReturnChar t.SymStream s.Other> (Colon);
+ReturnToken {
+  () (s.LineNumber e.FileName) t.hFile e.Line
+  (s.TokType e.Info) =
+    [Lexer () (s.LineNumber e.FileName) t.hFile e.Line]
+    (s.TokType <MSrcPos::Create-FilePos s.LineNumber e.FileName> e.Info);
+
+  (t.Error e.Errors) (s.LineNumber e.FileName) t.hFile e.Line
+  (s.TokType e.Info) =
+    [Lexer
+      (e.Errors
+        (s.TokType <MSrcPos::Create-FilePos s.LineNumber e.FileName> e.Info)
+      )
+      (s.LineNumber e.FileName)
+      t.hFile e.Line
+    ]
+    t.Error;
 }
 
 SwFirstChar {
-  t.SymStream UpAlph s.First =
-    <Identifier t.SymStream s.First>;
+  (e.Errors) t.Pos t.hFile UpAlph s.First e.Line =
+    <Identifier (e.Errors) t.Pos t.hFile s.First e.Line>;
 
-  t.SymStream Digit s.First =
-    <Macro t.SymStream s.First>;
+  (e.Errors) t.Pos t.hFile Digit s.First e.Line =
+    <Macro (e.Errors) t.Pos t.hFile s.First e.Line>;
 
-  t.SymStream s.Other s.First =
-    <CreateUndefined s.First t.SymStream>;
+  (e.Errors) t.Pos t.hFile s.Other s.First e.Line =
+    <CreateUndefined (e.Errors) t.Pos t.hFile s.First e.Line>;
 }
 
 Identifier
-  t.SymStream s.FirstChar =
+  (e.Errors) t.Pos t.hFile s.First e.Line =
     <Identifier-Tail
-      s.FirstChar
-      <MSymStream::ExtractsFromSet
-        t.SymStream (<ValidIdentSymbols>)
-      >
+      (e.Errors) t.Pos t.hFile
+      (<ValidIdentSymbols>) (s.First) e.Line
     >;
 
-Identifier-Tail
-  s.First t.SymStream e.Tail =
-    t.SymStream (Identifier s.First e.Tail);
+Identifier-Tail {
+  (e.Errors) t.Pos t.hFile
+  (e.Chars-B s.Next e.Chars-E) (e.Scanned) s.Next e.Line =
+    <Identifier-Tail
+      (e.Errors) t.Pos t.hFile
+      (s.Next e.Chars-B e.Chars-E) (e.Scanned s.Next) e.Line
+    >;
+
+  (e.Errors) t.Pos t.hFile
+  (e.Chars) (e.Scanned) e.Line =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile e.Line (Identifier e.Scanned)
+    >;
+}
 
 ValidIdentSymbols =
   <MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '?!-_';
 
 Quoted
-  t.SymStream s.Quote =
-    <DoQuoted s.Quote () <MSymStream::NextChar t.SymStream>>;
+  (e.Errors) t.Pos t.hFile e.Line =
+    <DoQuoted (e.Errors) () t.Pos t.hFile e.Line>;
 
 DoQuoted {
-  s.Quote (e.Scanned) t.SymStream s.Quote =
-    t.SymStream (<QType s.Quote> e.Scanned);
+  // Двойная кавычка представляет собой одинарную кавычку
+  (e.Errors) (e.Scanned) t.Pos t.hFile '\'\'' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\'') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream '\\' =
-    <Escaped s.Quote (e.Scanned) <MSymStream::NextChar t.SymStream>>;
+  (e.Errors) (e.Scanned) t.Pos t.hFile '\'' e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Literal e.Scanned)>;
 
-  s.Quote (e.Scanned) t.SymStream CrLf =
-    t.SymStream (Error 'Unclosed quote');
+  (e.Errors) (e.Scanned) t.Pos t.hFile '\\' e.Line =
+    <Escaped (e.Errors) (e.Scanned) t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream s.Next =
-    <DoQuoted
-      s.Quote (e.Scanned s.Next)
-      <MSymStream::NextChar t.SymStream>
+  (e.Errors) (e.Scanned) t.Pos t.hFile /* пусто */ =
+    <ReturnToken
+      (e.Errors <MakeError 'Unclosed quote'>)
+      t.Pos t.hFile (Literal e.Scanned)
     >;
-}
 
-QType { '\'' = Literal; '\"' = DQWord; }
+  (e.Errors) (e.Scanned) t.Pos t.hFile /* пусто */ 0 =
+    <ReturnToken
+      (e.Errors <MakeError 'Unclosed quote'>)
+      t.Pos t.hFile 0 (Literal e.Scanned)
+    >;
+
+  (e.Errors) (e.Scanned) t.Pos t.hFile s.Next e.Line =
+    <DoQuoted (e.Errors) (e.Scanned s.Next) t.Pos t.hFile e.Line>;
+}
 
 Escaped {
   // Разрешим разрывать закавыченную строку при помощи бэкслеша
-  s.Quote (e.Scanned) t.SymStream CrLf =
-    <DoQuoted
-      s.Quote (e.Scanned)
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile /* пусто */ =
+    <DoQuoted (e.Errors) (e.Scanned) <NewLine t.Pos t.hFile>>;
 
-  s.Quote (e.Scanned) t.SymStream 'a' =
-    <DoQuoted
-      s.Quote (e.Scanned '\x07')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile /* пусто */ 0 =
+    /*
+      Никакой обработки ошибок не делаем: во-первых, конец строки
+      (подразумеваемый в конце файла) допустим после '\',
+      во-вторых, неожиданный конец файла будет обработан на уровне выше.
+    */
+    <DoQuoted (e.Errors) (e.Scanned) t.Pos t.hFile 0>;
 
-  s.Quote (e.Scanned) t.SymStream 'b' =
-    <DoQuoted
-      s.Quote (e.Scanned '\x08')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'a' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\a') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream 'f' =
-    <DoQuoted
-      s.Quote (e.Scanned '\x0C')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'b' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\b') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream 'n' =
-    <DoQuoted
-      s.Quote (e.Scanned '\n')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'f' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\f') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream 'r' =
-    <DoQuoted
-      s.Quote (e.Scanned '\r')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'n' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\n') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream 't' =
-    <DoQuoted
-      s.Quote (e.Scanned '\t')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'r' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\r') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream 'v' =
-    <DoQuoted
-      s.Quote (e.Scanned '\x0B')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 't' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\t') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream '\'' =
-    <DoQuoted
-      s.Quote (e.Scanned '\'')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'v' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\v') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream '\"' =
-    <DoQuoted
-      s.Quote (e.Scanned '\"')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile '\'' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\'') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream '\\' =
-    <DoQuoted
-      s.Quote (e.Scanned '\\')
-      <MSymStream::NextChar t.SymStream>
-    >;
+  (e.Errors) (e.Scanned) t.Pos t.hFile '\"' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\"') t.Pos t.hFile e.Line>;
 
-  s.Quote (e.Scanned) t.SymStream 'x' =
+  (e.Errors) (e.Scanned) t.Pos t.hFile '\\' e.Line =
+    <DoQuoted (e.Errors) (e.Scanned '\\') t.Pos t.hFile e.Line>;
+
+  (e.Errors) (e.Scanned) t.Pos t.hFile 'x' e.Line =
     <DoQuoted-Hex
-      s.Quote (e.Scanned)
-      <MSymStream::ExtractsFromSet
-        t.SymStream
-        ('0123456789ABCDEFabcdef')
-      >
+      (e.Errors) (e.Scanned) t.Pos t.hFile () e.Line
+      ('0123456789ABCDEFabcdef')
     >;
 
-  s.Quote (e.Scanned) t.SymStream s.Other =
+  (e.Errors) (e.Scanned) t.Pos t.hFile s.Next e.Line =
     <DoQuoted-TestOct
-      s.Quote (e.Scanned) t.SymStream s.Other ('01234567')
+      (e.Errors) (e.Scanned) t.Pos t.hFile s.Next e.Line ('01234567')
     >;
 }
 
 DoQuoted-TestOct {
-  s.Quote (e.Scanned) t.SymStream s.Oct (e.Octs-B s.Oct e.Octs-E) =
+  (e.Errors) (e.Scanned) t.Pos t.hFile s.Oct e.Line
+  (e.Octs-B s.Oct e.Octs-E) =
     <DoQuoted-Oct
-      s.Quote (e.Scanned)
-      s.Oct
-      <MSymStream::ExtractsFromSet-N
-        t.SymStream ('01234567') 2
-      >
+      (e.Errors) (e.Scanned) t.Pos t.hFile (s.Oct) e.Line
+      1 ('01234567')
     >;
 
-  s.Quote (e.Scanned) t.SymStream s.Other (e.Octs) =
-    t.SymStream (Error 'Unknown excaped symbol <' s.Other '>');
+  (e.Errors) (e.Scanned) t.Pos t.hFile s.First e.Line =
+    <DoQuoted
+      (e.Errors <MakeError t.Pos 'Bad escape sequence \\' s.First>)
+      (e.Scanned) t.Pos t.hFile s.First e.Line
+    >;
 }
 
 DoQuoted-Hex {
-  s.Quote (e.Scanned) t.SymStream /* не найдено */ =
-    t.SymStream (Error 'Expected hex number after \\x');
+  (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number) s.Hex e.Line
+  (e.Hexs-B s.Hex e.Hexs-E) =
+    <DoQuoted-Hex
+      (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number s.Hex) e.Line
+      (e.Hexs-B s.Hex e.Hexs-E)
+    >;
 
-  s.Quote (e.Scanned) t.SymStream e.HexRep =
+  (e.Errors) (e.Scanned) t.Pos t.hFile () e.Line (e.Hexs) =
     <DoQuoted
-      s.Quote (e.Scanned <CharFromHex e.HexRep>)
-      <MSymStream::NextChar t.SymStream>
+      (e.Errors <MakeError t.Pos 'Expected hex number after \\x'>)
+      (e.Scanned) t.Pos t.hFile e.Line
+    >;
+
+  (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number) e.Line (e.Hexs) =
+    <DoQuoted
+      (e.Errors) (e.Scanned <CharFromHex e.Number>) t.Pos t.hFile e.Line
     >;
 }
 
 DoQuoted-Oct {
-  s.Quote (e.Scanned) s.FirstOct t.SymStream e.LastOcts =
+  (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number) e.Line
+  3 (e.Octs) =
     <DoQuoted
-      s.Quote (e.Scanned <CharFromOct s.FirstOct e.LastOcts>)
-      <MSymStream::NextChar t.SymStream>
+      (e.Errors) (e.Scanned <CharFromOct e.Number>) t.Pos t.hFile e.Line
+    >;
+
+  (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number) s.Oct e.Line
+  s.Length (e.Octs-B s.Oct e.Octs-E) =
+    <DoQuoted-Oct
+      (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number s.Oct) e.Line
+      <MMath::Inc s.Length> ('01234567')
+    >;
+
+  (e.Errors) (e.Scanned) t.Pos t.hFile (e.Number) e.Line
+  s.Length (e.Octs) =
+    <DoQuoted
+      (e.Errors) (e.Scanned <CharFromOct e.Number>) t.Pos t.hFile e.Line
     >;
 }
 
@@ -440,153 +431,170 @@ CharFromBase {
 
 AppendDigit {
   s.L-Base s.Accum s.Digit =
-    <Math::Add <Math::Mul s.L-Base s.Accum> s.Digit>;
+    <MMath::Add <MMath::Mul s.L-Base s.Accum> s.Digit>;
 }
 
-Directive t.SymStream =
-  <SwDirective
-    <MSymStream::ExtractsFromSet
-      t.SymStream (<MStrings::UpAlph> <MStrings::LoAlph>)
-    >
-  >;
+Directive
+  (e.Errors) t.Pos t.hFile e.Line =
+    <DoDirective
+      (e.Errors) t.Pos t.hFile () e.Line
+      (<MStrings::UpAlph> <MStrings::LoAlph>)
+    >;
+
+DoDirective {
+  (e.Errors) t.Pos t.hFile (e.Scanned) s.Letter e.Line
+  (e.Letters-B s.Letter e.Letters-E) =
+    <DoDirective
+      (e.Errors) t.Pos t.hFile (e.Scanned s.Letter) e.Line
+      (e.Letters-B s.Letter e.Letters-E)
+    >;
+
+  (e.Errors) t.Pos t.hFile (e.Scanned) e.Line (e.Letters) =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line <SwDirective e.Scanned>>;
+}
 
 SwDirective {
-  t.SymStream 'CLEARMODULE' = t.SymStream (Directive ClearModule);
-  t.SymStream 'clearmodule' = t.SymStream (Directive ClearModule);
+  'CLEARMODULE' = (Directive ClearModule);
+  'clearmodule' = (Directive ClearModule);
 
-  t.SymStream 'DATA' = t.SymStream (Directive Data);
-  t.SymStream 'data' = t.SymStream (Directive Data);
+  'DATA' = (Directive Data);
+  'data' = (Directive Data);
 
-  t.SymStream 'END' = t.SymStream (Directive End);
-  t.SymStream 'end' = t.SymStream (Directive End);
+  'END' = (Directive End);
+  'end' = (Directive End);
 
-  t.SymStream 'ENTRY' = t.SymStream (Directive Entry);
-  t.SymStream 'entry' = t.SymStream (Directive Entry);
+  'ENTRY' = (Directive Entry);
+  'entry' = (Directive Entry);
 
-  t.SymStream 'IMPORT' = t.SymStream (Directive Import);
-  t.SymStream 'import' = t.SymStream (Directive Import);
+  'IMPORT' = (Directive Import);
+  'import' = (Directive Import);
 
-  t.SymStream 'MODULE' = t.SymStream (Directive Module);
-  t.SymStream 'module' = t.SymStream (Directive Module);
+  'MODULE' = (Directive Module);
+  'module' = (Directive Module);
 
-  t.SymStream 'PROGRAM' = t.SymStream (Directive Program);
-  t.SymStream 'program' = t.SymStream (Directive Program);
+  'PROGRAM' = (Directive Program);
+  'program' = (Directive Program);
 
-  t.SymStream 'SWAP' = t.SymStream (Directive Swap);
-  t.SymStream 'swap' = t.SymStream (Directive Swap);
+  'SWAP' = (Directive Swap);
+  'swap' = (Directive Swap);
 
-  t.SymStream e.Other =
-    t.SymStream (Error 'unknown directive \'' e.Other '\'');
+  e.Other = (Error 'unknown directive \'' e.Other '\'');
 }
 
 Variable
-  s.VarType t.SymStream =
+  s.VarType (e.Errors) t.Pos t.hFile e.Line =
     <SwVarIndex
-      s.VarType
-      <MSymStream::ExtractFromSet
-        t.SymStream
-	(<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '.')
-      >
+      s.VarType (e.Errors) t.Pos t.hFile e.Line
+      (<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '.')
     >;
 
 SwVarIndex {
-  s.VarType t.SymStream '.' =
+  s.VarType (e.Errors) t.Pos t.hFile '.' e.Line (e.IndexSymbols) =
     <LongIndex
-      s.VarType
-      <MSymStream::ExtractsFromSet
-        t.SymStream
-	(<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '-_?!')
-      >
+      s.VarType (e.Errors) t.Pos t.hFile () e.Line
+      (<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '-_?!')
     >;
 
-  s.VarType t.SymStream s.ShortIndex =
-    t.SymStream (Var s.VarType s.ShortIndex);
+  s.VarType (e.Errors) t.Pos t.hFile s.ShortIndex e.Line
+  (e.IndexSymbols-B s.ShortIndex e.IndexSymbols-E) =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Var s.VarType s.ShortIndex)>;
 
-  s.VarType t.SymStream =
-    t.SymStream (Error 'index of variable not found');
+  s.VarType (e.Errors) t.Pos t.hFile e.Line (e.IndexSymbols) =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile e.Line (Error 'index of variable not found')
+    >;
 }
 
-LongIndex
-  s.VarType t.SymStream e.LongIndex =
-    t.SymStream (Var s.VarType e.LongIndex);
+LongIndex {
+  s.VarType (e.Errors) t.Pos t.hFile (e.Scanned) s.Next e.Line
+  (e.IndexSymbols-B s.Next e.IndexSymbols-E) =
+    <LongIndex
+      s.VarType (e.Errors) t.Pos t.hFile (e.Scanned s.Next) e.Line
+      (s.Next e.IndexSymbols-B e.IndexSymbols-E)
+    >;
 
-// Максимальное значение макрочисла -- 4 294 968 295
+  s.VarType (e.Errors) t.Pos t.hFile () e.Line (e.IndexSymbols) =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile e.Line (Error 'Variable with empty index')
+    >;
+
+  s.VarType (e.Errors) t.Pos t.hFile (e.Index) e.Line (e.IndexSymbols) =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile e.Line (Var s.VarType e.Index)
+    >;
+}
+
+// Максимальное значение макрочисла -- <MMath::MaxNum>
 Macro
-  t.SymStream s.First =
-    <SwMacro
-      s.First
-      <MSymStream::ExtractsFromSet-N
-        t.SymStream (<MStrings::Digits>) 9
+  (e.Errors) t.Pos t.hFile s.First e.Line =
+    <DoMacro
+      (e.Errors) t.Pos t.hFile (s.First) e.Line ('01234567890')
+    >;
+
+DoMacro {
+  // Обработка числа, начинающегося на незначащие нули
+  (e.Errors) t.Pos t.hFile ('0') s.Digit e.Line
+  (e.Digits-B s.Digit e.Digits-E) =
+    <DoMacro
+      (e.Errors) t.Pos t.hFile (s.Digit) e.Line
+      (e.Digits-B s.Digit e.Digits-E)
+    >;
+
+  (e.Errors) t.Pos t.hFile (e.Scanned) s.Digit e.Line
+  (e.Digits-B s.Digit e.Digits-E) =
+    <DoMacro
+      (e.Errors) t.Pos t.hFile (e.Scanned s.Digit) e.Line
+      (e.Digits-B s.Digit e.Digits-E)
+    >;
+
+  (e.Errors) t.Pos t.hFile (e.Scanned) e.Line (e.Digits) =
+    <Macro-CheckLimit
+      (e.Errors) t.Pos t.hFile (e.Scanned) e.Line
+      <MOrder::Compare
+        (<MStrings::Length-T e.Scanned>)
+        (<MStrings::Length-T <MStrings::Symb <MMath::MaxNum>>>)
       >
     >;
-
-SwMacro
-  s.First t.SymStream e.Tail =
-    <Macro-CheckLength
-      t.SymStream <MStrings::Length-T s.First e.Tail>
-    >;
-
-Macro-CheckLength {
-  t.SymStream 10 e.Line = <Macro-CheckLimit t.SymStream e.Line>;
-
-  t.SymStream s.Other e.Line =
-    t.SymStream (Macro <MStrings::Numb e.Line>);
 }
 
-Macro-CheckLimit
-  t.SymStream e.Digits =
-    <SwMacro-CheckLimit
-      t.SymStream
-      <MOrder::Compare (e.Digits) ('4294967295')>
-      e.Digits
+Macro-CheckLimit {
+  (e.Errors) t.Pos t.hFile (e.Scanned) e.Line '>' =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile e.Line
+      (Error 'Number ' e.Scanned ' is very big for this implementation')
     >;
 
-SwMacro-CheckLimit {
-  t.SymStream '>' e.Digits s.Last =
-    <MSymStream::ReturnChar t.SymStream s.Last>
-    (Macro <MStrings::Numb e.Digits>);
-
-  t.SymStream s.Other e.Digits =
-    t.SymStream
-    (Macro <MStrings::Numb e.Digits>);
+  (e.Errors) t.Pos t.hFile (e.Scanned) e.Line s.Comp =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile e.Line (Macro <MStrings::Numb e.Scanned>)
+    >;
 }
 
 CreateUndefined
-  s.First t.SymStream =
-    <DoCreateUndefined (s.First) <MSymStream::NextChar t.SymStream>>;
+  (e.Errors) t.Pos t.hFile s.Next e.Line =
+    <DoCreateUndefined
+      (e.Errors) t.Pos t.hFile (s.Next) e.Line
+      (' \t[]{}<>()&:,.;=$\'est' <MStrings::UpAlph> <MStrings::Digits> 0)
+    >;
 
 DoCreateUndefined {
-  (e.BadSeq) t.SymStream EOF =
-    <MSymStream::ReturnChar t.SymStream EOF>
-    (Undefined <EscapeText e.BadSeq>);
-
-  (e.BadSeq) t.SymStream s.Next =
-    <SwDoCreateUndefined
-      (e.BadSeq) t.SymStream <CheckValid-T s.Next>
+  (e.Errors) t.Pos t.hFile (e.BadSeq) s.Valid e.Line
+  (e.Valids-B s.Valid e.Valids-E) =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile s.Valid e.Line
+      (Undefined <EscapeText e.BadSeq>)
     >;
-}
 
-SwDoCreateUndefined {
-  (e.BadSeq) t.SymStream F s.Next =
+  (e.Errors) t.Pos t.hFile (e.BadSeq) /* пусто */ (e.Valids) =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile /* пусто */ (Undefined <EscapeText e.BadSeq>)
+    >;
+
+  (e.Errors) t.Pos t.hFile (e.BadSeq) s.Invalid e.Line (e.Valids) =
     <DoCreateUndefined
-      (e.BadSeq s.Next)
-      <MSymStream::NextChar t.SymStream>
+      (e.Errors) t.Pos t.hFile (e.BadSeq s.Invalid) e.Line (e.Valids)
     >;
-
-  (e.BadSeq) t.SymStream T s.Next =
-    <MSymStream::ReturnChar t.SymStream s.Next>
-    (Undefined <EscapeText e.BadSeq>);
 }
-
-CheckValid-T
-  s.Char =
-    <MStrings::OneOf
-      s.Char
-      (
-        ' \t' CrLf '[]{}<>()&:,.;=$\"\'est'
-        <MStrings::UpAlph> <MStrings::Digits>
-      )
-    > s.Char;
 
 $ENTRY TokenToString {
   (OpenBlock) = <Q '{'>;

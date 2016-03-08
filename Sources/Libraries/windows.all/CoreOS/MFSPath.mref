@@ -175,7 +175,14 @@ DoPathFromStr-Tail {
 
   (e.Invalid)
   t.Root (e.Segments) () '\\' e.Tail =
-    Fails;
+    /*
+      Допустимый случай, поскольку компоненты пути могут разделяться несколькими
+      слешами подряд.
+    */
+    <DoPathFromStr-Tail
+      (e.Invalid)
+      t.Root (e.Segments) () e.Tail
+    >;
 
   (e.Invalid)
   t.Root (e.Segments) (e.Scanned) '\\' e.Tail =

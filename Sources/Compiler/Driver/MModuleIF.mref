@@ -164,7 +164,7 @@ FromIModule-Aux {
             & MIModule.GetModuleAttribute Position
           >
           <MLambda::Composite
-            & MIModule.GetFunctionList
+            & MIModule.GetFunctionList-EntryOnly
             & MLambda.Bracket-H
           >
           <MLambda::Composite

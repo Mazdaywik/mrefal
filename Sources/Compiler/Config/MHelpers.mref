@@ -3,6 +3,7 @@ $MODULE Config::MHelpers;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MLambda;
+$IMPORT CmdLine::MParser;
 
 $ENTRY TuneEndConfig = ();
 
@@ -30,22 +31,50 @@ GenExtentEntry {
       OneTime
     );
 
+  (SinglePath s.OptionId (e.OptionName) e.DefaultValue) =
+    ((Param (e.OptionName))
+      <MLambda::BindLeft & Handler-SinglePath s.OptionId (e.OptionName)>
+      (Optional)
+      OneTime
+    );
+
   (FileList s.OptionId (e.OptionName) e.DefaultValue) =
     ((Naked (e.OptionName))
-      <MLambda::BindLeft & Handler-FileList s.OptionId (e.OptionName)>
+      <MLambda::BindLeft & Handler-FilePathList s.OptionId (e.OptionName)>
       (Optional)
       OneTime
       Required & FileList-GroupHandler
+    );
+
+  (PathList s.OptionId (e.OptionName) e.DefaultValue) =
+    ((Naked (e.OptionName))
+      <MLambda::BindLeft & Handler-FilePathList s.OptionId (e.OptionName)>
+      (Optional)
+      OneTime
+      Required & PathList-GroupHandler
     );
 }
 
 Handler-Single
   s.OptionName (e.OptionText)
-  t.hErrorList (e.TunerConfig) t.SrcPos (e.CompilerCmdLine) NoGroup =
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.Option) NoGroup =
     t.hErrorList
-    (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.CompilerCmdLine));
+    (e.TunerConfig (s.OptionName (e.OptionText) t.SrcPos e.Option));
 
-Handler-FileList
+Handler-SinglePath
+  s.OptionName (e.OptionText)
+  t.hErrorList (e.TunerConfig) t.SrcPos (e.StrPath) NoGroup =
+    t.hErrorList
+    (e.TunerConfig
+      (s.OptionName (e.OptionText) t.SrcPos <FixupPath-Str t.SrcPos e.StrPath>)
+    );
+
+FixupPath-Str {
+  t.SrcPos e.StrPath =
+    <CmdLine::MParser::FixupPath-Str t.SrcPos e.StrPath>;
+}
+
+Handler-FilePathList
   s.OptionName (e.OptionText)
   t.hErrorList (e.TunerConfig) t.SrcPos NoParam (e.FileList) =
     t.hErrorList
@@ -54,28 +83,53 @@ Handler-FileList
 FileList-GroupHandler
   =
     (
-      & FileList-Config
+      & FilePathList-Config
       ((Param (File))
         & FileList-FileHandler
         (Optional)
         Multiply
       )
       ((Naked (EOG))
-        & FileList-EOGHandler
+        & FilePathList-EOGHandler
         (Required)
         OneTime
       )
     );
 
-FileList-Config = ();
+FilePathList-Config = ();
 
 FileList-FileHandler
   t.hErrorList (e.FileList) t.SrcPos (e.PtFileName) NoGroup =
     t.hErrorList (e.FileList (e.PtFileName));
 
-FileList-EOGHandler
+FilePathList-EOGHandler
   t.hErrorList (e.FileList) t.SrcPos NoParam NoGroup =
     t.hErrorList (e.FileList);
+
+PathList-GroupHandler
+  =
+    (
+      & FilePathList-Config
+      ((Param (File))
+        & PathList-FileHandler
+        (Optional)
+        Multiply
+      )
+      ((Naked (EOG))
+        & FilePathList-EOGHandler
+        (Required)
+        OneTime
+      )
+    );
+
+PathList-FileHandler
+  t.hErrorList (e.FileList) t.SrcPos (e.PtFileName) NoGroup =
+    t.hErrorList (e.FileList (<FixupPath-Pt t.SrcPos e.PtFileName>));
+
+FixupPath-Pt {
+  t.SrcPos e.PtFileName =
+    <CmdLine::MParser::FixupPath-Pt t.SrcPos e.PtFileName>;
+}
 
 /**
   <InitConfig s.FnExtentDescription e.Tunings>

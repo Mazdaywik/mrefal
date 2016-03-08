@@ -1,11 +1,11 @@
 $MODULE Config::MLoad;
 
-$IMPORT CmdLine::MParser;
 $IMPORT MConfig = Config::MConfig;
 $IMPORT MError;
 $IMPORT MFileSystem;
 $IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
+$IMPORT MParser = CmdLine::MParser;
 $IMPORT MSrcPos;
 
 // Регистраторы
@@ -25,7 +25,7 @@ $IMPORT FE-MRefal  ::MInit;
 $ENTRY Load
   t.hErrorList e.CommandLine =
     <Load-Aux
-      <CmdLine::MParser::Parse
+      <MParser::Parse
         t.hErrorList
         & TopLevelDescription
         e.CommandLine
@@ -166,7 +166,7 @@ FileTargetHandler {
 FileTargetHandler-Check {
   t.hErrorList t.SrcPos (e.StrTargetName)
   Success e.PtTargetName =
-    t.hErrorList (e.PtTargetName);
+    t.hErrorList (<MParser::FixupPath-Pt t.SrcPos e.PtTargetName>);
 
   t.hErrorList t.SrcPos (e.StrTargetName)
   Fails =
@@ -194,12 +194,16 @@ ModulePath-IsCorrectPath {
   t.SrcPos (e.StrPath)
   Success e.PtPath =
     t.hErrorList
-    (e.Config-B (ModulePath e.Paths (e.PtPath)) e.Config-E);
+    (
+      e.Config-B
+      (ModulePath e.Paths (<MParser::FixupPath-Pt t.SrcPos e.PtPath>))
+      e.Config-E
+    );
 
   t.hErrorList (e.Config) t.SrcPos (e.SrcPath)
   Success e.PtPath =
     t.hErrorList
-    (e.Config (ModulePath (e.PtPath)));
+    (e.Config (ModulePath (<MParser::FixupPath-Pt t.SrcPos e.PtPath>)));
 
   t.hErrorList (e.Config) t.SrcPos (e.StrPath) Fails =
     <MError::AddCmdLineError

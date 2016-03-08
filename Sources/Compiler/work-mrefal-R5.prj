@@ -1,4 +1,4 @@
--cfg:.Config/work/config-R5.cfg
+-be:R5
 MRefal
 (
   -target:../Bin/MRefal.r5

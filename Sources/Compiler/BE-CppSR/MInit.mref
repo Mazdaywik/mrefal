@@ -24,7 +24,7 @@ $ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
 
 Tunings =
   (Single CCompiler ('compiler') 'call call-C++.bat')
-  (FileList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
+  (PathList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
   (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
   (Single IncludeOpt ('include-opt') '-I')
   (Single DefineOpt ('define') '-D')
@@ -36,7 +36,7 @@ Tunings =
   (Single ObjectExt ('object-ext') 'o')
   (Single LinkerType ('accelerate-link') 'genmake')
   (Single GenMakeMake ('genmake-make') 'make')
-  (Single GenMakeFolder ('genmake-folder') 'objects.tmp')
+  (SinglePath GenMakeFolder ('genmake-folder') 'objects.tmp')
   (Single GenMakeMakefile ('genmake-makefile') 'compile-and-link.mak');
 
 $END BE-CppSR::MInit.

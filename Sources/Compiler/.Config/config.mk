@@ -82,10 +82,10 @@ comp-SR = $(call BATEXE, ../Bin/start-sr)
 comp-CPPSR = $(call BATEXE, ../Bin/start-cpp)
 comp-C++/SR = $(call BATEXE, ../Bin/start-cpp)
 
-profile-R5 = work/mrefal-R5
-profile-SR = work/mrefal-SR
-profile-CPPSR = work/mrefal-CPPSR
-profile-C++/SR = work/mrefal-CPPSR
+profile-R5 = work-mrefal-R5
+profile-SR = work-mrefal-SR
+profile-CPPSR = work-mrefal-CPPSR
+profile-C++/SR = work-mrefal-CPPSR
 
 scomp-R5 = refgo -c300 -l200 ../Bin/stable/MRefal.r5.rsl ++extent:..\Bin\stable\FS-Extent.cpp.exe
 scomp-SR = ..\Bin\stable\MRefal.sr.exe

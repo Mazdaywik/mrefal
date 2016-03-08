@@ -57,4 +57,15 @@ $ENTRY ToString {
   (SrcPos 'RT') = 'Runtime call';
 }
 
+/**
+  <File t.SrcPos>
+    == NotInFile
+    == e.StrFileName
+*/
+$ENTRY File {
+  (SrcPos 'F' e.FileName s.LnNum) = e.FileName;
+
+  (SrcPos e.Other) = NotInFile;
+}
+
 $END MSrcPos.

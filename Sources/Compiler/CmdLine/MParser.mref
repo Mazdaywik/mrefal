@@ -2,7 +2,7 @@ $MODULE CmdLine::MParser;
 
 /*=============================================================================
   Модуль пишется в соответствии со спецификацией
-  "DSL описания командной строки.01.txt"
+  "DSL описания командной строки.02.txt"
 =============================================================================*/
 
 $IMPORT FileIO = MFileIO;
@@ -195,6 +195,26 @@ PreScan-Option-Param {
     >;
 
   (e.Stack) t.SrcPos ('cfg') (e.ConfigFile) e.Tail =
+    <PreScan-Option-Param-LoadFile
+      (e.Stack) t.SrcPos (<FixupPath-Str t.SrcPos e.ConfigFile>) e.Tail
+    >;
+
+  t.FileStack t.SrcPos ('file') (e.StrFileName) e.Tail =
+    (File t.SrcPos e.StrFileName)
+    <PreScan t.FileStack e.Tail>;
+
+  t.FileStack t.SrcPos (e.Name) (e.Value) e.Tail =
+    (Option
+      t.SrcPos
+      (<MStrings::Trim e.Name>)
+      Param
+      <MStrings::Trim e.Value>
+    )
+    <PreScan t.FileStack e.Tail>;
+}
+
+PreScan-Option-Param-LoadFile {
+  (e.Stack) t.SrcPos (e.ConfigFile) e.Tail =
     <ErrorIfNotExist t.SrcPos e.ConfigFile>
     <PreScan
       (e.Stack (e.ConfigFile))
@@ -218,19 +238,6 @@ PreScan-Option-Param {
       PopStackFile
       e.Tail
     >;
-
-  t.FileStack t.SrcPos ('file') (e.StrFileName) e.Tail =
-    (File t.SrcPos e.StrFileName)
-    <PreScan t.FileStack e.Tail>;
-
-  t.FileStack t.SrcPos (e.Name) (e.Value) e.Tail =
-    (Option
-      t.SrcPos
-      (<MStrings::Trim e.Name>)
-      Param
-      <MStrings::Trim e.Value>
-    )
-    <PreScan t.FileStack e.Tail>;
 }
 
 ErrorIfNotExist {
@@ -1098,5 +1105,68 @@ ProcessOptionalFinalizers {
 Semantics-Analyze-AddSuccess
   t.hErrorList t.Collected =
     t.hErrorList Success t.Collected;
+
+/**
+  <FixupPath-Pt t.SrcPos e.PtFileName> == e.PtFileName
+  <FixupPath-Str t.SrcPos e.StrFileName> == e.StrFileName
+
+  Эти две функции — костыли. Подробности - в журнале проекта
+  для этого коммита.
+*/
+$ENTRY FixupPath-Pt {
+  t.SrcPos e.PtFileName =
+    <FixupPath-Pt-SwKnownConfigFile
+      (<MSrcPos::File t.SrcPos>) e.PtFileName
+    >;
+}
+
+FixupPath-Pt-SwKnownConfigFile {
+  (NotInFile) e.PtFileName = e.PtFileName;
+
+  (e.StrFileName) e.PtFileName =
+    <FixupPath-Pt-SwConcat
+      <MFileSystem::ConcatPath
+        (<Pt-ConfigDir-Str e.StrFileName>) e.PtFileName
+      >
+      (e.PtFileName)
+    >;
+}
+
+Pt-ConfigDir-Str {
+  e.StrFileName =
+    <Pt-ConfigDir-Str-Aux <MFileSystem::PathFromStr e.StrFileName>>;
+}
+
+Pt-ConfigDir-Str-Aux {
+  Success e.PtDirectory (e.FileName) = e.PtDirectory;
+
+  /*
+    Ветвь с Fails не рассматриваем: путь априори корректен, поскольку
+    этот конфигурационный файл уже был прочтён.
+  */
+}
+
+FixupPath-Pt-SwConcat {
+  Success e.PtConcatenatedPath (e.PtOriginalPath) = e.PtConcatenatedPath;
+
+  // В случае невозможности конкатенации сохраняем исходный путь
+  Fails (e.PtOriginalPath) = e.PtOriginalPath;
+}
+
+$ENTRY FixupPath-Str {
+  t.SrcPos e.StrFileName =
+    <FixupPath-Str-SwValidPath
+      t.SrcPos (e.StrFileName) <MFileSystem::PathFromStr e.StrFileName>
+    >;
+}
+
+FixupPath-Str-SwValidPath {
+  t.SrcPos (e.StrFileName) Success e.PtFileName =
+    <MFileSystem::StrFromPath
+      <FixupPath-Pt t.SrcPos e.PtFileName>
+    >;
+
+  t.SrcPos (e.StrFileName) Fails = e.StrFileName;
+}
 
 $END CmdLine::MParser.

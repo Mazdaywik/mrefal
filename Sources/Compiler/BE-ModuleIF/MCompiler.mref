@@ -39,7 +39,7 @@ GenerateBorders-Aux {
   t.ModuleName t.hIModule Found Main =
     <MoveFirstLineToFront
       <GenerateFunctions
-        <GetEntryList t.hIModule>
+        <MIModule::GetFunctionList-EntryOnly t.hIModule>
       >
       ('$program ' <MQualifiedName::ToPrintable-Quad t.ModuleName> ';')
       ('$end ' <MQualifiedName::ToPrintable-Quad t.ModuleName> '.')
@@ -48,7 +48,7 @@ GenerateBorders-Aux {
   t.ModuleName t.hIModule Found Regular =
     <MoveFirstLineToFront
       <GenerateFunctions
-        <GetEntryList t.hIModule>
+        <MIModule::GetFunctionList-EntryOnly t.hIModule>
       >
       ('$module ' <MQualifiedName::ToPrintable-Quad t.ModuleName> ';')
       ('$end ' <MQualifiedName::ToPrintable-Quad t.ModuleName> '.')
@@ -76,30 +76,6 @@ AddSegment
     (e.Segments '::' e.NextSegment);
 
 UnBracket (e.Expr) = e.Expr;
-
-GetEntryList
-  t.IModule =
-    <MLambda::MapReduce
-      & ToEntry
-      <MIModule::GetFunctionList t.IModule>
-    >;
-
-ToEntry
-  t.IModule t.NextFn =
-    <SwToEntry
-      t.NextFn
-      <MIModule::GetFunctionAttribute
-        t.IModule ScopeClass t.NextFn
-      >
-    >;
-
-SwToEntry {
-  t.NextFn t.IModule Found Entry =
-    t.IModule t.NextFn;
-
-  t.NextFn t.IModule Found s.OtherScope =
-    t.IModule;
-}
 
 MoveFirstLineToFront
   t.IModule e.Lines t.FirstLine t.LastLine =

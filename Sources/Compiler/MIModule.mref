@@ -629,11 +629,34 @@ GetKind-ReturnIModule {
 
 /**
   <GetFunctionList t.hIModule>
+  <GetFunctionList-EntryOnly t.hIModule>
     == t.hIModule t.FunctionName*
 */
 $ENTRY GetFunctionList
   t.hIModule =
     <FindEntityByKind-Relative t.hIModule Function>;
+
+$ENTRY GetFunctionList-EntryOnly
+  t.hIModule =
+    <MLambda::MapReduce
+      & ToEntry
+      <GetFunctionList t.hIModule>
+    >;
+
+ToEntry
+  t.hIModule t.NextFn =
+    <SwToEntry
+      t.NextFn
+      <GetFunctionAttribute t.hIModule ScopeClass t.NextFn>
+    >;
+
+SwToEntry {
+  t.NextFn t.hIModule Found Entry =
+    t.hIModule t.NextFn;
+
+  t.NextFn t.hIModule Found s.OtherScope =
+    t.hIModule;
+}
 
 //------------------------------------------------------------------------------
 

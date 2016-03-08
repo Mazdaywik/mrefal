@@ -41,7 +41,7 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
     //(0 0 )
     if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) )
       break;
-    if( ! empty_seq( bb_0_0, be_0_0 ) )
+    if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
 
     refalrts::reset_allocator();
@@ -59,7 +59,7 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
     //(0 0 )
     if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) )
       break;
-    if( ! empty_seq( bb_0_0, be_0_0 ) )
+    if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
 
     refalrts::reset_allocator();
@@ -82,3 +82,14 @@ refalrts::FnResult CoreBEP_MProfilerP_PrintResults(
   return implement_profiler::print_results(arg_begin, arg_end);
 }
 
+refalrts::FnResult CoreBEP_MProfilerP_SetOutputName(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return implement_profiler::set_output_name(arg_begin, arg_end);
+}
+
+refalrts::FnResult CoreBEP_MProfilerP_Flush(
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  return implement_profiler::flush(arg_begin, arg_end);
+}

@@ -1,6 +1,6 @@
 @echo off
 echo [Profile: C++/SR]
-copy ..\Bin\MRefal.cppsr.exe ..\Bin\MRefal_.cppsr.exe
-..\Bin\MRefal_.cppsr.exe %*
-if exist ..\Bin\*.tds del ..\Bin\*.tds
+copy %~dp0MRefal.cppsr.exe %~dp0MRefal_.cppsr.exe
+%~dp0MRefal_.cppsr.exe %*
+if exist %~dp0*.tds del %~dp0*.tds
 if exist *.obj del *.obj

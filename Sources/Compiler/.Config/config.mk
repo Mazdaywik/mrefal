@@ -82,21 +82,21 @@ comp-SR = $(call BATEXE, ../Bin/start-sr)
 comp-CPPSR = $(call BATEXE, ../Bin/start-cpp)
 comp-C++/SR = $(call BATEXE, ../Bin/start-cpp)
 
-profile-R5 = mp-work-R5
-profile-SR = mp-work-SR
-profile-CPPSR = mp-work-CPPSR
-profile-C++/SR = mp-work-CPPSR
+profile-R5 = work/mrefal-R5
+profile-SR = work/mrefal-SR
+profile-CPPSR = work/mrefal-CPPSR
+profile-C++/SR = work/mrefal-CPPSR
 
-scomp-R5 = refgo -c300 -l200 ../Bin/MRefal.s.rsl ++extent:..\Bin\FS-Extent.cpp.exe
-scomp-SR = ..\Bin\mrefal.s.exe
-scomp-CPPSR = ..\Bin\mrefal.s.cpp.exe
-scomp-C++/SR = ..\Bin\mrefal.s.cpp.exe
+scomp-R5 = refgo -c300 -l200 ../Bin/stable/MRefal.r5.rsl ++extent:..\Bin\stable\FS-Extent.cpp.exe
+scomp-SR = ..\Bin\stable\MRefal.sr.exe
+scomp-CPPSR = ..\Bin\stable\MRefal.cppsr.exe
+scomp-C++/SR = ..\Bin\stable\MRefal.cppsr.exe
 
-sprofile-R5 = mp-stable-R5
-sprofile-R5T = mp-stable-R5
-sprofile-SR = mp-stable-SR
-sprofile-CPPSR = mp-stable-CPPSR
-sprofile-C++/SR = mp-stable-CPPSR
+sprofile-R5 = stable/mrefal-R5
+sprofile-R5T = stable/mrefal-R5
+sprofile-SR = stable/mrefal-SR
+sprofile-CPPSR = stable/mrefal-CPPSR
+sprofile-C++/SR = stable/mrefal-CPPSR
 
 mode-MAKE = +make
 mode-BUILD = +build

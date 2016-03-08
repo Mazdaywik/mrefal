@@ -1,5 +1,7 @@
 $EXTERN MR-Profiler-Quantify;
 $EXTERN MR-Profiler-PrintResults;
+$EXTERN MR-Profiler-SetOutputName;
+$EXTERN MR-Profiler-Flush;
 
 $ENTRY CoreBEP_MProfilerP_Quantify {
   s.Function e.Arguments =
@@ -9,6 +11,15 @@ $ENTRY CoreBEP_MProfilerP_Quantify {
 $ENTRY CoreBEP_MProfilerP_PrintResults {
   e.OptionalFileName =
     <MR-Profiler-PrintResults e.OptionalFileName>;
+}
+
+$ENTRY CoreBEP_MProfilerP_SetOutputName {
+  e.OptionalFileName =
+    <MR-Profiler-SetOutputName e.OptionalFileName>;
+}
+
+$ENTRY CoreBEP_MProfilerP_Flush {
+  = <MR-Profiler-Flush>;
 }
 
 $ENTRY CoreBEP_MProfilerP_EntryPointE_ {

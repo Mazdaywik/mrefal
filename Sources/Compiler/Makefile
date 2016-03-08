@@ -17,7 +17,7 @@ stable:
 	$(call CHECKPARAM, scomp)
 	$(call CHECKPARAM, sprofile)
 	$(call CHECKPARAM, mode)
-	$(scomp_tr) $(mode_tr) $(xlinx_tr) +cfg:.Config/$(sprofile_tr).cfg
+	$(scomp_tr) $(mode_tr) $(xlinx_tr) +cfg:.Config/$(sprofile_tr).prj
 
 check:
 	$(MAKE) work

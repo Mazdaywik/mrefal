@@ -16,13 +16,14 @@ refalrts::FnResult refalapi::CharArray::from_sequence(
       break;
     }
 
-    // На строчку ниже ругается BCC55, поэтому она закомментирована.
-    // Компиляторы g++ и MS VC обрабатывают без ошибок.
-    //result.insert( result.end(), buffer, buffer + read );
+    // В текущей версии Open Watcom (и форка Open Watcom V2) есть ошибка
+    // в функции vector::insert, которая возникает в случае,
+    // если во время вставки вектор увеличивает свою ёмкость (capacity).
+    // Для обхода этой ошибки предварительно резервируем место.
+    result.reserve( result.size() + read + 1 );
 
-    CharArray::iterator end = result.end();
-
-    result.as_vector().insert( end, buffer, buffer + read );
+    // Без .as_vector() компилятор BCC 5.5 не может откомпилировать
+    result.as_vector().insert( result.end(), buffer, buffer + read );
   }
 
   /*

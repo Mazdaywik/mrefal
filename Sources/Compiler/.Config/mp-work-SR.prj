@@ -1,5 +1,0 @@
--cfg:.Config/config-work-SR.cfg
-MRefal
-(
-  -target:../Bin/MRefal.sr.exe
-)

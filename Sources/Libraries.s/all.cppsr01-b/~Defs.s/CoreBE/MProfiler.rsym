@@ -1,7 +1,9 @@
 $module CoreBE::MProfiler;
 
 
+$entry Flush;
 $entry PrintResults;
 $entry Quantify;
+$entry SetOutputName;
 
 $end CoreBE::MProfiler.

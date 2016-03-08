@@ -1,0 +1,203 @@
+$MODULE MOrder;
+
+$IMPORT MLambda;
+$IMPORT Core = CoreBE::MOrder;
+
+/**
+  Сравнение по типам:
+  () > Macro > Character > Other
+  Скобочные термы сравниваются в лексиконографическом порядке.
+  Макроцифры сравниваются по арифметическим правилам.
+  Characters сравниваются по ASCII-значениям.
+  Остальные символы считаются равными.
+
+  Функция сравнения не определена для АТД-термов.
+*/
+
+/**
+  <Compare-T t.Left t.Right>
+    == s.Result t.Left t.Right
+
+  s.Result ::= '<' | '=' | '>'
+*/
+$ENTRY Compare-T {
+  s.Left s.Right = <Core::SymbCompare s.Left s.Right> s.Left s.Right;
+
+  (e.Left) s.Right = '>' (e.Left) s.Right;
+
+  s.Left (e.Right) = '<' s.Left (e.Right);
+
+  (e.Left) (e.Right) = <Lexicon-T (e.Left) (e.Right)>;
+
+  t.Left t.Right = <Compare t.Left t.Right> t.Left t.Right;
+}
+
+/**
+  <Compare t.Left t.Right> == '<' | '=' | '>'
+*/
+$ENTRY Compare {
+  //t.Val t.Val = '=';
+
+  s.Left s.Right = <Core::SymbCompare s.Left s.Right>;
+
+  (e.Left) s.Right = '>';
+
+  s.Left (e.Right) = '<';
+
+  (e.Left) (e.Right) = <Lexicon (e.Left) (e.Right)>;
+}
+
+Lexicon {
+  ( t.First e.Expr1 ) ( t.First e.Expr2 ) =
+    <Lexicon ( e.Expr1 ) ( e.Expr2 )>;
+
+  ( t.First1 e.Expr1 ) ( t.First2 e.Expr2 ) =
+    <Lexicon-SwCompare
+      <Compare t.First1 t.First2> ( e.Expr1 ) ( e.Expr2 )
+    >;
+
+  () (t.First2 e.Expr2) = '<';
+
+  (t.First1 e.Expr1) () = '>';
+
+  () () = '=';
+}
+
+Lexicon-SwCompare {
+  '=' ( e.Expr1 ) ( e.Expr2 ) =
+    <Lexicon ( e.Expr1 ) ( e.Expr2 )>;
+
+  s.Other ( e.Expr1 ) ( e.Expr2 ) =
+    s.Other;
+}
+
+Lexicon-T
+  (e.Left) (e.Right) =
+    <DoLexicon-T () (e.Left) () (e.Right)>;
+
+DoLexicon-T {
+  (e.Scanned1) ( t.Next1 e.Expr1 )
+  (e.Scanned2) ( t.Next2 e.Expr2 ) =
+    <SwDoLexicon-T
+      (e.Scanned1) (e.Scanned2)
+      <Compare-T t.Next1 t.Next2>
+      (e.Expr1) (e.Expr2)
+    >;
+
+  (e.Scanned1) () (e.Scanned2) () = '=' (e.Scanned1) (e.Scanned2);
+
+  (e.Scanned1) () (e.Scanned2) (e.Expr) =
+    '<' (e.Scanned1) (e.Scanned2 e.Expr);
+
+  (e.Scanned1) (e.Expr) (e.Scanned2) () =
+    '>' (e.Scanned1 e.Expr) (e.Scanned2);
+}
+
+SwDoLexicon-T {
+  (e.Scanned1) (e.Scanned2)
+  '<' t.Next1 t.Next2 (e.Expr1) (e.Expr2) =
+    '<' (e.Scanned1 t.Next1 e.Expr1) (e.Scanned2 t.Next2 e.Expr2);
+
+  (e.Scanned1) (e.Scanned2)
+  '=' t.Next1 t.Next2 (e.Expr1) (e.Expr2) =
+    <DoLexicon-T
+      (e.Scanned1 t.Next1) (e.Expr1)
+      (e.Scanned2 t.Next2) (e.Expr2)
+    >;
+
+  (e.Scanned1) (e.Scanned2)
+  '>' t.Next1 t.Next2 (e.Expr1) (e.Expr2) =
+    '>' (e.Scanned1 t.Next1 e.Expr1) (e.Scanned2 t.Next2 e.Expr2);
+
+}
+
+/**
+  <Sort e.Sequence>
+    == e.SortedSequence
+*/
+$ENTRY Sort {
+  = ;
+
+  e.Sequence = <MergePairs <CreateSeries e.Sequence> >;
+}
+
+CreateSeries {
+  t.Elem e.Tail = ( t.Elem ) <CreateSeries e.Tail>;
+  = ;
+}
+
+// Сливает соседние пары до тех пор, пока не останется одна серия
+MergePairs {
+  ( e.Series ) = e.Series;
+  e.Series =
+    <MergePairs
+      <MergeAdjacentPairs
+        e.Series
+      >
+    >;
+}
+
+// Сливает соседние пары
+MergeAdjacentPairs {
+  ( e.Series1 ) ( e.Series2 ) e.Tail =
+    ( <Merge (e.Series1) (e.Series2)> )
+    <MergeAdjacentPairs e.Tail>;
+
+  ( e.Series ) = ( e.Series );
+
+  = ;
+}
+
+Merge {
+  ( t.First1 e.Series1 ) ( t.First2 e.Series2 ) =
+    <SwMerge
+      <Compare t.First1 t.First2>
+      ( t.First1 e.Series1 )
+      ( t.First2 e.Series2 )
+    >;
+
+  // Одна из серий пустая
+  ( e.Series1 ) ( e.Series2 ) = e.Series1 e.Series2;
+}
+
+SwMerge {
+  '>' ( e.Series1 ) ( t.First2 e.Series2 ) =
+    t.First2 <Merge ( e.Series1 ) ( e.Series2 )>;
+
+  s.Other ( t.First1 e.Series1 ) ( e.Series2 ) =
+    t.First1 <Merge ( e.Series1 ) ( e.Series2 )>;
+}
+
+Max2
+  t.X t.Y = <SwMax2 <Compare-T t.X t.Y>>;
+
+SwMax2 {
+  '<' t.X t.Y = t.Y;
+
+  s.Order t.X t.Y = t.X;
+}
+
+/**
+  <Max e.Terms> == t.MaxTerm
+  e.Terms != empty
+*/
+$ENTRY Max
+  t.First e.Terms = <MLambda::Reduce & Max2 t.First e.Terms>;
+
+Min2
+  t.X t.Y = <SwMin2 <Compare-T t.X t.Y>>;
+
+SwMin2 {
+  '<' t.X t.Y = t.X;
+
+  s.Order t.X t.Y = t.Y;
+}
+
+/**
+  <Min e.Terms> == t.MinTerm
+  e.Terms != empty
+*/
+$ENTRY Min
+  t.First e.Terms = <MLambda::Reduce & Min2 t.First e.Terms>;
+
+$END MOrder.

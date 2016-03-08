@@ -1,4 +1,4 @@
-@type "..\Bin\MRefal.r5-Not linked.txt" | ^
+@type "%~dp0\MRefal.r5-Not linked.txt" | ^
 find /V ":InOut:" | ^
 find /V ":MInOut:" | ^
 find /V ":MOS:" | ^
@@ -13,4 +13,4 @@ find /V ":MMath:" | ^
 find /V ":MDosWinRecoder:" | ^
 find /V ":MXXIO:" | ^
 find /V ":MSwapSupport:" | ^
-find /V ":MLambda:" > "..\Bin\MRefal.r5-Not linked.txt"
+find /V ":MLambda:" > "%~dp0\MRefal.r5-Not linked.txt"

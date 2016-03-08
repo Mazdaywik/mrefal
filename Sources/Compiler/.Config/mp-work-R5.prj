@@ -1,5 +1,0 @@
--cfg:.Config/config-work-R5.cfg
-MRefal
-(
-  -target:../Bin/MRefal.r5
-)

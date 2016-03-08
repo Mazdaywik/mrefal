@@ -1,0 +1,328 @@
+$MODULE MLambda;
+
+$DATA L-Lambda, LH-Lambda, R-Lambda, C-Lambda, H-Lambda, P-Lambda, PH-Lambda,
+  Const-Lambda;
+
+/*------------------------------------------------------------------------------
+  Внутреннее представление
+  [L-Lambda t.Lambda e.LeftLinked]
+  [LH-Lambda t.Lambda e.LeftLinked]
+  [R-Lambda t.Lambda e.RightLinked]
+  [C-Lambda t.InnerLambda t.OuterLambda]
+  [H-Lambda t.Lambda]
+  [P-Lambda t.Lambda-L t.Lambda-R]
+  [PH-Lambda t.Lambda*]
+  [Const-Lambda e.Value]
+------------------------------------------------------------------------------*/
+
+/**
+  <Apply t.Lambda e.Arg>
+    == e.Result
+*/
+$ENTRY Apply {
+  s.FnPtr e.Argument = <s.FnPtr e.Argument>;
+
+  [L-Lambda t.Lambda e.LeftLinked] e.Argument =
+    <Apply t.Lambda e.LeftLinked e.Argument>;
+
+  [C-Lambda t.InnerLambda t.OuterLambda] e.Argument =
+    <Apply
+      t.OuterLambda
+      <Apply t.InnerLambda e.Argument>
+    >;
+
+  [LH-Lambda t.Lambda e.LeftLinked] t.Handle e.Argument =
+    <Apply t.Lambda t.Handle e.LeftLinked e.Argument>;
+
+  [R-Lambda t.Lambda e.RightLinked] e.Argument =
+    <Apply t.Lambda e.Argument e.RightLinked>;
+
+  [H-Lambda t.Lambda] t.Handle e.Argument =
+    t.Handle <Apply t.Lambda e.Argument>;
+
+  [P-Lambda t.Lambda-L t.Lambda-R] e.Argument =
+    <Apply t.Lambda-L e.Argument>
+    <Apply t.Lambda-R e.Argument>;
+
+  [PH-Lambda e.Lambdas] t.Handle e.Argument =
+    <Apply-PH-Finish
+      <MapReduce
+        & Applies-PH
+        (t.Handle e.Argument)
+        e.Lambdas
+      >
+    >;
+
+  [Const-Lambda e.Value] e.Argument = e.Value;
+}
+
+Applies-PH
+  (t.Handle e.Argument) t.Lambda =
+    <Applies-PH-Aux
+      (e.Argument)
+      <Apply t.Lambda t.Handle e.Argument>
+    >;
+
+Applies-PH-Aux
+  (e.Argument) t.Handle e.Result =
+    (t.Handle e.Argument) e.Result;
+
+Apply-PH-Finish
+  (t.Handle e.Argument) e.Results =
+    t.Handle e.Results;
+
+/**
+  <BindLeft t.Lambda e.Left>
+    == t.Lambda'
+  <Apply t.Lambda' e.Arg>
+    === <Apply t.Lambda e.Left e.Arg>
+*/
+$ENTRY BindLeft {
+  [L-Lambda t.Lambda e.Left1] e.Left2 =
+    [L-Lambda t.Lambda e.Left1 e.Left2];
+
+  t.Lambda e.Left =
+    [L-Lambda t.Lambda e.Left];
+}
+
+/**
+  <BindLeft-H t.Lambda e.Left>
+    == t.Lambda'
+  <Apply t.Lambda' t.Handle e.Arg>
+    == <Apply t.Lambda t.Handle e.Left e.Arg>
+*/
+$ENTRY BindLeft-H
+  t.Lambda e.Left =
+    [LH-Lambda t.Lambda e.Left];
+
+/**
+  <BindRight t.Lambda e.Right>
+    == t.Lambda'
+  <Apply t.Lambda' e.Arg>
+    === <Apply t.Lambda e.Arg e.Right>
+*/
+$ENTRY BindRight {
+  [R-Lambda t.Lambda e.Right1] e.Right2 =
+    [R-Lambda t.Lambda e.Right2 e.Right1];
+
+  t.Lambda e.Right =
+    [R-Lambda t.Lambda e.Right];
+}
+
+/**
+  <Composite t.Lambda_1 ... t.Lambda_N>
+    == t.CompositeLambda
+  <Apply t.CompositeLambda e.Arg>
+    ===
+    <Apply
+      t.Lambda_N
+      <Apply
+        t.Lambda_N-1
+        ...
+        <Apply t.Lambda_1 e.Arg>
+        ...
+      >
+    >
+*/
+$ENTRY Composite {
+  t.InnerLambda = t.InnerLambda;
+
+  t.InnerLambda e.OtherLambdas =
+    [C-Lambda
+      t.InnerLambda
+      <Composite e.OtherLambdas>
+    ];
+}
+
+/**
+  <MakeHandled t.Lambda>
+    == t.Lambda'
+  <Apply t.Lambda' t.Handle e.Arg>
+    === t.Handle <Apply t.Lambda e.Arg>
+*/
+$ENTRY MakeHandled
+  t.Lambda =
+    [H-Lambda t.Lambda];
+
+/**
+  <Parallel t.Lambda_1 ... t.Lambda_N>
+    == t.Lambda'
+  <Apply t.Lambda' e.Argument>
+    === <Apply t.Lambda_1 e.Argument> ... <Apply t.Lambda_N e.Argument>
+*/
+$ENTRY Parallel {
+  t.Lambda = t.Lambda;
+
+  t.Lambda e.OtherLambdas =
+    [P-Lambda
+      t.Lambda
+      <Parallel e.OtherLambdas>
+    ];
+}
+
+/**
+  <Parallel-H e.Lambda_1 ... t.Lambda_N>
+    == t.Lambda'
+  <Apply t.Lambda' t.Handle e.Argument>:
+  <Apply t.Lambda t.Handle e.Argument>
+    === t.Handle_1 e.Result_1
+  ...
+  <Apply t.Lambda_N t.Handle_N-1 e.Result_N-1>
+    === t.Handle' e.Result
+*/
+$ENTRY Parallel-H
+  e.Lambdas = [PH-Lambda e.Lambdas];
+
+/**
+  <Const e.Value>
+    == t.Lambda
+  <Apply t.Lambda e.AnyArg> === e.Value
+*/
+$ENTRY Const
+  e.Value = [Const-Lambda e.Value];
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  <Map t.Lambda t.Src*>
+    == e.Result*
+  <Apply t.Lambda t.Src> == e.Result
+*/
+$ENTRY Map {
+  t.Lambda t.Next e.Tail =
+    <Apply t.Lambda t.Next>
+    <Map t.Lambda e.Tail>;
+
+  t.Lambda = ;
+}
+
+/**
+  <Reduce t.Lambda t.Accum t.Src*>
+    == t.Accum'
+  <Apply t.Lambda t.Accum t.Src> == t.Accum'
+*/
+$ENTRY Reduce {
+  t.Lambda t.Accum t.Next e.Tail =
+    <Reduce
+      t.Lambda
+      <GuardTerm <Apply t.Lambda t.Accum t.Next>>
+      e.Tail
+    >;
+
+  t.Lambda t.Accum = t.Accum;
+}
+
+GuardTerm {
+  t.OneTerm = t.OneTerm;
+
+  //Если функция на входе Reduce нарушает соглашение -- сама виновата.
+}
+
+/**
+  <Reduce-R t.Lambda t.Accum t.Src*>
+    == t.Accum'
+  <Apply t.Lambda t.Accum t.Src> == t.Accum'
+*/
+$ENTRY Reduce-R {
+  t.Lambda t.Accum e.AntiTail t.Last =
+    <Reduce-R
+      t.Lambda
+      <GuardTerm <Apply t.Lambda t.Accum t.Last>>
+      e.AntiTail
+    >;
+
+  t.Lambda t.Accum = t.Accum;
+}
+
+/**
+  <MapReduce t.Lambda t.Accum t.Src*>
+    == t.Accum' e.Result*
+  <Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+*/
+$ENTRY MapReduce {
+  t.Lambda t.Accum e.Src =
+    <UnBracket
+      <Reduce
+        <BindLeft & MapReducer t.Lambda>
+        (t.Accum) e.Src
+      >
+    >;
+}
+
+MapReducer
+  t.LLambda (t.Accum e.Scanned) t.Next =
+    <MapReducer-Aux
+      (<Apply t.LLambda t.Accum t.Next>)
+      e.Scanned
+    >;
+
+MapReducer-Aux
+  (t.Accum e.Result) e.Scanned =
+    (t.Accum e.Scanned e.Result);
+
+/**
+  <MapReduce-R t.Lambda t.Accum t.Src*>
+    == t.Accum' e.Result*
+  <Apply t.Lambda t.Accum t.Src> == t.Accum' e.Result
+*/
+$ENTRY MapReduce-R
+  t.Lambda t.Accum e.Src =
+    <UnBracket
+      <Reduce-R
+        <BindLeft & MapReducer-R t.Lambda>
+        (t.Accum) e.Src
+      >
+    >;
+
+MapReducer-R
+  t.LLambda (t.Accum e.Result) t.Src =
+    ( <Apply t.LLambda t.Accum t.Src> e.Result );
+
+/**
+  <TerminateAccumulator t.FnTerminator t.Accum e.Elems>
+    == <Apply t.FnTerminator t.Accum> e.Elems
+*/
+$ENTRY TerminateAccumulator
+  t.FnTerminator t.Accum e.Elems =
+    <Apply t.FnTerminator t.Accum> e.Elems;
+
+/**---------------------------------------------------------------------------*/
+
+/**
+  <UnBracket (e.Brackets)> == e.Brackets
+*/
+$ENTRY UnBracket
+  (e.Brackets) = e.Brackets;
+
+/**
+  <Bracket e.Expr> == (e.Expr)
+*/
+$ENTRY Bracket
+  e.Expr = (e.Expr);
+
+/**
+  <UnBracket-H t.Handle (e.Brackets)>
+    == t.Handle e.Brackets
+*/
+$ENTRY UnBracket-H
+  t.Handle (e.Brackets) = t.Handle e.Brackets;
+
+/**
+  <Bracket-H t.Handle e.Expr>
+    == t.Handle (e.Expr)
+*/
+$ENTRY Bracket-H
+  t.Handle e.Expr = t.Handle (e.Expr);
+
+/**
+  <Nil e.Any> == empty
+*/
+$ENTRY Nil e.Any = ;
+
+/**
+  <Identity e.Value> == e.Value
+*/
+$ENTRY Identity e.Value = e.Value;
+
+$END MLambda.
+

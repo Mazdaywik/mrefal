@@ -18,3 +18,15 @@ c     <Putout 18 'Profiling for Refal 5 back-end not supported' >
 c     <Close 18 >;
 c }
 
+b Entry::CoreBE::MProfiler::SetOutputName
+c $Entry::CoreBE::MProfiler::SetOutputName$ {
+r   // Ничего не делаем
+c   e.$Index::OptionalFileName$ =
+c     ;
+c }
+
+b Entry::CoreBE::MProfiler::Flush
+c $Entry::CoreBE::MProfiler::Flush$ {
+r   // Ничего не делаем
+c   = ;
+c }

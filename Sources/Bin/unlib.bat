@@ -13,4 +13,5 @@ find /V ":MMath:" | ^
 find /V ":MDosWinRecoder:" | ^
 find /V ":MXXIO:" | ^
 find /V ":MSwapSupport:" | ^
-find /V ":MLambda:" > "%~dp0\MRefal.r5-Not linked.txt"
+find /V ":MLambda:" | ^
+find /V ":MProfiler:" > "%~dp0\MRefal.r5-Not linked.txt"

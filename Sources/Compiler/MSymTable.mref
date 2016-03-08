@@ -1,6 +1,5 @@
 $MODULE MSymTable;
 
-$IMPORT MSelfDiag;
 $IMPORT MStrings;
 
 /**

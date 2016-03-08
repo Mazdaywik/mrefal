@@ -166,7 +166,7 @@ GetTuning-Aux
   s.Tuning e.Tunings-B (s.Tuning (e.Name) t.SrcPos e.Value) e.Tunigs-E =
     s.Tuning e.Value;
 
-/*
+/**
   <ConfigExtract t.Config s.Option>
     == e.Value
 */

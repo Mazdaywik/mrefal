@@ -212,7 +212,7 @@ $ENTRY LookupImportModule
   t.hContext t.Config t.ModuleName =
     <LookupImportModule-SwKnown
       t.Config t.ModuleName
-      <MContext::GetStatusType_ t.hContext t.ModuleName>
+      <MContext::GetStatusType t.hContext t.ModuleName>
    >;
 
 LookupImportModule-SwKnown {
@@ -261,7 +261,7 @@ CheckVariants-Import-CorrectFormat {
   t.ModuleName
   t.hContext NotFound =
     <GuardInvariant
-      <MContext::CreateModule_
+      <MContext::CreateModule
         t.hContext t.ModuleName
         (Type Errors)
         (FrontEnd None)
@@ -442,7 +442,7 @@ CheckVariant-T-SrcAux-SwExist-Finish {
   (e.PtBaseDirectory)
   e.BackEnds =
     <CheckVariant-T-SwRedefinition
-      <MContext::CreateModule_
+      <MContext::CreateModule
         t.hContext t.ModuleName
         (Type <BackEnds-CalcType e.BackEnds>)
         (FrontEnd s.FrontEnd e.FrontEndName)
@@ -510,7 +510,7 @@ CheckVariant-T-LibAux-SwExist {
 
   t.hContext t.Config t.QualifiedName (e.PtBaseDirectory) e.BE-Files =
     <CheckVariant-T-SwRedefinition
-      <MContext::CreateModule_
+      <MContext::CreateModule
         t.hContext t.QualifiedName
         (Type Library)
         (FrontEnd None)

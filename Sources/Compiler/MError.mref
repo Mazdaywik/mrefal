@@ -289,22 +289,6 @@ PrintRecursiveLoop {
 //------------------------------------------------------------------------------
 
 /**
-  <AddModuleNotFound t.hErrorList t.SrcPos t.ImportName>
-    == t.hErrorList
-*/
-$ENTRY AddModuleNotFound
-  t.hErrorList t.SrcPos t.ImportName =
-    <AddToList
-      t.hErrorList
-      ( Semantics t.SrcPos
-        'MODULE NOT FOUND '
-        <StringFromQualifiedName t.ImportName>
-      )
-    >;
-
-//------------------------------------------------------------------------------
-
-/**
   <AddBrokenImport t.hErrorList t.SrcPos t.ImportName>
     == t.hErrorList
 */

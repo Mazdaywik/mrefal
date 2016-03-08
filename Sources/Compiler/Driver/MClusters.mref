@@ -27,7 +27,7 @@ DependencesList-Cached
   t.hContext t.ModuleName =
     <DependencesList-Cached-SwAvail
       t.ModuleName
-      <MContext::GetStatusType_
+      <MContext::GetStatusType
         t.hContext t.ModuleName
       >
     >;
@@ -90,7 +90,7 @@ DependencesList-Real
   t.hErrorList t.hContext t.ModuleName =
     <DependencesList-Real-SwAvail
       t.ModuleName t.hErrorList
-      <MContext::GetStatusType_
+      <MContext::GetStatusType
         t.hContext t.ModuleName
       >
     >;
@@ -289,7 +289,7 @@ CheckNeedCompile-UpdateStatusType
   t.hErrorList t.hContext t.ModuleName s.NewType =
     <CheckNeedCompile-UpdateStatusType-Aux
       t.hErrorList
-      <MContext::SetClusterType_ t.hContext t.ModuleName s.NewType>
+      <MContext::SetClusterType t.hContext t.ModuleName s.NewType>
       t.ModuleName s.NewType
     >;
 
@@ -519,7 +519,7 @@ GetTime
       <MLambda::Apply
         <MLambda::Parallel-H
           <MLambda::Composite
-            <MLambda::BindRight & MContext.GetStatusType_ t.ModuleName>
+            <MLambda::BindRight & MContext.GetStatusType t.ModuleName>
             & MLambda.Bracket-H
           >
           <MLambda::Composite
@@ -631,7 +631,7 @@ GetDateTime-SwExist {
 GetLastTime-MakeResult-Library
   t.ModuleName Library t.hContext (e.MinTime) e.Times (e.MaxTime) =
     <GuardUpdateContext
-      <MContext::SetMinMaxTime_
+      <MContext::SetMinMaxTime
         t.hContext t.ModuleName (e.MinTime) (e.MaxTime)
       >
     >
@@ -647,7 +647,7 @@ GetLastTime-OutTime
 GetLastTime-Compare {
   t.ModuleName t.hContext (e.MaxTime) '<' (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
-      <MContext::SetMinMaxTime_
+      <MContext::SetMinMaxTime
         t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
       >
     >
@@ -655,7 +655,7 @@ GetLastTime-Compare {
 
   t.ModuleName t.hContext (e.MaxTime) s.OtherOrder (e.SrcTime) (e.MinTime) =
     <GuardUpdateContext
-      <MContext::SetMinMaxTime_
+      <MContext::SetMinMaxTime
         t.hContext t.ModuleName (e.SrcTime) (e.MaxTime)
       >
     >

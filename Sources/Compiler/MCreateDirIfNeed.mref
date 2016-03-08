@@ -31,20 +31,6 @@ CheckCreated {
 //------------------------------------------------------------------------------
 
 /**
-  <InfoDir> == '.Info'
-  Создаёт папку с указанным именем.
-*/
-$ENTRY InfoDir = <Create-T <InfoName>>;
-
-/**
-  <InfoName> == '.Info'
-  Просто возвращает имя .Info-директории.
-*/
-$ENTRY InfoName = '.Info';
-
-//------------------------------------------------------------------------------
-
-/**
   <CreatePathToFile e.FileName> == e.FileName
     e.FileName ::= e.Dir1 '\\' e.Dir2 '\\' e.FName
     '>md ' e.Dir1

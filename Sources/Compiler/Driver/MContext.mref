@@ -3,7 +3,7 @@ $MODULE Driver::MContext;
 $IMPORT MTables = Driver::MTables;
 $IMPORT MModuleTable = Driver::Tables::MModules;
 
-$ENTRY GetStatusType_ {
+$ENTRY GetStatusType {
   t.hTables t.ModuleName =
     <MTables::Modules
       t.hTables & MModuleTable.GetStatusType t.ModuleName
@@ -24,7 +24,7 @@ $ENTRY GetMinMaxTime {
     >;
 }
 
-$ENTRY SetClusterType_ {
+$ENTRY SetClusterType {
   t.hTables t.ModuleName s.NewType =
     <MTables::Modules
       t.hTables & MModuleTable.SetClusterType t.ModuleName s.NewType
@@ -45,7 +45,7 @@ $ENTRY GetFrontEnd {
     >;
 }
 
-$ENTRY SetMinMaxTime_ {
+$ENTRY SetMinMaxTime {
   t.hTables t.ModuleName (e.MinTime) (e.MaxTime) =
     <MTables::Modules
       t.hTables
@@ -67,17 +67,11 @@ $ENTRY GetTarget {
     >;
 }
 
-$ENTRY CreateModule_ {
+$ENTRY CreateModule {
   t.hTables t.ModuleName e.Parameters =
     <MTables::Modules
       t.hTables & MModuleTable.CreateModule t.ModuleName e.Parameters
     >;
 }
 
-$ENTRY SetTarget_ {
-  t.hTables t.ModuleName e.PtTargetName =
-    <MTables::Modules
-      t.hTables & MModuleTable.SetTarget t.ModuleName e.PtTargetName
-    >;
-}
 $END Driver::MContext.

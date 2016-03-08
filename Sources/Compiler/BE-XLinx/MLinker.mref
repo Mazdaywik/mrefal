@@ -217,9 +217,7 @@ AddInvertedInfo {
 XLinx-FileNamePt {
   (t.Prefix e.SubDir (e.TargetProgram)) e.Suffix =
     <MCreateDirIfNeed::Create-T
-      <MFileSystem::StrFromPath
-        t.Prefix e.SubDir (<MCreateDirIfNeed::InfoName>)
-      >
+      <MFileSystem::StrFromPath t.Prefix e.SubDir ('.Info')>
     >
     '\\' e.TargetProgram e.Suffix;
 }

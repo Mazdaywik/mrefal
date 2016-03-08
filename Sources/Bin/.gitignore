@@ -1,11 +1,12 @@
-MRefal.cppsr.exe
-MRefal.r5.ref
-MRefal.r5.rsl
-MRefal.r5-Aliases.txt
-MRefal.r5-Not linked.txt
-MRefal.sr.exe
-MRefal_.cppsr.exe
-MRefal_.sr.exe
-.Info
-MRefal.sr.exe.sr_main.cpp
-MRefal.sr.exe.sr_main.sref
+/MRefal.cppsr.exe
+/MRefal.r5.ref
+/MRefal.r5.rsl
+/MRefal.r5-Aliases.txt
+/MRefal.r5-Not linked.txt
+/MRefal.sr.exe
+/MRefal_.cppsr.exe
+/MRefal_.sr.exe
+/.Info
+/MRefal.sr.exe.sr_main.cpp
+/MRefal.sr.exe.sr_main.sref
+/*.tds

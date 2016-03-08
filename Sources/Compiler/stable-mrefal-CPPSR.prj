@@ -1,4 +1,4 @@
--cfg:.Config/stable/config-CPPSR.cfg
+-be:CPPSR
 MRefal
 (
   -target:../Bin/MRefal.cppsr.exe

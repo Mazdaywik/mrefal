@@ -92,11 +92,11 @@ scomp-SR = ..\Bin\stable\MRefal.sr.exe
 scomp-CPPSR = ..\Bin\stable\MRefal.cppsr.exe
 scomp-C++/SR = ..\Bin\stable\MRefal.cppsr.exe
 
-sprofile-R5 = stable/mrefal-R5
-sprofile-R5T = stable/mrefal-R5
-sprofile-SR = stable/mrefal-SR
-sprofile-CPPSR = stable/mrefal-CPPSR
-sprofile-C++/SR = stable/mrefal-CPPSR
+sprofile-R5 = stable-mrefal-R5
+sprofile-R5T = stable-mrefal-R5
+sprofile-SR = stable-mrefal-SR
+sprofile-CPPSR = stable-mrefal-CPPSR
+sprofile-C++/SR = stable-mrefal-CPPSR
 
 mode-MAKE = +make
 mode-BUILD = +build

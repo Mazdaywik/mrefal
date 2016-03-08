@@ -6,7 +6,7 @@ set VERSRC-MR=Compiler\MVersion.mref
 set /P CURVER=<%VERFILE%
 set LOGFILE=~rebuild.log
 
-echo Rebuilding Module and Simple Refal (start version %CURVER%)>%LOGFILE%
+echo Rebuilding Module Refal (start version %CURVER%)>%LOGFILE%
 echo.>>%LOGFILE%
 
 
@@ -159,7 +159,8 @@ setlocal
   call :SUB_DUAL_PRINT "----------------------------------------------------------" %3
   call :SUB_DUAL_PRINT "-- Recompiling with compiler '%1' with profile '%2' --"     %3
   call :SUB_DUAL_PRINT "----------------------------------------------------------" %3
-  set CMDLINE=call ..\Bin\start-%1.bat +build +cfg:.Config/mp-work-%2.prj
+  set CMDLINE=call ..\Bin\start-%1.bat ^
+    +build +cfg:.Config/config-work.cfg +MP:. +cfg:work-mrefal-%2.prj
   call :SUB_CALL_AND_SAVE_OUTPUT "%CMDLINE%" %3
 endlocal
 goto :EOF

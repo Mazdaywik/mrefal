@@ -156,6 +156,11 @@ extern bool repeated_evar_right(
   Iter& first, Iter& last
 );
 
+extern bool open_evar_advance(
+  Iter& evar_b, Iter& evar_e,
+  Iter& first, Iter& last
+);
+
 extern unsigned read_chars(
   char buffer[], unsigned buflen, Iter& first, Iter& last
 );

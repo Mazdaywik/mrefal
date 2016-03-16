@@ -207,11 +207,6 @@ BracketsVar-E {
     'be_' <MStrings::Symb s.BracketNum> '_' <MStrings::Symb s.Nested>;
 }
 
-BracketsVar-OE {
-  s.BracketNum s.Nested =
-    'boe_' <MStrings::Symb s.BracketNum> '_' <MStrings::Symb s.Nested>;
-}
-
 /*
   Величина отступа также определяет режим работы. Отступ в 4 пробела --
   вне цикла по открытой e-переменной, отступ больше -- внутри оного
@@ -364,20 +359,9 @@ GenCommand {
   ) =
     <IncrementEvarIndent t.Indent>
     (<Indent t.Indent> 'refalrts::start_e_loop();')
-    (<Indent t.Indent> 'for(')
-    (<Indent t.Indent>
-      '  refalrts::Iter ' <BracketsVar-OE s.BracketNum s.Nested>
-      ' = ' <BracketsVar-B s.BracketNum s.Nested> ';'
-    )
-    (<Indent t.Indent> '  '
-      '! refalrts::empty_seq( ' <BracketsVar-OE s.BracketNum s.Nested> ', '
-      <BracketsVar-E s.BracketNum s.Nested> ' );'
-    )
-    (<Indent t.Indent> '  '
-      'refalrts::next_term( ' <BracketsVar-OE s.BracketNum s.Nested> ', '
-      <BracketsVar-E s.BracketNum s.Nested> ' )'
-    )
-    (<Indent t.Indent> ') {')
+    (<Indent t.Indent> <PrintEVar-B 1 'e' e.Index> ' = 0;')
+    (<Indent t.Indent> <PrintEVar-E 1 'e' e.Index> ' = 0;')
+    (<Indent t.Indent> 'do {')
     /*
       Объявление и инициализация "внутренних" переменных для цикла.
       Эти переменные (с индексом вложенности на единицу бОльшим)
@@ -392,23 +376,7 @@ GenCommand {
         & PrintStkBracket <Indent t.Indent> '  '
       >
       e.BracketsForSave
-    >
-    (<Indent t.Indent> '  '
-      <BracketsVar-B s.BracketNum <Math::Inc s.Nested>>
-      ' = ' <BracketsVar-OE s.BracketNum s.Nested> ';'
-    )
-    (<Indent t.Indent> '  '
-      <PrintEVar-B 1 'e' e.Index> ' = '
-      <BracketsVar-B s.BracketNum s.Nested> ';'
-    )
-    (<Indent t.Indent> '  '
-      <PrintEVar-E 1 'e' e.Index> ' = '
-      <BracketsVar-OE s.BracketNum s.Nested> ';'
-    )
-    (<Indent t.Indent>
-      '  refalrts::move_right( ' <PrintEVar-B 1 'e' e.Index> ', '
-      <PrintEVar-E 1 'e' e.Index> ' );'
-    );
+    >;
 
   t.Indent (CmdEmptyResult) =
     t.Indent
@@ -504,9 +472,15 @@ GenCommand {
     <DecrementEvarIndent t.Indent>
     (<Indent <DecrementEvarIndent t.Indent>> '}');
 
-  t.Indent (CmdOpenedE-EndCycle) =
+  t.Indent (CmdOpenedE-EndCycle s.BracketNum s.Nested 'e' e.Index) =
     <DecrementEvarIndent t.Indent>
-    (<Indent <DecrementEvarIndent t.Indent>> '}');
+    (<Indent <DecrementEvarIndent t.Indent>>
+      '} while ( refalrts::open_evar_advance( '
+      <PrintEVar-B 1 'e' e.Index> ', ' <PrintEVar-E 1 'e' e.Index> ', '
+      <BracketsVar-B s.BracketNum s.Nested> ', '
+      <BracketsVar-E s.BracketNum s.Nested>
+      ' ) );'
+    );
 
   t.Indent (CmdEndSentence) =
     <DecrementFusedIndent t.Indent>

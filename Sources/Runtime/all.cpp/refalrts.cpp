@@ -789,6 +789,31 @@ bool refalrts::repeated_evar_right(
   }
 }
 
+bool refalrts::open_evar_advance(
+  Iter& evar_b, Iter& evar_e,
+  Iter& first, Iter& last
+) {
+  assert( (evar_b == 0) == (evar_e == 0) );
+
+  refalrts::Iter prev_first = 0;
+
+  if ( tvar_left( prev_first, first, last ) ) {
+    if (! evar_b) {
+      evar_b = prev_first;
+    }
+
+    if ( is_open_bracket( prev_first ) ) {
+      evar_e = prev_first->link_info;
+    } else {
+      evar_e = prev_first;
+    }
+
+    return true;
+  } else {
+    return false;
+  }
+}
+
 unsigned refalrts::read_chars(
   char buffer[], unsigned buflen, refalrts::Iter& first, refalrts::Iter& last
 ) {

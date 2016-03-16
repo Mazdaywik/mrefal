@@ -177,11 +177,13 @@ GeneralizeResult {
 }
 
 GenOpenedEEndCycle {
-  e.Commands-B (CmdOpenedE e.Params) e.Commands-E =
+  e.Commands-B
+  (CmdOpenedE AlgLeft s.Bracket s.Nested 'e' e.Index (e.Saved))
+  e.Commands-E =
     e.Commands-B
-    (CmdOpenedE e.Params)
+    (CmdOpenedE AlgLeft s.Bracket s.Nested 'e' e.Index (e.Saved))
     <GenOpenedEEndCycle e.Commands-E>
-    (CmdOpenedE-EndCycle);
+    (CmdOpenedE-EndCycle s.Bracket s.Nested 'e' e.Index);
 
   e.Commands = e.Commands;
 }

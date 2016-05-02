@@ -145,7 +145,7 @@ GenSwap-Aux {
 $ENTRY GenIdent {
   t.Name =
     <GenIdent-Aux
-      (<MQualifiedName::ToPrintable-Dot t.Name>)
+      (<MakeExternalName t.Name>)
       <QNameCode t.Name>
     >;
 }
@@ -153,9 +153,20 @@ $ENTRY GenIdent {
 $ENTRY GenIdent-FuncName {
   t.Name =
     <GenIdent-Aux
-      (<MQualifiedName::ToPrintable-Dot t.Name>)
+      (<MakeExternalName t.Name>)
       <QNameCode t.Name> 'N_'
     >;
+}
+
+MakeExternalName {
+  t.Name =
+    <MakeExternalName-Aux <MQualifiedName::ToPrintable-Dot t.Name>>;
+}
+
+MakeExternalName-Aux {
+  e.Name Entry = e.Name '#ENTRY';
+
+  e.Name = e.Name;
 }
 
 GenIdent-Aux {
@@ -442,7 +453,7 @@ GenCommand {
       ' ) );'
     );
 
-  (e.Indent) (CmdEndSentence) =
+  (e.Indent '  ') (CmdEndSentence) =
     (e.Indent)
     (e.Indent '} while ( 0 );') ();
 }

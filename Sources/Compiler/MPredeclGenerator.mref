@@ -195,7 +195,7 @@ Profiling-GenerateElems
 
 GenerateElem {
   (s.DeclareDefine s.Type t.Name (s.Generator e.Arguments)) =
-    <s.Generator e.Arguments>;
+    <MProfiler::Quantify s.Generator e.Arguments>;
 }
 
 //----------------------------------------------------------------------

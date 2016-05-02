@@ -62,7 +62,7 @@ $ENTRY GeneralizeInfo {
   >
     == t.hErrorList Success s.Result t.IModule
     == t.hErrorList Fails
-  s.Reslult ::= Success | Warnings | Errors
+  s.Result ::= Success | Warnings | Errors
 */
 MergeErrorLists {
   t.Generic t.LocalErrorList s.SF-Result e.MaybeInfo =

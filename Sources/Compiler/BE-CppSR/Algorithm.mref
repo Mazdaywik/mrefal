@@ -82,9 +82,6 @@ PrepareLiteral {
 }
 
 MakeAlgorithm-Sentences
-  e.Sentences = <MakeAlgorithm-Sentences-Old e.Sentences>;
-
-MakeAlgorithm-Sentences-Old
   e.Sentences =
     <MLambda::Map & MakeAlgorithm-Sentence e.Sentences>;
 

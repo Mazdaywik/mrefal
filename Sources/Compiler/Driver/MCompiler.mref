@@ -343,7 +343,7 @@ OnUnknown-UpdateTable {
       t.hTables & MLookupTable.AddError-MismatchWithInternal
       t.ImportName t.InternalName
     >
-    t.hErrorList Error-MismathWithInternal t.InternalName;
+    t.hErrorList Error Error-MismatchWithInternal t.InternalName;
 }
 
 OnUnknown-CheckLookupModule {

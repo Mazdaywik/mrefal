@@ -186,14 +186,14 @@ $ENTRY GenSentence {
     <GenSentence-TerminateAccumulator
       <MLambda::MapReduce
         & GenCommand
-        (('  ' /* fused indent */) (/* evar indent */))
+        ('  ')
         e.Algorithm
       >
     >;
 }
 
 GenSentence-TerminateAccumulator {
-  ((e.FusedIndent) (e.EvarIndent)) e.Generated =
+  (e.Indent) e.Generated =
     e.Generated;
 }
 
@@ -228,7 +228,7 @@ PrintStkBracket {
 }
 
 Indent
-  ((e.FusedIndent) (e.EvarIndent)) = e.FusedIndent e.EvarIndent;
+  (e.Indent) = e.Indent;
 
 GenCommand {
   t.Indent (CmdStartSentence) =
@@ -488,20 +488,20 @@ GenCommand {
 }
 
 IncrementEvarIndent
-  ((e.FusedIndent) (e.EvarIndent)) =
-    ((e.FusedIndent) (e.EvarIndent '  '));
+  (e.Indent) =
+    (e.Indent '  ');
 
 DecrementEvarIndent
-  ((e.FusedIndent) (e.EvarIndent '  ')) =
-    ((e.FusedIndent) (e.EvarIndent));
+  (e.Indent '  ') =
+    (e.Indent);
 
 IncrementFusedIndent
-  ((e.FusedIndent) (e.EvarIndent)) =
-    ((e.FusedIndent '  ') (e.EvarIndent));
+  (e.Indent) =
+    (e.Indent '  ');
 
 DecrementFusedIndent
-  ((e.FusedIndent '  ') (e.EvarIndent)) =
-    ((e.FusedIndent) (e.EvarIndent));
+  (e.Indent '  ') =
+    (e.Indent);
 
 EntryCondition {
   Init = '(s_counter ++) == 0';
@@ -581,11 +581,11 @@ BreakerFromIndent {
 }
 
 BreakerFromIndent-Aux {
-  (('  ') ()) = 'return refalrts::cRecognitionImpossible;';
+  ('  ') = 'return refalrts::cRecognitionImpossible;';
 
-  (('    ' e.FusedIndent) ()) = 'break;';
+  ('    ') = 'break;';
 
-  ((e.FusedIndent) (e.EvarIndent)) = 'continue;';
+  (e.Indent) = 'continue;';
 }
 
 PrintMatchEmpty {

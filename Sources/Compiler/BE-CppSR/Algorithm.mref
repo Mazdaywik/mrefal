@@ -8,88 +8,39 @@ $IMPORT MStrings;
 
 $ENTRY MakeAlgorithm {
   e.Sentences =
-    <MakeAlgorithm-Sentences
-      <MLambda::Map
-        <MLambda::Composite
-          & MLambda.UnBracket
-          & PrepareSentence
-        >
-        e.Sentences
-      >
-    >;
-}
-
-PrepareSentence
-  (Pattern e.Pattern) (Result e.Result) =
-    ((e.Pattern) (<PrepareExpr e.Result>));
-
-PrepareExpr
-  e.Expr = <DoPrepareExpr e.Expr>;
-
-DoPrepareExpr {
-  (Identifier t.SrcPos e.Name) e.Tail =
-    (TkIdentifier <MQualifiedName::Create (e.Name)>)
-    <DoPrepareExpr e.Tail>;
-
-  (EVar e.Index) e.Tail =
-    (TkVariable 'e' e.Index) <DoPrepareExpr e.Tail>;
-
-  (TVar e.Index) e.Tail =
-    (TkVariable 't' e.Index) <DoPrepareExpr e.Tail>;
-
-  (SVar e.Index) e.Tail =
-    (TkVariable 's' e.Index) <DoPrepareExpr e.Tail>;
-
-  (Literal e.Content) e.Tail =
-    <PrepareLiteral e.Content> <DoPrepareExpr e.Tail>;
-
-  (Macro s.Value) e.Tail =
-    (TkNumber s.Value) <DoPrepareExpr e.Tail>;
-
-  (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail =
-    (TkName t.Name) <DoPrepareExpr e.Tail>;
-
-  (EntryCode s.CodeType e.InBrackets) e.Tail =
-    (Brackets EntryCode s.CodeType <DoPrepareExpr e.InBrackets>)
-    <DoPrepareExpr e.Tail>;
-
-  (Structure e.InBrackets) e.Tail =
-    (Brackets Structure <DoPrepareExpr e.InBrackets>)
-    <DoPrepareExpr e.Tail>;
-
-  (Abstract (s.CallType t.SrcPos t.Name) e.InBrackets) e.Tail =
-    (Brackets Abstract (TkName t.Name) <DoPrepareExpr e.InBrackets>)
-    <DoPrepareExpr e.Tail>;
-
-  (Function (s.CallType t.SrcPos t.Name) e.InBrackets) e.Tail =
-    (Brackets Function (TkName t.Name) <DoPrepareExpr e.InBrackets>)
-    <DoPrepareExpr e.Tail>;
-
-  (IndirectCall (SVar e.Index) e.InBrackets)
-  e.Tail =
-    (Brackets Function
-      (TkVariable 's' e.Index) <DoPrepareExpr e.InBrackets>
-    )
-    <DoPrepareExpr e.Tail>;
-
-   = ;
-}
-
-PrepareLiteral {
-  s.First e.Tail = (TkChar s.First) <PrepareLiteral e.Tail>;
-
-  = ;
-}
-
-MakeAlgorithm-Sentences
-  e.Sentences =
     <MLambda::Map & MakeAlgorithm-Sentence e.Sentences>;
+}
 
 MakeAlgorithm-Sentence {
-  ((e.Pattern) (e.Result)) =
+  ((Pattern e.Pattern) (Result e.Result)) =
     <MakeAlgorithm-Result
-      <GenPattern <PrepareExpr-Pattern e.Pattern>> e.Result
+      <GenPattern
+        <PrepareExpr-Pattern e.Pattern>
+      >
+      <PrepareExpr-Result e.Result>
     >;
+}
+
+MakeAlgorithm-Result
+  (e.PatternVars) (e.PatternCommands) e.Result =
+    <GeneralizeResult
+      (e.PatternVars)
+      (e.PatternCommands)
+      <GenResult (e.PatternVars) e.Result>
+    >;
+
+GeneralizeResult {
+  (e.PatternVars) (e.PatternCommands)
+  e.ResultCommands =
+    (CmdStartSentence)
+    <MLambda::Map & MakeDeclaration <MOrder::Sort e.PatternVars>>
+    <GenOpenedEEndCycle
+      e.PatternCommands
+      (CmdEmptyResult)
+      e.ResultCommands
+      (CmdReturnResult)
+    >
+    (CmdEndSentence);
 }
 
 PrepareExpr-Pattern
@@ -151,26 +102,62 @@ DoPrepareExpr-Pattern {
   s.BracketNum '$' = ;
 }
 
-MakeAlgorithm-Result
-  (e.PatternVars) (e.PatternCommands) e.Result =
-    <GeneralizeResult
-      (e.PatternVars)
-      (e.PatternCommands)
-      <GenResult (e.PatternVars) e.Result>
-    >;
+PrepareExpr-Result
+  e.Expr = <DoPrepareExpr-Result e.Expr>;
 
-GeneralizeResult {
-  (e.PatternVars) (e.PatternCommands)
-  e.ResultCommands =
-    (CmdStartSentence)
-    <MLambda::Map & MakeDeclaration <MOrder::Sort e.PatternVars>>
-    <GenOpenedEEndCycle
-      e.PatternCommands
-      (CmdEmptyResult)
-      e.ResultCommands
-      (CmdReturnResult)
-    >
-    (CmdEndSentence);
+DoPrepareExpr-Result {
+  (Identifier t.SrcPos e.Name) e.Tail =
+    (TkIdentifier <MQualifiedName::Create (e.Name)>)
+    <DoPrepareExpr-Result e.Tail>;
+
+  (EVar e.Index) e.Tail =
+    (TkVariable 'e' e.Index) <DoPrepareExpr-Result e.Tail>;
+
+  (TVar e.Index) e.Tail =
+    (TkVariable 't' e.Index) <DoPrepareExpr-Result e.Tail>;
+
+  (SVar e.Index) e.Tail =
+    (TkVariable 's' e.Index) <DoPrepareExpr-Result e.Tail>;
+
+  (Literal e.Content) e.Tail =
+    <PrepareLiteral e.Content> <DoPrepareExpr-Result e.Tail>;
+
+  (Macro s.Value) e.Tail =
+    (TkNumber s.Value) <DoPrepareExpr-Result e.Tail>;
+
+  (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail =
+    (TkName t.Name) <DoPrepareExpr-Result e.Tail>;
+
+  (EntryCode s.CodeType e.InBrackets) e.Tail =
+    (Brackets EntryCode s.CodeType <DoPrepareExpr-Result e.InBrackets>)
+    <DoPrepareExpr-Result e.Tail>;
+
+  (Structure e.InBrackets) e.Tail =
+    (Brackets Structure <DoPrepareExpr-Result e.InBrackets>)
+    <DoPrepareExpr-Result e.Tail>;
+
+  (Abstract (s.CallType t.SrcPos t.Name) e.InBrackets) e.Tail =
+    (Brackets Abstract (TkName t.Name) <DoPrepareExpr-Result e.InBrackets>)
+    <DoPrepareExpr-Result e.Tail>;
+
+  (Function (s.CallType t.SrcPos t.Name) e.InBrackets) e.Tail =
+    (Brackets Function (TkName t.Name) <DoPrepareExpr-Result e.InBrackets>)
+    <DoPrepareExpr-Result e.Tail>;
+
+  (IndirectCall (SVar e.Index) e.InBrackets)
+  e.Tail =
+    (Brackets Function
+      (TkVariable 's' e.Index) <DoPrepareExpr-Result e.InBrackets>
+    )
+    <DoPrepareExpr-Result e.Tail>;
+
+   = ;
+}
+
+PrepareLiteral {
+  s.First e.Tail = (TkChar s.First) <PrepareLiteral e.Tail>;
+
+  = ;
 }
 
 GenOpenedEEndCycle {
@@ -186,14 +173,14 @@ GenOpenedEEndCycle {
 }
 
 MakeDeclaration {
-  (s.Mode e.Index 1) = <MakeDeclaration-Aux s.Mode e.Index 1>;
+  (s.Mode e.Index 1) = <MakeOneDeclaration s.Mode e.Index 1>;
 
   (s.Mode e.Index s.Usings) =
     <MakeDeclaration (s.Mode e.Index <MMath::Dec s.Usings>)>
-    <MakeDeclaration-Aux s.Mode e.Index s.Usings>;
+    <MakeOneDeclaration s.Mode e.Index s.Usings>;
 }
 
-MakeDeclaration-Aux {
+MakeOneDeclaration {
   'e' e.Index s.Usings = (CmdDeclareEVar s.Usings 'e' e.Index);
 
   s.Mode e.Index s.Usings =

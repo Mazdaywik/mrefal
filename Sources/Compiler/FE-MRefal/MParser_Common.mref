@@ -27,128 +27,61 @@ $ENTRY Parse
 
 /**
   <GeneralizeInfo
-    t.GenericErrorList t.QualifiedName
-    t.LocalErrorList {Maybe t.IModule}
+    t.hGenericErrorList t.QualifiedName
+    t.hLocalErrorList {Maybe t.hIModule}
   >
     == t.hErrorList Success s.ErrorsLevel t.IModule
     == t.hErrorList Fails
   s.ErrorsLevel ::= Success | Warnings | Errors
+  {Maybe t.hIModule} ::= Success t.hIModule | Fails
 */
 $ENTRY GeneralizeInfo {
-  t.GenericErrorList t.QualifiedName
-  t.hErrorList Success t.IModule =
-    <MergeErrorLists
-      t.GenericErrorList
-      <CheckLocalErrorList
-        <CompareQNames
-          t.QualifiedName
-          t.hErrorList
-          t.IModule
-        >
-      >
+  t.hGenericErrorList t.QualifiedName
+  t.hErrorList e.SuccessFailResult =
+    <GeneralizeInfo-Aux
+      t.hGenericErrorList
+      <GeneralizeInfo-PrepareLocal t.hErrorList e.SuccessFailResult>
+    >
+    <MQualifiedName::Destroy t.QualifiedName>;
+}
+
+GeneralizeInfo-Aux {
+  t.hGenericErrorList t.hLocalErrorList e.SuccessFailResult =
+    <MError::MergeLists t.hGenericErrorList t.hLocalErrorList>
+    e.SuccessFailResult;
+}
+
+GeneralizeInfo-PrepareLocal {
+  t.hErrorList Success t.hIModule =
+    <GeneralizeInfo-PrepareLocal-Aux
+      <GetErrorLevel t.hErrorList> t.hIModule
     >;
 
-  t.GenericErrorList t.QualifiedName
   t.hErrorList Fails =
-    <MError::MergeLists t.GenericErrorList t.hErrorList>
-    <MQualifiedName::Destroy t.QualifiedName>
-    Fails;
+    t.hErrorList Fail;
 }
 
-/*
-  <MergeErrorLists
-    t.Generic t.hErrorList Success s.Result t.IModule
-    t.Generic t.hErrorList Fails
-  >
-    == t.hErrorList Success s.Result t.IModule
-    == t.hErrorList Fails
-  s.Result ::= Success | Warnings | Errors
-*/
-MergeErrorLists {
-  t.Generic t.LocalErrorList s.SF-Result e.MaybeInfo =
-    <MError::MergeLists t.Generic t.LocalErrorList>
-    s.SF-Result e.MaybeInfo;
+GeneralizeInfo-PrepareLocal-Aux {
+  t.hErrorList s.ErrorsLevel t.hIModule =
+    t.hErrorList Success s.ErrorsLevel t.hIModule;
 }
 
-/*
-  <CheckLocalErrorList
-    t.hErrorList Success t.IModule
-    t.hErrorList Fails
-  >
-    == t.hErrorList Success s.Result t.IModule
-    == t.hErrorList Fails
-*/
-CheckLocalErrorList {
-  t.hErrorList Success t.IModule =
-    <CheckLocalErrorList-Aux
+GetErrorLevel {
+  t.hErrorList =
+    <GetErrorLevel-Transform
       <MError::ContentLevel t.hErrorList>
-      t.IModule
-    >;
-
-  t.hErrorList Fails = t.hErrorList Fails;
-}
-
-CheckLocalErrorList-Aux {
-  t.hErrorList Empty t.IModule =
-    t.hErrorList Success Success t.IModule;
-
-  t.hErrorList Warnigs t.IModule =
-    t.hErrorList Success Warnings t.IModule;
-
-  t.hErrorList Errors t.IModule =
-    t.hErrorList Success Errors t.IModule;
-}
-
-/*
-  <CompareQNames
-    t.QualifiedName t.hErrorList t.IModule
-  >
-    == t.hErrorList Success t.IModule
-    == t.hErrorList Fails
-*/
-CompareQNames
-  t.QualifiedName t.hErrorList t.IModule =
-    <CompareQNames-Aux
-      t.QualifiedName
-      t.hErrorList
-      <MIModule::GetModuleName t.IModule>
-    >;
-
-CompareQNames-Aux
-  t.ExternalName
-  t.hErrorList t.IModule
-  t.InternalName =
-    <SwCompareQNames-Aux
-      <MQualifiedName::Equals-T t.ExternalName t.InternalName>
-      t.hErrorList t.IModule
-    >;
-
-SwCompareQNames-Aux {
-  s.True t.ExternalName t.InternalName
-  t.hErrorList t.IModule =
-    <MQualifiedName::Destroy t.ExternalName>
-    <MQualifiedName::Destroy t.InternalName>
-    t.hErrorList Success t.IModule;
-
-  False t.ExternalName t.InternalName
-  t.hErrorList t.IModule =
-    <CompareQNames-AddErrorInfo
-      t.ExternalName t.InternalName
-      t.hErrorList
-      <MIModule::GetModuleAttribute t.IModule Position>
     >;
 }
 
-CompareQNames-AddErrorInfo {
-  t.ExternalName t.InternalName
-  t.hErrorList
-  t.IModule Found t.SrcPos =
-    <MIModule::Destroy t.IModule>
-    <MError::AddMismatchInternalAndExternalNames
-      t.hErrorList t.SrcPos t.InternalName t.ExternalName
-    > Fails;
+GetErrorLevel-Transform {
+  t.hErrorList Empty =
+    t.hErrorList Success;
 
-  // Ошибку не проверяем, пусть будет fail down
+  t.hErrorList Warnigs =
+    t.hErrorList Warnings;
+
+  t.hErrorList Errors =
+    t.hErrorList Errors;
 }
 
 //------------------------------------------------------------------------------

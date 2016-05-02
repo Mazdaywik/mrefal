@@ -235,6 +235,12 @@ GenFunction-Declarations {
     <Declarations-Expr s.FnProperties e.ResultExpr>
     <GenFunction-Declarations s.FnProperties e.Tail>;
 
+  s.FnProperties
+  ( (Pattern e.PatternExpr) s.EntryCodeType (Result e.ResultExpr) ) e.Tail =
+    <Declarations-Expr s.FnProperties e.PatternExpr>
+    <Declarations-Expr s.FnProperties e.ResultExpr>
+    <GenFunction-Declarations s.FnProperties e.Tail>;
+
   s.FnProperties = ;
 }
 

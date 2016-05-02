@@ -17,20 +17,31 @@ MakeAlgorithm-Sentence {
       <GenPattern
         <PrepareExpr-Pattern e.Pattern>
       >
+      Regular
+      <PrepareExpr-Result e.Result>
+    >;
+
+  ((Pattern e.Pattern) s.EntryCodeType (Result e.Result)) =
+    <MakeAlgorithm-Result
+      <GenPattern
+        <PrepareExpr-Pattern e.Pattern>
+      >
+      s.EntryCodeType
       <PrepareExpr-Result e.Result>
     >;
 }
 
 MakeAlgorithm-Result
-  (e.PatternVars) (e.PatternCommands) e.Result =
+  (e.PatternVars) (e.PatternCommands) s.SentenceType e.Result =
     <GeneralizeResult
       (e.PatternVars)
       (e.PatternCommands)
+      s.SentenceType
       <GenResult (e.PatternVars) e.Result>
     >;
 
 GeneralizeResult {
-  (e.PatternVars) (e.PatternCommands)
+  (e.PatternVars) (e.PatternCommands) Regular
   e.ResultCommands =
     (CmdStartSentence)
     <MLambda::Map & MakeDeclaration <MOrder::Sort e.PatternVars>>
@@ -38,6 +49,20 @@ GeneralizeResult {
       e.PatternCommands
       (CmdEmptyResult)
       e.ResultCommands
+      (CmdReturnResult)
+    >
+    (CmdEndSentence);
+
+  (e.PatternVars) (e.PatternCommands) s.EntryCodeType
+  e.ResultCommands =
+    (CmdStartSentence)
+    <MLambda::Map & MakeDeclaration <MOrder::Sort e.PatternVars>>
+    <GenOpenedEEndCycle
+      e.PatternCommands
+      (CmdEmptyResult)
+      (CmdStartEntryCode s.EntryCodeType)
+      e.ResultCommands
+      (CmdEndEntryCode)
       (CmdReturnResult)
     >
     (CmdEndSentence);

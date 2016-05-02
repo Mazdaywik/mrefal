@@ -109,15 +109,17 @@ Generate-EntryCode-InitFinal
       InitFinal
       (
         (Pattern (Identifier NoPos 'Init'))
+        Init
         (Result
           <MLambda::Map & GenInitImport e.Imports>
-          <GenEntry Init t.InitSeq>
+          <GenEntry t.InitSeq>
         )
       )
       (
         (Pattern (Identifier NoPos 'Final'))
+        Final
         (Result
-          <GenEntry Final t.FinalSeq>
+          <GenEntry t.FinalSeq>
           <MLambda::Map
             & GenFinalImport
             <MStrings::Reverse e.Imports>
@@ -127,9 +129,8 @@ Generate-EntryCode-InitFinal
     >;
 
 GenEntry {
-  s.CodeType None = ;
-
-  s.CodeType (Result e.Result) = (EntryCode s.CodeType e.Result);
+  None = ;
+  (Result e.Result) = e.Result;
 }
 
 GenInitImport {

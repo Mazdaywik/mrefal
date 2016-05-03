@@ -551,6 +551,20 @@ $ENTRY AddGoNotFound {
 
 //------------------------------------------------------------------------------
 
+/**
+  <AddGoNotEntry t.hErrorList t.SrcPos>
+    == t.hErrorList
+*/
+$ENTRY AddGoNotEntry {
+  t.hErrorList t.SrcPos =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos 'Go function must be $ENTRY' )
+    >;
+}
+
+//------------------------------------------------------------------------------
+
 ErrorFile = '__errors';
 
 /**

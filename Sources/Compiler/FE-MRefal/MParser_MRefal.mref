@@ -1,6 +1,8 @@
 $MODULE FE-MRefal::MParser_MRefal;
 
 $IMPORT MError;
+$IMPORT MIModule;
+$IMPORT MLambda;
 $IMPORT MLexer = FE-MRefal::MLexer;
 $IMPORT MParser_Common = FE-MRefal::MParser_Common;
 $IMPORT MQualifiedName;
@@ -101,8 +103,8 @@ NModuleBody {
   t.IModule
   t.hErrorList t.Lexer (Directive t.SrcPos End) =
     <MParser_Common::NModuleTailer
-      t.IModule
-      t.hErrorList t.Lexer (Directive t.SrcPos End)
+      <FixupEntryPoints t.IModule t.hErrorList t.SrcPos>
+      t.Lexer (Directive t.SrcPos End)
     >;
 
   /* При обнаружении конца файла завершаем анализ */
@@ -129,6 +131,133 @@ NModuleBody {
       >
       <MLexer::NextToken t.Lexer>
     >;
+}
+
+FixupEntryPoints {
+  t.hIModule t.hErrorList t.SrcPos =
+    <FixupEntryPoints-SwModuleType
+      <MIModule::GetModuleAttribute t.hIModule ModuleType>
+      t.hErrorList t.SrcPos
+    >;
+}
+
+FixupEntryPoints-SwModuleType {
+  t.hIModule Found Main t.hErrorList t.SrcPos =
+    <FixupEntryPoints-Go
+      <MIModule::AbsolutName
+        t.hIModule <MQualifiedName::Create ('Go')>
+      >
+      <MQualifiedName::Create ('Go')>
+      t.hErrorList t.SrcPos
+    >;
+
+  t.hIModule Found Regular t.hErrorList t.SrcPos =
+    <FixupEntryPoints-InitFinal
+      <MIModule::GetEntryPoint t.hIModule>
+    >
+    t.hErrorList;
+}
+
+FixupEntryPoints-Go {
+  t.hIModule t.GoName t.RelativeName t.hErrorList t.SrcPos =
+    <FixupEntryPoints-Go-SwExist
+      <MIModule::GetKind t.hIModule t.GoName>
+      t.GoName t.RelativeName t.hErrorList t.SrcPos
+    >;
+}
+
+FixupEntryPoints-Go-SwExist {
+  t.hIModule Success Function t.GoName t.RelativeName t.hErrorList t.SrcPos =
+    <FixupEntryPoints-Go-SetEntryPoint
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft-H
+            &MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+          >
+          <MLambda::BindLeft-H
+            &MIModule.GetFunctionAttribute Position t.RelativeName
+          >
+        >
+        t.hIModule
+      >
+      t.GoName t.hErrorList t.SrcPos
+    >;
+
+  t.hIModule e.OtherKindOrFails t.GoName t.RelativeName t.hErrorList t.SrcPos =
+    t.hIModule
+    <MError::AddGoNotFound t.hErrorList t.SrcPos>;
+}
+
+FixupEntryPoints-Go-SetEntryPoint {
+  t.hIModule Found Entry Found t.GoSrcPos t.GoName t.hErrorList t.EndSrcPos =
+    <MIModule::SetGoEntryPoint
+      t.hIModule
+      (Function (Entry t.GoSrcPos t.GoName))
+    >
+    t.hErrorList;
+
+  t.hIModule Found s.Other Found t.GoSrcPos t.GoName t.hErrorList t.EndSrcPos =
+    t.hIModule
+    <MError::AddGoNotEntry t.hErrorList t.GoSrcPos>;
+}
+
+FixupEntryPoints-InitFinal {
+  t.hIModule Regular t.InitSeq t.FinalSeq =
+    <MLambda::Reduce
+      &FixupInitFinal
+      t.hIModule
+      (&MIModule.SetInitEntryPoint t.InitSeq 'Init')
+      (&MIModule.SetFinalEntryPoint t.FinalSeq 'Final')
+    >;
+}
+
+FixupInitFinal {
+  t.hIModule (s.FnChanger None e.FuncName) =
+    <FixupInitFinal-AbsolutName
+      s.FnChanger t.hIModule <MQualifiedName::Create (e.FuncName)>
+    >;
+
+  t.hIModule (s.FnChanger (Result e.Result) e.FuncName) =
+    // Уже точка входа задана
+    t.hIModule;
+}
+
+FixupInitFinal-AbsolutName {
+  s.FnChanger t.hIModule t.RelativeName =
+    <FixupInitFinal-GetScopeClass
+      s.FnChanger t.RelativeName
+      <MIModule::AbsolutName t.hIModule t.RelativeName>
+    >;
+}
+
+FixupInitFinal-GetScopeClass {
+  s.FnChanger t.RelativeName t.hIModule t.FuncName =
+    <FixupInitFinal-SetEntryCode
+      s.FnChanger t.FuncName
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft-H
+            &MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+          >
+          <MLambda::BindLeft-H
+            &MIModule.GetFunctionAttribute Position t.RelativeName
+          >
+        >
+        t.hIModule
+      >
+    >;
+}
+
+FixupInitFinal-SetEntryCode {
+  s.FnChanger t.FuncName t.hIModule Found s.ScopeClass Found t.SrcPos =
+    <s.FnChanger
+      t.hIModule
+      (Function (s.ScopeClass t.SrcPos t.FuncName))
+    >;
+
+  s.FnChanger t.FuncName t.hIModule NoName NoName =
+    /* Нет такой функции */
+    t.hIModule;
 }
 
 //------------------------------------------------------------------------------

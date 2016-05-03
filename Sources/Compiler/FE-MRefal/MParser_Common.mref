@@ -107,68 +107,13 @@ AddNewFunction-SwRedeclaration {
 
   t.SrcPos t.NewName (e.Attribs) t.hErrorList
   t.hIModule NoName =
-    <AddNewFunction-SwEntryPoint
-      t.SrcPos
-      ( t.NewName <MQualifiedName::Parse t.NewName> ) e.Attribs
-      <UpdateEntity-GuardInvariant
-        t.hErrorList
-        <MIModule::UpdateFunction
-          t.hIModule t.NewName e.Attribs (Position t.SrcPos)
-        >
-        t.SrcPos t.NewName
-      >
-    >;
-}
-
-AddNewFunction-SwEntryPoint {
-  t.SrcPos ( t.FuncName e.ModuleName (e.LastSegment) )
-  e.Attribs-B (ScopeClass Entry) e.Attribs-E
-  t.hIModule t.hErrorList =
-    <AddNewFunction-SwEntryPoint-AbsolutName
-      t.SrcPos ( e.LastSegment )
-      <MIModule::AbsolutName t.hIModule t.FuncName>
+    <UpdateEntity-GuardInvariant
       t.hErrorList
-    >;
-
-  t.SrcPos ( t.FuncName e.Parsed ) e.Attribs t.hIModule t.hErrorList =
-    t.hIModule t.hErrorList;
-}
-
-AddNewFunction-SwEntryPoint-AbsolutName
-  t.SrcPos ( e.LastSegment )
-  t.hIModule t.FuncName t.hErrorList =
-    <AddNewFunction-SwEntryPoint-Aux
-      t.SrcPos ( t.FuncName e.LastSegment )
-      <MIModule::GetModuleAttribute
-        t.hIModule ModuleType
+      <MIModule::UpdateFunction
+        t.hIModule t.NewName e.Attribs (Position t.SrcPos)
       >
-      t.hErrorList
+      t.SrcPos t.NewName
     >;
-
-AddNewFunction-SwEntryPoint-Aux {
-  t.SrcPos ( t.FuncName 'Go' ) t.hIModule Found Main t.hErrorList =
-    <MIModule::SetGoEntryPoint
-      t.hIModule
-      (Function (Entry t.SrcPos t.FuncName))
-    >
-    t.hErrorList;
-
-  t.SrcPos ( t.FuncName 'Init' ) t.hIModule Found Regular t.hErrorList =
-    <MIModule::SetInitEntryPoint
-      t.hIModule
-      (Function (Entry t.SrcPos t.FuncName))
-    >
-    t.hErrorList;
-
-  t.SrcPos ( t.FuncName 'Final' ) t.hIModule Found Regular t.hErrorList =
-    <MIModule::SetFinalEntryPoint
-      t.hIModule
-      (Function (Entry t.SrcPos t.FuncName))
-    >
-    t.hErrorList;
-
-  t.SrcPos ( t.FuncName e.Name ) t.hIModule Found s.Type t.hErrorList =
-    t.hIModule t.hErrorList;
 }
 
 $ENTRY AddNewADT
@@ -437,33 +382,10 @@ NModuleHeader-ExpectEndSent {
 */
 $ENTRY NModuleTailer {
   t.hIModule t.hErrorList t.hLexer (Directive t.SrcPos End) =
-    <NModuleTailer-CheckGo
-      <MIModule::GetEntryPoint t.hIModule>
-      t.SrcPos t.hErrorList t.hLexer
-    >;
-}
-
-NModuleTailer-CheckGo {
-  t.hIModule Regular t.InitSeq t.FinalSeq
-  t.SrcPos t.hErrorList t.hLexer =
     <NModuleTailer-ModuleName
       t.hIModule t.hErrorList t.hLexer
     >;
-
-  t.hIModule Go (Result e.Result)
-  t.SrcPos t.hErrorList t.hLexer =
-    <NModuleTailer-ModuleName
-      t.hIModule t.hErrorList t.hLexer
-    >;
-
-  t.hIModule Go None t.SrcPos t.hErrorList t.hLexer =
-    <NModuleTailer-ModuleName
-      t.hIModule
-      <MError::AddGoNotFound t.hErrorList t.SrcPos>
-      t.hLexer
-    >;
 }
-
 
 NModuleTailer-ModuleName {
   t.hIModule t.hErrorList t.hLexer =

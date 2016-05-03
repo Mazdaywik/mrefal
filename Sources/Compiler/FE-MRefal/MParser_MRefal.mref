@@ -144,9 +144,7 @@ FixupEntryPoints {
 FixupEntryPoints-SwModuleType {
   t.hIModule Found Main t.hErrorList t.SrcPos =
     <FixupEntryPoints-Go
-      <MIModule::AbsolutName
-        t.hIModule <MQualifiedName::Create ('Go')>
-      >
+      t.hIModule
       <MQualifiedName::Create ('Go')>
       t.hErrorList t.SrcPos
     >;
@@ -159,23 +157,25 @@ FixupEntryPoints-SwModuleType {
 }
 
 FixupEntryPoints-Go {
-  t.hIModule t.GoName t.RelativeName t.hErrorList t.SrcPos =
+  t.hIModule t.GoName t.hErrorList t.SrcPos =
     <FixupEntryPoints-Go-SwExist
-      <MIModule::GetKind t.hIModule t.GoName>
-      t.GoName t.RelativeName t.hErrorList t.SrcPos
+      <MIModule::GetKind
+        <MIModule::AbsolutName t.hIModule t.GoName>
+      >
+      t.GoName t.hErrorList t.SrcPos
     >;
 }
 
 FixupEntryPoints-Go-SwExist {
-  t.hIModule Success Function t.GoName t.RelativeName t.hErrorList t.SrcPos =
+  t.hIModule Success Function t.GoName t.hErrorList t.SrcPos =
     <FixupEntryPoints-Go-SetEntryPoint
       <MLambda::Apply
         <MLambda::Parallel-H
           <MLambda::BindLeft-H
-            &MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+            &MIModule.GetFunctionAttribute ScopeClass t.GoName
           >
           <MLambda::BindLeft-H
-            &MIModule.GetFunctionAttribute Position t.RelativeName
+            &MIModule.GetFunctionAttribute Position t.GoName
           >
         >
         t.hIModule
@@ -183,7 +183,7 @@ FixupEntryPoints-Go-SwExist {
       t.GoName t.hErrorList t.SrcPos
     >;
 
-  t.hIModule e.OtherKindOrFails t.GoName t.RelativeName t.hErrorList t.SrcPos =
+  t.hIModule e.OtherKindOrFails t.GoName t.hErrorList t.SrcPos =
     t.hIModule
     <MError::AddGoNotFound t.hErrorList t.SrcPos>;
 }
@@ -192,7 +192,7 @@ FixupEntryPoints-Go-SetEntryPoint {
   t.hIModule Found Entry Found t.GoSrcPos t.GoName t.hErrorList t.EndSrcPos =
     <MIModule::SetGoEntryPoint
       t.hIModule
-      (Function (Entry t.GoSrcPos t.GoName))
+      (Function (Qualified t.GoSrcPos t.GoName))
     >
     t.hErrorList;
 
@@ -213,7 +213,7 @@ FixupEntryPoints-InitFinal {
 
 FixupInitFinal {
   t.hIModule (s.FnChanger None e.FuncName) =
-    <FixupInitFinal-AbsolutName
+    <FixupInitFinal-GetPosition
       s.FnChanger t.hIModule <MQualifiedName::Create (e.FuncName)>
     >;
 
@@ -222,40 +222,22 @@ FixupInitFinal {
     t.hIModule;
 }
 
-FixupInitFinal-AbsolutName {
-  s.FnChanger t.hIModule t.RelativeName =
-    <FixupInitFinal-GetScopeClass
-      s.FnChanger t.RelativeName
-      <MIModule::AbsolutName t.hIModule t.RelativeName>
-    >;
-}
-
-FixupInitFinal-GetScopeClass {
-  s.FnChanger t.RelativeName t.hIModule t.FuncName =
+FixupInitFinal-GetPosition {
+  s.FnChanger t.hIModule t.FuncName =
     <FixupInitFinal-SetEntryCode
       s.FnChanger t.FuncName
-      <MLambda::Apply
-        <MLambda::Parallel-H
-          <MLambda::BindLeft-H
-            &MIModule.GetFunctionAttribute ScopeClass t.RelativeName
-          >
-          <MLambda::BindLeft-H
-            &MIModule.GetFunctionAttribute Position t.RelativeName
-          >
-        >
-        t.hIModule
-      >
+      <MIModule::GetFunctionAttribute t.hIModule Position t.FuncName>
     >;
 }
 
 FixupInitFinal-SetEntryCode {
-  s.FnChanger t.FuncName t.hIModule Found s.ScopeClass Found t.SrcPos =
+  s.FnChanger t.FuncName t.hIModule Found t.SrcPos =
     <s.FnChanger
       t.hIModule
-      (Function (s.ScopeClass t.SrcPos t.FuncName))
+      (Function (Qualified t.SrcPos t.FuncName))
     >;
 
-  s.FnChanger t.FuncName t.hIModule NoName NoName =
+  s.FnChanger t.FuncName t.hIModule NoName =
     /* Нет такой функции */
     t.hIModule;
 }

@@ -197,20 +197,22 @@ ResolvingElements
     >;
 
 DoResolvingFunctions {
-  s.Errors t.IModule t.hErrorList t.ResolveTable
+  s.Errors t.hIModule t.hErrorList t.ResolveTable
   t.NextFunction e.Tail =
     <DoResolvingFunctions
       <ResolvingFunction
-        s.Errors t.IModule t.hErrorList t.ResolveTable
+        s.Errors t.hIModule t.hErrorList t.ResolveTable
         t.NextFunction
       >
       e.Tail
     >;
 
-  s.Errors t.IModule t.hErrorList t.ResolveTable =
-    t.IModule
-    <MResolveTable::Destroy t.ResolveTable>
-    s.Errors t.hErrorList;
+  s.Errors t.hIModule t.hErrorList t.ResolveTable =
+    <ResolvingEntry
+      s.Errors
+      <MIModule::GetEntryPoint t.hIModule>
+      t.hErrorList t.ResolveTable
+    >;
 }
 
 ResolvingFunction
@@ -300,6 +302,61 @@ ResolvingBody {
   но пока так проще.
   Возможно, в перспективе перепишу.
 */
+
+ResolvingEntry {
+  s.Errors t.hIModule Go t.GoSeq t.hErrorList t.ResolveTable =
+    <ResolvingEntry-Aux
+      <ResolvingEntry-EntrySeq
+        (s.Errors t.hIModule t.hErrorList t.ResolveTable)
+        (& MIModule.SetGoEntryPoint t.GoSeq)
+      >
+    >;
+
+  s.Errors t.hIModule Regular t.InitSeq t.FinalSeq t.hErrorList t.ResolveTable =
+    <ResolvingEntry-Aux
+      <MLambda::Reduce
+        &ResolvingEntry-EntrySeq
+        (s.Errors t.hIModule t.hErrorList t.ResolveTable)
+        (& MIModule.SetInitEntryPoint t.InitSeq)
+        (& MIModule.SetFinalEntryPoint t.FinalSeq)
+      >
+    >;
+}
+
+ResolvingEntry-Aux {
+  (s.Errors t.hIModule t.hErrorList t.ResolveTable) =
+    t.hIModule
+    <MResolveTable::Destroy t.ResolveTable>
+    s.Errors t.hErrorList;
+}
+
+ResolvingEntry-EntrySeq {
+  (s.Errors t.hIModule t.hErrorList t.ResolveTable)
+  (s.FnUpdate None) =
+    (s.Errors t.hIModule t.hErrorList t.ResolveTable);
+
+  (s.Errors t.hIModule t.hErrorList t.ResolveTable)
+  (s.FnUpdate (Result e.Result)) =
+    <ResolvingEntry-EntrySeq-Aux
+      s.FnUpdate t.hIModule
+      <ResolvingSentence
+        s.Errors t.hErrorList t.ResolveTable
+        (/* нет предыдущих предложений */)
+        ((Result e.Result))
+      >
+    >;
+}
+
+ResolvingEntry-EntrySeq-Aux {
+  s.FnUpdate t.hIModule
+  s.Errors t.hErrorList t.ResolveTable ( ((Result e.Result)) ) =
+    (
+      s.Errors
+      <s.FnUpdate t.hIModule e.Result>
+      t.hErrorList
+      t.ResolveTable
+    );
+}
 
 ResolvingSentence {
   s.Errors t.hErrorList t.ResolveTable

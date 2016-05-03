@@ -478,6 +478,12 @@ SwDirective {
   'SWAP' = (Directive Swap);
   'swap' = (Directive Swap);
 
+  'INIT' = (Directive Init);
+  'init' = (Directive Init);
+
+  'FINAL' = (Directive Final);
+  'final' = (Directive Final);
+
   e.Other = (Error 'unknown directive \'' e.Other '\'');
 }
 

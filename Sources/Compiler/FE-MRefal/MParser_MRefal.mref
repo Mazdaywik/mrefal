@@ -38,7 +38,8 @@ Profiling-SrcModule
 //------------------------------------------------------------------------------
 
 /*
-  ModuleBody = { ImportBlock | FunctionDefinition | SwapDefinition }* .
+  ModuleBody =
+    { ImportBlock | FunctionDefinition | SwapDefinition | InitFinalBlock }* .
 
   <NModuleBody t.IModule t.hErrorList t.Lexer t.NextToken >
     == t.hErrorList Success t.IModule
@@ -78,6 +79,24 @@ NModuleBody {
     <NModuleBody
       <NDataBlock
         t.IModule
+        t.hErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
+  t.IModule
+  t.hErrorList t.Lexer (Directive t.SrcPos Init) =
+    <NModuleBody
+      <NInitFinalBlock
+        t.IModule Init t.SrcPos
+        t.hErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
+  t.IModule
+  t.hErrorList t.Lexer (Directive t.SrcPos Final) =
+    <NModuleBody
+      <NInitFinalBlock
+        t.IModule Final t.SrcPos
         t.hErrorList <MLexer::NextToken t.Lexer>
       >
     >;
@@ -330,6 +349,69 @@ ListDeclaration-AfterName {
       t.hErrorList t.OtherToken 'comma or semicolon'
     >
     t.Lexer t.OtherToken;
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  InitFinalBlock = ( "$INIT" | "$FINAL" ) ResultExpr .
+*/
+NInitFinalBlock {
+  t.hIModule s.Type t.SrcPos t.hErrorList t.hLexer t.NextTerm =
+    <NInitFinalBlock-Closing
+      <NResultExpr
+        <MVarTable::Create> ( '$' (t.hIModule s.Type t.SrcPos) )
+        t.hErrorList t.hLexer t.NextTerm
+      >
+    >;
+}
+
+NInitFinalBlock-Closing {
+  t.VarTable ( (Result e.Result) t.hIModule s.Type t.SrcPos )
+  t.hErrorList t.hLexer t.NextToken =
+    <MVarTable::Destroy t.VarTable>
+    <NInitFinalBlock-Closing-Aux
+      <InitFinalBlock-SetEntryCode
+        <MIModule::GetEntryPoint t.hIModule> s.Type e.Result
+        t.hErrorList t.SrcPos
+      >
+      t.hLexer t.NextToken
+    >;
+}
+
+NInitFinalBlock-Closing-Aux {
+  t.hIModule t.hErrorList t.hLexer t.NextToken =
+    t.hIModule
+    <ExpectEndSent t.hErrorList t.hLexer t.NextToken>;
+}
+
+InitFinalBlock-SetEntryCode {
+  t.hIModule Go t.GoSeq s.Type e.Result
+  t.hErrorList t.SrcPos =
+    t.hIModule
+    <MError::AddInitOrFinalInMain t.hErrorList t.SrcPos s.Type>;
+
+  t.hIModule Regular (Result e.InitCode) t.FinalSeq Init e.Result
+  t.hErrorList t.SrcPos =
+    t.hIModule
+    <MError::AddInitOrFinalRedeclaration t.hErrorList t.SrcPos Init>;
+
+  t.hIModule Regular t.InitSeq (Result e.FinalCode) Final e.Result
+  t.hErrorList t.SrcPos =
+    t.hIModule
+    <MError::AddInitOrFinalRedeclaration t.hErrorList t.SrcPos Final>;
+
+  t.hIModule Regular t.InitSeq t.FinalSeq s.Type e.Result
+  t.hErrorList t.SrcPos =
+    <MLambda::Apply
+      <EntrySetter s.Type> t.hIModule e.Result
+    >
+    t.hErrorList;
+}
+
+EntrySetter {
+  Init = & MIModule.SetInitEntryPoint;
+  Final = & MIModule.SetFinalEntryPoint;
 }
 
 //------------------------------------------------------------------------------

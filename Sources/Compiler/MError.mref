@@ -565,6 +565,38 @@ $ENTRY AddGoNotEntry {
 
 //------------------------------------------------------------------------------
 
+/**
+  <AddInitOrFinalInMain t.hErrorList t.SrcPos>
+    == t.hErrorList
+*/
+$ENTRY AddInitOrFinalInMain {
+  t.hErrorList t.SrcPos s.Type =
+    <AddToList
+      t.hErrorList
+      ( Semantics
+        t.SrcPos 'Unexpected ' <InitFinal s.Type> ' block in $PROGRAM'
+      )
+    >;
+}
+
+InitFinal { Init = '$INIT'; Final = '$FINAL'; }
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddInitOrFinalRedeclaration t.hErrorList t.SrcPos>
+    == t.hErrorList
+*/
+$ENTRY AddInitOrFinalRedeclaration {
+  t.hErrorList t.SrcPos s.Type =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos <InitFinal s.Type> ' block already defined' )
+    >;
+}
+
+//------------------------------------------------------------------------------
+
 ErrorFile = '__errors';
 
 /**

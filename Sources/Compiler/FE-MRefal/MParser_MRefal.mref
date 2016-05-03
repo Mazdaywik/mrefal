@@ -275,7 +275,6 @@ NSwapBlock-AddName {
     <MParser_Common::AddNewFunction
       t.hIModule t.SrcPos t.SwapName
       (ScopeClass Swap)
-      (Qualified t.SwapName)
       t.hErrorList
     >;
 }
@@ -384,7 +383,6 @@ NFunctionDefinition-Closing
       <MQualifiedName::Create (e.Name)>
       (Body t.FunctionBody)
       (ScopeClass s.ScopeClass)
-      (Qualified <MQualifiedName::Create (e.Name)>)
       t.hErrorList
     >
     t.Lexer t.NextToken;

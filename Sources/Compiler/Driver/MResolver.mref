@@ -224,68 +224,19 @@ ResolvingFunction
 
 ResolvingFunction-ScopeClass {
   s.Errors
-  t.IModule Found s.ScopeClass
-  t.hErrorList t.ResolveTable t.Function =
-    <ResolvingFunction-Qualified
-      s.Errors s.ScopeClass
-      <MIModule::GetFunctionAttribute t.IModule Qualified t.Function>
-      t.hErrorList t.ResolveTable t.Function
-    >;
-}
+  t.hIModule Found Swap
+  t.hErrorList t.ResolveTable t.FunctionName =
+    s.Errors t.hIModule t.hErrorList t.ResolveTable;
 
-ResolvingFunction-Qualified
-  s.Errors s.ScopeClass
-  t.IModule Found t.QualifiedName
-  t.hErrorList t.ResolveTable t.Function =
-    <SwResolvingFunction-Qualified
-      s.Errors s.ScopeClass
-      t.IModule t.hErrorList
-      <MResolveTable::Lookup
-        t.ResolveTable (s.ScopeClass) t.QualifiedName
-      >
-      t.Function
-    >;
-
-/*
-  <SwResolvedFunction-Qualified
-    s.Errors s.ScopeClass t.IModule t.hErrorList
-    t.ResolveTable Found s.ScopeClass t.ExternalQualifier
-    t.FunctionName
-  >
-    == s.Errors t.IModule t.hErrorList t.ResolveTable
-*/
-SwResolvingFunction-Qualified {
-  s.Errors Swap
-  t.IModule t.hErrorList
-  t.ResolveTable Success s.ScopeClass t.ExternalQualifier
-  t.Function =
-    s.Errors
-    <CheckSuccess
-      <MIModule::UpdateFunction
-        t.IModule t.Function
-        (ScopeClass Swap)
-        (Qualified t.ExternalQualifier)
-      >
-    >
-    t.hErrorList t.ResolveTable;
-
-  s.Errors s.ScopeClass
-  t.IModule t.hErrorList
-  t.ResolveTable Success s.ScopeClass t.ExternalQualifier
-  t.Function =
+  s.Errors
+  t.hIModule Found s.ScopeClass
+  t.hErrorList t.ResolveTable t.FunctionName =
     <ResolvingFunction-Body
       s.Errors
       <MIModule::GetFunctionAttribute
-        <CheckSuccess
-          <MIModule::UpdateFunction
-            t.IModule t.Function
-            (ScopeClass s.ScopeClass)
-            (Qualified t.ExternalQualifier)
-          >
-        >
-        Body t.Function
+        t.hIModule Body t.FunctionName
       >
-      t.hErrorList t.ResolveTable t.Function
+      t.hErrorList t.ResolveTable t.FunctionName
     >;
 }
 

@@ -365,7 +365,7 @@ UpdateEntity
 
 //STARTCUT
 ValidAttribs {
-  Function = ScopeClass Position Body Qualified;
+  Function = ScopeClass Position Body;
   ModuleName = Position ModuleType;
   ImportName = Position RealName AliasName;
   ImportAlias = Position RealName AliasName;

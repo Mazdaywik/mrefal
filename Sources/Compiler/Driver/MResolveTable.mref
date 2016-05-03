@@ -61,19 +61,12 @@ $ENTRY AddBrokenImport {
 */
 $ENTRY Lookup
   t.ResolveTable (e.ValidScopes) t.InternalQualifier =
-    <LookupModuleName
+    <Lookup-BySegments
       t.ResolveTable (e.ValidScopes)
       <MQualifiedName::Parse-T t.InternalQualifier>
     >;
 
-LookupModuleName {
-  t.ResolveTable (e.ValidScopes) t.InternalQualifier e.Segments =
-    <LookupSubName
-      t.ResolveTable (e.ValidScopes) t.InternalQualifier e.Segments
-    >;
-}
-
-LookupSubName {
+Lookup-BySegments {
   [ResolveTable
     e.Pairs-B
     ((e.ImportSegments) BrokenImport)

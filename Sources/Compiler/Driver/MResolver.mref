@@ -16,7 +16,7 @@ $ENTRY CreateTable = <MResolveTable::Create>;
 //------------------------------------------------------------------------------
 
 /**
-  <AddModuleInfo t.hResolveTable t.Prefis t.hIModule>
+  <AddModuleInfo t.hResolveTable t.Prefix t.hIModule>
     == t.hResolveTable t.hIModule
 
   <AddModuleInfo t.hResolveTable t.Prefix BrokenModule>
@@ -248,11 +248,11 @@ ResolvingFunction-Qualified
 
 /*
   <SwResolvedFunction-Qualified
-    s.ScopeClass t.IModule t.hErrorList
+    s.Errors s.ScopeClass t.IModule t.hErrorList
     t.ResolveTable Found s.ScopeClass t.ExternalQualifier
     t.FunctionName
   >
-    == t.IModule t.hErrorList t.ResolveTable
+    == s.Errors t.IModule t.hErrorList t.ResolveTable
 */
 SwResolvingFunction-Qualified {
   s.Errors Swap
@@ -294,10 +294,10 @@ CheckSuccess
 
 /*
   <ResolvingFunction-Body
-    t.IModule Found (e.Sentences)
+    s.Errors t.IModule Found (e.Sentences)
     t.hErrorList t.ResolveTable e.FnName
   >
-    == t.IModule t.hErrorList t.ResolveTable
+    == s.Errors t.IModule t.hErrorList t.ResolveTable
 */
 ResolvingFunction-Body {
   s.Errors t.hIModule Found (e.Sentences)
@@ -340,12 +340,14 @@ ResolvingBody {
   Считаем, что на входе имеем правильное выражение (чужих термов ни в образце,
   ни в результате нет, все переменные на месте).
   Не смотря на то, что пока поддерживается только Базисный Рефал, мы выражение
-  трактуем как цепочку из нескольких образцовых и результатных выражений:
+  трактуем как цепочку из нескольких образцовых или результатных выражений:
     (Pattern ...) (Result ...) (Result ...) ...
-  Эту последовательность можно трактовать как одно большое длинное выражение, в кото-
-  ром (Pattern e.Content) и (Result e.Content) -- просто особые типы скобок.
-  Это, конечно, злостное хакерство в плохом смысле слова "хакерство", но пока так проще.
-  В перспективе перепишу.
+  Эту последовательность можно трактовать как одно большое длинное выражение,
+  в котором (Pattern e.Content) и (Result e.Content) -- просто особые типы
+  скобок.
+  Это, конечно, злостное хакерство в плохом смысле слова "хакерство",
+  но пока так проще.
+  Возможно, в перспективе перепишу.
 */
 
 ResolvingSentence {

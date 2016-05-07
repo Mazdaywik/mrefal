@@ -1168,6 +1168,4 @@ CheckCallableVariable {
     t.hErrorList <MLexer::NextToken t.Lexer>;
 }
 
-
-
 $END FE-MRefal::MParser_MRefal.

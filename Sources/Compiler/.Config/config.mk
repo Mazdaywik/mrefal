@@ -87,7 +87,8 @@ profile-SR = work-mrefal-SR
 profile-CPPSR = work-mrefal-CPPSR
 profile-C++/SR = work-mrefal-CPPSR
 
-scomp-R5 = refgo -c300 -l200 ../Bin/stable/MRefal.r5.rsl ++extent:..\Bin\stable\FS-Extent.cpp.exe
+scomp-R5 = refgo -c300 -l200 ../Bin/stable/MRefal.r5.rsl \
+  ++extent:..\Bin\stable\FS-Extent.cpp.exe
 scomp-SR = ..\Bin\stable\MRefal.sr.exe
 scomp-CPPSR = ..\Bin\stable\MRefal.cppsr.exe
 scomp-C++/SR = ..\Bin\stable\MRefal.cppsr.exe

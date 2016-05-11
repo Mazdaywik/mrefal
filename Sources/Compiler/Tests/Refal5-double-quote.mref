@@ -1,0 +1,9 @@
+$PROGRAM Tests::Refal5-double-quote;
+
+$IMPORT Raw;
+
+$ENTRY Go = <Raw::Check <Last <Raw::Make>>>;
+
+Last s.First s.Last = s.Last;
+
+$END Tests::Refal5-double-quote.

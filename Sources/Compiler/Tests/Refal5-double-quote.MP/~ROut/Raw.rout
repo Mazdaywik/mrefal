@@ -1,0 +1,16 @@
+v ROUT3 Module Refal 0.1
+r file Tests\Refal5-double-quote.MP\~ROut\Raw.rout
+
+b Entry::Raw::Make#28
+c $Entry::Raw::Make#28$ {
+c 	=
+c 		"The quick brown fox jumps over the lazy dog"
+c 		"The quick brown fox jumps over the lazy dog" ;
+c }
+
+b Entry::Raw::Check#12
+c $Entry::Raw::Check#12$ {
+c 	"The quick brown fox jumps over the lazy dog" =
+c 		;
+c }
+

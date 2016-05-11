@@ -1,0 +1,7 @@
+$module Raw;
+
+
+$entry Check;
+$entry Make;
+
+$end Raw.

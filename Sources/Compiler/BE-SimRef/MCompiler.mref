@@ -180,7 +180,6 @@ Gen-Common-Term {
   (TVar e.Index) = 't.' <NameCode e.Index> ' ';
 
   (Literal e.Content) = '\'' <Escape e.Content> '\' ';
-  // (DQWord e.Content) = ;
   (Macro s.Value) = <MStrings::Symb s.Value> ' ';
 
   (FnPtr t.Callable) = <Gen-Callable t.Callable>;

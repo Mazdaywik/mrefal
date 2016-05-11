@@ -626,7 +626,6 @@ $ENTRY TokenToString {
 
   (Directive s.Direc) = '$' <DirectiveToString s.Direc>;
 
-  (DQWord e.Text) = '\\\"' <EscapeText e.Text> '\\\"';
   (Literal e.Text) = '\\\'' <EscapeText e.Text> '\\\'';
   (Identifier e.Ident) = 'identifier ' e.Ident;
   (Macro s.Value) = 'macronumber ' <MStrings::Symb s.Value>;

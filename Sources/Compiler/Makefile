@@ -4,6 +4,7 @@ PATH:=$(PATH):../../Bin
 
 include ../Include/platform.mk
 include .Config/config.mk
+include Tests/details.mk
 
 .PHONY: work stable check check-s menu help %.test %.test-s tests tests-s
 

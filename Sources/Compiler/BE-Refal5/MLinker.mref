@@ -500,7 +500,7 @@ TypeLine {
   t.UnitStorage t.Aliases t.ExeTyper ('' e.HiddenQuote) e.Raw =
     <TypeLine
       t.UnitStorage t.Aliases
-      <MExeTyper::TypeSingleQuoted t.ExeTyper '' e.HiddenQuote>
+      <MExeTyper::TypeSingleQuoted t.ExeTyper e.HiddenQuote>
       e.Raw
     >;
 

@@ -2,7 +2,9 @@ $PROGRAM Tests::Refal5-double-quote;
 
 $IMPORT Raw;
 
-$ENTRY Go = <Raw::Check <Last <Raw::Make>>>;
+$ENTRY Go =
+  <Raw::Check <Last <Raw::Make>>>
+  <Raw::CheckWords <Raw::MakeWords>>;
 
 Last s.First s.Last = s.Last;
 

@@ -40,7 +40,7 @@ check-s:
 	$(comp_tr) $(mode_tr) $(xlinx_tr) \
 	  +cfg:.Config/config-work.cfg +MP:. +be:$(profile) \
 	  $(TESTFLAGS) \
-	  $*.mref ( -target:$* )
+	  $*.mref ( +target:$* )
 	$(call RUNTEST_tr, $*)
 
 %.test-s:
@@ -50,7 +50,7 @@ check-s:
 	$(scomp_tr) $(mode_tr) $(xlinx_tr) \
 	  +cfg:.Config/config-stable.cfg +MP:. +be:$(sprofile) \
 	  $(TESTFLAGS) \
-	  $*.mref ( -target:$* )
+	  $*.mref ( +target:$* )
 	$(call SRUNTEST_tr, $*)
 
 TEST_SOURCES=$(wildcard Tests/*.mref)

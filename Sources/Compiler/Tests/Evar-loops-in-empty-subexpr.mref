@@ -1,0 +1,13 @@
+$PROGRAM Tests::Evar-loops-in-empty-subexpr;
+
+WithE {
+  (e.Prefix e.Suffix) e.Prefixes-B (e.Prefix) e.Suffix = ;
+}
+
+$ENTRY Go {
+  =
+    <WithE ('prefix') ('prefix')>
+    <WithE () ()>;
+}
+
+$END Tests::Evar-loops-in-empty-subexpr.

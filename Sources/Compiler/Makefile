@@ -39,6 +39,7 @@ check-s:
 	$(call CHECKPARAM, mode)
 	$(comp_tr) $(mode_tr) $(xlinx_tr) \
 	  +cfg:.Config/config-work.cfg +MP:. +be:$(profile) \
+	  $(TESTFLAGS) \
 	  $*.mref ( -target:$* )
 	$(call RUNTEST_tr, $*)
 
@@ -48,6 +49,7 @@ check-s:
 	$(call CHECKPARAM, mode)
 	$(scomp_tr) $(mode_tr) $(xlinx_tr) \
 	  +cfg:.Config/config-stable.cfg +MP:. +be:$(sprofile) \
+	  $(TESTFLAGS) \
 	  $*.mref ( -target:$* )
 	$(call SRUNTEST_tr, $*)
 

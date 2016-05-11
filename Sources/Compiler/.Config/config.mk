@@ -99,6 +99,12 @@ sprofile-SR = stable-mrefal-SR
 sprofile-CPPSR = stable-mrefal-CPPSR
 sprofile-C++/SR = stable-mrefal-CPPSR
 
+RUNTEST-R5 = refgo $(1)
+RUNTEST-R5T = refgo $(1)
+RUNTEST-SR = ./$(strip $(1))
+RUNTEST-CPPSR = ./$(strip $(1))
+RUNTEST-C++/SR = ./$(strip $(1))
+
 mode-MAKE = +make
 mode-BUILD = +build
 mode-FULL = +build
@@ -115,3 +121,5 @@ scomp_tr = $(scomp-$(scomp))
 sprofile_tr = $(sprofile-$(sprofile))
 mode_tr = $(mode-$(mode))
 xlinx_tr = $(xlinx-$(xlinx))
+RUNTEST_tr = $(RUNTEST-$(profile))
+SRUNTEST_tr = $(RUNTEST-$(profile))

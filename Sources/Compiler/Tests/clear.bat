@@ -1,0 +1,1 @@
+@for /F "delims=|" %%m in (.gitignore) do @if exist "%%m" erase "%%m"

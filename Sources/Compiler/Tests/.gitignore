@@ -1,2 +1,8 @@
 *.exe
 *.tds
+*.sr_main.cpp
+*.sr_main.sref
+*.ref
+*.rsl
+*-Aliases.txt
+*-Not linked.txt

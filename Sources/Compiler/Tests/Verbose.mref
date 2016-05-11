@@ -1,0 +1,13 @@
+$PROGRAM Tests::Verbose;
+
+$IMPORT MInOut;
+
+$ENTRY Go =
+  <MInOut::WriteLine
+    '\n'
+    '-------------------------------------------------\n'
+    '                   Hello!\n'
+    '-------------------------------------------------\n'
+  >;
+
+$END Tests::Verbose.

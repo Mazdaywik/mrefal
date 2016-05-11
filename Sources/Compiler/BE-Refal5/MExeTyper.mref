@@ -127,11 +127,11 @@ TypeCharWithSpaceAfter {
 }
 
 /**
-  <TypeQuoted t.ExeTyper s.Quote e.Text> == t.ExeTyper
+  <TypeSingleQuoted t.ExeTyper s.Quote e.Text> == t.ExeTyper
 */
-$ENTRY TypeQuoted {
+$ENTRY TypeSingleQuoted {
   [ExeTyper s.Limit Limit t.FOut e.Converted] s.Quote e.Text =
-    <TypeQuoted
+    <TypeSingleQuoted
       [ExeTyper s.Limit s.Limit <FileIO::WriteLine t.FOut e.Converted>]
       s.Quote e.Text
     >;
@@ -139,31 +139,31 @@ $ENTRY TypeQuoted {
   // Склеиваем две соседние строки в кавычках
   [ExeTyper s.Limit s.Free t.FOut e.Converted  s.Quote ' ']
   s.Quote e.Text =
-    <DoTypeQuoted
+    <DoTypeSingleQuoted
       [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote e.Text
     >;
 
   // Удаляем пробел перед кавычкой
   [ExeTyper s.Limit s.Free t.FOut e.Converted ' '] s.Quote e.Text =
-    <TypeQuoted
+    <TypeSingleQuoted
       [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote e.Text
     >;
 
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote e.Text =
-    <DoTypeQuoted
+    <DoTypeSingleQuoted
       [ExeTyper s.Limit <Dec2 s.Free> t.FOut e.Converted s.Quote]
       s.Quote e.Text
     >;
 }
 
-DoTypeQuoted {
+DoTypeSingleQuoted {
   /*
     Не рассматриваем символ за бэкслешем, а сразу же его переносим,
     за исключением случая символа x, т.к. нельзя разрывать
     шестнадцатиричный символ.
   */
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '\\x' s.Num1 s.Num2 e.Tail =
-    <DoTypeQuoted
+    <DoTypeSingleQuoted
       [ExeTyper
         s.Limit
         <Dec2 s.Free>
@@ -173,7 +173,7 @@ DoTypeQuoted {
     >;
 
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '\\' s.Escaped e.Tail =
-    <DoTypeQuoted
+    <DoTypeSingleQuoted
       [ExeTyper
         s.Limit
         <Dec2 s.Free>
@@ -184,7 +184,7 @@ DoTypeQuoted {
 
   /* Обрабатываем $ */
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '$$' e.Tail =
-    <DoTypeQuoted
+    <DoTypeSingleQuoted
       [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted '$'] s.Quote e.Tail
     >;
 
@@ -201,7 +201,7 @@ DoTypeQuoted {
   // Строка заканчивается на \' и осталась ещё длинная строка.
   // Предыдущую строку заканчиваем \'', а на новой печатаем текст в кавычках.
   [ExeTyper s.Limit Limit t.FOut e.Converted '\\' s.Quote] s.Quote e.Text =
-    <TypeQuoted
+    <TypeSingleQuoted
       [ExeTyper
         s.Limit s.Limit
         <FileIO::WriteLine t.FOut e.Converted '\\' s.Quote s.Quote>
@@ -215,8 +215,8 @@ DoTypeQuoted {
     >;
 
   [ExeTyper s.Limit Limit t.FOut e.Converted s.Quote] s.Quote e.Text =
-    // ВНИМАНИЕ! DoTypeQuoted!
-    <TypeQuoted
+    // ВНИМАНИЕ! DoTypeSingleQuoted!
+    <TypeSingleQuoted
       [ExeTyper
         s.Limit s.Limit
         <FileIO::WriteLine t.FOut e.Converted>
@@ -232,8 +232,8 @@ DoTypeQuoted {
 
   // Закончилась строка, текст в кавычках остался
   [ExeTyper s.Limit Limit t.FOut e.Converted] s.Quote e.Text =
-    // ВНИМАНИЕ! Не DoTypeQuoted!
-    <TypeQuoted
+    // ВНИМАНИЕ! Не DoTypeSingleQuoted!
+    <TypeSingleQuoted
       [ExeTyper s.Limit Limit t.FOut e.Converted s.Quote]
       s.Quote e.Text
     >;
@@ -243,7 +243,130 @@ DoTypeQuoted {
     [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted s.Quote ' '];
 
   [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote s.Char e.Text =
-    <DoTypeQuoted
+    <DoTypeSingleQuoted
+      [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted s.Char]
+      s.Quote e.Text
+    >;
+}
+
+/**
+  <TypeDoubleQuoted t.ExeTyper s.Quote e.Text> == t.ExeTyper
+*/
+$ENTRY TypeDoubleQuoted {
+  [ExeTyper s.Limit Limit t.FOut e.Converted] s.Quote e.Text =
+    <TypeDoubleQuoted
+      [ExeTyper s.Limit s.Limit <FileIO::WriteLine t.FOut e.Converted>]
+      s.Quote e.Text
+    >;
+
+  // Склеиваем две соседние строки в кавычках
+  [ExeTyper s.Limit s.Free t.FOut e.Converted  s.Quote ' ']
+  s.Quote e.Text =
+    <DoTypeDoubleQuoted
+      [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote e.Text
+    >;
+
+  // Удаляем пробел перед кавычкой
+  [ExeTyper s.Limit s.Free t.FOut e.Converted ' '] s.Quote e.Text =
+    <TypeDoubleQuoted
+      [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote e.Text
+    >;
+
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote e.Text =
+    <DoTypeDoubleQuoted
+      [ExeTyper s.Limit <Dec2 s.Free> t.FOut e.Converted s.Quote]
+      s.Quote e.Text
+    >;
+}
+
+DoTypeDoubleQuoted {
+  /*
+    Не рассматриваем символ за бэкслешем, а сразу же его переносим,
+    за исключением случая символа x, т.к. нельзя разрывать
+    шестнадцатиричный символ.
+  */
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '\\x' s.Num1 s.Num2 e.Tail =
+    <DoTypeDoubleQuoted
+      [ExeTyper
+        s.Limit
+        <Dec2 s.Free>
+        t.FOut e.Converted '\\x' s.Num1 s.Num2
+      ]
+      s.Quote e.Tail
+    >;
+
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '\\' s.Escaped e.Tail =
+    <DoTypeDoubleQuoted
+      [ExeTyper
+        s.Limit
+        <Dec2 s.Free>
+        t.FOut e.Converted '\\' s.Escaped
+      ]
+      s.Quote e.Tail
+    >;
+
+  /* Обрабатываем $ */
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote '$$' e.Tail =
+    <DoTypeDoubleQuoted
+      [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted '$'] s.Quote e.Tail
+    >;
+
+  /* Необходимо разрезать текст в кавычках таким образом, чтобы на отдель-
+  ной строке не осталось '' или "". */
+
+  // Строка заканчивается на \', печатаемый текст закончился -- печатаем \''
+  [ExeTyper s.Limit Limit t.FOut e.Converted '\\' s.Quote] s.Quote =
+    [ExeTyper
+      s.Limit s.Limit
+      <FileIO::WriteLine t.FOut e.Converted '\\' s.Quote s.Quote>
+    ];
+
+  // Строка заканчивается на \' и осталась ещё длинная строка.
+  // Предыдущую строку заканчиваем \'', а на новой печатаем текст в кавычках.
+  [ExeTyper s.Limit Limit t.FOut e.Converted '\\' s.Quote] s.Quote e.Text =
+    <TypeDoubleQuoted
+      [ExeTyper
+        s.Limit s.Limit
+        <FileIO::WriteLine t.FOut e.Converted '\\' s.Quote s.Quote>
+      ] s.Quote e.Text
+    >;
+
+  // Неожиданно закончилась строка
+  [ExeTyper s.Limit Limit t.FOut e.Converted s.Quote] s.Quote =
+    <MError::LinkError
+      'Unexpected quote position ??? `' e.Converted s.Quote '`'
+    >;
+
+  [ExeTyper s.Limit Limit t.FOut e.Converted s.Quote] s.Quote e.Text =
+    // ВНИМАНИЕ! DoTypeDoubleQuoted!
+    <TypeDoubleQuoted
+      [ExeTyper
+        s.Limit s.Limit
+        <FileIO::WriteLine t.FOut e.Converted>
+      ] s.Quote e.Text
+    >;
+
+  // Закончилась строка и закончился текст в кавычках
+  [ExeTyper s.Limit Limit t.FOut e.Converted] s.Quote =
+    [ExeTyper
+      s.Limit s.Limit
+      <FileIO::WriteLine t.FOut e.Converted s.Quote>
+    ];
+
+  // Закончилась строка, текст в кавычках остался
+  [ExeTyper s.Limit Limit t.FOut e.Converted] s.Quote e.Text =
+    // ВНИМАНИЕ! Не DoTypeDoubleQuoted!
+    <TypeDoubleQuoted
+      [ExeTyper s.Limit Limit t.FOut e.Converted s.Quote]
+      s.Quote e.Text
+    >;
+
+  /* Штатные случаи */
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote =
+    [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted s.Quote ' '];
+
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] s.Quote s.Char e.Text =
+    <DoTypeDoubleQuoted
       [ExeTyper s.Limit <Dec s.Free> t.FOut e.Converted s.Char]
       s.Quote e.Text
     >;

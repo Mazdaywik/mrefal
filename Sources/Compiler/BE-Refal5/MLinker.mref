@@ -497,10 +497,17 @@ TypeLine {
       >
     >;
 
-  t.UnitStorage t.Aliases t.ExeTyper (s.Quote e.HiddenQuote) e.Raw =
+  t.UnitStorage t.Aliases t.ExeTyper ('' e.HiddenQuote) e.Raw =
     <TypeLine
       t.UnitStorage t.Aliases
-      <MExeTyper::TypeQuoted t.ExeTyper s.Quote e.HiddenQuote>
+      <MExeTyper::TypeSingleQuoted t.ExeTyper '' e.HiddenQuote>
+      e.Raw
+    >;
+
+  t.UnitStorage t.Aliases t.ExeTyper ('"' e.HiddenQuote) e.Raw =
+    <TypeLine
+      t.UnitStorage t.Aliases
+      <MExeTyper::TypeDoubleQuoted t.ExeTyper '"' e.HiddenQuote>
       e.Raw
     >;
 

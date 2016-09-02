@@ -491,7 +491,7 @@ Variable
   s.VarType (e.Errors) t.Pos t.hFile e.Line =
     <SwVarIndex
       s.VarType (e.Errors) t.Pos t.hFile e.Line
-      (<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits> '.')
+      (<MStrings::UpAlph> <MStrings::LoAlph> <MStrings::Digits>)
     >;
 
 SwVarIndex {
@@ -638,11 +638,15 @@ $ENTRY TokenToString {
 Q e.Text = '\'' e.Text '\'';
 
 DirectiveToString {
+  ClearModule = 'CLEARMODULE';
+  Data = 'DATA';
   End = 'END';
   Entry = 'ENTRY';
   Import = 'IMPORT';
   Module = 'MODULE';
   Swap = 'SWAP';
+  Init = 'INIT';
+  Final = 'FINAL';
 }
 
 VarTypeToChar { EVar = 'e'; SVar = 's'; TVar = 't'; }

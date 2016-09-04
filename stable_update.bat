@@ -17,6 +17,8 @@ for %%i in (~Defs ~ROut ~XLinx ~SimRef-01 ~Cpp-01) do (
 
 xcopy /S /I /Y Sources\Runtime\windows.cpp      Runtime\windows.cpp
 xcopy /S /I /Y Sources\Runtime\all.cpp          Runtime\all.cpp
+copy /Y Sources\Runtime\windows.sr\*.cpp        Runtime\windows.cpp\*.cpp
+copy /Y Sources\Runtime\all.sr\*.cpp            Runtime\all.cpp\*.cpp
 
 copy /Y Sources\Bin\mrefal.cppsr.exe            Bin\mrefal.cpp.exe
 copy /Y Sources\Bin\mrefal.sr.exe               Bin\mrefal.exe

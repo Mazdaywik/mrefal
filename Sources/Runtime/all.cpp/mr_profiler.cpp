@@ -50,7 +50,13 @@ REFAL_FUNC(end_quantify)
   return refalrts::cSuccess;
 }
 
-DECL_REFAL_IDENT(endQualityName, PROFILE_STOP_FUNCTION_NAME);
+#ifdef MODULE_REFAL
+DECL_REFAL_IDENT(endQuantifyName, PROFILE_STOP_FUNCTION_NAME);
+#else
+refalrts::RefalFunction endQuantifyDescr(
+  end_quantify, PROFILE_STOP_FUNCTION_NAME
+);
+#endif
 
 } // безымянное namespace
 
@@ -100,11 +106,11 @@ REFAL_FUNC(implement_profiler::quantify)
     refalrts::alloc_close_call(new_close_call)
     && refalrts::alloc_open_call(new_open_call)
     && refalrts::alloc_name(
-        end_quantify_func, end_quantify,
+        end_quantify_func,
 #ifdef MODULE_REFAL
-        REFAL_IDENT(endQualityName)
+        end_quantify, REFAL_IDENT(endQuantifyName)
 #else
-        PROFILE_STOP_FUNCTION_NAME
+        & endQuantifyDescr
 #endif
        )
     && refalrts::copy_stvar(copy_func, func)
@@ -122,7 +128,7 @@ REFAL_FUNC(implement_profiler::quantify)
 #ifdef MODULE_REFAL
     (func->function_info.name)();
 #else
-    func->function_info.name;
+    func->function_info->name;
 #endif
 
   profiler_object->char_info = 0;

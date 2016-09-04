@@ -158,14 +158,6 @@ private:
   Fragments m_fragments;
 };
 
-/*
-  Константа используется для утверждений после метки default внутри switch.
-  Использование: assert( SWITCH_VIOLATION );
-*/
-enum { SWITCH_VIOLATION = 0 };
-
 } // namespace refalapi
-
-using refalapi::SWITCH_VIOLATION;
 
 #endif //RefalAPI_H_

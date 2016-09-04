@@ -346,7 +346,7 @@ REFAL_FUNC(implement_fileio::write) {
 #ifdef MODULE_REFAL
         printf_res = fprintf(f, "%s ", (ptr->function_info.name)());
 #else
-        printf_res = fprintf(f, "%s ", ptr->function_info.name);
+        printf_res = fprintf(f, "%s ", ptr->function_info->name);
 #endif
         continue;
 
@@ -375,8 +375,7 @@ REFAL_FUNC(implement_fileio::write) {
         continue;
 
       default:
-        // Неожиданный тип узла в объектном выражении
-        assert( SWITCH_VIOLATION );
+        refalrts_switch_default_violation(ptr->tag);
     }
   }
 
@@ -599,7 +598,14 @@ REFAL_FUNC(implement_strings::numb) {
 DECL_REFAL_IDENT(Char, "Char");
 DECL_REFAL_IDENT(Number, "Number");
 DECL_REFAL_IDENT(IsntSerializable, "IsntSerializable");
+
+#ifdef MODULE_REFAL
 DECL_REFAL_IDENT(Symb, "Symb");
+#else
+namespace {
+refalrts::RefalFunction symb_descr(implement_strings::symb, "Symb");
+}
+#endif
 
 REFAL_FUNC(implement_strings::serialize_atom) {
   // Формат
@@ -661,11 +667,11 @@ REFAL_FUNC(implement_strings::serialize_atom) {
 
     // Необычный ход для не-рефальной функции:
     // формирование в результатном выражении вызова другой функции
-    func_name->function_info.ptr = symb;
 #ifdef MODULE_REFAL
+    func_name->function_info.ptr = symb;
     func_name->function_info.name = REFAL_IDENT(Symb);
 #else
-    func_name->function_info.name = "Symb";
+    func_name->function_info = &symb_descr;
 #endif
     push_stack(close_call);
     push_stack(open_call);
@@ -682,7 +688,12 @@ REFAL_FUNC(implement_strings::serialize_atom) {
   }
 }
 
-REFAL_FUNC(Exit) {
+#ifdef MODULE_REFAL
+REFAL_FUNC(Exit)
+#else
+REFAL_FUNC(func_Exit)
+#endif
+{
   // Формат <Exit s.RetCode> == поле зрения не изменяет
 
   using namespace refalrts;
@@ -712,6 +723,11 @@ REFAL_FUNC(Exit) {
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
+
+#ifndef MODULE_REFAL
+refalrts::RefalFunction descr_Exit(func_Exit, "Exit");
+refalrts::RefalFunction& Exit = descr_Exit;
+#endif
 
 REFAL_FUNC(implement_order::symb_compare) {
   /*
@@ -870,11 +886,11 @@ REFAL_FUNC(implement_selfdiag::exit_failure) {
   if( ! alloc_number(sRetValue, 255) ) return cNoMemory;
 
   // Переинициализация имени функции
-  func_name->function_info.ptr = ExitE_;
 #ifdef MODULE_REFAL
+  func_name->function_info.ptr = ExitE_;
   func_name->function_info.name = REFAL_IDENT(Exit_FuncNameE_);
 #else
-  func_name->function_info.name = "@Exit";
+  func_name->function_info = &ExitE_;
 #endif
 
   // Вставка кода возврата после имени функции

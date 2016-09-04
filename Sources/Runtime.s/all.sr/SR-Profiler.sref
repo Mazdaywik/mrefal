@@ -1,0 +1,28 @@
+%%
+#include "refalrts.h"
+#include "mr_profiler.h"
+%%
+
+$ENTRY MR_Profiler_Quantify {
+%%
+  return implement_profiler::quantify(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_Profiler_PrintResults {
+%%
+  return implement_profiler::print_results(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_Profiler_SetOutputName {
+%%
+  return implement_profiler::set_output_name(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_Profiler_Flush {
+%%
+  return implement_profiler::flush(arg_begin, arg_end);
+%%
+}

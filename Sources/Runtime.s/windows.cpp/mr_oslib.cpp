@@ -214,8 +214,12 @@ REFAL_FUNC(implement_os::create_process) {
         оставлена для возврата #Success/#Fails.
       */
 
+#ifdef MODULE_REFAL
       func_name->function_info.ptr = 0;
       func_name->function_info.name = 0;
+#else
+      func_name->function_info = 0;
+#endif
       func_name->tag = cDataNumber;
       func_name->number_info = ret_code;
 

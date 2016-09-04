@@ -1,0 +1,66 @@
+%%
+#include <stdio.h>
+#include "refalrts.h"
+#include "mr_oslib.h"
+%%
+
+
+$ENTRY MR_OS_CommandLine {
+%%
+  return implement_os::command_line(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_OS_EnvList {
+%%
+  return implement_os::env_list(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_OS_CreateProcess {
+%%
+  return implement_os::create_process(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_FS_FindFiles {
+%%
+  return implement_fs::find_files(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_FS_FileAttributes {
+%%
+  return implement_fs::file_attributes(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_FS_FullName {
+%%
+  return implement_fs::full_name(arg_begin, arg_end);
+%%
+}
+
+$ENTRY MR_FS_MakeDir {
+%%
+  return implement_fs::perform_file_operation(
+    implement_fs::make_dir, arg_begin, arg_end
+  );
+%%
+}
+
+$ENTRY MR_FS_RemoveDir {
+%%
+  return implement_fs::perform_file_operation(
+    implement_fs::remove_dir, arg_begin, arg_end
+  );
+%%
+}
+
+$ENTRY MR_FS_RemoveFile {
+%%
+  return implement_fs::perform_file_operation(
+    implement_fs::remove_file, arg_begin, arg_end
+  );
+%%
+}

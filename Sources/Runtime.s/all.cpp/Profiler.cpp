@@ -8,10 +8,6 @@
 // Класс Metrics
 //------------------------------------------------------------------------------
 
-namespace {
-  enum { cSWITCH_DEFAULT_VIOLATION = 0 };
-}
-
 
 unsigned long profiler::Metrics::sm_ticks_per_sec =
   refalrts::ticks_per_second();
@@ -151,8 +147,7 @@ profiler::Report::SuffixMethod profiler::Report::get_method(int metric) {
       return &Report::print_number_line_suffix;
 
     default:
-      assert(cSWITCH_DEFAULT_VIOLATION);
-      return &Report::print_number_line_suffix;
+      refalrts_switch_default_violation(metric);
   }
 }
 
@@ -365,8 +360,7 @@ profiler::Report::metric_name(int metric) {
       return "+ Linear result time";
 
     default:
-      assert(cSWITCH_DEFAULT_VIOLATION);
-      return "";
+      refalrts_switch_default_violation(metric);
   }
 }
 

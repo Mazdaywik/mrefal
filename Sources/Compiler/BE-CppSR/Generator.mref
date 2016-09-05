@@ -238,9 +238,6 @@ PrintStkBracket {
     );
 }
 
-Indent
-  (e.Indent) = e.Indent;
-
 GenCommand {
   (e.Indent) (CmdStartSentence) =
     (e.Indent '  ')

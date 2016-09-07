@@ -62,11 +62,7 @@ REFAL_FUNC(CoreBEP_OSP_MOSP_CreateProcess, "CoreBE.OS.MOS.CreateProcess") {
 }
 
 REFAL_FUNC(CoreBEP_OSP_MOSP_ForseExit, "CoreBE.OS.MOS.ForseExit") {
-#ifdef MODULE_REFAL_NEW
   return ExitE_.ptr(arg_begin, arg_end);
-#else
-  return ExitE_(arg_begin, arg_end);
-#endif
 }
 
 REFAL_FUNC(CoreBEP_OSP_MOSP_EnvList, "CoreBE.OS.MOS.EnvList") {

@@ -50,13 +50,9 @@ REFAL_FUNC_IMPL(end_quantify)
   return refalrts::cSuccess;
 }
 
-#ifdef MODULE_REFAL
-DECL_REFAL_IDENT(endQuantifyName, PROFILE_STOP_FUNCTION_NAME);
-#else
 refalrts::RefalFunction endQuantifyDescr(
   end_quantify, PROFILE_STOP_FUNCTION_NAME
 );
-#endif
 
 } // безымянное namespace
 
@@ -105,14 +101,7 @@ REFAL_FUNC_IMPL(implement_profiler::quantify)
   bool allocated =
     refalrts::alloc_close_call(new_close_call)
     && refalrts::alloc_open_call(new_open_call)
-    && refalrts::alloc_name(
-        end_quantify_func,
-#ifdef MODULE_REFAL
-        end_quantify, REFAL_IDENT(endQuantifyName)
-#else
-        & endQuantifyDescr
-#endif
-       )
+    && refalrts::alloc_name(end_quantify_func, & endQuantifyDescr)
     && refalrts::copy_stvar(copy_func, func)
     && refalrts::alloc_char(profiler_object, '?');
 
@@ -124,12 +113,7 @@ REFAL_FUNC_IMPL(implement_profiler::quantify)
   if ( ! allocated )
     return refalrts::cNoMemory;
 
-  const char *func_name =
-#ifdef MODULE_REFAL
-    (func->function_info.name)();
-#else
-    func->function_info->name;
-#endif
+  const char *func_name = func->function_info->name;
 
   profiler_object->char_info = 0;
   profiler_object->tag = refalrts::cDataFile;

@@ -109,10 +109,7 @@ Compiler-Include-Define-Options
         <MHelpers::ConfigExtract t.Config RunTimeDirs>
       >
     )
-    (Define
-      <C-LinkOption t.Config DefineOpt>
-      ('MODULE_REFAL_NEW')
-    );
+    (Define <C-LinkOption t.Config DefineOpt>);
 
 C-LinkOption
   t.Config s.OptName =

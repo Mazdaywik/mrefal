@@ -343,11 +343,7 @@ REFAL_FUNC_IMPL(implement_fileio::write) {
         continue;
 
       case cDataFunction:
-#ifdef MODULE_REFAL
-        printf_res = fprintf(f, "%s ", (ptr->function_info.name)());
-#else
         printf_res = fprintf(f, "%s ", ptr->function_info->name);
-#endif
         continue;
 
       case cDataIdentifier:
@@ -599,13 +595,9 @@ DECL_REFAL_IDENT(Char, "Char");
 DECL_REFAL_IDENT(Number, "Number");
 DECL_REFAL_IDENT(IsntSerializable, "IsntSerializable");
 
-#ifdef MODULE_REFAL
-DECL_REFAL_IDENT(Symb, "Symb");
-#else
 namespace {
 refalrts::RefalFunction symb_descr(implement_strings::symb, "Symb");
 }
-#endif
 
 REFAL_FUNC_IMPL(implement_strings::serialize_atom) {
   // Формат
@@ -667,12 +659,7 @@ REFAL_FUNC_IMPL(implement_strings::serialize_atom) {
 
     // Необычный ход для не-рефальной функции:
     // формирование в результатном выражении вызова другой функции
-#ifdef MODULE_REFAL
-    func_name->function_info.ptr = symb;
-    func_name->function_info.name = REFAL_IDENT(Symb);
-#else
     func_name->function_info = &symb_descr;
-#endif
     push_stack(close_call);
     push_stack(open_call);
 
@@ -688,11 +675,7 @@ REFAL_FUNC_IMPL(implement_strings::serialize_atom) {
   }
 }
 
-#ifdef MODULE_REFAL
-REFAL_FUNC_IMPL(Exit)
-#else
 REFAL_FUNC_IMPL(func_Exit)
-#endif
 {
   // Формат <Exit s.RetCode> == поле зрения не изменяет
 
@@ -724,10 +707,8 @@ REFAL_FUNC_IMPL(func_Exit)
   return ::refalrts::cExit;
 }
 
-#ifndef MODULE_REFAL
 refalrts::RefalFunction descr_Exit(func_Exit, "Exit");
 refalrts::RefalFunction& Exit = descr_Exit;
-#endif
 
 REFAL_FUNC_IMPL(implement_order::symb_compare) {
   /*
@@ -861,8 +842,6 @@ refalrts::FnResult implement_selfdiag::log(
   return cSuccess;
 }
 
-DECL_REFAL_IDENT(Exit_FuncNameE_, "@Exit");
-
 REFAL_FUNC_IMPL(implement_selfdiag::exit_failure) {
   /*
     Предполагается, что функция будет вызывать все финализаторы,
@@ -886,12 +865,7 @@ REFAL_FUNC_IMPL(implement_selfdiag::exit_failure) {
   if( ! alloc_number(sRetValue, 255) ) return cNoMemory;
 
   // Переинициализация имени функции
-#ifdef MODULE_REFAL
-  func_name->function_info.ptr = ExitE_;
-  func_name->function_info.name = REFAL_IDENT(Exit_FuncNameE_);
-#else
   func_name->function_info = &ExitE_;
-#endif
 
   // Вставка кода возврата после имени функции
   splice_elem( close_call, sRetValue );

@@ -111,7 +111,7 @@ Compiler-Include-Define-Options
     )
     (Define
       <C-LinkOption t.Config DefineOpt>
-      ('MODULE_REFAL')
+      ('MODULE_REFAL_NEW')
     );
 
 C-LinkOption

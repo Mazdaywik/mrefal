@@ -22,7 +22,7 @@ using refalapi::AllocArray;
   Реализация функций библиотеки.
 ===========================================================================*/
 
-REFAL_FUNC(implement_os::command_line) {
+REFAL_FUNC_IMPL(implement_os::command_line) {
   // Формат <CommandLine> == e.CommandLine
 
   using namespace refalrts;
@@ -53,7 +53,7 @@ REFAL_FUNC(implement_os::command_line) {
   return cSuccess;
 }
 
-REFAL_FUNC(implement_os::env_list) {
+REFAL_FUNC_IMPL(implement_os::env_list) {
   // Формат <EnvList> == (e.EnvLine)*
 
   using namespace refalrts;
@@ -114,7 +114,7 @@ DECL_REFAL_IDENT(Fails, "Fails");
 DECL_REFAL_IDENT(Wait, "Wait");
 DECL_REFAL_IDENT(NoWait, "NoWait");
 
-REFAL_FUNC(implement_os::create_process) {
+REFAL_FUNC_IMPL(implement_os::create_process) {
   /*
     Функция создания нового процесса,
     Вызывает одноимённую WinAPI-функцию.
@@ -256,7 +256,7 @@ static bool add_attribute_record(
   DWORD size
 );
 
-REFAL_FUNC(implement_fs::find_files) {
+REFAL_FUNC_IMPL(implement_fs::find_files) {
   /*
     Функция является оболочкой над парой WinAPI-функций
     FindFirstFile и FindNextFile.
@@ -491,7 +491,7 @@ static bool append_filetime(
   return true;
 }
 
-REFAL_FUNC(implement_fs::file_attributes) {
+REFAL_FUNC_IMPL(implement_fs::file_attributes) {
   /*
     Функция получает имя файла и возвращает его атрибуты.
 
@@ -564,7 +564,7 @@ REFAL_FUNC(implement_fs::file_attributes) {
   }
 }
 
-REFAL_FUNC(implement_fs::full_name) {
+REFAL_FUNC_IMPL(implement_fs::full_name) {
   /*
     Возвращает абсолютный путь для относительного вроде как.
 

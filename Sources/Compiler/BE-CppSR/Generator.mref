@@ -31,7 +31,7 @@ NameCodeChar {
   '-' = 'D_';
   Entry = 'E_';
   FuncName = 'N_';
-  Go = 'Entry_Go';
+  Go = 'Go';
   s.Other = s.Other;
 }
 
@@ -49,12 +49,17 @@ TextFromMemoryClass {
 
 SwGenFnStart {
   s.MemoryClass s.FnArguments t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    ('extern refalrts::RefalFunction& ' <QNameCode t.Name> ';')
+    ('refalrts::FnResult func_' <QNameCode t.Name> '(' <s.FnArguments> ') {')
+    ('#else')
     (
       <TextFromMemoryClass s.MemoryClass>
       'refalrts::FnResult '
       <QNameCode t.Name>
       '(' <s.FnArguments> ') {'
     )
+    ('#endif')
     ('  refalrts::this_is_generated_function();');
 }
 
@@ -72,34 +77,65 @@ $ENTRY GenFnStart {
 }
 
 $ENTRY GenFnEnd {
-  = ('  return refalrts::cRecognitionImpossible;') ('}') ();
+  t.Name =
+    ('  return refalrts::cRecognitionImpossible;') ('}')
+    <GenFnEnd-Aux t.Name>;
+}
+
+Reference {
+  t.Name =
+    (
+      'refalrts::RefalFunction& ' <QNameCode t.Name>
+      ' = descr_' <QNameCode t.Name> ';'
+    );
+}
+
+GenFnEnd-Aux {
+  t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    (
+      'refalrts::RefalFunction descr_' <QNameCode t.Name> '('
+      'func_' <QNameCode t.Name> ', "' <MakeExternalName t.Name> '"'
+      ');'
+    )
+    <Reference t.Name>
+    ('#endif')
+    ();
 }
 
 $ENTRY GenEEnum {
-  t.Name = <SwGenFnStart Entry & NakedArguments t.Name> <GenFnEnd>;
+  t.Name = <SwGenFnStart Entry & NakedArguments t.Name> <GenFnEnd t.Name>;
 }
 
 $ENTRY GenEnum {
-  t.Name = <SwGenFnStart Local & NakedArguments t.Name> <GenFnEnd>;
+  t.Name = <SwGenFnStart Local & NakedArguments t.Name> <GenFnEnd t.Name>;
 }
 
 $ENTRY GenExtern {
   t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    ('extern refalrts::RefalFunction& ' <QNameCode t.Name> ';')
+    ('#else')
     (
       'extern refalrts::FnResult '
       <QNameCode t.Name>
       '(' <FuncArguments> ');'
     )
+    ('#endif')
     ();
 }
 
 $ENTRY GenForward {
   t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    ('extern refalrts::RefalFunction& ' <QNameCode t.Name> ';')
+    ('#else')
     (
       'static refalrts::FnResult '
       <QNameCode t.Name>
       '(' <FuncArguments> ');'
     )
+    ('#endif')
     ();
 }
 
@@ -113,6 +149,13 @@ $ENTRY GenSwap {
 
 GenSwap-Aux {
   s.MemoryClass t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    (
+      'refalrts::RefalSwap descr_' <QNameCode t.Name>
+      '("' <MakeExternalName t.Name> '");'
+    )
+    <Reference t.Name>
+    ('#else')
     <GenFnStart s.MemoryClass t.Name>
     ('  refalrts::Iter func_name = arg_begin;')
     ()
@@ -139,23 +182,33 @@ GenSwap-Aux {
     ()
     ('  return refalrts::cSuccess;')
     ('}')
-    ();
+    <GenFnEnd-Aux t.Name>
+    ('#endif');
 }
 
 $ENTRY GenIdent {
   t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    <GenIdent-Aux
+      (<MakeExternalName t.Name>)
+      'ident_' <QNameCode t.Name>
+    >
+    ('#else')
     <GenIdent-Aux
       (<MakeExternalName t.Name>)
       <QNameCode t.Name>
-    >;
+    >
+    ('#endif');
 }
 
 $ENTRY GenIdent-FuncName {
   t.Name =
+    ('#ifndef MODULE_REFAL_NEW')
     <GenIdent-Aux
       (<MakeExternalName t.Name>)
       <QNameCode t.Name> 'N_'
-    >;
+    >
+    ('#endif');
 }
 
 MakeExternalName {
@@ -501,10 +554,17 @@ PrintMatchName {
 
 PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    <PrintMatch
+      (e.Indent) s.Direction s.BracketNum s.Nested
+      ('ident') ' & ident_' <QNameCode t.Name> '<int>::name'
+    >
+    ('#else')
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
       ('ident') ' & ' <QNameCode t.Name> '<int>::name'
-    >;
+    >
+    ('#endif');
 }
 
 PrintMatchBrackets {
@@ -622,6 +682,39 @@ PrintAllocateCopyVar {
 }
 
 PrintAllocateElem {
+  // TODO: удалить грязный хак
+  (e.Indent) s.ElemNumber ElName t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    (e.Indent
+      'if( ! refalrts::alloc_name( ' <PrintElemVar s.ElemNumber>
+      ', & ' <QNameCode t.Name> ' ) )'
+    )
+    ('#else')
+    (e.Indent
+      'if( ! refalrts::alloc_name( ' <PrintElemVar s.ElemNumber>
+      ', & ' <QNameCode t.Name>
+      ', & ' <QNameCode t.Name> 'N_<int>::name ) )'
+    )
+    ('#endif')
+    (e.Indent '  return refalrts::cNoMemory;');
+
+
+  // TODO: удалить грязный хак
+  (e.Indent) s.ElemNumber ElIdent t.Name =
+    ('#ifdef MODULE_REFAL_NEW')
+    (e.Indent
+      'if( ! refalrts::alloc_ident( ' <PrintElemVar s.ElemNumber>
+      ', & ident_' <QNameCode t.Name> '<int>::name ) )'
+    )
+    ('#else')
+    (e.Indent
+      'if( ! refalrts::alloc_ident( ' <PrintElemVar s.ElemNumber>
+      ', & ' <QNameCode t.Name> '<int>::name ) )'
+    )
+    ('#endif')
+    (e.Indent '  return refalrts::cNoMemory;');
+
+
   (e.Indent) s.ElemNumber s.ElementType e.Info =
     <PrintAllocate_Aux
       (e.Indent) s.ElemNumber

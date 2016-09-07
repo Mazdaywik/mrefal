@@ -6,17 +6,17 @@
 
 namespace implement_math {
 
-extern REFAL_FUNC(binary);
-extern REFAL_FUNC(compare);
+extern REFAL_FUNC_IMPL(binary);
+extern REFAL_FUNC_IMPL(compare);
 
 } // namespace implement_math
 
 namespace implement_fileio {
 
-extern REFAL_FUNC(open);
-extern REFAL_FUNC(close);
-extern REFAL_FUNC(read_line);
-extern REFAL_FUNC(write);
+extern REFAL_FUNC_IMPL(open);
+extern REFAL_FUNC_IMPL(close);
+extern REFAL_FUNC_IMPL(read_line);
+extern REFAL_FUNC_IMPL(write);
 
 refalrts::FnResult
 get_stdin(refalrts::Iter arg_begin, refalrts::Iter arg_end);
@@ -36,29 +36,29 @@ void ord(refalrts::Iter i);
 refalrts::FnResult
 convert(SymConverter conv, refalrts::Iter arg_begin, refalrts::Iter arg_end);
 
-extern REFAL_FUNC(symb);
-extern REFAL_FUNC(numb);
+extern REFAL_FUNC_IMPL(symb);
+extern REFAL_FUNC_IMPL(numb);
 
-extern REFAL_FUNC(serialize_atom);
+extern REFAL_FUNC_IMPL(serialize_atom);
 
 } // namespace implement_strings
 
 // Эта функция генерится автоматически вместе с Go ...
 #ifdef MODULE_REFAL
-extern REFAL_FUNC(ExitE_);
+extern REFAL_FUNC_IMPL(ExitE_);
 #else
 extern refalrts::RefalFunction& ExitE_;
 #endif
 // ... и вызывает эту функцию
 #ifdef MODULE_REFAL
-extern REFAL_FUNC(Exit);
+extern REFAL_FUNC_IMPL(Exit);
 #else
 extern refalrts::RefalFunction& Exit;
 #endif
 
 namespace implement_order {
 
-extern REFAL_FUNC(symb_compare);
+extern REFAL_FUNC_IMPL(symb_compare);
 
 } // namespace implement_order
 
@@ -70,8 +70,8 @@ extern refalrts::FnResult log(
   refalrts::Iter arg_begin, refalrts::Iter arg_end
 );
 
-extern REFAL_FUNC(exit_failure);
-extern REFAL_FUNC(close_log);
+extern REFAL_FUNC_IMPL(exit_failure);
+extern REFAL_FUNC_IMPL(close_log);
 extern void* get_log_handle();
 extern void* get_stderror_handle();
 

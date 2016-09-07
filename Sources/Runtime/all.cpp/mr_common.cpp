@@ -12,7 +12,7 @@ using refalapi::AllocArray;
   Реализация функций библиотеки.
 ===========================================================================*/
 
-REFAL_FUNC(implement_math::binary) {
+REFAL_FUNC_IMPL(implement_math::binary) {
   using namespace refalrts;
 
   // Левая скобка конкретизации
@@ -84,7 +84,7 @@ REFAL_FUNC(implement_math::binary) {
   return cSuccess;
 }
 
-REFAL_FUNC(implement_math::compare) {
+REFAL_FUNC_IMPL(implement_math::compare) {
   // <Math::Compare s.X s.Y>
 
   using namespace refalrts;
@@ -127,7 +127,7 @@ REFAL_FUNC(implement_math::compare) {
 
 DECL_REFAL_IDENT(Fails, "Fails");
 
-REFAL_FUNC(implement_fileio::open) {
+REFAL_FUNC_IMPL(implement_fileio::open) {
   using namespace refalrts;
 
   // Образец: <Open ['b'] s.Mode e.FileName>
@@ -196,7 +196,7 @@ REFAL_FUNC(implement_fileio::open) {
   }
 }
 
-REFAL_FUNC(implement_fileio::close) {
+REFAL_FUNC_IMPL(implement_fileio::close) {
   // Функция закрывает дескриптор файла
   // <Close s.FileHandle> == пусто
 
@@ -230,7 +230,7 @@ REFAL_FUNC(implement_fileio::close) {
   }
 }
 
-REFAL_FUNC(implement_fileio::read_line) {
+REFAL_FUNC_IMPL(implement_fileio::read_line) {
   // Функция считывания строки со стандартного потока
   // <Read s.Handle> == e.Line
 
@@ -301,7 +301,7 @@ REFAL_FUNC(implement_fileio::read_line) {
   return cSuccess;
 }
 
-REFAL_FUNC(implement_fileio::write) {
+REFAL_FUNC_IMPL(implement_fileio::write) {
   // Функция печатает объектное выражение, являющееся аргументом
   // <Write s.Handle e.Expr> == пусто
 
@@ -492,7 +492,7 @@ void implement_strings::ord(refalrts::Iter ptr) {
   }
 }
 
-REFAL_FUNC(implement_strings::symb) {
+REFAL_FUNC_IMPL(implement_strings::symb) {
   /*
     Функция преобразует число в строку
     <Symb s.Number> == e.Text
@@ -550,7 +550,7 @@ REFAL_FUNC(implement_strings::symb) {
   return cSuccess;
 }
 
-REFAL_FUNC(implement_strings::numb) {
+REFAL_FUNC_IMPL(implement_strings::numb) {
   /*
     Функция преобразует цепочку символов в число.
 
@@ -607,7 +607,7 @@ refalrts::RefalFunction symb_descr(implement_strings::symb, "Symb");
 }
 #endif
 
-REFAL_FUNC(implement_strings::serialize_atom) {
+REFAL_FUNC_IMPL(implement_strings::serialize_atom) {
   // Формат
   // <SerializeAtom s.Atom>
   //   == Char e.CharRep
@@ -689,9 +689,9 @@ REFAL_FUNC(implement_strings::serialize_atom) {
 }
 
 #ifdef MODULE_REFAL
-REFAL_FUNC(Exit)
+REFAL_FUNC_IMPL(Exit)
 #else
-REFAL_FUNC(func_Exit)
+REFAL_FUNC_IMPL(func_Exit)
 #endif
 {
   // Формат <Exit s.RetCode> == поле зрения не изменяет
@@ -729,7 +729,7 @@ refalrts::RefalFunction descr_Exit(func_Exit, "Exit");
 refalrts::RefalFunction& Exit = descr_Exit;
 #endif
 
-REFAL_FUNC(implement_order::symb_compare) {
+REFAL_FUNC_IMPL(implement_order::symb_compare) {
   /*
     Функция сравнения двух атомов. Семантика функции устаревшая,
     т.к. наследует ограничения Модульного Рефала,
@@ -863,7 +863,7 @@ refalrts::FnResult implement_selfdiag::log(
 
 DECL_REFAL_IDENT(Exit_FuncNameE_, "@Exit");
 
-REFAL_FUNC(implement_selfdiag::exit_failure) {
+REFAL_FUNC_IMPL(implement_selfdiag::exit_failure) {
   /*
     Предполагается, что функция будет вызывать все финализаторы,
     поэтому вызывает функцию ExitE_.
@@ -906,7 +906,7 @@ FILE *g_log_file = 0;
 
 } // безымянное namespace
 
-REFAL_FUNC(implement_selfdiag::close_log) {
+REFAL_FUNC_IMPL(implement_selfdiag::close_log) {
   /*
     Закрывает файл лога.
 

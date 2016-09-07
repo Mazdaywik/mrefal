@@ -3,31 +3,15 @@
 
 #ifndef InitDEFINED_R_
 #define InitDEFINED_R_
-
-//$LABEL Init
-template <typename T>
-struct Init {
-  static const char *name() {
-    return "Init";
-  }
-};
-
+DECL_REFAL_IDENT(Init, "Init");
 #endif // InitDEFINED_R_
 
 #ifndef FinalDEFINED_R_
 #define FinalDEFINED_R_
-
-//$LABEL Final
-template <typename T>
-struct Final {
-  static const char *name() {
-    return "Final";
-  }
-};
-
+DECL_REFAL_IDENT(Final, "Final");
 #endif // FinalDEFINED_R_
 
-refalrts::FnResult CoreBEP_MSelfDiagP_InitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
+REFAL_FUNC(CoreBEP_MSelfDiagP_InitE_, "CoreBE.MSelfDiag.Init#ENTRY") {
   refalrts::this_is_generated_function();
   static unsigned s_counter = 0;
   refalrts::use_counter(s_counter);
@@ -39,7 +23,7 @@ refalrts::FnResult CoreBEP_MSelfDiagP_InitE_(refalrts::Iter arg_begin, refalrts:
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Init
     //(0 0 )
-    if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left( REFAL_IDENT(Init), bb_0_0, be_0_0 ) )
       break;
     if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -59,7 +43,7 @@ refalrts::FnResult CoreBEP_MSelfDiagP_InitE_(refalrts::Iter arg_begin, refalrts:
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Final
     //(0 0 )
-    if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left( REFAL_IDENT(Final), bb_0_0, be_0_0 ) )
       break;
     if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -74,21 +58,15 @@ refalrts::FnResult CoreBEP_MSelfDiagP_InitE_(refalrts::Iter arg_begin, refalrts:
   return refalrts::cRecognitionImpossible;
 }
 
-refalrts::FnResult CoreBEP_MSelfDiagP_CloseLog(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MSelfDiagP_CloseLog, "CoreBE.MSelfDiag.CloseLog") {
   return implement_selfdiag::close_log(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_MSelfDiagP_ExitFailure(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MSelfDiagP_ExitFailure, "CoreBE.MSelfDiag.ExitFailure") {
   return implement_selfdiag::exit_failure(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_MSelfDiagP_LogD_T(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MSelfDiagP_LogD_T, "CoreBE.MSelfDiag.Log-T") {
   return implement_selfdiag::log(
     implement_selfdiag::get_log_handle(),
     true, // прозрачный режим
@@ -96,9 +74,7 @@ refalrts::FnResult CoreBEP_MSelfDiagP_LogD_T(
   );
 }
 
-refalrts::FnResult CoreBEP_MSelfDiagP_Log(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MSelfDiagP_Log, "CoreBE.MSelfDiag.Log") {
   return implement_selfdiag::log(
     implement_selfdiag::get_log_handle(),
     false, // непрозрачный режим
@@ -106,9 +82,7 @@ refalrts::FnResult CoreBEP_MSelfDiagP_Log(
   );
 }
 
-refalrts::FnResult CoreBEP_MSelfDiagP_PrintMessage(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MSelfDiagP_PrintMessage, "CoreBE.MSelfDiag.PrintMessage") {
   return implement_selfdiag::log(
     implement_selfdiag::get_stderror_handle(),
     false, // непрозрачный режим

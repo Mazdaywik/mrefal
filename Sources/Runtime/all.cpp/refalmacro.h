@@ -6,8 +6,18 @@
 /*
   Макрос для написания заголовков рефал-функций.
 */
-#define REFAL_FUNC(func) \
+#define REFAL_FUNC_IMPL(func) \
   refalrts::FnResult func(refalrts::Iter arg_begin, refalrts::Iter arg_end)
+
+#ifdef MODULE_REFAL_NEW
+#define REFAL_FUNC(func, name) \
+  static REFAL_FUNC_IMPL(func_ ## func); \
+  refalrts::RefalFunction descr_ ## func(func_ ## func, name); \
+  refalrts::RefalFunction& func = descr_ ## func; \
+  static REFAL_FUNC_IMPL(func_ ## func)
+#else
+#define REFAL_FUNC(func, name) REFAL_FUNC_IMPL(func)
+#endif
 
 #ifdef MODULE_REFAL
 

@@ -6,17 +6,17 @@
 
 namespace implement_os {
 
-extern REFAL_FUNC(command_line);
-extern REFAL_FUNC(env_list);
-extern REFAL_FUNC(create_process);
+extern REFAL_FUNC_IMPL(command_line);
+extern REFAL_FUNC_IMPL(env_list);
+extern REFAL_FUNC_IMPL(create_process);
 
 } // namespace implement_os
 
 namespace implement_fs {
 
-extern REFAL_FUNC(find_files);
-extern REFAL_FUNC(file_attributes);
-extern REFAL_FUNC(full_name);
+extern REFAL_FUNC_IMPL(find_files);
+extern REFAL_FUNC_IMPL(file_attributes);
+extern REFAL_FUNC_IMPL(full_name);
 
 typedef bool (*FileFunc)(const char *file_name);
 

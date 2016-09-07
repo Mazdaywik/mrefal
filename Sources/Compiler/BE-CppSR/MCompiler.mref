@@ -55,7 +55,7 @@ GenFunction-Code {
     <Generator::GenFnStart s.ScopeClass t.FuncName>
     <Generator::GenInitCounter s.ScopeClass>
     <GenSentences e.Sentences>
-    <Generator::GenFnEnd>;
+    <Generator::GenFnEnd t.FuncName>;
 }
 
 GenSentences

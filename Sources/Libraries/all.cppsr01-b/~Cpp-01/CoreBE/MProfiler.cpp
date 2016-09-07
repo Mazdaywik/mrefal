@@ -3,31 +3,15 @@
 
 #ifndef InitDEFINED_R_
 #define InitDEFINED_R_
-
-//$LABEL Init
-template <typename refal_param_int>
-struct Init {
-  static const char *name() {
-    return "Init";
-  }
-};
-
+DECL_REFAL_IDENT(Init, "Init");
 #endif // InitDEFINED_R_
 
 #ifndef FinalDEFINED_R_
 #define FinalDEFINED_R_
-
-//$LABEL Final
-template <typename refal_param_int>
-struct Final {
-  static const char *name() {
-    return "Final";
-  }
-};
-
+DECL_REFAL_IDENT(Final, "Final");
 #endif // FinalDEFINED_R_
 
-refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
+REFAL_FUNC(CoreBEP_MProfilerP_InitE_, "CoreBE.MProfiler.Init#ENTRY") {
   refalrts::this_is_generated_function();
   static unsigned s_counter = 0;
   refalrts::use_counter(s_counter);
@@ -39,7 +23,7 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Init
     //(0 0 )
-    if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) )
+    if( ! refalrts::ident_left( REFAL_IDENT(Init), bb_0_0, be_0_0 ) )
       break;
     if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -57,7 +41,7 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Final
     //(0 0 )
-    if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) )
+    if( ! refalrts::ident_left( REFAL_IDENT(Final), bb_0_0, be_0_0 ) )
       break;
     if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -70,26 +54,18 @@ refalrts::FnResult CoreBEP_MProfilerP_InitE_(refalrts::Iter arg_begin, refalrts:
   return refalrts::cRecognitionImpossible;
 }
 
-refalrts::FnResult CoreBEP_MProfilerP_Quantify(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MProfilerP_Quantify, "CoreBE.MProfiler.Quantify") {
   return implement_profiler::quantify(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_MProfilerP_PrintResults(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MProfilerP_PrintResults, "CoreBE.MProfiler.PrintResults") {
   return implement_profiler::print_results(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_MProfilerP_SetOutputName(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MProfilerP_SetOutputName, "CoreBE.MProfiler.SetOutputName") {
   return implement_profiler::set_output_name(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_MProfilerP_Flush(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_MProfilerP_Flush, "CoreBE.MProfiler.Flush") {
   return implement_profiler::flush(arg_begin, arg_end);
 }

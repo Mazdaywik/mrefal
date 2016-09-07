@@ -4,31 +4,17 @@
 
 #ifndef InitDEFINED_R_
 #define InitDEFINED_R_
-
-//$LABEL Init
-template <typename T>
-struct Init {
-  static const char *name() {
-    return "Init";
-  }
-};
-
+DECL_REFAL_IDENT(Init, "Init");
 #endif // InitDEFINED_R_
 
 #ifndef FinalDEFINED_R_
 #define FinalDEFINED_R_
-
-//$LABEL Final
-template <typename T>
-struct Final {
-  static const char *name() {
-    return "Final";
-  }
-};
-
+DECL_REFAL_IDENT(Final, "Final");
 #endif // FinalDEFINED_R_
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_InitE_(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
+REFAL_FUNC(
+  CoreBEP_OSP_MFileSystemP_InitE_, "CoreBE.OS.MFileSystem.Init#ENTRY"
+) {
   refalrts::this_is_generated_function();
   static unsigned s_counter = 0;
   refalrts::use_counter(s_counter);
@@ -40,7 +26,7 @@ refalrts::FnResult CoreBEP_OSP_MFileSystemP_InitE_(refalrts::Iter arg_begin, ref
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Init
     //(0 0 )
-    if( ! refalrts::ident_left(  & Init<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left( REFAL_IDENT(Init), bb_0_0, be_0_0 ) )
       break;
     if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -60,7 +46,7 @@ refalrts::FnResult CoreBEP_OSP_MFileSystemP_InitE_(refalrts::Iter arg_begin, ref
     refalrts::move_right( bb_0_0, be_0_0 );
     // # Final
     //(0 0 )
-    if( ! refalrts::ident_left(  & Final<int>::name, bb_0_0, be_0_0 ) ) 
+    if( ! refalrts::ident_left( REFAL_IDENT(Final), bb_0_0, be_0_0 ) )
       break;
     if( ! refalrts::empty_seq( bb_0_0, be_0_0 ) )
       break;
@@ -75,44 +61,43 @@ refalrts::FnResult CoreBEP_OSP_MFileSystemP_InitE_(refalrts::Iter arg_begin, ref
   return refalrts::cRecognitionImpossible;
 }
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_RemoveFile(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+REFAL_FUNC(
+  CoreBEP_OSP_MFileSystemP_RemoveFile, "CoreBE.OS.MFileSystem.RemoveFile"
 ) {
   return implement_fs::perform_file_operation(
     implement_fs::remove_file, arg_begin, arg_end
   );
 }
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_RemoveDir(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+REFAL_FUNC(
+  CoreBEP_OSP_MFileSystemP_RemoveDir, "CoreBE.OS.MFileSystem.RemoveDir"
 ) {
   return implement_fs::perform_file_operation(
     implement_fs::remove_dir, arg_begin, arg_end
   );
 }
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_MakeDir(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-) {
+REFAL_FUNC(CoreBEP_OSP_MFileSystemP_MakeDir, "CoreBE.OS.MFileSystem.MakeDir") {
   return implement_fs::perform_file_operation(
     implement_fs::make_dir, arg_begin, arg_end
   );
 }
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_FullName(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+REFAL_FUNC(
+  CoreBEP_OSP_MFileSystemP_FullName, "CoreBE.OS.MFileSystem.FullName"
 ) {
   return implement_fs::full_name(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_FileAttributes(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+REFAL_FUNC(
+  CoreBEP_OSP_MFileSystemP_FileAttributes,
+  "CoreBE.OS.MFileSystem.FileAttributes"
 ) {
   return implement_fs::file_attributes(arg_begin, arg_end);
 }
 
-refalrts::FnResult CoreBEP_OSP_MFileSystemP_FindFiles(
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+REFAL_FUNC(
+  CoreBEP_OSP_MFileSystemP_FindFiles, "CoreBE.OS.MFileSystem.FindFiles"
 ) {
   return implement_fs::find_files(arg_begin, arg_end);
 }

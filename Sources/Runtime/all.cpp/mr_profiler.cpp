@@ -13,7 +13,7 @@ using profiler::Profiler;
 
 namespace {
 
-REFAL_FUNC(end_quantify)
+REFAL_FUNC_IMPL(end_quantify)
 {
   refalrts::Iter open_call = arg_begin;
   refalrts::Iter close_call = arg_end;
@@ -60,7 +60,7 @@ refalrts::RefalFunction endQuantifyDescr(
 
 } // безымянное namespace
 
-REFAL_FUNC(implement_profiler::quantify)
+REFAL_FUNC_IMPL(implement_profiler::quantify)
 {
   // Угловые скобки, имя функции
   refalrts::Iter open_call = arg_begin;
@@ -149,7 +149,7 @@ REFAL_FUNC(implement_profiler::quantify)
   return refalrts::cSuccess;
 }
 
-REFAL_FUNC(implement_profiler::print_results)
+REFAL_FUNC_IMPL(implement_profiler::print_results)
 {
   refalrts::Iter open_call = arg_begin;
   refalrts::Iter close_call = arg_end;
@@ -184,7 +184,7 @@ REFAL_FUNC(implement_profiler::print_results)
   return refalrts::cSuccess;
 }
 
-REFAL_FUNC(implement_profiler::set_output_name) {
+REFAL_FUNC_IMPL(implement_profiler::set_output_name) {
   refalrts::Iter open_call = arg_begin;
   refalrts::Iter close_call = arg_end;
   refalrts::move_left( arg_begin, arg_end );
@@ -206,7 +206,7 @@ REFAL_FUNC(implement_profiler::set_output_name) {
   return refalrts::cSuccess;
 }
 
-REFAL_FUNC(implement_profiler::flush) {
+REFAL_FUNC_IMPL(implement_profiler::flush) {
   refalrts::Iter open_call = arg_begin;
   refalrts::Iter close_call = arg_end;
   refalrts::move_left( arg_begin, arg_end );

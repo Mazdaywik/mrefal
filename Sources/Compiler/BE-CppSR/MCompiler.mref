@@ -22,10 +22,9 @@ $ENTRY Generate
 
 Generate-Properties {
   GenSwap = & Generator.GenSwap;
-  SwitchEnum Entry = & Generator.GenEEnum;
+  SwitchEnum Entry = & Generator.GenEnum;
   SwitchEnum Local = & Generator.GenEnum;
   GenCommonHeaders = <Generator::GenCommonHeaders>;
-  GenerateLabelForFunction = Yes & Generator.GenIdent-FuncName;
   GenIdent = & GenIdent;
   GenFunction-Decl = & GenFunction-Decl;
   Generate-EntryCode-Go = & Generate-EntryCode-Go;
@@ -41,28 +40,22 @@ GenFunction-Decl {
     <Generator::GenExtern t.FunctionName>;
 
   Local t.FunctionName =
-    <Generator::GenForward t.FunctionName>;
+    <Generator::GenExtern t.FunctionName>;
 
   ADT t.FunctionName =
     <Generator::GenEnum t.FunctionName>;
 
   Swap t.FunctionName =
-    <Generator::GenForward t.FunctionName>;
+    <Generator::GenExtern t.FunctionName>;
 }
 
 GenFunction-Code {
   t.FuncName s.ScopeClass e.Sentences =
-    <Generator::GenFnStart s.ScopeClass t.FuncName>
-    <Generator::GenInitCounter s.ScopeClass>
-    <GenSentences e.Sentences>
-    <Generator::GenFnEnd t.FuncName>;
-}
-
-GenSentences
-  e.Sentences =
-    <Generator::GenSentence
+    <Generator::GenFunction
+      t.FuncName s.ScopeClass
       <Algorithm::MakeAlgorithm e.Sentences>
     >;
+}
 
 Generate-EntryCode-Go
   s.FnProperties t.ModuleName (e.Result) e.Imports =

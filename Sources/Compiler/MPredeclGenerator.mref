@@ -19,10 +19,6 @@ $IMPORT MProfiler;
   <<s.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName> == e.Lines
   s.ScopeClass ::= Entry | Local
   <s.FnProperties GenCommonHeaders> == e.Lines
-  <s.FnProperties GenerateLabelForFunction>
-    == Yes s.FnGenLabelForFunction
-    == No
-    <s.FnGenLabelForFunction t.AbsolutName> == e.Lines
   <<s.FnProperties GenIdent> e.Name> == e.Lines
   <<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName>
     == e.Lines
@@ -271,28 +267,6 @@ Declarations-Expr {
 
 Declarations-Callable {
   s.FnProperties (s.CallType t.SrcPos t.QualifiedName) =
-    <Declarations-Callable-Aux
-      s.FnProperties
-      <s.FnProperties GenerateLabelForFunction>
-      s.CallType t.SrcPos t.QualifiedName
-    >;
-}
-
-Declarations-Callable-Aux {
-  s.FnProperties
-  Yes s.GenIdent-FuncName s.CallType t.SrcPos t.QualifiedName =
-    (Declare
-      Identifier t.QualifiedName
-      (s.GenIdent-FuncName t.QualifiedName)
-    )
-    (Declare
-      Function
-      t.QualifiedName
-      (<s.FnProperties GenFunction-Decl> s.CallType t.QualifiedName)
-    );
-
-  s.FnProperties
-  No s.CallType t.SrcPos t.QualifiedName =
     (Declare
       Function
       t.QualifiedName

@@ -27,7 +27,6 @@ Generate-Properties {
   SwitchEnum Entry = & GenEnum-Entry;
   SwitchEnum Local = & GenEnum-Local;
   GenCommonHeaders = /* пусто */;
-  GenerateLabelForFunction = No;
   GenIdent = & GenIdent;
   GenFunction-Decl = & GenFunction-Decl;
   Generate-EntryCode-Go = & Generate-EntryCode-Go;

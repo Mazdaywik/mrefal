@@ -35,26 +35,25 @@ NameCodeChar {
   s.Other = s.Other;
 }
 
-FuncArguments {
-  = 'refalrts::Iter arg_begin, refalrts::Iter arg_end';
+$ENTRY GenFunction {
+  t.FuncName s.ScopeClass e.Algorithm =
+    <GenFnStart t.FuncName>
+    <GenInitCounter s.ScopeClass>
+    <GenBody e.Algorithm>
+    <GenFnEnd t.FuncName>;
 }
 
-NakedArguments {
-  = 'refalrts::Iter, refalrts::Iter';
-}
-
-TextFromMemoryClass {
-  Local = 'static '; Entry = ; InitFinal = ;
-}
-
-SwGenFnStart {
-  s.MemoryClass s.FnArguments t.Name =
+GenFnStart {
+  t.Name =
     ('extern refalrts::RefalFunction& ' <QNameCode t.Name> ';')
-    ('refalrts::FnResult func_' <QNameCode t.Name> '(' <s.FnArguments> ') {')
+    (
+      'refalrts::FnResult func_' <QNameCode t.Name>
+      '(refalrts::Iter arg_begin, refalrts::Iter arg_end) {'
+    )
     ('  refalrts::this_is_generated_function();');
 }
 
-$ENTRY GenInitCounter {
+GenInitCounter {
   InitFinal =
     ('  static unsigned s_counter = 0;')
     ('  refalrts::use_counter(s_counter);');
@@ -62,15 +61,16 @@ $ENTRY GenInitCounter {
   s.Other = ;
 }
 
-$ENTRY GenFnStart {
-  s.MemoryClass t.Name =
-    <SwGenFnStart s.MemoryClass & FuncArguments t.Name>;
-}
-
-$ENTRY GenFnEnd {
+GenFnEnd {
   t.Name =
-    ('  return refalrts::cRecognitionImpossible;') ('}')
-    <GenFnEnd-Aux t.Name>;
+    ('  return refalrts::cRecognitionImpossible;')
+    ('}')
+    (
+      'refalrts::RefalFunction descr_' <QNameCode t.Name>
+      '(func_' <QNameCode t.Name> ', "' <MakeExternalName t.Name> '");'
+    )
+    <Reference t.Name>
+    ();
 }
 
 Reference {
@@ -81,23 +81,13 @@ Reference {
     );
 }
 
-GenFnEnd-Aux {
+$ENTRY GenEnum {
   t.Name =
     (
-      'refalrts::RefalFunction descr_' <QNameCode t.Name> '('
-      'func_' <QNameCode t.Name> ', "' <MakeExternalName t.Name> '"'
-      ');'
+      'refalrts::RefalEmptyFunction descr_' <QNameCode t.Name>
+      '("' <MakeExternalName t.Name> '");'
     )
-    <Reference t.Name>
-    ();
-}
-
-$ENTRY GenEEnum {
-  t.Name = <SwGenFnStart Entry & NakedArguments t.Name> <GenFnEnd t.Name>;
-}
-
-$ENTRY GenEnum {
-  t.Name = <SwGenFnStart Local & NakedArguments t.Name> <GenFnEnd t.Name>;
+    <Reference t.Name>;
 }
 
 $ENTRY GenExtern {
@@ -106,22 +96,8 @@ $ENTRY GenExtern {
     ();
 }
 
-$ENTRY GenForward {
-  t.Name =
-    ('extern refalrts::RefalFunction& ' <QNameCode t.Name> ';')
-    ();
-}
-
-//$ENTRY GenESwap {
-//  t.Name = <GenSwap-Aux Entry t.Name>;
-//}
-
 $ENTRY GenSwap {
-  t.Name = <GenSwap-Aux Local t.Name>;
-}
-
-GenSwap-Aux {
-  s.MemoryClass t.Name =
+  t.Name =
     (
       'refalrts::RefalSwap descr_' <QNameCode t.Name>
       '("' <MakeExternalName t.Name> '");'
@@ -135,10 +111,6 @@ $ENTRY GenIdent {
       (<MakeExternalName t.Name>)
       'ident_' <QNameCode t.Name>
     >;
-}
-
-$ENTRY GenIdent-FuncName {
-  t.Name = /* пусто */;
 }
 
 MakeExternalName {
@@ -175,9 +147,9 @@ $ENTRY GenCommonHeaders {
 }
 
 
-$ENTRY GenSentence {
+GenBody {
   e.Algorithm =
-    <GenSentence-TerminateAccumulator
+    <GenBody-TerminateAccumulator
       <MLambda::MapReduce
         & GenCommand
         ('  ')
@@ -186,7 +158,7 @@ $ENTRY GenSentence {
     >;
 }
 
-GenSentence-TerminateAccumulator {
+GenBody-TerminateAccumulator {
   (e.Indent) e.Generated =
     e.Generated;
 }
@@ -486,7 +458,7 @@ PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('ident') ' & ident_' <QNameCode t.Name> '<int>::name'
+      ('ident') '& ident_' <QNameCode t.Name> '<int>::name'
     >;
 }
 

@@ -1,7 +1,7 @@
 @echo off
 set MR-PROGRAMS=Grab_info Text-To-HTML TODO_list Recoder VersionUpdater
-set MR-PROGRAMS=%MR-PROGRAMS% MergeFindResults ErrorDecoder DocConverter
-set MR-PROGRAMS=%MR-PROGRAMS% DocConverter-wp ClearXLinx UnStructure
+set MR-PROGRAMS=%MR-PROGRAMS% ErrorDecoder DocConverter
+set MR-PROGRAMS=%MR-PROGRAMS% DocConverter-wp ClearXLinx
 set MR-PROGRAMS=%MR-PROGRAMS% SRPrep FS-Extent
 
 set VERSRC=/srcfile:mUtilitiesBanner.mref

@@ -197,9 +197,9 @@ struct ProfilerInfo {
   ProfilerInfo(): name(), stat(0) {}
 
   std::string make_name() const {
-    enum { cBitsInLong = sizeof(unsigned long) * 3 / 10 + 2 };
+    enum { cDecimalDigitsInLong = sizeof(unsigned long) * 3 / 10 + 2 };
     // " (" + count + ")" + \0
-    char buffer[2 + cBitsInLong + 1 + 1];
+    char buffer[2 + cDecimalDigitsInLong + 1 + 1];
     std::sprintf(buffer, " (%ld)", count());
     return name + buffer;
   }

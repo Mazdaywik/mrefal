@@ -125,6 +125,8 @@ profiler::Report::SuffixMethod profiler::Report::get_method(int metric) {
   switch(metric) {
     case cPerformanceCounter_TotalTime:
     case cPerformanceCounter_BuiltInTime:
+    case cPerformanceCounter_RuntimeTime:
+    case cPerformanceCounter_NativeTime:
     case cPerformanceCounter_LinearPatternTime:
     case cPerformanceCounter_LinearResultTime:
     case cPerformanceCounter_OpenELoopTimeClear:
@@ -133,6 +135,7 @@ profiler::Report::SuffixMethod profiler::Report::get_method(int metric) {
     case cPerformanceCounter_RepeatTvarMatchTime:
     case cPerformanceCounter_RepeatTvarMatchTimeOutsideECycle:
     case cPerformanceCounter_TEvarCopyTime:
+    case cPerformanceCounter_ContextCopyTime:
     case cPerformanceCounter_RefalTime:
     case cPerformanceCounter_BuildResultTime:
     case cPerformanceCounter_PatternMatchTime:
@@ -312,7 +315,13 @@ profiler::Report::metric_name(int metric) {
       return "= Total time";
 
     case cPerformanceCounter_BuiltInTime:
-      return "+ Built in time";
+      return "* Built in time";
+
+    case cPerformanceCounter_RuntimeTime:
+      return "+ Runtime time";
+
+    case cPerformanceCounter_NativeTime:
+      return "+ Native time";
 
     case cPerformanceCounter_RefalTime:
       return "* Refal time";
@@ -331,6 +340,9 @@ profiler::Report::metric_name(int metric) {
 
     case cPerformanceCounter_TEvarCopyTime:
       return "+ t-, e-vars copy time";
+
+    case cPerformanceCounter_ContextCopyTime:
+      return "+ context copy time";
 
     case cPerformanceCounter_RepeatTvarMatchTime:
       return "+ Repeated t-var time (in e-loop)";
@@ -372,7 +384,8 @@ void profiler::MetricsEnumerator::enumerate() {
   using namespace refalrts;
 
   int atomic_time_counters[] = {
-    cPerformanceCounter_BuiltInTime,
+    cPerformanceCounter_RuntimeTime,
+    cPerformanceCounter_NativeTime,
     cPerformanceCounter_LinearPatternTime,
     cPerformanceCounter_LinearResultTime,
     cPerformanceCounter_OpenELoopTimeClear,
@@ -380,7 +393,8 @@ void profiler::MetricsEnumerator::enumerate() {
     cPerformanceCounter_RepeatEvarMatchTimeOutsideECycle,
     cPerformanceCounter_RepeatTvarMatchTime,
     cPerformanceCounter_RepeatTvarMatchTimeOutsideECycle,
-    cPerformanceCounter_TEvarCopyTime
+    cPerformanceCounter_TEvarCopyTime,
+    cPerformanceCounter_ContextCopyTime,
   };
 
   std::sort(
@@ -395,6 +409,7 @@ void profiler::MetricsEnumerator::enumerate() {
     cPerformanceCounter_PatternMatchTime,
     cPerformanceCounter_LinearRefalTime,
     cPerformanceCounter_OpenELoopTime,
+    cPerformanceCounter_BuiltInTime,
   };
 
   bool base_present = amount(cPerformanceCounter_TotalTime);
@@ -599,31 +614,6 @@ void profiler::Profiler::OutToStream(std::FILE *output) {
   metrics_enum.program_stat = &program_stat;
   metrics_enum.report = &report;
   metrics_enum.enumerate();
-
-  unsigned long counters[cPerformanceCounter_COUNTERS_NUMBER];
-  refalrts::read_performance_counters(counters);
-  double tick_per_sec = refalrts::ticks_per_second();
-
-  std::fprintf(
-    output,
-    "\n"
-    "Total time %f\n"
-    "Built in time %f\n"
-    "Refal time %f\n"
-    "Pattern match time %f\n"
-    "Building result time %f\n"
-    "Tick per second %f\n"
-    "Total steps %lu\n"
-    "Heap size %lu\n",
-    counters[cPerformanceCounter_TotalTime] / tick_per_sec,
-    counters[cPerformanceCounter_BuiltInTime] / tick_per_sec,
-    counters[cPerformanceCounter_RefalTime] / tick_per_sec,
-    counters[cPerformanceCounter_PatternMatchTime] / tick_per_sec,
-    counters[cPerformanceCounter_BuildResultTime] / tick_per_sec,
-    tick_per_sec,
-    counters[cPerformanceCounter_TotalSteps],
-    counters[cPerformanceCounter_HeapSize]
-  );
 }
 
 profiler::Profiler* profiler::Profiler::create(const char *name) {

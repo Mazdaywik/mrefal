@@ -596,7 +596,7 @@ DECL_REFAL_IDENT(Number, "Number");
 DECL_REFAL_IDENT(IsntSerializable, "IsntSerializable");
 
 namespace {
-refalrts::RefalFunction symb_descr(implement_strings::symb, "Symb");
+refalrts::RefalNativeFunction symb_descr(implement_strings::symb, "Symb");
 }
 
 REFAL_FUNC_IMPL(implement_strings::serialize_atom) {
@@ -707,7 +707,7 @@ REFAL_FUNC_IMPL(func_Exit)
   return ::refalrts::cExit;
 }
 
-refalrts::RefalFunction descr_Exit(func_Exit, "Exit");
+refalrts::RefalNativeFunction descr_Exit(func_Exit, "Exit");
 refalrts::RefalFunction& Exit = descr_Exit;
 
 REFAL_FUNC_IMPL(implement_order::symb_compare) {

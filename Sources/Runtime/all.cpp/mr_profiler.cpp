@@ -50,7 +50,7 @@ REFAL_FUNC_IMPL(end_quantify)
   return refalrts::cSuccess;
 }
 
-refalrts::RefalFunction endQuantifyDescr(
+refalrts::RefalNativeFunction endQuantifyDescr(
   end_quantify, PROFILE_STOP_FUNCTION_NAME
 );
 

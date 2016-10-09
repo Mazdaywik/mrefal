@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "refalrts.h"
 #include "mr_common.h"
 #include "mr_oslib.h"
@@ -62,7 +64,12 @@ REFAL_FUNC(CoreBEP_OSP_MOSP_CreateProcess, "CoreBE.OS.MOS.CreateProcess") {
 }
 
 REFAL_FUNC(CoreBEP_OSP_MOSP_ForseExit, "CoreBE.OS.MOS.ForseExit") {
-  return ExitE_.ptr(arg_begin, arg_end);
+  refalrts::Iter func_name = arg_begin->next;
+  assert(func_name->tag == refalrts::cDataFunction);
+  func_name->function_info = &ExitE_;
+  refalrts::push_stack(arg_end);
+  refalrts::push_stack(arg_begin);
+  return refalrts::cSuccess;
 }
 
 REFAL_FUNC(CoreBEP_OSP_MOSP_EnvList, "CoreBE.OS.MOS.EnvList") {

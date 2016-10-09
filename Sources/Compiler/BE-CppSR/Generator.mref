@@ -197,7 +197,6 @@ GenCommand {
   (e.Indent) (CmdStartSentence) =
     (e.Indent '  ')
     (e.Indent 'do {')
-    (e.Indent '  refalrts::start_sentence();')
     (e.Indent '  refalrts::Iter ' <BracketsVar-B 0 0> ' = arg_begin;')
     (e.Indent '  refalrts::Iter ' <BracketsVar-E 0 0> ' = arg_end;')
     (
@@ -407,7 +406,9 @@ GenCommand {
 
   (e.Indent '  ') (CmdEndSentence) =
     (e.Indent)
-    (e.Indent '} while ( 0 );') ();
+    (e.Indent '} while ( 0 );')
+    (e.Indent 'refalrts::stop_sentence();')
+    ();
 }
 
 EntryCondition {

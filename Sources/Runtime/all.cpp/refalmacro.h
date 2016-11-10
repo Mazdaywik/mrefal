@@ -12,7 +12,7 @@
 #define REFAL_FUNC(func, name) \
   static REFAL_FUNC_IMPL(func_ ## func); \
   refalrts::RefalNativeFunction descr_ ## func(func_ ## func, name); \
-  refalrts::RefalFunction& func = descr_ ## func; \
+  refalrts::RefalFunction& func ## _0_0 = descr_ ## func; \
   static REFAL_FUNC_IMPL(func_ ## func)
 
 /*

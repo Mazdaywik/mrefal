@@ -708,7 +708,7 @@ REFAL_FUNC_IMPL(func_Exit)
 }
 
 refalrts::RefalNativeFunction descr_Exit(func_Exit, "Exit");
-refalrts::RefalFunction& Exit = descr_Exit;
+refalrts::RefalFunction& Exit_0_0 = descr_Exit;
 
 REFAL_FUNC_IMPL(implement_order::symb_compare) {
   /*
@@ -865,7 +865,7 @@ REFAL_FUNC_IMPL(implement_selfdiag::exit_failure) {
   if( ! alloc_number(sRetValue, 255) ) return cNoMemory;
 
   // Переинициализация имени функции
-  func_name->function_info = &ExitE_;
+  func_name->function_info = &ExitE__0_0;
 
   // Вставка кода возврата после имени функции
   splice_elem( close_call, sRetValue );

@@ -66,7 +66,7 @@ REFAL_FUNC(CoreBEP_OSP_MOSP_CreateProcess, "CoreBE.OS.MOS.CreateProcess") {
 REFAL_FUNC(CoreBEP_OSP_MOSP_ForseExit, "CoreBE.OS.MOS.ForseExit") {
   refalrts::Iter func_name = arg_begin->next;
   assert(func_name->tag == refalrts::cDataFunction);
-  func_name->function_info = &ExitE_;
+  func_name->function_info = &ExitE__0_0;
   refalrts::push_stack(arg_end);
   refalrts::push_stack(arg_begin);
   return refalrts::cSuccess;

@@ -44,9 +44,9 @@ extern REFAL_FUNC_IMPL(serialize_atom);
 } // namespace implement_strings
 
 // Эта функция генерится автоматически вместе с Go ...
-extern refalrts::RefalFunction& ExitE_;
+extern refalrts::RefalFunction& ExitE__0_0;
 // ... и вызывает эту функцию
-extern refalrts::RefalFunction& Exit;
+extern refalrts::RefalFunction& Exit_0_0;
 
 namespace implement_order {
 

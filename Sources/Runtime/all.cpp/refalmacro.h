@@ -19,17 +19,13 @@
   Макрос для объявления идентификаторов.
 */
 #define DECL_REFAL_IDENT(ident_name, textual) \
-  template <typename T> \
-  struct ident_ ## ident_name { \
-    static const char *name() { \
-      return textual; \
-    } \
-  };
+  const refalrts::RefalIdentifier ident_ ## ident_name = \
+    refalrts::ident_from_static(textual);
 
 /*
   Макрос для использования идентификаторов.
 */
-#define REFAL_IDENT(ident_name) ident_ ## ident_name <int>::name
+#define REFAL_IDENT(ident_name) ident_ ## ident_name
 
 
 #endif //RefalMacro_H_

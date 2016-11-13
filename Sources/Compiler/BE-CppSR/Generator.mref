@@ -111,10 +111,10 @@ $ENTRY GenSwap {
 
 $ENTRY GenIdent {
   t.Name =
-    <GenIdent-Aux
-      (<MakeExternalName t.Name>)
-      'ident_' <QNameCode t.Name>
-    >;
+    (
+      'const refalrts::RefalIdentifier ident_' <QNameCode t.Name> ' = '
+      'refalrts::ident_from_static("' <MakeExternalName t.Name> '");'
+    );
 }
 
 MakeExternalName {
@@ -126,23 +126,6 @@ MakeExternalName-Aux {
   e.Name Entry = e.Name '#ENTRY';
 
   e.Name = e.Name;
-}
-
-GenIdent-Aux {
-  (e.ExternalName) e.InternalName =
-    ('#ifndef ' e.InternalName 'DEFINED_R_')
-    ('#define ' e.InternalName 'DEFINED_R_')
-    ()
-    ('//$LABEL ' e.ExternalName)
-    ('template <typename refal_param_int>')
-    ('struct ' e.InternalName ' {')
-    ('  static const char *name() {')
-    ('    return "' e.ExternalName '";')
-    ('  }')
-    ('};')
-    ()
-    ('#endif // ' e.InternalName 'DEFINED_R_')
-    ();
 }
 
 $ENTRY GenCommonHeaders {
@@ -463,7 +446,7 @@ PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('ident') '& ident_' <QNameCode t.Name> '<int>::name'
+      ('ident') 'ident_' <QNameCode t.Name>
     >;
 }
 
@@ -622,7 +605,7 @@ SwInfo {
 
   ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 
-  ElIdent t.Name = ', & ident_' <QNameCode t.Name> '<int>::name';
+  ElIdent t.Name = ', ident_' <QNameCode t.Name>;
 
   // Остальное -- скобки
   s.Other = ;

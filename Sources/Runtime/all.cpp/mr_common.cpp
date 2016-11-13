@@ -347,7 +347,7 @@ REFAL_FUNC_IMPL(implement_fileio::write) {
         continue;
 
       case cDataIdentifier:
-        printf_res = fprintf(f, "%s ", (ptr->ident_info)());
+        printf_res = fprintf(f, "%s ", ptr->ident_info->name());
         continue;
 
       case cDataOpenADT:

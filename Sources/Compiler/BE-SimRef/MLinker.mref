@@ -177,7 +177,16 @@ MakeCppRunTime {
 }
 
 MakeCppRunTime-Sref {
-  e.CExt (e.FileName '.sref') = (e.FileName '.' e.CExt);
+  e.CExt (e.FileName '.sref') =
+    (e.FileName '.' e.CExt)
+    <MakeCppRunTime-Sref-SwNative
+      <MFileSystem::ExistFile-T e.FileName '.native.' e.CExt>
+    >;
+}
+
+MakeCppRunTime-Sref-SwNative {
+  True e.NativeName = (e.NativeName);
+  False e.NativeName = /* нет нативного файла */;
 }
 
 CallSRefC

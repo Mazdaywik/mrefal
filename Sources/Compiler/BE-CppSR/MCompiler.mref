@@ -43,7 +43,7 @@ GenFunction-Decl {
     <Generator::GenExtern t.FunctionName>;
 
   ADT t.FunctionName =
-    <Generator::GenEnum t.FunctionName>;
+    <Generator::GenADT t.FunctionName>;
 
   Swap t.FunctionName =
     <Generator::GenExtern t.FunctionName>;

@@ -343,7 +343,7 @@ REFAL_FUNC_IMPL(implement_fileio::write) {
         continue;
 
       case cDataFunction:
-        printf_res = fprintf(f, "%s ", ptr->function_info->name);
+        printf_res = fprintf(f, "%s ", ptr->function_info->name.name);
         continue;
 
       case cDataIdentifier:
@@ -596,7 +596,11 @@ DECL_REFAL_IDENT(Number, "Number");
 DECL_REFAL_IDENT(IsntSerializable, "IsntSerializable");
 
 namespace {
-refalrts::RefalNativeFunction symb_descr(implement_strings::symb, "Symb");
+
+refalrts::RefalNativeFunction symb_descr(
+  implement_strings::symb, refalrts::RefalFuncName("Symb", 0, 0)
+);
+
 }
 
 REFAL_FUNC_IMPL(implement_strings::serialize_atom) {
@@ -707,8 +711,10 @@ REFAL_FUNC_IMPL(func_Exit)
   return ::refalrts::cExit;
 }
 
-refalrts::RefalNativeFunction descr_Exit(func_Exit, "Exit");
-refalrts::RefalFunction& Exit_0_0 = descr_Exit;
+refalrts::RefalNativeFunction descr_Exit(
+  func_Exit, refalrts::RefalFuncName("Exit", 0, 0)
+);
+refalrts::ExternalReference ref_Exit("Exit", 0, 0);
 
 REFAL_FUNC_IMPL(implement_order::symb_compare) {
   /*
@@ -865,7 +871,7 @@ REFAL_FUNC_IMPL(implement_selfdiag::exit_failure) {
   if( ! alloc_number(sRetValue, 255) ) return cNoMemory;
 
   // Переинициализация имени функции
-  func_name->function_info = &ExitE__0_0;
+  func_name->function_info = ref_Exit.ref.function;
 
   // Вставка кода возврата после имени функции
   splice_elem( close_call, sRetValue );

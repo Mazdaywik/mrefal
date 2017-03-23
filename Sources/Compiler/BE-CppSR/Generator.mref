@@ -10,10 +10,6 @@ QNameCode {
   t.Name = <DoQNameCode <MQualifiedName::Parse t.Name>>;
 }
 
-QNameCode-Func {
-  t.Name = <QNameCode t.Name> '_0_0';
-}
-
 DoQNameCode {
   (e.First) = <NameCode e.First>;
 
@@ -49,7 +45,6 @@ $ENTRY GenFunction {
 
 GenFnStart {
   t.Name =
-    ('extern refalrts::RefalFunction& ' <QNameCode-Func t.Name> ';')
     (
       'refalrts::FnResult func_' <QNameCode t.Name>
       '(refalrts::Iter arg_begin, refalrts::Iter arg_end) {'
@@ -71,32 +66,31 @@ GenFnEnd {
     ('}')
     (
       'refalrts::RefalNativeFunction descr_' <QNameCode t.Name>
-      '(func_' <QNameCode t.Name> ', "' <MakeExternalName t.Name> '");'
+      '(func_' <QNameCode t.Name> ', ' <MakeNameObject t.Name> ');'
     )
-    <Reference t.Name>
     ();
 }
 
-Reference {
+$ENTRY GenADT {
   t.Name =
-    (
-      'refalrts::RefalFunction& ' <QNameCode-Func t.Name>
-      ' = descr_' <QNameCode t.Name> ';'
-    );
+    <GenEnum t.Name>
+    <GenExtern t.Name>;
 }
 
 $ENTRY GenEnum {
   t.Name =
     (
       'refalrts::RefalEmptyFunction descr_' <QNameCode t.Name>
-      '("' <MakeExternalName t.Name> '");'
-    )
-    <Reference t.Name>;
+      '(' <MakeNameObject t.Name> ');'
+    );
 }
 
 $ENTRY GenExtern {
   t.Name =
-    ('extern refalrts::RefalFunction& ' <QNameCode-Func t.Name> ';')
+    (
+      'static refalrts::ExternalReference ref_' <QNameCode t.Name>
+      '("' <MakeExternalName t.Name> '", 0, 0);'
+    )
     ();
 }
 
@@ -104,9 +98,8 @@ $ENTRY GenSwap {
   t.Name =
     (
       'refalrts::RefalSwap descr_' <QNameCode t.Name>
-      '("' <MakeExternalName t.Name> '");'
-    )
-    <Reference t.Name>;
+      '(' <MakeNameObject t.Name> ');'
+    );
 }
 
 $ENTRY GenIdent {
@@ -117,12 +110,19 @@ $ENTRY GenIdent {
     );
 }
 
+MakeNameObject {
+  t.Name =
+    'refalrts::RefalFuncName("' <MakeExternalName t.Name> '", 0, 0)';
+}
+
 MakeExternalName {
   t.Name =
     <MakeExternalName-Aux <MQualifiedName::ToPrintable-Dot t.Name>>;
 }
 
 MakeExternalName-Aux {
+  Go = 'Go';
+
   e.Name Entry = e.Name '#ENTRY';
 
   e.Name = e.Name;
@@ -438,7 +438,7 @@ PrintMatchName {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('function') '& ' <QNameCode-Func t.Name>
+      ('function') 'ref_' <QNameCode t.Name> '.ref.function'
     >;
 }
 
@@ -466,7 +466,7 @@ PrintMatchADT {
       ('adt')
       <BracketsVar-B s.InnerNum 0> ', '
       <BracketsVar-E s.InnerNum 0> ', '
-      '& ' <QNameCode-Func t.Name>
+      'ref_' <QNameCode t.Name> '.ref.function'
     >;
 }
 
@@ -601,7 +601,7 @@ SwAllocator {
 SwInfo {
   ElChar s.Char = ', ' '\'' <MEscape::EscapeChar-Hex s.Char> '\'';
 
-  ElName t.Name = ', & ' <QNameCode-Func t.Name>;
+  ElName t.Name = ', ref_' <QNameCode t.Name> '.ref.function';
 
   ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 

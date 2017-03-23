@@ -51,7 +51,7 @@ REFAL_FUNC_IMPL(end_quantify)
 }
 
 refalrts::RefalNativeFunction endQuantifyDescr(
-  end_quantify, PROFILE_STOP_FUNCTION_NAME
+  end_quantify, refalrts::RefalFuncName(PROFILE_STOP_FUNCTION_NAME, 0, 0)
 );
 
 } // безымянное namespace
@@ -113,7 +113,7 @@ REFAL_FUNC_IMPL(implement_profiler::quantify)
   if ( ! allocated )
     return refalrts::cNoMemory;
 
-  const char *func_name = func->function_info->name;
+  const char *func_name = func->function_info->name.name;
 
   profiler_object->char_info = 0;
   profiler_object->tag = refalrts::cDataFile;

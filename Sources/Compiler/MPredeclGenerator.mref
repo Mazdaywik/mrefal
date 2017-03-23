@@ -93,6 +93,11 @@ GenerateFunction-Aux {
   s.FnProperties
   t.hIModule Found Swap NoAttrib t.AbsolutName =
     t.hIModule
+    (Declare
+      Function
+      t.AbsolutName
+      (<s.FnProperties GenFunction-Decl> Swap t.AbsolutName)
+    )
     (Define
       Function t.AbsolutName (<s.FnProperties GenSwap> t.AbsolutName)
     );
@@ -100,6 +105,11 @@ GenerateFunction-Aux {
   s.FnProperties
   t.hIModule Found s.ScopeClass Found (/* пусто */) t.AbsolutName =
     t.hIModule
+    (Declare
+      Function
+      t.AbsolutName
+      (<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName)
+    )
     (Define
       Function t.AbsolutName
       (<s.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName)
@@ -163,10 +173,10 @@ FilterDecls {
 }
 
 DoFilterDecls {
-  (e.Known-B (s.Known s.Type t.Name t.Gen) e.Known-E)
+  (e.Known-B (Declare s.Type t.Name t.Gen) e.Known-E)
   (Declare s.Type t.Name t.Gen2) e.Tail =
     <DoFilterDecls
-      (e.Known-B (s.Known s.Type t.Name t.Gen) e.Known-E) e.Tail
+      (e.Known-B (Declare s.Type t.Name t.Gen) e.Known-E) e.Tail
     >;
 
   (e.Known) (Declare s.Type t.Name t.Gen) e.Tail =
@@ -204,10 +214,7 @@ GenerateElem {
 */
 $ENTRY GenFunction
   s.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
-    <FilterSelf
-      t.AbsolutName
-      <GenFunction-Declarations s.FnProperties e.Sentences>
-    >
+    <GenFunction-Declarations s.FnProperties e.Sentences>
     (Define
       Function
       t.AbsolutName
@@ -215,14 +222,6 @@ $ENTRY GenFunction
         t.AbsolutName s.ScopeClass e.Sentences
       )
     );
-
-FilterSelf {
-  t.FnName e.Decls-Begin (Declare Function t.FnName t.Gen) e.Decls-End =
-    e.Decls-Begin
-    <FilterSelf t.FnName e.Decls-End>;
-
-  t.FnName e.Decls = e.Decls;
-}
 
 GenFunction-Declarations {
   s.FnProperties

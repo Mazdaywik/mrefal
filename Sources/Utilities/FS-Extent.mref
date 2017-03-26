@@ -151,9 +151,9 @@ Identifier {
 SelectIdentifier {
   'Success' = Success;
   'Fails' = Fails;
-  'A-DateTime' = A-DateTime;
-  'C-DateTime' = C-DateTime;
-  'M-DateTime' = M-DateTime;
+  'ADateTime' = ADateTime;
+  'CDateTime' = CDateTime;
+  'MDateTime' = MDateTime;
   'Size' = Size;
   'Dir' = Dir;
   e.Other = & Error;
@@ -207,9 +207,9 @@ FA-Attributes
   e.Attributes = <MLambda::Map & FA-OneAttrib e.Attributes>;
 
 FA-OneAttrib {
-  (A-DateTime e.Value) = <PrintDate 'A' e.Value>;
-  (C-DateTime e.Value) = <PrintDate 'C' e.Value>;
-  (M-DateTime e.Value) = <PrintDate 'M' e.Value>;
+  (ADateTime e.Value) = <PrintDate 'A' e.Value>;
+  (CDateTime e.Value) = <PrintDate 'C' e.Value>;
+  (MDateTime e.Value) = <PrintDate 'M' e.Value>;
 
   (Size Dir) = '(#iSize #iDir )';
   (Size s.Size) = '(#iSize ' <DumpNumber s.Size> ')';

@@ -126,9 +126,9 @@ c          , s.$Index::Atom$ :
 c          {
 c            $Ident::Success$ = '#iSuccess+' ;
 c            $Ident::Fails$ = '#iFails+' ;
-c            $Ident::A-DateTime$ = '#iA-DateTime+' ;
-c            $Ident::C-DateTime$ = '#iC-DateTime+' ;
-c            $Ident::M-DateTime$ = '#iM-DateTime+' ;
+c            $Ident::ADateTime$ = '#iADateTime+' ;
+c            $Ident::CDateTime$ = '#iCDateTime+' ;
+c            $Ident::MDateTime$ = '#iMDateTime+' ;
 c            $Ident::Size$ = '#iSize+' ;
 c            $Ident::Dir$ = '#iDir+' ;
 c            s.$Index::Other$ = '#iError+' ;
@@ -348,9 +348,9 @@ c $Local::CoreBE::OS::MFileSystem::Implode$ {
 r   // Ага, хуйня на постном масле
 c   'Success'        = Valid   $Ident::Success$    ;
 c   'Fails'          = Valid   $Ident::Fails$      ;
-c   'A-DateTime'     = Valid   $Ident::A-DateTime$ ;
-c   'C-DateTime'     = Valid   $Ident::C-DateTime$ ;
-c   'M-DateTime'     = Valid   $Ident::M-DateTime$ ;
+c   'ADateTime'      = Valid   $Ident::ADateTime$  ;
+c   'CDateTime'      = Valid   $Ident::CDateTime$  ;
+c   'MDateTime'      = Valid   $Ident::MDateTime$  ;
 c   'Size'           = Valid   $Ident::Size$       ;
 c   'Dir'            = Valid   $Ident::Dir$        ;
 c   e.$Index::Other$ = Invalid                     ;

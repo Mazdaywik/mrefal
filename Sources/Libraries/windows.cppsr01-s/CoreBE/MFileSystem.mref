@@ -48,7 +48,7 @@ $ENTRY FileAttribute {
     <CheckFullName <Core::FullName e.FileName>>;
 
   DateTime e.FileName =
-    <LookupAttribute M-DateTime <Core::FileAttributes e.FileName>>;
+    <LookupAttribute MDateTime <Core::FileAttributes e.FileName>>;
 
   Size e.FileName =
     <LookupAttribute Size <Core::FileAttributes e.FileName>>;

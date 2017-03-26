@@ -264,7 +264,7 @@ REFAL_FUNC_IMPL(implement_fs::find_files) {
       e.Attribs = (s.Attribute e.Value)*
 
     s.Attribute может принимать следующие значения:
-      * #A-DateTime, #M-DateTime и #C-DateTime --- соответственно
+      * #ADateTime, #MDateTime и #CDateTime --- соответственно
         даты доступа, модификации и создания файла;
         формат e.Value:
           s.Year s.Month s.Day s.Hour s.Min s.Sec s.Millisec
@@ -381,9 +381,9 @@ REFAL_FUNC_IMPL(implement_fs::find_files) {
   }
 }
 
-DECL_REFAL_IDENT(AD_DateTime, "A-DateTime");
-DECL_REFAL_IDENT(CD_DateTime, "C-DateTime");
-DECL_REFAL_IDENT(MD_DateTime, "M-DateTime");
+DECL_REFAL_IDENT(ADateTime, "ADateTime");
+DECL_REFAL_IDENT(CDateTime, "CDateTime");
+DECL_REFAL_IDENT(MDateTime, "MDateTime");
 DECL_REFAL_IDENT(Size, "Size");
 DECL_REFAL_IDENT(Dir, "Dir");
 
@@ -405,9 +405,9 @@ static bool add_attribute_record(
   using namespace refalrts;
 
   bool append_time =
-    append_filetime(allocs, REFAL_IDENT(AD_DateTime), last_access_time)
-    && append_filetime(allocs, REFAL_IDENT(MD_DateTime), last_write_time)
-    && append_filetime(allocs, REFAL_IDENT(CD_DateTime), creation_time);
+    append_filetime(allocs, REFAL_IDENT(ADateTime), last_access_time)
+    && append_filetime(allocs, REFAL_IDENT(MDateTime), last_write_time)
+    && append_filetime(allocs, REFAL_IDENT(CDateTime), creation_time);
 
   if( ! append_time ) return false;
 

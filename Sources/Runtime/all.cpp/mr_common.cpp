@@ -339,7 +339,7 @@ REFAL_FUNC_IMPL(implement_fileio::write) {
         continue;
 
       case cDataNumber:
-        printf_res = fprintf(f, "%ld ", ptr->number_info);
+        printf_res = fprintf(f, "%d ", ptr->number_info);
         continue;
 
       case cDataFunction:

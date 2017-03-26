@@ -44,23 +44,24 @@ $ENTRY EscapeChar-Hex {
 EscapeChar-Aux {
   s.Base s.Char s.Code =
     <EscapeChar-SwCode
-      s.Base s.Char <Math::Compare-T s.Code 32>
+      s.Base s.Char <Math::Compare-T 31 s.Code> <Math::Compare s.Code 128>
     >;
 }
 
 EscapeChar-SwCode {
-  Oct s.Char '<' s.Code 32 =
+  s.Base s.Char '<' 31 s.Code '<' =
+    s.Char;
+
+  Oct s.Char s.Comp31 31 s.Code s.Comp128 =
     '\\'
     <OctTxt <Math::Div s.Code 64>>
     <OctTxt <Math::Mod <Math::Div s.Code 8> 8>>
     <OctTxt <Math::Mod s.Code 8>>;
 
-  Hex s.Char '<' s.Code 32 =
+  Hex s.Char s.Comp31 31 s.Code s.Comp128 =
     '\\x'
     <HexTxt <Math::Div s.Code 16>>
     <HexTxt <Math::Mod s.Code 16>>;
-
-  s.Base s.Char s.Compare s.Code 32 = s.Char;
 }
 
 OctTxt {

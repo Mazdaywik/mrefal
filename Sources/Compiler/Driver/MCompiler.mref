@@ -96,8 +96,7 @@ ExternalName-CheckLookup {
       s.Type (e.Stack) t.SrcPos t.ImportName
       <ExternalName-SwKnown
         s.Type (e.Stack) t.Config
-        <MError::IsErrorList t.hErrorList>
-        t.SrcPos t.ImportName
+        t.hErrorList t.SrcPos t.ImportName
         <MTables::Lookup
           t.hTables & MLookupTable.LookupResult t.ImportName
         >
@@ -114,7 +113,7 @@ ExternalName-SwKnown {
 
   s.Type (e.Stack) t.Config
   t.hErrorList t.SrcPos t.ImportName t.hTables e.Known =
-    t.hTables <MError::IsErrorList t.hErrorList> e.Known;
+    t.hTables t.hErrorList e.Known;
 }
 
 ExternalName-SwSuccessModule {
@@ -131,40 +130,31 @@ ExternalName-SwSuccessModule {
   s.Type (e.Stack) t.SrcPos t.ImportName
   t.hTables t.hErrorList Error e.Error =
     t.hTables
-    <ExternalName-AddImportError
-      <MError::IsErrorList t.hErrorList>
-      t.SrcPos t.ImportName e.Error
-    >
+    <ExternalName-AddImportError t.hErrorList t.SrcPos t.ImportName e.Error>
     CantLoadInterface;
 }
 
 ExternalName-AddImportError {
   t.hErrorList t.SrcPos t.ImportName
   Error-CantLoadModule =
-    <MError::AddBrokenImport
-      <MError::IsErrorList t.hErrorList>
-      t.SrcPos t.ImportName
-    >;
+    <MError::AddBrokenImport t.hErrorList t.SrcPos t.ImportName>;
 
   t.hErrorList t.SrcPos t.ImportName
   Error-MismatchWithInternal t.InternalName =
     <MError::AddMismatchInternalAndExternalNames
-      <MError::IsErrorList t.hErrorList>
-      t.SrcPos t.InternalName t.ImportName
+      t.hErrorList t.SrcPos t.InternalName t.ImportName
     >;
 
   t.hErrorList t.SrcPos t.ImportName
   Error-Tree-ModulePacket s.Conflict t.KnownName =
     <MError::AddTreeModulePacketConflict
-      <MError::IsErrorList t.hErrorList>
-      t.SrcPos t.ImportName s.Conflict t.KnownName
+      t.hErrorList t.SrcPos t.ImportName s.Conflict t.KnownName
     >;
 
   t.hErrorList t.SrcPos t.ImportName
   Error-Tree-CaseError t.ValidCaseName =
     <MError::AddTreeCaseError
-      <MError::IsErrorList t.hErrorList>
-      t.SrcPos t.ImportName t.ValidCaseName
+      t.hErrorList t.SrcPos t.ImportName t.ValidCaseName
     >;
 }
 
@@ -320,8 +310,7 @@ OnUnknown-CreateErrorResult {
     <MTables::Lookup
       t.hTables s.FnUpdateLookup e.UpdateLookupParam
     >
-    <MError::IsErrorList t.hErrorList>
-    e.ErrorResult;
+    t.hErrorList e.ErrorResult;
 }
 
 OnUnknown-UpdateTable {

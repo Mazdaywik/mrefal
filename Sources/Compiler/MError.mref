@@ -27,10 +27,6 @@ $ENTRY LinkError
 
 $DATA ErrorList;
 
-$ENTRY IsErrorList {
-  [ErrorList e.Errors] = [ErrorList e.Errors];
-}
-
 //------------------------------------------------------------------------------
 
 /**

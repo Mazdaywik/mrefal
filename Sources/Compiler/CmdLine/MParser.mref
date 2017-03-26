@@ -25,7 +25,7 @@ $ENTRY Parse
       <Semantics
         <Syntax
           <Lexer
-            <MError::CreateErrList> e.ArgList
+            <MError::Create> e.ArgList
           >
         >
         t.FnCmdLineDescription

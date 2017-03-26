@@ -19,7 +19,7 @@ $ENTRY Parse
   s.FnModuleBody e.FileName =
     <NGenericModule
       s.FnModuleBody
-      <MError::CreateErrList>
+      <MError::Create>
       <MLexer::NextToken
         <MLexer::Create e.FileName>
       >

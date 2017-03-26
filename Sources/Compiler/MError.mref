@@ -30,16 +30,16 @@ $DATA ErrorList;
 //------------------------------------------------------------------------------
 
 /**
-  <CreateErrList> == t.hErrorList
+  <Create> == t.hErrorList
 */
-$ENTRY CreateErrList = [ErrorList];
+$ENTRY Create = [ErrorList];
 
 //------------------------------------------------------------------------------
 
 /**
-  <DestroyErrList t.hErrorList> == empty
+  <Destroy t.hErrorList> == empty
 */
-$ENTRY DestroyErrList
+$ENTRY Destroy
   [ErrorList e.Errors] = ;
 
 //------------------------------------------------------------------------------

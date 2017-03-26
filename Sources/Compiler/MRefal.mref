@@ -30,7 +30,7 @@ Profiling-Go =
       &Driver.Tables.MModuleTree.Create
     >
     <Config::MLoad::Load
-      <MError::CreateErrList>
+      <MError::Create>
       <MOS::ArgList>
     >
   >;
@@ -48,7 +48,7 @@ DestroyContext {
 CompileList {
   t.hContext t.hErrorList Success (Help e.Message) =
     <DestroyContext t.hContext>
-    <MError::DestroyErrList t.hErrorList>
+    <MError::Destroy t.hErrorList>
     <MInOut::WriteText e.Message>;
 
   t.hContext t.hErrorList Success t.Config e.PtModules =

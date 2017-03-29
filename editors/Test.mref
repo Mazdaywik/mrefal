@@ -10,27 +10,32 @@ $IMPORT MInOut;
 $IMPORT MOS;
 $YMPORT Broken; // А вот подсветка ошибки
 
-$ENTRY Go {
-  = <Main <MOS::ArgList>>;
+$DATA Encapsulated;
+
+$ENTRY CreateEncapsulated {
+  e.X = [Encapsulated e.X];
 }
 
-Main {
+$ENTRY Go {
+  = <?Main! <MOS::ArgList>>;
+}
+
+ProcessFile {
+  (e.NextFile) =
+    <MFileIO::Save
+      (e.NextFile '.out')
+      <MFileIO::Load e.NextFile>
+    >;
+}
+
+?Main! {
   (e.ProgName) =
-    <InOut::WriteLine 'Arguments not found' 10 12>
+    <MInOut::WriteLine 'Arguments not found' 10 12>
     // А вот незакрытая кавычка:
-    <InOut::WriteLine 'Ooops>;
+    <MInOut::WriteLine 'Ooops>;
 
   (e.ProgName) e.Files =
-    <Map
-      {
-        (e.NextFile) =
-	  <MFileIO::Save
-	    (e.NextFile '.out')
-	    <MFileIO::Load e.NextFile>
-	  >;
-      }
-      e.Files
-    >;
+    <Map & ProcessFile e.Files>;
 }
 
 $END Test.

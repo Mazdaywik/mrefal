@@ -7,6 +7,7 @@ syntax match mrefalIdentifier /\<[A-Z!?][A-Za-z0-9!?_-]*\>/
 syntax match mrefalNumber /\<\d*\>/
 syntax match mrefalBrokenString /'[^']*$/
 syntax match mrefalString /'\(\(\\.\)\|[^']\)*'/
+syntax region mrefalString start=/\z(@\+\)'/ skip=/\n/ end=/'\z1/ contains=NONE
 syntax region mrefalComment start=/\/\*/ skip=/\n/ end=/\*\//
 syntax region mrefalComment start=/\/\// end=/$/
 syntax region mrefalComment start=/^\*/ end=/$/

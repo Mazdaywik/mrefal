@@ -32,6 +32,9 @@
       <regexp match="/[^\\\']$/" region0="def:Error"/>
     </scheme>
 
+    <scheme name="mrefalSymbolsRaw">
+    </scheme>
+
     <scheme name="mrefalStringCore">
       <regexp match='/\\\\$/' region0="def:Error"/>
       <regexp match='/\\[^xX0-7]/' region0="cString2"/>
@@ -93,6 +96,7 @@
       <regexp match='/\b*[A-Z?!][\w_\-\d?!]*\M(\W|$)/' region0="mrefalFunction"/>
 
       <block start="/'/" end="/'|$/" scheme="mrefalSymbolsCore" region="mrefalString"/>
+      <block start="/(@+)'/" end="/'\y1/" scheme="mrefalSymbolsRaw" region="mrefalString"/>
       <block start='/"/' end='/"|$/' scheme="mrefalStringCore" region="mrefalString"/>
     </scheme>
   </type>

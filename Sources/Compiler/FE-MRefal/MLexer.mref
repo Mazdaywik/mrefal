@@ -181,6 +181,8 @@ NextToken-Aux {
     <ReturnToken (e.Errors) t.Pos t.hFile e.Line (Literal '\'')>;
   (e.Errors) t.Pos t.hFile '\'' e.Line =
     <Quoted (e.Errors) t.Pos t.hFile e.Line>;
+  (e.Errors) t.Pos t.hFile '@' e.Line =
+    <QuotedRaw (e.Errors) ('''@') t.Pos t.hFile e.Line>;
 
   (e.Errors) t.Pos t.hFile '$' e.Line =
     <Directive (e.Errors) t.Pos t.hFile e.Line>;
@@ -435,6 +437,53 @@ AppendDigit {
     <MMath::Add <MMath::Mul s.L-Base s.Accum> s.Digit>;
 }
 
+QuotedRaw {
+  (e.Errors) (e.Terminator) t.Pos t.hFile '@' e.Line =
+    <QuotedRaw (e.Errors) (e.Terminator '@') t.Pos t.hFile e.Line>;
+
+  (e.Errors) (e.Terminator) t.Pos t.hFile '' e.Line =
+    <DoQuotedRaw (e.Errors) () (e.Terminator) t.Pos t.hFile e.Line>;
+
+  (e.Errors) (e.Terminator) t.Pos t.hFile /* пусто */ 0 =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile /* пусто */ 0
+      <MakeError t.Pos 'Bad raw string'>
+    >;
+
+  (e.Errors) (e.Terminator) t.Pos t.hFile /* пусто */ =
+    <ReturnToken
+      (e.Errors) t.Pos t.hFile /* пусто */
+      <MakeError t.Pos 'Bad raw string'>
+    >;
+}
+
+DoQuotedRaw {
+  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile e.Terminator e.Line =
+    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (RawLiteral e.Scanned)>;
+
+  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile /* пусто */ 0 =
+    <ReturnToken
+      (e.Errors <MakeError t.Pos 'Unexpected EOF in raw string literal'>)
+      t.Pos t.hFile /* пусто */ 0 (RawLiteral e.Scanned)
+    >;
+
+  // Для случая чтения файла в формате Windows из-под UNIX
+  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile /* пусто */ '\r' =
+    <DoQuotedRaw
+      (e.Errors) (e.Scanned '\n') (e.Terminator) <NewLine t.Pos t.hFile>
+    >;
+
+  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile /* пусто */ =
+    <DoQuotedRaw
+      (e.Errors) (e.Scanned '\n') (e.Terminator) <NewLine t.Pos t.hFile>
+    >;
+
+  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile s.Next e.Line =
+    <DoQuotedRaw
+      (e.Errors) (e.Scanned s.Next) (e.Terminator) t.Pos t.hFile e.Line
+    >;
+}
+
 Directive
   (e.Errors) t.Pos t.hFile e.Line =
     <DoDirective
@@ -628,6 +677,7 @@ $ENTRY TokenToString {
   (Directive s.Direc) = '$' <DirectiveToString s.Direc>;
 
   (Literal e.Text) = '\\\'' <EscapeText e.Text> '\\\'';
+  (RawLiteral e.Text) = '@''' <EscapeText e.Text> '''@';
   (Identifier e.Ident) = 'identifier ' e.Ident;
   (Macro s.Value) = 'macronumber ' <MStrings::Symb s.Value>;
 

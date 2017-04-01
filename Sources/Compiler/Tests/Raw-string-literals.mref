@@ -1,0 +1,19 @@
+$PROGRAM Tests::Raw-string-literals;
+
+$ENTRY Go {
+  =
+    <RawInPattern 'abcd'>
+    <Eq
+      ('\\+\'+\n\'\'\n\'@\'@\n...')
+      @@'\+'+
+''
+'@'@
+...'@@
+    >;
+}
+
+RawInPattern @'abcd'@ = ;
+
+Eq { (e.X) e.X = e.X; }
+
+$END Tests::Raw-string-literals.

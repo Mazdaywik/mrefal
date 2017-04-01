@@ -632,6 +632,14 @@ NPatternExpr {
     >;
 
   t.VarTable ( e.PatternExpr t.ParentStack )
+  t.hErrorList t.Lexer (RawLiteral t.SrcPos e.Content) =
+    <NPatternExpr
+      t.VarTable
+      (e.PatternExpr (Literal e.Content) t.ParentStack)
+      t.hErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.VarTable ( e.PatternExpr t.ParentStack )
   t.hErrorList t.Lexer (Macro t.SrcPos s.Value) =
     <NPatternExpr
       t.VarTable
@@ -911,6 +919,14 @@ NResultExpr {
 
   t.VarTable (e.ResultExpr t.ParentStack)
   t.hErrorList t.Lexer (Literal t.SrcPos e.Content) =
+    <NResultExpr
+      t.VarTable
+      ( e.ResultExpr (Literal e.Content) t.ParentStack )
+      t.hErrorList <MLexer::NextToken t.Lexer>
+    >;
+
+  t.VarTable (e.ResultExpr t.ParentStack)
+  t.hErrorList t.Lexer (RawLiteral t.SrcPos e.Content) =
     <NResultExpr
       t.VarTable
       ( e.ResultExpr (Literal e.Content) t.ParentStack )

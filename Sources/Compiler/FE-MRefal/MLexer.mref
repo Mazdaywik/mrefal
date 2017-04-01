@@ -273,13 +273,13 @@ DoQuoted {
 
   (e.Errors) (e.Scanned) t.Pos t.hFile /* пусто */ =
     <ReturnToken
-      (e.Errors <MakeError 'Unclosed quote'>)
+      (e.Errors <MakeError t.Pos 'Unclosed quote'>)
       t.Pos t.hFile (Literal e.Scanned)
     >;
 
   (e.Errors) (e.Scanned) t.Pos t.hFile /* пусто */ 0 =
     <ReturnToken
-      (e.Errors <MakeError 'Unclosed quote'>)
+      (e.Errors <MakeError t.Pos 'Unclosed quote'>)
       t.Pos t.hFile 0 (Literal e.Scanned)
     >;
 
@@ -350,7 +350,8 @@ DoQuoted-TestOct {
       1 ('01234567')
     >;
 
-  (e.Errors) (e.Scanned) t.Pos t.hFile s.First e.Line =
+  (e.Errors) (e.Scanned) t.Pos t.hFile s.First e.Line
+  (e.Octs) =
     <DoQuoted
       (e.Errors <MakeError t.Pos 'Bad escape sequence \\' s.First>)
       (e.Scanned) t.Pos t.hFile s.First e.Line

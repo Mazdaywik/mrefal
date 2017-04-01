@@ -16,7 +16,6 @@ OpenSquare   нет              '['
 CloseSquare  нет              ']'
 
 Ampersand    нет              '&'
-Asterisk     нет              '*'
 Colon        нет              ':'
 Comma        нет              ','
 Dot          нет              '.'
@@ -32,10 +31,12 @@ Directive    ClearModule      '$CLEARMODULE', '$clearmodule'
              Module           '$MODULE', '$module'
              Swap             '$SWAP', '$swap'
              Program          '$PROGRAM', '$program'
+             Init             '$INIT', '$init'
+             Final            '$FINAL', '$final'
 
-DQWord       e.Content        '\"' e.EscapedContent '\"'
 Identifier   e.Name           e.Name
 Literal      e.Content        '\'' e.EscapedContent '\''
+RawLiteral   e.Content        '@…@\'' e.Content ''\@…@'
 Macro        s.Value          s.Digit*
 
 Var         s.VarType e.Index s.VarType ::= EVar | SVar | TVar

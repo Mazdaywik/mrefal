@@ -20,7 +20,6 @@ t.CommonTerm ::=
   (SVar e.Index)
   (TVar e.Index)
   (Literal e.Content)
-  (DQWord e.Content)
   (Macro s.Value)
   (FnPtr t.Callable)
 

@@ -191,15 +191,12 @@ FromIModule-BaseFields {
             & CreateMIFList
             & MIModule.GetFunctionAttribute
             & CreateFunctionIF
-            & NoRelative
             e.Functions
           >
           <MLambda::BindLeft-H
             & CreateMIFList
             & MIModule.GetImportAttribute-RealName
             & CreateImportIF
-            //& MIModule.RelativeName
-            & NoRelative
             e.Imports
           >
         > // Parallel-H
@@ -234,14 +231,14 @@ FromIModule-Detailed {
     == t.hIModule (t.EntityIF*)
 */
 CreateMIFList {
-  t.hIModule s.FnGetAttribute s.FnCreateDatatype s.FnGetRelative
+  t.hIModule s.FnGetAttribute s.FnCreateDatatype
   e.EntityNames =
     <MLambda::Bracket-H
       <MLambda::MapReduce
         <MLambda::Composite
           <MLambda::BindLeft
             & CreateMIFEntity
-            s.FnGetAttribute s.FnCreateDatatype s.FnGetRelative
+            s.FnGetAttribute s.FnCreateDatatype
           >
           //& MLambda.Bracket-H
         >
@@ -258,24 +255,11 @@ CreateMIFList {
     == t.hIModule t.EntityIF
 */
 CreateMIFEntity {
-  s.L-FnGetAttribute s.L-FnCreateDatatype s.L-FnGetRelative
+  s.L-FnGetAttribute s.L-FnCreateDatatype
   t.hIModule t.EntityName =
-    <CreateMIFEntity-Relative
-      s.L-FnGetAttribute s.L-FnCreateDatatype
-      <s.L-FnGetRelative t.hIModule t.EntityName>
-    >;
-}
-
-NoRelative {
-  t.hIModule t.EntityName = t.hIModule Success t.EntityName;
-}
-
-CreateMIFEntity-Relative {
-  s.FnGetAttribute s.FnCreateDatatype
-  t.hIModule Success t.RelativeName =
     <CreateMIFEntity-GetSrcPos
-      s.FnCreateDatatype t.RelativeName
-      <s.FnGetAttribute t.hIModule Position t.RelativeName>
+      s.L-FnCreateDatatype t.EntityName
+      <s.L-FnGetAttribute t.hIModule Position t.EntityName>
     >;
 }
 

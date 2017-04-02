@@ -25,7 +25,7 @@ $ENTRY Make
   t.hTables t.hErrorList t.Config t.SrcPos t.RootModuleName =
     <Make-SwResult
       t.Config t.RootModuleName
-      <ExternalName
+      <GetModuleInterface
         Recompile
         () t.Config t.hTables t.hErrorList
         t.SrcPos t.RootModuleName
@@ -64,15 +64,16 @@ Make-Aux
 //------------------------------------------------------------------------------
 
 /**
-  <ExternalName
+  <GetModuleInterface
     s.Type (e.Stack)
     t.Config t.hTables t.hErrorList t.SrcPos t.ImportName
   >
-    == t.hTables t.hErrorList t.Interface_
+    == t.hTables t.hErrorList CantLoadInterface
+    == t.hTables t.hErrorList t.ModuleIF
+
   s.Type ::= Recompile | Updated | Library
-  t.Interface_ ::= t.ModuleIF | CantLoadInterface
 */
-ExternalName {
+GetModuleInterface {
   s.Type (e.Stack-B t.ImportName e.Stack-E)
   t.Config t.hTables t.hErrorList t.SrcPos t.ImportName =
     t.hTables
@@ -83,18 +84,9 @@ ExternalName {
 
   s.Type (e.Stack)
   t.Config t.hTables t.hErrorList t.SrcPos t.ImportName =
-    <ExternalName-CheckLookup
-      s.Type (e.Stack)
-      t.Config t.hTables t.hErrorList t.SrcPos t.ImportName
-    >;
-}
-
-ExternalName-CheckLookup {
-  s.Type (e.Stack)
-  t.Config t.hTables t.hErrorList t.SrcPos t.ImportName =
-    <ExternalName-SwSuccessModule
+    <GetModuleInterface-SwSuccessModule
       s.Type (e.Stack) t.SrcPos t.ImportName
-      <ExternalName-SwKnown
+      <GetModuleInterface-SwKnown
         s.Type (e.Stack) t.Config
         t.hErrorList t.SrcPos t.ImportName
         <MTables::Lookup
@@ -104,7 +96,7 @@ ExternalName-CheckLookup {
     >;
 }
 
-ExternalName-SwKnown {
+GetModuleInterface-SwKnown {
   s.Type (e.Stack) t.Config
   t.hErrorList t.SrcPos t.ImportName t.hTables Unknown =
     <OnUnknown
@@ -116,10 +108,10 @@ ExternalName-SwKnown {
     t.hTables t.hErrorList e.Known;
 }
 
-ExternalName-SwSuccessModule {
+GetModuleInterface-SwSuccessModule {
   s.Type (e.Stack) t.SrcPos t.ImportName
   t.hTables t.hErrorList Success =
-    <ExternalName-OnKnown-StatusType
+    <GetModuleInterface-OnKnown-StatusType
       s.Type (e.Stack)
       t.hErrorList t.SrcPos t.ImportName
       <MTables::Modules
@@ -130,11 +122,13 @@ ExternalName-SwSuccessModule {
   s.Type (e.Stack) t.SrcPos t.ImportName
   t.hTables t.hErrorList Error e.Error =
     t.hTables
-    <ExternalName-AddImportError t.hErrorList t.SrcPos t.ImportName e.Error>
+    <GetModuleInterface-AddImportError
+      t.hErrorList t.SrcPos t.ImportName e.Error
+    >
     CantLoadInterface;
 }
 
-ExternalName-AddImportError {
+GetModuleInterface-AddImportError {
   t.hErrorList t.SrcPos t.ImportName
   Error-CantLoadModule =
     <MError::AddBrokenImport t.hErrorList t.SrcPos t.ImportName>;
@@ -158,17 +152,17 @@ ExternalName-AddImportError {
     >;
 }
 
-ExternalName-OnKnown-StatusType {
+GetModuleInterface-OnKnown-StatusType {
   s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
   t.hTables Success Ready s.Type =
-    <ExternalName-OnKnown-StatusType-SwTranslated
+    <GetModuleInterface-OnKnown-StatusType-SwTranslated
       (e.Stack) t.hTables t.hErrorList
       t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
     >;
 
   //s.TypeMode (e.Stack) t.hErrorList t.SrcPos t.ImportName
   //t.hTables Success Cluster s.Type =
-  //  <ExternalName-OnKnown-StatusType-SwTranslated
+  //  <GetModuleInterface-OnKnown-StatusType-SwTranslated
   //    (e.Stack) t.hTables t.hErrorList
   //    t.SrcPos t.ImportName <TranslateType s.TypeMode s.Type>
   //  >;
@@ -182,7 +176,7 @@ TranslateType {
   s.TypeMode s.Type    = LoadInterface;
 }
 
-ExternalName-OnKnown-StatusType-SwTranslated {
+GetModuleInterface-OnKnown-StatusType-SwTranslated {
   (e.Stack) t.hTables t.hErrorList
   t.SrcPos t.ImportName CantLoadInterface =
     t.hTables
@@ -201,7 +195,7 @@ ExternalName-OnKnown-StatusType-SwTranslated {
 
   (e.Stack) t.hTables t.hErrorList
   t.SrcPos t.ImportName LoadInterface =
-    <ExternalName-CheckModuleType
+    <GetModuleInterface-CheckModuleType
       <Step-From-Stack e.Stack>
       <Driver::MModuleIF::LoadCached t.hTables t.ImportName>
       t.hErrorList t.SrcPos t.ImportName
@@ -213,17 +207,17 @@ Step-From-Stack {
   e.NotEmptyStack   = ImportModule;
 }
 
-ExternalName-CheckModuleType {
+GetModuleInterface-CheckModuleType {
   s.Step t.hTables t.ModuleIF
   t.hErrorList t.SrcPos t.ImportName =
-    <ExternalName-SwCheckModuleType
+    <GetModuleInterface-SwCheckModuleType
       t.hTables t.hErrorList t.SrcPos t.ImportName
       t.ModuleIF s.Step
       <Driver::MModuleIF::GetModuleType t.ModuleIF>
     >;
 }
 
-ExternalName-SwCheckModuleType {
+GetModuleInterface-SwCheckModuleType {
   t.hTables t.hErrorList t.SrcPos t.ImportName
   t.ModuleIF ImportModule Main =
     t.hTables
@@ -313,6 +307,21 @@ OnUnknown-CreateErrorResult {
     t.hErrorList e.ErrorResult;
 }
 
+OnUnknown-CheckLookupModule {
+  (e.Stack) t.Config t.ImportName
+  t.hErrorList t.hTables Success Cluster Errors =
+    t.hTables t.hErrorList Error Error-CantLoadModule;
+
+  (e.Stack) t.Config t.ImportName
+  t.hErrorList t.hTables Success Cluster s.Type =
+    <Driver::MUtils::OutModuleStatus-Start-ByType
+      s.Type t.ImportName
+    >
+    <Compile
+      s.Type (e.Stack) t.Config t.hTables t.hErrorList t.ImportName
+    >;
+}
+
 OnUnknown-UpdateTable {
   t.ImportName t.hTables t.hErrorList Success =
     t.hTables t.hErrorList Success;
@@ -335,20 +344,7 @@ OnUnknown-UpdateTable {
     t.hErrorList Error Error-MismatchWithInternal t.InternalName;
 }
 
-OnUnknown-CheckLookupModule {
-  (e.Stack) t.Config t.ImportName
-  t.hErrorList t.hTables Success Cluster Errors =
-    t.hTables t.hErrorList Error Error-CantLoadModule;
-
-  (e.Stack) t.Config t.ImportName
-  t.hErrorList t.hTables Success Cluster s.Type =
-    <Driver::MUtils::OutModuleStatus-Start-ByType
-      s.Type t.ImportName
-    >
-    <Compile
-      s.Type (e.Stack) t.Config t.hTables t.hErrorList t.ImportName
-    >;
-}
+//------------------------------------------------------------------------------
 
 /**
   <Compile
@@ -568,7 +564,7 @@ Compile-CheckImports-LoadInterfaces {
       <Driver::MModuleIF::FromIModule-T t.hRawIModule>
       <MLambda::MapReduce
         <MLambda::BindLeft
-          & LoadInterface
+          & LoadImportInterface
           s.Type (e.Stack t.InternalName) t.Config
         >
         (t.hTables t.hErrorList) e.ImportNames
@@ -582,19 +578,19 @@ UpdateReturnStatus {
   t.ReturnStatus Errors = (Error Error-CantLoadModule);
 }
 
-LoadInterface {
+LoadImportInterface {
   s.Type (e.Stack) t.Config (t.hTables t.hErrorList)
   (t.SrcPos t.AliasName t.RealName) =
-    <LoadInterface-Aux
+    <LoadImportInterface-Aux
       t.AliasName
-      <ExternalName
+      <GetModuleInterface
         s.Type (e.Stack)
         t.Config t.hTables t.hErrorList t.SrcPos t.RealName
       >
     >;
 }
 
-LoadInterface-Aux {
+LoadImportInterface-Aux {
   t.AliasName t.hTables t.hErrorList t.Interface_ =
     (t.hTables t.hErrorList) (t.AliasName t.Interface_);
 }
@@ -609,12 +605,12 @@ Synthesis {
       e.ImportInterfaces
     >;
 
-  t.ReturnStatus s.UpdateLibrary t.Config
+  t.ReturnStatus s.UpdateOrLibrary t.Config
   t.hSymIModule t.ModuleIF
   (t.hTables t.hErrorList) e.ImportInterfaces =
     <MIModule::Destroy t.hSymIModule>
     <Synthesis-Update
-      s.UpdateLibrary
+      s.UpdateOrLibrary
       <UpdateReturnStatus-ImportInterfaces
         t.ReturnStatus e.ImportInterfaces
       >

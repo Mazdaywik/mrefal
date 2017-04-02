@@ -492,10 +492,6 @@ CheckNeedCompileOne
 
 CheckNeedCompileOne-SwGetLastTime {
   t.ModuleName t.hErrorList t.hContext
-  Success s.Status s.Type Unknown =
-    t.hErrorList t.hContext t.ModuleName Success s.Status s.Type;
-
-  t.ModuleName t.hErrorList t.hContext
   Success s.Status s.Type (e.MinTime) (e.MaxTime) =
     t.hErrorList t.hContext t.ModuleName Success s.Status s.Type;
 

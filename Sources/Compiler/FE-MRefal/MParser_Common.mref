@@ -187,7 +187,7 @@ AddNewImport-SwRedeclaration-RealName {
   t.hIModule e.OtherResult =
     <UpdateEntity-GuardInvariant
       t.hErrorList
-      <MIModule::UpdateImport-X
+      <MIModule::UpdateImport
         t.hIModule
         (Position t.SrcPos)
         (RealName t.RealName)

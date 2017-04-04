@@ -97,21 +97,25 @@ $ENTRY RemoveAttrib {
     e.Names-B
     ((e.Name) e.Attribs-B (Kind s.Value) e.Attribs-E)
     e.Names-E
-  ] e.Name Kind =
+  ]
+  e.Name Kind =
     [SymTable
       ((e.Name) (Kind s.Value) e.Attribs-B e.Attribs-E)
       e.Names-B e.Names-E
-    ] Found s.Value;
+    ]
+    Found s.Value;
 
   [SymTable
     e.Names-B
     ((e.Name) e.Attribs-B (s.Attrib e.Value) e.Attribs-E)
     e.Names-E
-  ] e.Name s.Attrib =
+  ]
+  e.Name s.Attrib =
     [SymTable
       ((e.Name) e.Attribs-B e.Attribs-E)
       e.Names-B e.Names-E
-    ] Found e.Value;
+    ]
+    Found e.Value;
 
   [SymTable e.Names-B ((e.Name) e.Attribs) e.Names-E]
   e.Name s.?Attrib =
@@ -139,7 +143,8 @@ SwGetAttrib {
   (e.Name) s.Attrib t.SymTable Found e.Value =
     <UpdateAttrib
       t.SymTable (e.Name) s.Attrib e.Value
-    > Found e.Value;
+    >
+    Found e.Value;
 
   (e.Name) s.Attrib t.SymTable NoAttrib =
     t.SymTable NoAttrib;
@@ -186,7 +191,8 @@ $ENTRY Destroy
   <UpdateAttribSet
     t.SymTable (e.Name)
     (s.Attrib e.Value)*
-  > == t.SymTable
+  >
+    == t.SymTable
 */
 $ENTRY UpdateAttribSet {
   t.SymTable (e.Name) (s.Attrib e.Value) =
@@ -198,7 +204,8 @@ $ENTRY UpdateAttribSet {
     <UpdateAttribSet
       <UpdateAttrib
         t.SymTable (e.Name) s.Attrib e.Value
-      > (e.Name) e.Tail
+      >
+      (e.Name) e.Tail
     >;
 }
 
@@ -231,7 +238,8 @@ DoFindByKind-Aux {
   t.SymTable Found s.Kind e.Names (e.NextName) s.Kind =
     <DoFindByKind
       t.SymTable e.Names s.Kind
-    > (e.NextName);
+    >
+    (e.NextName);
 
   t.SymTable Found s.Kind1 e.Names (e.?NextName) s.Kind2 =
     <DoFindByKind

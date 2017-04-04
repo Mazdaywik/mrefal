@@ -33,7 +33,7 @@ $DATA IModule;
 */
 $ENTRY Create
   t.QualifiedName e.Attribs =
-    <Create-Aux
+    <UpdateModule
       [IModule
         (Name <MQualifiedName::Parse t.QualifiedName>)
         <InitEntryPoint e.Attribs>
@@ -47,13 +47,6 @@ InitEntryPoint {
 
   e.Attribs-B (ModuleType Regular) e.Attribs-E = (RegularEntry None None);
 }
-
-Create-Aux
-  t.IModule e.Attribs =
-    <UpdateModule
-      t.IModule
-      e.Attribs
-    >;
 
 //------------------------------------------------------------------------------
 
@@ -234,16 +227,16 @@ $ENTRY UpdateFunction
 //------------------------------------------------------------------------------
 
 /**
-  <UpdateImport-X
+  <UpdateImport
     t.hIModule
     (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
   >
     == t.hIModule s.Status
 */
-$ENTRY UpdateImport-X
+$ENTRY UpdateImport
   t.hIModule
   (Position t.Position) (RealName t.RealName) (AliasName t.AliasName) =
-    <UpdateImport-X-CheckDefined
+    <UpdateImport-CheckDefined
       (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
       <CheckDefinedImport
         <MLambda::Apply
@@ -266,10 +259,10 @@ CheckDefinedImport {
   t.hIModule e.Other = t.hIModule Fails;
 }
 
-UpdateImport-X-CheckDefined {
+UpdateImport-CheckDefined {
   (Position t.Position) (RealName t.RealName) (AliasName t.AliasName)
   t.hIModule Success =
-    <UpdateImport-X-Aux
+    <UpdateImport-Aux
       t.hIModule (Position t.Position)
       (RealName <MQualifiedName::Parse-T t.RealName>)
       (AliasName <MQualifiedName::Parse t.AliasName>)
@@ -280,12 +273,12 @@ UpdateImport-X-CheckDefined {
     t.hIModule InvalidKind;
 }
 
-UpdateImport-X-Aux
+UpdateImport-Aux
   [IModule (Name e.ModName) t.EntryPoint t.SymTable]
   (Position t.Position)
   (RealName t.RealName e.RealNameSegments)
   (AliasName e.AliasNameSegments) =
-    <UpdateImport-X-Aux-UpdateRealName
+    <UpdateImport-Aux-UpdateRealName
       <UpdateEntity
         [IModule (Name e.ModName) t.EntryPoint t.SymTable] ImportAlias
         (e.ModName e.AliasNameSegments)
@@ -300,7 +293,7 @@ UpdateImport-X-Aux
       )
     >;
 
-UpdateImport-X-Aux-UpdateRealName {
+UpdateImport-Aux-UpdateRealName {
   t.hIModule Success (Position t.Position)
   (RealName t.RealName e.RealNameSegments)
   (AliasName t.AliasName) =

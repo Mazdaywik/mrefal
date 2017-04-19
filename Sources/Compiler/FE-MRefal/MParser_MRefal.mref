@@ -468,9 +468,9 @@ NFunctionBody {
       >
     >;
 
-  ( e.Sentence OneSentence (e.ParentStack) )
+  ( (e.Sentence) OneSentence (e.ParentStack) )
   t.hErrorList t.Lexer t.NextToken =
-    ( (e.Sentence) e.ParentStack )
+    ( ((e.Sentence)) e.ParentStack )
     t.hErrorList t.Lexer t.NextToken;
 }
 

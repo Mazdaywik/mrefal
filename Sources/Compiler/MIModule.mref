@@ -6,11 +6,7 @@ $IMPORT MSymTable;
 
 /*------------------------------------------------------------------------------
  Формат:
-  [IModule
-    (Name e.ParsedQName)
-    t.EntryPoint
-    t.SymTable
-  ]
+  [IModule (Name e.ParsedQName) t.EntryPoint t.SymTable]
 
   t.EntryPoint ::=
     (GoEntry t.Seq-Go)

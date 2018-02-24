@@ -217,7 +217,7 @@ FA-OneAttrib {
 
 PrintDate {
   s.Letter e.Numbers =
-    '(#i' s.Letter '-DateTime ' <MLambda::Map & DumpNumber e.Numbers> ')';
+    '(#i' s.Letter 'DateTime ' <MLambda::Map & DumpNumber e.Numbers> ')';
 }
 
 Result-FindFiles {

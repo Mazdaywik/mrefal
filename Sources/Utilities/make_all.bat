@@ -6,7 +6,7 @@ set MR-PROGRAMS=%MR-PROGRAMS% SRPrep FS-Extent
 
 set VERSRC=/srcfile:mUtilitiesBanner.mref
 
-refgo ..\..\Bin\VersionUpdater.rsl /verfile:Utilities_version.txt %VERSRC%
+refgo ..\..\Bin\VersionUpdater.rsl /verfile:Utilities_version.conf %VERSRC%
 
 if exist _compilation.log del _compilation.log
 if exist __err del __err

@@ -34,7 +34,7 @@ LoadAliases =
   (
     <MLambda::Map
       & MakeRule
-      <FileIO::Load '.Info/Aliases.als'>
+      <FileIO::Load '../Bin/MRefal.r5-Aliases.txt'>
     >
   );
 

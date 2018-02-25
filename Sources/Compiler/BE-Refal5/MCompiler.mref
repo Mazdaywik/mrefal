@@ -100,15 +100,21 @@ GenerateElements
   t.IModule =
     <MLambda::MapReduce
       & GenerateElement
-      <MIModule::GetFunctionList t.IModule>
+      <MIModule::GetEntityList t.IModule>
     >;
 
-GenerateElement
-  t.hIModule t.NextFnName =
+GenerateElement {
+  t.hIModule (Function t.NextFnName) =
     <GenerateElement-Aux
       <MIModule::AbsolutName t.hIModule t.NextFnName>
       t.NextFnName
     >;
+
+  t.hIModule (ADT t.NextFnName) = t.hIModule /* пусто */;
+
+  t.hIModule (NativeInsertion t.SrcPos s.BackEndID e.Code) =
+    t.hIModule /* пусто */;
+}
 
 GenerateElement-Aux
   t.IModule t.QualifiedName t.FnName =

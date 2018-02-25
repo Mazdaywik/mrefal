@@ -55,24 +55,32 @@ $ENTRY Generate-Generic
 GenerateFunctions
   s.FnProperties t.hIModule =
     <MLambda::MapReduce
-      <MLambda::Composite
-        <MLambda::Parallel-H
-          & MLambda.Identity
-          & MIModule.AbsolutName
-        >
-        <MLambda::BindLeft & GenerateFunction s.FnProperties>
-      >
-      <MIModule::GetFunctionList t.hIModule>
+      <MLambda::BindLeft & GenerateEntity s.FnProperties>
+      <MIModule::GetEntityList t.hIModule>
     >;
+
+GenerateEntity {
+  s.FnProperties t.hIModule (Function t.RelativeName) =
+    <GenerateFunction
+      s.FnProperties
+      <MIModule::AbsolutName t.hIModule t.RelativeName> t.RelativeName
+    >;
+
+  s.FnProperties t.hIModule (ADT t.RelativeName) =
+    t.hIModule /* пусто */;
+
+  s.FnProperties t.hIModule (NativeInsertion t.SrcPos s.BackEndID e.Code) =
+    t.hIModule /* пусто */;
+}
 
 /*
   <GenerateFunction
-    s.FnProperties t.hIModule t.RelativeName t.AbsolutName
+    s.FnProperties t.hIModule t.AbsolutName t.RelativeName
   >
     == t.hIModule ( (e.Definitions) (e.FunctionCode) )
 */
 GenerateFunction
-  s.FnProperties t.hIModule t.RelativeName t.AbsolutName =
+  s.FnProperties t.hIModule t.AbsolutName t.RelativeName =
     <GenerateFunction-Aux
       s.FnProperties
       <MLambda::Apply

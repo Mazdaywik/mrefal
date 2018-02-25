@@ -68,4 +68,21 @@ $ENTRY File {
   (SrcPos e.Other) = NotInFile;
 }
 
+/**
+  <SharpLine t.SrcPos> == e.Text
+*/
+$ENTRY SharpLine {
+  (SrcPos 'F' e.FileName s.LnNum) =
+    '#line ' <MStrings::Symb s.LnNum> ' "' <Escape e.FileName> '"';
+
+  t.OtherSrcPos = '/* ' <ToString t.OtherSrcPos> ' */';
+}
+
+Escape {
+  '"' e.Text = '\\"' <Escape e.Text>;
+  '\\' e.Text = '\\\\' <Escape e.Text>;
+  s.Other e.Text = s.Other <Escape e.Text>;
+  /* empty */ = /* empty */;
+}
+
 $END MSrcPos.

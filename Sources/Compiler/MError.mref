@@ -25,6 +25,29 @@ $ENTRY LinkError
 
 //------------------------------------------------------------------------------
 
+/**
+  <LinkError-BadBackEndID t.SrcPos s.BackEndID e.Expected>
+    == fail down (errcode 1)
+*/
+$ENTRY LinkError-BadBackEndID {
+  t.SrcPos s.BackEndID e.Expected =
+    <MOutModuleStatus::Flush>
+    <InOut::WriteLine
+      <MSrcPos::ToString-Error t.SrcPos> ':'
+      'LINKER ERROR: bad back end ID ' <StrFromBackEndID s.BackEndID> ', '
+      'expected ' e.Expected
+    >
+    <MOS::Exit 1>;
+}
+
+StrFromBackEndID {
+  CppSR = 'CppSR';
+  SimRef = 'SimRef';
+  Refal5 = 'Refal5';
+}
+
+//------------------------------------------------------------------------------
+
 $DATA ErrorList;
 
 //------------------------------------------------------------------------------
@@ -588,6 +611,20 @@ $ENTRY AddInitOrFinalRedeclaration {
     <AddToList
       t.hErrorList
       ( Semantics t.SrcPos <InitFinal s.Type> ' block already defined' )
+    >;
+}
+
+//------------------------------------------------------------------------------
+
+/**
+  <AddBadBackEndID t.hErrorList t.SrcPos e.BadID>
+    == t.hErrorList
+*/
+$ENTRY AddBadBackEndID {
+  t.hErrorList t.SrcPos e.BadID =
+    <AddToList
+      t.hErrorList
+      ( Semantics t.SrcPos 'Bad back end id: ' e.BadID )
     >;
 }
 

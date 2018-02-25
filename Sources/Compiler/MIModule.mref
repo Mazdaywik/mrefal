@@ -783,4 +783,22 @@ ReturnIModule {
     [IModule (Name e.Name) t.EntryPoint t.EntitiesList t.SymTable] e.Entities;
 }
 
+//------------------------------------------------------------------------------
+
+/**
+  <AddNativeInsertion t.hIModule t.SrcPos s.BackEndID e.Code>
+    == t.hIModule
+*/
+$ENTRY AddNativeInsertion {
+  [IModule (Name e.Name) t.EntryPoint (e.Entities) t.SymTable]
+  t.SrcPos s.BackEndID e.Code =
+    [IModule
+      (Name e.Name)
+      t.EntryPoint
+      (e.Entities (NativeInsertion t.SrcPos s.BackEndID e.Code))
+      t.SymTable
+    ];
+}
+
+
 $END MIModule.

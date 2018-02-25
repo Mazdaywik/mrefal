@@ -3,7 +3,9 @@ $MODULE MPredeclGenerator;
 $IMPORT MFileIO;
 $IMPORT MIModule;
 $IMPORT MLambda;
+$IMPORT MMath;
 $IMPORT MQualifiedName;
+$IMPORT MSrcPos;
 
 $IMPORT MProfiler;
 
@@ -70,7 +72,16 @@ GenerateEntity {
     t.hIModule /* пусто */;
 
   s.FnProperties t.hIModule (NativeInsertion t.SrcPos s.BackEndID e.Code) =
-    t.hIModule /* пусто */;
+    t.hIModule
+    (Native
+      <s.FnProperties GenNativeInsertion>
+      t.SrcPos s.BackEndID <SplitCode e.Code>
+    );
+}
+
+SplitCode {
+  e.Line '\n' e.Lines = (e.Line) <SplitCode e.Lines>;
+  e.Line = (e.Line);
 }
 
 /*
@@ -91,6 +102,9 @@ GenerateFunction
           <MLambda::BindLeft-H
             & MIModule.GetFunctionAttribute Body t.RelativeName
           >
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute NativeBody t.RelativeName
+          >
         >
         t.hIModule
       >
@@ -99,7 +113,7 @@ GenerateFunction
 
 GenerateFunction-Aux {
   s.FnProperties
-  t.hIModule Found Swap NoAttrib t.AbsolutName =
+  t.hIModule Found Swap NoAttrib NoAttrib t.AbsolutName =
     t.hIModule
     (Declare
       Function
@@ -111,7 +125,7 @@ GenerateFunction-Aux {
     );
 
   s.FnProperties
-  t.hIModule Found s.ScopeClass Found (/* пусто */) t.AbsolutName =
+  t.hIModule Found s.ScopeClass Found (/* пусто */) NoAttrib t.AbsolutName =
     t.hIModule
     (Declare
       Function
@@ -124,9 +138,21 @@ GenerateFunction-Aux {
     );
 
   s.FnProperties
-  t.hIModule Found s.ScopeClass Found (e.Sentences) t.AbsolutName =
+  t.hIModule Found s.ScopeClass Found (e.Sentences) NoAttrib t.AbsolutName =
     t.hIModule
     <GenFunction s.FnProperties t.AbsolutName s.ScopeClass e.Sentences>;
+
+  s.FnProperties
+  t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos s.BackEndID e.Code
+  t.AbsolutName =
+    t.hIModule
+    (Define
+      Function
+      t.AbsolutName
+      (<s.FnProperties GenNativeInsertion-Body>
+        t.AbsolutName s.ScopeClass t.SrcPos s.BackEndID <SplitCode e.Code>
+      )
+    );
 }
 
 GenerateEntryCode
@@ -151,8 +177,11 @@ Generate-Aux
     t.hIModule
     <MProfiler::Quantify & Profiling-MFileIO-Save
       (e.OutName)
-      <s.FnProperties GenCommonHeaders>
-      <FilterDecls e.FunctionsEntries>
+      <MProfiler::Quantify & PatchSrcPos
+        (e.OutName)
+        <s.FnProperties GenCommonHeaders>
+        <FilterDecls e.FunctionsEntries>
+      >
     >;
 
 Profiling-MFileIO-Save
@@ -197,6 +226,9 @@ DoFilterDecls {
       (e.Known (Define s.Type t.Name t.Gen)) e.Tail
     >;
 
+  (e.Known) (Native e.Info) e.Tail =
+    <DoFilterDecls (e.Known (Native e.Info)) e.Tail>;
+
   (e.Known) =
     <GenerateElems e.Known>;
 }
@@ -208,8 +240,30 @@ Profiling-GenerateElems
   e.Known = <MLambda::Map & GenerateElem e.Known>;
 
 GenerateElem {
+  (Native s.FnGenNative t.SrcPos s.BackEndID e.Code) =
+    <MProfiler::Quantify s.FnGenNative t.SrcPos s.BackEndID e.Code>;
+
   (s.DeclareDefine s.Type t.Name (s.Generator e.Arguments)) =
     <MProfiler::Quantify s.Generator e.Arguments>;
+}
+
+PatchSrcPos {
+  (e.OutName) e.Lines-B PATCH-SHARP-LINE e.Lines-E =
+    <DoPatchSrcPos (e.OutName) 2 e.Lines-B PATCH-SHARP-LINE e.Lines-E>;
+
+  (e.OutName) e.Lines = e.Lines;
+}
+
+DoPatchSrcPos {
+  (e.OutName) s.LineNo (e.Line) e.Lines =
+    (e.Line)
+    <DoPatchSrcPos (e.OutName) <MMath::Inc s.LineNo> e.Lines>;
+
+  (e.OutName) s.LineNo PATCH-SHARP-LINE e.Lines =
+    (<MSrcPos::SharpLine <MSrcPos::Create-FilePos s.LineNo e.OutName>>)
+    <DoPatchSrcPos (e.OutName) <MMath::Inc s.LineNo> e.Lines>;
+
+  (e.OutName) s.LineNo /* всё */ = /* всё */;
 }
 
 //----------------------------------------------------------------------

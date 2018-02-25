@@ -74,6 +74,14 @@ NModuleBody {
       >
     >;
 
+  t.hIModule
+  t.hErrorList t.Lexer (Directive t.SrcPos Native) =
+    <NModuleBody
+      <NNativeInsertion
+        t.hIModule t.hErrorList <MLexer::NextToken t.Lexer>
+      >
+    >;
+
   t.IModule
   t.hErrorList t.Lexer (Directive t.SrcPos Data) =
     <NModuleBody
@@ -1190,6 +1198,182 @@ CheckCallableVariable {
     t.VarTable
     ( e.ResultExpr InvalidCallable t.UpParentStack)
     t.hErrorList <MLexer::NextToken t.Lexer>;
+}
+
+NNativeInsertion {
+  t.hIModule t.hErrorList t.hLexer (Identifier t.SrcPos e.BackEndID) =
+    <NNativeInsertion-Identifier
+      t.hIModule t.hErrorList t.SrcPos <BackEndID e.BackEndID>
+      <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList t.Unexpected 'Identifier with back end ID'
+    >
+    t.hLexer t.Unexpected;
+}
+
+BackEndID {
+  'CppSR' = CppSR;
+  'SimRef' = SimRef;
+  'SR' = SimRef;
+  'Refal5' = Refal5;
+  'R5' = Refal5;
+  e.Other = (BadId e.Other);
+}
+
+NNativeInsertion-Identifier {
+  t.hIModule t.hErrorList t.IdSrcPos s.BackEndID
+  t.hLexer (Identifier t.SrcPos 'TOPLEVEL') =
+    <NNativeInsertion-TopLevel
+      t.hIModule t.hErrorList s.BackEndID <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList t.IdSrcPos s.BackEndID
+  t.hLexer (Identifier t.SrcPos 'FUNCTION') =
+    <NNativeInsertion-Function
+      t.hIModule t.hErrorList s.BackEndID <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList t.IdSrcPos s.BackEndID
+  t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList t.Unexpected 'identifiers TOPLEVEL or FUNCTION'
+    >
+    t.hLexer t.Unexpected;
+
+  t.hIModule t.hErrorList t.IdSrcPos (BadId e.BadBackEndID)
+  t.hLexer t.NextToken =
+    <NNativeInsertion-Identifier
+      t.hIModule
+      <MError::AddBadBackEndID t.hErrorList t.IdSrcPos e.BadBackEndID>
+      t.IdSrcPos CppSR
+      t.hLexer t.NextToken
+    >;
+}
+
+/*
+$NATIVE CppSR TOPLEVEL
+@@'
+void hello() {
+}
+'@@;
+*/
+
+/*
+$NATIVE SR TOPLEVEL
+@@'
+$ESWAP Hello2;
+'@@;
+*/
+
+/*
+$NATIVE Refal5 TOPLEVEL
+@@'
+b Local::A::B
+c $Local::A::B$ {
+c   e.X = e.X;
+c }
+'@@;
+*/
+
+NNativeInsertion-TopLevel {
+  t.hIModule t.hErrorList s.BackEndID t.hLexer (RawLiteral t.SrcPos e.Code) =
+    <MIModule::AddNativeInsertion t.hIModule t.SrcPos s.BackEndID e.Code>
+    <ExpectEndSent t.hErrorList <MLexer::NextToken t.hLexer>>;
+
+  t.hIModule t.hErrorList s.BackEndID t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected t.hErrorList t.Unexpected 'raw string literal'>
+    t.hLexer t.Unexpected;
+}
+
+/*
+$NATIVE CppSR FUNCTION
+Test1
+@@'
+  (void) arg_begin;
+  (void) arg_end;
+  return refalrts::cRecognitionImpossible;
+'@@;
+*/
+
+/*
+$NATIVE SR FUNCTION
+$ENTRY Test2
+@@'
+  #X = #Y;
+'@@;
+*/
+
+/*
+$NATIVE Refal5 FUNCTION
+Test3
+@@'
+c {
+c   e.X = <Prout e.X>;
+c }
+'@@;
+*/
+
+NNativeInsertion-Function {
+  t.hIModule t.hErrorList s.BackEndID t.hLexer (Directive t.SrcPos Entry) =
+    <NNativeInsertion-Function-Name
+      t.hIModule t.hErrorList s.BackEndID Entry <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList s.BackEndID t.hLexer t.OtherToken =
+    <NNativeInsertion-Function-Name
+      t.hIModule t.hErrorList s.BackEndID Local t.hLexer t.OtherToken
+    >;
+}
+
+NNativeInsertion-Function-Name {
+  t.hIModule t.hErrorList s.BackEndID s.ScopeClass
+  t.hLexer (Identifier t.SrcPos e.Name) =
+    <NNativeInsertion-Function-Body
+      t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
+      <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList s.BackEndID s.ScopeClass t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList t.Unexpected 'Function name (identifier)'
+    >
+    t.hLexer t.Unexpected;
+}
+
+NNativeInsertion-Function-Body {
+  t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
+  t.hLexer (RawLiteral t.SrcPos e.Code) =
+    <NNativeInsertion-Function-Body-Aux
+      <MParser_Common::AddNewFunction
+        t.hIModule t.SrcPos
+        <MQualifiedName::Create (e.Name)>
+        (NativeBody t.SrcPos s.BackEndID e.Code)
+        (ScopeClass s.ScopeClass)
+        t.hErrorList
+      >
+      <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
+  t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList t.Unexpected 'raw string literal'
+    >
+    t.hLexer t.Unexpected;
+}
+
+NNativeInsertion-Function-Body-Aux {
+  t.hIModule t.hErrorList t.hLexer t.NextToken =
+    t.hIModule
+    <ExpectEndSent t.hErrorList t.hLexer t.NextToken>;
 }
 
 $END FE-MRefal::MParser_MRefal.

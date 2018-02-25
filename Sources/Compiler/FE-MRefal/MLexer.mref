@@ -442,7 +442,7 @@ QuotedRaw {
     <QuotedRaw (e.Errors) (e.Terminator '@') t.Pos t.hFile e.Line>;
 
   (e.Errors) (e.Terminator) t.Pos t.hFile '' e.Line =
-    <DoQuotedRaw (e.Errors) () (e.Terminator) t.Pos t.hFile e.Line>;
+    <DoQuotedRaw (e.Errors) () (e.Terminator) t.Pos t.Pos t.hFile e.Line>;
 
   (e.Errors) (e.Terminator) t.Pos t.hFile /* пусто */ 0 =
     <ReturnToken
@@ -458,30 +458,52 @@ QuotedRaw {
 }
 
 DoQuotedRaw {
-  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile e.Terminator e.Line =
-    <ReturnToken (e.Errors) t.Pos t.hFile e.Line (RawLiteral e.Scanned)>;
+  (e.Errors) (e.Scanned) (e.Terminator) t.StartPos
+  t.Pos t.hFile e.Terminator e.Line =
+    <CorrectPosRawLiteral
+      <ReturnToken (e.Errors) t.Pos t.hFile e.Line (RawLiteral e.Scanned)>
+      t.StartPos
+    >;
 
-  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile /* пусто */ 0 =
-    <ReturnToken
-      (e.Errors <MakeError t.Pos 'Unexpected EOF in raw string literal'>)
-      t.Pos t.hFile /* пусто */ 0 (RawLiteral e.Scanned)
+  (e.Errors) (e.Scanned) (e.Terminator) t.StartPos
+  t.Pos t.hFile /* пусто */ 0 =
+    <CorrectPosRawLiteral
+      <ReturnToken
+        (e.Errors <MakeError t.Pos 'Unexpected EOF in raw string literal'>)
+        t.Pos t.hFile /* пусто */ 0 (RawLiteral e.Scanned)
+      >
+      t.StartPos
     >;
 
   // Для случая чтения файла в формате Windows из-под UNIX
-  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile /* пусто */ '\r' =
+  (e.Errors) (e.Scanned) (e.Terminator) t.StartPos
+  t.Pos t.hFile /* пусто */ '\r' =
     <DoQuotedRaw
-      (e.Errors) (e.Scanned '\n') (e.Terminator) <NewLine t.Pos t.hFile>
+      (e.Errors) (e.Scanned '\n') (e.Terminator) t.StartPos
+      <NewLine t.Pos t.hFile>
     >;
 
-  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile /* пусто */ =
+  (e.Errors) (e.Scanned) (e.Terminator) t.StartPos
+  t.Pos t.hFile /* пусто */ =
     <DoQuotedRaw
-      (e.Errors) (e.Scanned '\n') (e.Terminator) <NewLine t.Pos t.hFile>
+      (e.Errors) (e.Scanned '\n') (e.Terminator) t.StartPos
+      <NewLine t.Pos t.hFile>
     >;
 
-  (e.Errors) (e.Scanned) (e.Terminator) t.Pos t.hFile s.Next e.Line =
+  (e.Errors) (e.Scanned) (e.Terminator) t.StartPos
+  t.Pos t.hFile s.Next e.Line =
     <DoQuotedRaw
-      (e.Errors) (e.Scanned s.Next) (e.Terminator) t.Pos t.hFile e.Line
+      (e.Errors) (e.Scanned s.Next) (e.Terminator) t.StartPos
+      t.Pos t.hFile e.Line
     >;
+}
+
+CorrectPosRawLiteral {
+  t.Lexer (RawLiteral t.Pos e.Chars) (s.LineNumber e.FileName) =
+    t.Lexer
+    (RawLiteral <MSrcPos::Create-FilePos s.LineNumber e.FileName> e.Chars);
+
+  t.Lexer t.ErrorToken t.StartPos = t.Lexer t.ErrorToken;
 }
 
 Directive
@@ -533,6 +555,9 @@ SwDirective {
 
   'FINAL' = (Directive Final);
   'final' = (Directive Final);
+
+  'NATIVE' = (Directive Native);
+  'native' = (Directive Native);
 
   e.Other = (Error 'unknown directive \'' e.Other '\'');
 }
@@ -697,6 +722,7 @@ DirectiveToString {
   Swap = 'SWAP';
   Init = 'INIT';
   Final = 'FINAL';
+  Native = 'NATIVE';
 }
 
 VarTypeToChar { EVar = 'e'; SVar = 's'; TVar = 't'; }

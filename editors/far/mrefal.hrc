@@ -70,6 +70,7 @@
         <word name="$INIT"/>
         <word name="$FINAL"/>
         <word name="$END"/>
+        <word name="$NATIVE"/>
       </keywords>
       <keywords region="mrefalSymbol">
         <symb name="="/>

@@ -1,9 +1,11 @@
 $MODULE BE-SimRef::MCompiler;
 
+$IMPORT MError;
 $IMPORT MEscape;
 $IMPORT MLambda;
 $IMPORT MPredeclGenerator;
 $IMPORT MQualifiedName;
+$IMPORT MSrcPos;
 $IMPORT MStrings;
 
 $IMPORT MProfiler;
@@ -32,6 +34,8 @@ Generate-Properties {
   Generate-EntryCode-Go = & Generate-EntryCode-Go;
   Generate-EntryCode-InitFinal = & Generate-EntryCode-InitFinal;
   GenFunction-Code = & GenFunction-Code;
+  GenNativeInsertion = & GenNativeInsertion;
+  GenNativeInsertion-Body = & GenNativeInsertion-Body;
 }
 
 GenSwap
@@ -213,6 +217,30 @@ NameCode {
 NameCodeChar {
   '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; Entry = 'E_';
   s.Other = s.Other;
+}
+
+GenNativeInsertion {
+  t.SrcPos CppSR e.Code =
+    ('%%')
+    (<MSrcPos::SharpLine t.SrcPos>)
+    e.Code
+    PATCH-SHARP-LINE
+    ('%%');
+
+  t.SrcPos SimRef e.Code =
+    ('/* ' <MSrcPos::ToString t.SrcPos> ' */')
+    e.Code;
+
+  t.SrcPos s.BackEndID e.Code =
+    <MError::LinkError-BadBackEndID t.SrcPos s.BackEndID 'SimRef or CppSR'>;
+}
+
+GenNativeInsertion-Body {
+  t.FunctionName s.ScopeClass t.SrcPos s.BackEndID e.Code =
+    (<Gen-FnScopeClass s.ScopeClass> <QNameCode t.FunctionName> ' {')
+    <GenNativeInsertion t.SrcPos s.BackEndID e.Code>
+    ('}')
+    ();
 }
 
 $END BE-SimRef::MCompiler.

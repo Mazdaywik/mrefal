@@ -1,11 +1,13 @@
 $MODULE BE-Refal5::MCompiler;
 
+$IMPORT MError;
 $IMPORT MEscape;
 $IMPORT MFileIO;
 $IMPORT MHash = BE-Refal5::MHash;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MQualifiedName;
+$IMPORT MSrcPos;
 $IMPORT MStrings;
 $IMPORT MVersion;
 
@@ -113,7 +115,23 @@ GenerateElement {
   t.hIModule (ADT t.NextFnName) = t.hIModule /* пусто */;
 
   t.hIModule (NativeInsertion t.SrcPos s.BackEndID e.Code) =
-    t.hIModule /* пусто */;
+    t.hIModule
+    <GenerateNative t.SrcPos s.BackEndID e.Code>;
+}
+
+GenerateNative {
+  t.SrcPos Refal5 e.Code =
+    ('r ' <MSrcPos::ToString t.SrcPos>)
+    <SplitCode e.Code>
+    ();
+
+  t.SrcPos s.BackEndID e.Code =
+    <MError::LinkError-BadBackEndID t.SrcPos s.BackEndID 'Refal5'>;
+}
+
+SplitCode {
+  e.Line '\n' e.Lines = (e.Line) <SplitCode e.Lines>;
+  e.Line = (e.Line);
 }
 
 GenerateElement-Aux
@@ -147,7 +165,7 @@ GenerateSwap
 
   */
   t.SwapName =
-    ( 'b ' <XQualifiedToLine Swap t.SwapName> )
+    ('b ' <XQualifiedToLine Swap t.SwapName>)
     ('c $' <XQualifiedToLine Swap t.SwapName> '$ {')
     ('c \te.$Index::NewValue$ =')
     ('c \t\t<Dg (\'' <QualifiedToLine t.SwapName> '\')>')
@@ -156,19 +174,38 @@ GenerateSwap
 
 GenerateFunction
   t.IModule s.FnScopeClass t.QualifiedName t.FnName =
-    <GenerateFunction-Aux
-      s.FnScopeClass t.QualifiedName
+    <GenerateFunction-Body
+      s.FnScopeClass t.QualifiedName t.FnName
       <MIModule::GetFunctionAttribute
         t.IModule Body t.FnName
       >
     >;
 
-GenerateFunction-Aux
-  s.FnScopeClass t.QualifiedName
+GenerateFunction-Body {
+  s.FnScopeClass t.QualifiedName t.FnName
   t.IModule Found (e.Sentences) =
     t.IModule
     <GenerateFnHeader s.FnScopeClass t.QualifiedName>
     <GenerateFnBody e.Sentences>;
+
+  s.FnScopeClass t.QualifiedName t.FnName
+  t.IModule NoAttrib =
+    <GenerateFunction-NativeBody
+      s.FnScopeClass t.QualifiedName
+      <MIModule::GetFunctionAttribute
+        t.IModule NativeBody t.FnName
+      >
+    >;
+}
+
+GenerateFunction-NativeBody {
+  s.FnScopeClass t.QualifiedName
+  t.IModule Found t.SrcPos s.BackEndID e.Code =
+    t.IModule
+    ('b ' <XQualifiedToLine s.FnScopeClass t.QualifiedName>)
+    ('c $' <XQualifiedToLine s.FnScopeClass t.QualifiedName> '$')
+    <GenerateNative t.SrcPos s.BackEndID e.Code>;
+}
 
 GenerateFnHeader
   s.ScopeClass t.QualifiedFnName =

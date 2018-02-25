@@ -1,10 +1,12 @@
 $MODULE BE-CppSR::Generator;
 
 $IMPORT Math = MMath;
+$IMPORT MError;
 $IMPORT MEscape;
 $IMPORT MLambda;
-$IMPORT MStrings;
 $IMPORT MQualifiedName;
+$IMPORT MSrcPos;
+$IMPORT MStrings;
 
 QNameCode {
   t.Name = <DoQNameCode <MQualifiedName::Parse t.Name>>;
@@ -62,7 +64,6 @@ GenInitCounter {
 
 GenFnEnd {
   t.Name =
-    ('  return refalrts::cRecognitionImpossible;')
     ('}')
     (
       'refalrts::RefalNativeFunction descr_' <QNameCode t.Name>
@@ -142,7 +143,8 @@ GenBody {
         ('  ')
         e.Algorithm
       >
-    >;
+    >
+    ('  return refalrts::cRecognitionImpossible;');
 }
 
 GenBody-TerminateAccumulator {
@@ -609,6 +611,23 @@ SwInfo {
 
   // Остальное -- скобки
   s.Other = ;
+}
+
+$ENTRY GenNativeInsertion {
+  t.SrcPos CppSR e.Code =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    e.Code
+    PATCH-SHARP-LINE;
+
+  t.SrcPos s.BackEndID e.Code =
+    <MError::LinkError-BadBackEndID t.SrcPos s.BackEndID 'CppSR'>;
+}
+
+$ENTRY GenNativeInsertion-Body {
+  t.FuncName s.ScopeClass t.SrcPos s.BackEndID e.Code =
+    <GenFnStart t.FuncName>
+    <GenNativeInsertion t.SrcPos s.BackEndID e.Code>
+    <GenFnEnd t.FuncName>;
 }
 
 $END BE-CppSR::Generator.

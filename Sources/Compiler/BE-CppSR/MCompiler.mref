@@ -30,6 +30,8 @@ Generate-Properties {
   Generate-EntryCode-Go = & Generate-EntryCode-Go;
   Generate-EntryCode-InitFinal = & Generate-EntryCode-InitFinal;
   GenFunction-Code = & GenFunction-Code;
+  GenNativeInsertion = & Generator.GenNativeInsertion;
+  GenNativeInsertion-Body = & Generator.GenNativeInsertion-Body;
 }
 
 GenIdent

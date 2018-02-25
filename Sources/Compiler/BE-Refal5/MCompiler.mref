@@ -23,18 +23,18 @@ Profiled-Generate
   t.IModule e.OutName =
     <SaveModule
       (e.OutName)
+      <GenerateContent t.IModule>
+    >;
+
+SaveModule
+  (e.OutName) t.IModule e.Lines =
+    <MFileIO::Save
+      (e.OutName)
       ('v ' <MVersion::ROut>)
       ('r file ' e.OutName)
       ()
-      <ModuleToBack <GenerateContent t.IModule>>
-    >;
-
-ModuleToBack
-  t.IModule e.Lines = e.Lines t.IModule;
-
-SaveModule
-  (e.OutName) e.Lines t.IModule =
-    <MFileIO::Save (e.OutName) e.Lines>
+      e.Lines
+    >
     t.IModule;
 
 GenerateContent

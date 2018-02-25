@@ -472,6 +472,14 @@ NFunctionBody {
   t.hErrorList t.Lexer t.NextToken =
     ( ((e.Sentence)) e.ParentStack )
     t.hErrorList t.Lexer t.NextToken;
+
+  /*
+    Восстановление после ошибок, когда предложение построить не удалось
+  */
+  ( OneSentence (e.ParentStack) )
+  t.hErrorList t.Lexer t.NextToken =
+    ( () e.ParentStack )
+    t.hErrorList t.Lexer t.NextToken;
 }
 
 //------------------------------------------------------------------------------

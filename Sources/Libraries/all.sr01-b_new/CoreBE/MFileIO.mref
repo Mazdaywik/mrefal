@@ -1,3 +1,7 @@
+$MODULE CoreBE::MFileIO;
+
+$NATIVE SimRef TOPLEVEL
+@@'
 // FROM MR-BaseLib
 $EXTERN MR-IO-Close;
 $EXTERN MR-IO-Open;
@@ -5,41 +9,54 @@ $EXTERN MR-IO-ReadLine;
 $EXTERN MR-IO-Write;
 $EXTERN MR-IO-StdIn;
 $EXTERN MR-IO-StdOut;
+'@@;
 
-$ENTRY CoreBEP_MFileIOP_StdOut {
+
+$NATIVE SimRef FUNCTION
+$ENTRY StdOut
+@@'
   = <MR-IO-StdOut>;
-}
+'@@;
 
-$ENTRY CoreBEP_MFileIOP_StdIn {
+$NATIVE SimRef FUNCTION
+$ENTRY StdIn
+@@'
   = <MR-IO-StdIn>;
-}
+'@@;
 
-$ENTRY CoreBEP_MFileIOP_ReadLine {
+$NATIVE SimRef FUNCTION
+$ENTRY ReadLine
+@@'
   s.Handle = <MR-IO-ReadLine s.Handle>;
-}
+'@@;
 
-$ENTRY CoreBEP_MFileIOP_Write {
+$NATIVE SimRef FUNCTION
+$ENTRY Write
+@@'
   s.Handle e.Line = <MR-IO-Write s.Handle e.Line>;
-}
+'@@;
 
-$ENTRY CoreBEP_MFileIOP_Close {
+$NATIVE SimRef FUNCTION
+$ENTRY Close
+@@'
   s.Handle = <MR-IO-Close s.Handle >;
-}
+'@@;
 
-$ENTRY CoreBEP_MFileIOP_Open {
+$NATIVE SimRef FUNCTION
+$ENTRY Open
+@@'
   'r' e.FileName = <MR-IO-Open 'r' e.FileName>;
   'w' e.FileName = <MR-IO-Open 'w' e.FileName>;
   'a' e.FileName = <MR-IO-Open 'a' e.FileName>;
   'br' e.FileName = <MR-IO-Open 'br' e.FileName>;
   'bw' e.FileName = <MR-IO-Open 'bw' e.FileName>;
   'ba' e.FileName = <MR-IO-Open 'ba' e.FileName>;
-}
+'@@;
 
-
-$ENTRY CoreBEP_MFileIOP_EntryPointE_ {
-  = /* пусто */;
-}
-
-$ENTRY CoreBEP_MFileIOP_FlushIO {
+$NATIVE SimRef FUNCTION
+$ENTRY FlushIO
+@@'
   e.Arg = /* empty */;
-}
+'@@;
+
+$END CoreBE::MFileIO.

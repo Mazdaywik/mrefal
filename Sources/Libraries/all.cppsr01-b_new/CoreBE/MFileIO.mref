@@ -1,0 +1,49 @@
+$MODULE CoreBE::MFileIO;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+
+
+$NATIVE CppSR FUNCTION
+$ENTRY StdOut
+@@'
+  return implement_fileio::get_stdout(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY StdIn
+@@'
+  return implement_fileio::get_stdin(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY ReadLine
+@@'
+  return implement_fileio::read_line(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Write
+@@'
+  return implement_fileio::write(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Close
+@@'
+  return implement_fileio::close(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Open
+@@'
+  return implement_fileio::open(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY FlushIO
+@@'
+  refalrts::splice_to_freelist(arg_begin, arg_end);
+  return refalrts::cSuccess;
+'@@;
+
+$END CoreBE::MFileIO.

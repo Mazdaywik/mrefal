@@ -3,3 +3,5 @@ MRefal
 (
   -target:../Bin/MRefal.cppsr.exe
 )
+
+-cfg:../Libraries/modulepath-CppSR.cfg

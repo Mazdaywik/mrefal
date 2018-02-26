@@ -3,3 +3,5 @@ MRefal
 (
   -target:../Bin/MRefal.r5
 )
+
+-cfg:../Libraries/modulepath-R5.cfg

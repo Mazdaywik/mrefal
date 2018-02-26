@@ -1,7 +1,9 @@
-v ROUT3 Module Refal 0.1
+$MODULE CoreBE::MFileIO;
 
-b Entry::CoreBE::MFileIO::Open
-c $Entry::CoreBE::MFileIO::Open$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY Open
+@@'
+c {
 c   'b' s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
@@ -14,10 +16,10 @@ c       Handles s.FreeHandle e.Handles
 c         = <Open <Implode s.Mode 'b'> s.FreeHandle e.FileName >
 c         <Br FreeHandles '=' Handles e.Handles >
 c         s.FreeHandle;
-r 
+
 r       //Свободных дескрипторов не осталось --- функция должна падать
 c     };
-r 
+
 c   s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
@@ -30,53 +32,76 @@ c       Handles s.FreeHandle e.Handles
 c         = <Open s.Mode s.FreeHandle e.FileName >
 c         <Br FreeHandles '=' Handles e.Handles >
 c         s.FreeHandle;
-r 
+
 r       //Свободных дескрипторов не осталось --- функция должна падать
 c     };
 c }
+'@@;
 
-b Local::CoreBE::MFileIO::Open-CheckHandles
-c $Local::CoreBE::MFileIO::Open-CheckHandles$ {
+$NATIVE Refal5 FUNCTION
+Open-CheckHandles
+@@'
+c {
 c   , <Cp FreeHandles > :
 c   {
 c     Handles e.Handles = ;
 c     = <Br FreeHandles '=' Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 >;
 c   }
 c }
+'@@;
 
-b Entry::CoreBE::MFileIO::Close
-c $Entry::CoreBE::MFileIO::Close$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY Close
+@@'
+c {
 c   s.Handle =
 c     <Close s.Handle >
 c     <Br FreeHandles '=' <Dg FreeHandles> s.Handle >;
 c }
+'@@;
 
-b Entry::CoreBE::MFileIO::ReadLine
-c $Entry::CoreBE::MFileIO::ReadLine$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY ReadLine
+@@'
+c {
 c   StdIn = <Card >;
 c   s.Handle = <Get s.Handle >;
 c }
+'@@;
 
-b Entry::CoreBE::MFileIO::StdIn
-c $Entry::CoreBE::MFileIO::StdIn$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY StdIn
+@@'
+c {
 c   = StdIn ;
 c }
+'@@;
 
-b Entry::CoreBE::MFileIO::StdOut
-c $Entry::CoreBE::MFileIO::StdOut$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY StdOut
+@@'
+c {
 c  = StdOut ;
 c }
+'@@;
 
-b Entry::CoreBE::MFileIO::Write
-c $Entry::CoreBE::MFileIO::Write$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY Write
+@@'
+c {
 c   StdOut e.Text '\n' = <Prout <Dg CachedLine > e.Text >;
 c   StdOut e.Text = <Br CachedLine '=' <Dg CachedLine > e.Text >;
 c   s.Handle e.Text '\n' = <Putout s.Handle e.Text >;
 c   s.Handle e.Text  = <Write s.Handle e.Text >;
 c }
+'@@;
 
-b Entry::CoreBE::MFileIO::FlushIO
-c $Entry::CoreBE::MFileIO::FlushIO$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY FlushIO
+@@'
+c {
 c   = <Prout <Dg CachedLine > >;
 c }
+'@@;
 
+$END CoreBE::MFileIO.

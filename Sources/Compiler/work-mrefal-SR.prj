@@ -3,3 +3,5 @@ MRefal
 (
   -target:../Bin/MRefal.sr.exe
 )
+
+-cfg:../Libraries/modulepath-SR.cfg

@@ -1,0 +1,58 @@
+$MODULE CoreBE::MSelfDiag;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY CloseLog @@'
+c {
+c   , <Dg LogHandle>:
+c   {
+c     s.Handle = <Close s.Handle >;
+c     = ;
+c   }
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY ExitFailure @@'
+c {
+c   s.ExitCode = <$Entry::__Exit$ 1 >;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Log @@'
+c {
+c   e.Message =
+c     <Putout <$Local::CoreBE::MSelfDiag::GetHandle$ > e.Message >;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Log-T @@'
+c {
+c   e.Message =
+c     <Put <$Local::CoreBE::MSelfDiag::GetHandle$ > e.Message >;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+GetHandle @@'
+c {
+c   , <Cp LogHandle >:
+c   {
+c     s.Handle = s.Handle;
+c     =
+c       <Open 'w' 19 '__log' >
+c       <Br LogHandle '=' 19 >
+c       19;
+c   };
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY PrintMessage @@'
+c {
+c   e.Message = <Write 0 e.Message '\n' >;
+c }
+'@@;
+
+$END CoreBE::MSelfDiag.

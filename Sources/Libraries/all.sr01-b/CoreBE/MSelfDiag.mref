@@ -1,30 +1,36 @@
+$MODULE CoreBE::MSelfDiag;
 
+$NATIVE SimRef TOPLEVEL @@'
 $EXTERN MR-SelfDiag-CloseLog;
 $EXTERN MR-SelfDiag-ExitFailure;
 $EXTERN MR-SelfDiag-Log;
 $EXTERN MR-SelfDiag-Log-T;
 $EXTERN MR-SelfDiag-PrintMessage;
+'@@;
 
-$ENTRY CoreBEP_MSelfDiagP_CloseLog {
+$NATIVE SimRef FUNCTION
+$ENTRY CloseLog @@'
   = <MR-SelfDiag-CloseLog>;
-}
+'@@;
 
-$ENTRY CoreBEP_MSelfDiagP_ExitFailure {
+$NATIVE SimRef FUNCTION
+$ENTRY ExitFailure @@'
   = <MR-SelfDiag-ExitFailure>;
-}
+'@@;
 
-$ENTRY CoreBEP_MSelfDiagP_LogD_T {
+$NATIVE SimRef FUNCTION
+$ENTRY Log-T @@'
   e.Text = <MR-SelfDiag-Log-T e.Text>;
-}
+'@@;
 
-$ENTRY CoreBEP_MSelfDiagP_Log {
+$NATIVE SimRef FUNCTION
+$ENTRY Log @@'
   e.Text = <MR-SelfDiag-Log e.Text>;
-}
+'@@;
 
-$ENTRY CoreBEP_MSelfDiagP_PrintMessage {
+$NATIVE SimRef FUNCTION
+$ENTRY PrintMessage @@'
   e.Message = <MR-SelfDiag-PrintMessage e.Message>;
-}
+'@@;
 
-$ENTRY CoreBEP_MSelfDiagP_EntryPointE_ {
-  = /* пусто */;
-}
+$END CoreBE::MSelfDiag.

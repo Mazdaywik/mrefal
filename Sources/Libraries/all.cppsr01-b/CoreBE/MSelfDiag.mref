@@ -1,0 +1,43 @@
+$MODULE CoreBE::MSelfDiag;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+
+
+$NATIVE CppSR FUNCTION
+$ENTRY CloseLog @@'
+  return implement_selfdiag::close_log(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY ExitFailure @@'
+  return implement_selfdiag::exit_failure(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Log-T @@'
+  return implement_selfdiag::log(
+    implement_selfdiag::get_log_handle(),
+    true, // прозрачный режим
+    arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Log @@'
+  return implement_selfdiag::log(
+    implement_selfdiag::get_log_handle(),
+    false, // непрозрачный режим
+    arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY PrintMessage @@'
+  return implement_selfdiag::log(
+    implement_selfdiag::get_stderror_handle(),
+    false, // непрозрачный режим
+    arg_begin, arg_end
+  );
+'@@;
+
+$END CoreBE::MSelfDiag.

@@ -1,7 +1,8 @@
-v ROUT3 Module Refal 0.1
+$MODULE CoreBE::MExistFile;
 
-b Entry::CoreBE::MExistFile::ExistFile
-c $Entry::CoreBE::MExistFile::ExistFile$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY ExistFile @@'
+c {
 c   e.$Index::FileName$
 c   , <ExistFile e.$Index::FileName$> :
 c   {
@@ -9,4 +10,6 @@ c     True = $Ident::True$;
 c     False = $Ident::False$;
 c   }
 c }
+'@@;
 
+$END CoreBE::MExistFile.

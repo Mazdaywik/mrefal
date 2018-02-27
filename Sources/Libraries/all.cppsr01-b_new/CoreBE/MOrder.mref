@@ -1,0 +1,10 @@
+$MODULE CoreBE::MOrder;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY SymbCompare @@'
+  return implement_order::symb_compare(arg_begin, arg_end);
+'@@;
+
+$END CoreBE::MOrder.

@@ -1,7 +1,8 @@
-v ROUT3 Module Refal 0.1
+$MODULE CoreBE::MOrder;
 
-b Entry::CoreBE::MOrder::SymbCompare
-c $Entry::CoreBE::MOrder::SymbCompare$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY SymbCompare @@'
+c {
 c   s.Left s.Right
 c     , <$Local::CoreBE::MOrder::GetType$ s.Left >
 c       <$Local::CoreBE::MOrder::GetType$ s.Right >:
@@ -21,9 +22,11 @@ c       s.Type s.LeftVal Char s.RightVal = '<';
 c       s.L-Type s.L-Val s.R-Type s.R-Val = '=';
 c     }
 c }
+'@@;
 
-b Local::CoreBE::MOrder::GetType
-c $Local::CoreBE::MOrder::GetType$ {
+$NATIVE Refal5 FUNCTION
+GetType @@'
+c {
 c   s.Atom, <Type s.Atom >:
 c     {
 c       'N' e.1 = Number s.Atom;
@@ -34,3 +37,6 @@ c       'D' e.1 = Char <Ord s.Atom >;
 c       e.1     = Other 0;
 c     }
 c }
+'@@;
+
+$END CoreBE::MOrder.

@@ -213,11 +213,17 @@ CreateFunctionInfo-SwScopeClass {
     >;
 }
 
-CreateFunctionInfo-Aux
+CreateFunctionInfo-Aux {
   t.FunctionName s.ScopeClass t.SrcPos
   t.hIModule Found (e.Sentences) =
     t.hIModule s.ScopeClass t.FunctionName t.SrcPos
     <MLambda::Map & ScanSentence e.Sentences>;
+
+  // Случай нативной функции
+  t.FunctionName s.ScopeClass t.SrcPos
+  t.hIModule NoAttrib =
+    t.hIModule s.ScopeClass t.FunctionName t.SrcPos;
+}
 
 ScanSentence
   (e.Actions) =

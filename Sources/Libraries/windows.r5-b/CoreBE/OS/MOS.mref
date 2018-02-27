@@ -1,13 +1,16 @@
-v ROUT3 Module Refal 0.1
+$MODULE CoreBE::OS::MOS;
 
-b Entry::CoreBE::OS::MOS::CommandLine
-c $Entry::CoreBE::OS::MOS::CommandLine$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY CommandLine @@'
+c {
 c   =
 c     <$Local::CoreBE::OS::MOS::Load$ 1 <Arg 0 > >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MOS::Load
-c $Local::CoreBE::OS::MOS::Load$ {
+$NATIVE Refal5 FUNCTION
+Load @@'
+c {
 c   s.$Index::Next$ = ;
 r   // Пропуск "особых" параметров
 c   s.$Index::Next$ '++' e.$Index::Arg$ =
@@ -22,47 +25,55 @@ c       <Add s.$Index::Next$ 1 >
 c       <Arg s.$Index::Next$ >
 c     >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MOS::Quote
-c $Local::CoreBE::OS::MOS::Quote$ {
+$NATIVE Refal5 FUNCTION
+Quote @@'
+c {
 c   e.$Index::Arg$ '\"' =
 c     <$Local::CoreBE::OS::MOS::Quote-Slash$ e.$Index::Arg$ >
 c     '\\\"';
-r 
+
 c   e.$Index::Arg$ s.$Index::Other$ =
 c     <$Local::CoreBE::OS::MOS::Quote$ e.$Index::Arg$ >
 c     s.$Index::Other$ ;
-r 
+
 c   = ;
 c }
+'@@;
 
-b Local::CoreBE::OS::MOS::Quote-Slash
-c $Local::CoreBE::OS::MOS::Quote-Slash$ {
+$NATIVE Refal5 FUNCTION
+Quote-Slash @@'
+c {
 c   e.$Index::Arg$ '\\' =
 c     <$Local::CoreBE::OS::MOS::Quote-Slash$ e.$Index::Arg$ >
 c     '\\\\';
-r 
+
 c   e.$Index::Arg$ =
 c     <$Local::CoreBE::OS::MOS::Quote$ e.$Index::Arg$ > ;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MOS::CreateProcess
-c $Entry::CoreBE::OS::MOS::CreateProcess$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY CreateProcess @@'
+c {
 c   $Ident::Wait$
 c   ($ADT::__StructureBrackets$ e.ExeModule)
 c   ($ADT::__StructureBrackets$ e.CommandLine) =
 r     // Кривое решение --- игнорировать параметр e.ExeModule,
 r     // но любые другие пути будут костылявее.
 c     <$Local::CoreBE::OS::MOS::PerformSystem$ e.CommandLine >;
-r 
+
 c   $Ident::NoWait$
 c   ($ADT::__StructureBrackets$ e.ExeModule)
 c   ($ADT::__StructureBrackets$ e.CommandLine) =
 c     <$Local::CoreBE::OS::MOS::PerformSystem$ 'start ' e.CommandLine >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MOS::PerformSystem
-c $Local::CoreBE::OS::MOS::PerformSystem$ {
+$NATIVE Refal5 FUNCTION
+PerformSystem @@'
+c {
 c   e.CommandLine
 c   , '~' <Symb <Random 1 > > '.tmp.bat' : e.TempBat
 c   , <Open 'w' 20 e.TempBat > :
@@ -72,13 +83,15 @@ c   , <System e.TempBat > : s.RetCode
 c   , <RemoveFile e.TempBat > : e.RemoveResult
 c   = s.RetCode ;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MOS::EnvList
-c $Entry::CoreBE::OS::MOS::EnvList$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY EnvList @@'
+c {
 c   , <Cp EnvList > :
 c   {
 c     Loaded e.List = e.List;
-r 
+
 c     , <System 'set>~envlist.tmp' > : s.$Index::Ret1$
 c     , <Open 'r' 20 '~envlist.tmp' > : e.$Index::Empty1$
 c     , <$Local::CoreBE::OS::MOS::LoadEnvs$ <Get 20 > > : e.$Index::Result$
@@ -86,22 +99,28 @@ c     , <System 'del ~envlist.tmp' > : s.$Index::Ret2$
 c     = e.$Index::Result$ ;
 c   };
 c }
+'@@;
 
-b Local::CoreBE::OS::MOS::LoadEnvs
-c $Local::CoreBE::OS::MOS::LoadEnvs$ {
+$NATIVE Refal5 FUNCTION
+LoadEnvs @@'
+c {
 c   0 = <Close 20 >;
-r 
+
 c   e.$Index::Line$ 0 =
 c     ($ADT::__StructureBrackets$ e.$Index::Line$)
 c     <Close 20 >;
-r 
+
 c   e.$Index::Line$ =
 c     ($ADT::__StructureBrackets$ e.$Index::Line$)
 c     <$Local::CoreBE::OS::MOS::LoadEnvs$ <Get 20 > >;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MOS::ForseExit
-c $Entry::CoreBE::OS::MOS::ForseExit$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY ForseExit @@'
+c {
 c   s.$Index::RetCode$ = <$Entry::__Exit$ s.$Index::RetCode$ >;
 c }
+'@@;
 
+$END CoreBE::OS::MOS.

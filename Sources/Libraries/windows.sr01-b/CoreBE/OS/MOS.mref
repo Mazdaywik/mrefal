@@ -1,3 +1,6 @@
+$MODULE CoreBE::OS::MOS;
+
+$NATIVE SimRef TOPLEVEL @@'
 $LABEL Wait;
 $LABEL NoWait;
 
@@ -5,44 +8,49 @@ $LABEL NoWait;
 
 //FROM MR-BaseLib
 $EXTERN MR-OS-CreateProcess;
+'@@;
 
-$ENTRY CoreBEP_OSP_MOSP_CreateProcess {
+$NATIVE SimRef FUNCTION
+$ENTRY CreateProcess @@'
   #Wait (e.Program) (e.CommandLine) =
     <MR-OS-CreateProcess #Wait (e.Program) (e.CommandLine)>;
 
   #NoWait (e.Program) (e.CommandLine) =
     <MR-OS-CreateProcess #NoWait (e.Program) (e.CommandLine)>;
-}
+'@@;
 
+$NATIVE SimRef TOPLEVEL @@'
 //FROM MR-BaseLib
 $EXTERN MR-OS-EnvList;
+'@@;
 
-$ENTRY CoreBEP_OSP_MOSP_EnvList {
+$NATIVE SimRef FUNCTION
+$ENTRY EnvList @@'
   = <MR-OS-EnvList>;
-}
+'@@;
 
+$NATIVE SimRef TOPLEVEL @@'
 //FROM MR-BaseLib
 $EXTERN MR-OS-CommandLine;
+'@@;
 
-$ENTRY CoreBEP_OSP_MOSP_CommandLine {
+$NATIVE SimRef FUNCTION
+$ENTRY CommandLine @@'
   = <MR-OS-CommandLine>;
-}
+'@@;
 
+$NATIVE SimRef TOPLEVEL @@'
 // Функции инициализации и финализации
 
 $SWAP G_Finalizers;
 
 $EXTERN ExitE_;
 //$FORWARD DoExit;
+'@@;
 
-$ENTRY CoreBEP_OSP_MOSP_ForseExit {
+$NATIVE SimRef FUNCTION
+$ENTRY ForseExit @@'
   s.RetCode = <ExitE_ s.RetCode>;
-}
+'@@;
 
-$EXTERN RegisterE_;
-
-// Инициализаторы и финализаторы модуля
-
-$ENTRY CoreBEP_OSP_MOSP_EntryPointE_ {
-  = /* пусто */;
-}
+$END CoreBE::OS::MOS.

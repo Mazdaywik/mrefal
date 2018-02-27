@@ -4,11 +4,11 @@ $NATIVE Refal5 FUNCTION
 $ENTRY ExistFile @@'
 c {
 c   e.$Index::FileName$
-c   , <ExistFile e.$Index::FileName$> :
-c   {
-c     True = $Ident::True$;
-c     False = $Ident::False$;
-c   }
+c     , <ExistFile e.$Index::FileName$>
+c     : {
+c         True = $Ident::True$;
+c         False = $Ident::False$;
+c       };
 c }
 '@@;
 

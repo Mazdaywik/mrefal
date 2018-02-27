@@ -1,0 +1,42 @@
+$MODULE CoreBE::MProfiler;
+
+// Профилировщик в этом back-end'е ничего не делает
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Quantify @@'
+c {
+c   s.$Index::Function$ e.$Index::Arguments$ =
+c     <Mu s.$Index::Function$ e.$Index::Arguments$ > ;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY PrintResults @@'
+c {
+c   =
+c     <Prout 'Profiling for Refal 5 back-end not supported' > ;
+c   e.$Index::FileName$ =
+c     <Open 'w' 18 e.$Index::FileName$ >
+c     <Putout 18 'Profiling for Refal 5 back-end not supported' >
+c     <Close 18 >;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY SetOutputName @@'
+c {
+r   // Ничего не делаем
+c   e.$Index::OptionalFileName$ =
+c     ;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Flush @@'
+c {
+r   // Ничего не делаем
+c   = ;
+c }
+'@@;
+
+$END CoreBE::MProfiler.

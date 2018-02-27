@@ -1,28 +1,33 @@
+$MODULE CoreBE::MProfiler;
+
+$NATIVE SimRef TOPLEVEL @@'
 $EXTERN MR-Profiler-Quantify;
 $EXTERN MR-Profiler-PrintResults;
 $EXTERN MR-Profiler-SetOutputName;
 $EXTERN MR-Profiler-Flush;
+'@@;
 
-$ENTRY CoreBEP_MProfilerP_Quantify {
+$NATIVE SimRef FUNCTION
+$ENTRY Quantify @@'
   s.Function e.Arguments =
     <MR-Profiler-Quantify s.Function e.Arguments>;
-}
+'@@;
 
-$ENTRY CoreBEP_MProfilerP_PrintResults {
+$NATIVE SimRef FUNCTION
+$ENTRY PrintResults @@'
   e.OptionalFileName =
     <MR-Profiler-PrintResults e.OptionalFileName>;
-}
+'@@;
 
-$ENTRY CoreBEP_MProfilerP_SetOutputName {
+$NATIVE SimRef FUNCTION
+$ENTRY SetOutputName @@'
   e.OptionalFileName =
     <MR-Profiler-SetOutputName e.OptionalFileName>;
-}
+'@@;
 
-$ENTRY CoreBEP_MProfilerP_Flush {
+$NATIVE SimRef FUNCTION
+$ENTRY Flush @@'
   = <MR-Profiler-Flush>;
-}
+'@@;
 
-$ENTRY CoreBEP_MProfilerP_EntryPointE_ {
-  = /* пусто */;
-}
-
+$END CoreBE::MProfiler.

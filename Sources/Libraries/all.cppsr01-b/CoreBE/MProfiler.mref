@@ -1,0 +1,25 @@
+$MODULE CoreBE::MProfiler;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_profiler.h"'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Quantify @@'
+  return implement_profiler::quantify(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY PrintResults @@'
+  return implement_profiler::print_results(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY SetOutputName @@'
+  return implement_profiler::set_output_name(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Flush @@'
+  return implement_profiler::flush(arg_begin, arg_end);
+'@@;
+
+$END CoreBE::MProfiler.

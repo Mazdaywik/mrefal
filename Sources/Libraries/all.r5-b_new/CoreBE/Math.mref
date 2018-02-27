@@ -1,16 +1,19 @@
-v ROUT3 Module Refal 0.1
+$MODULE CoreBE::Math;
 
-b Entry::CoreBE::Math::Binary
-c $Entry::CoreBE::Math::Binary$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY Binary @@'
+c {
 c   '+' s.Left s.Right , <Add s.Left s.Right > : e.Car s.Last = s.Last;
 c   '-' s.Left s.Right , <Sub s.Left s.Right > : e.Car s.Last = s.Last;
 c   '*' s.Left s.Right , <Mul s.Left s.Right > : e.Car s.Last = s.Last;
 c   '/' s.Left s.Right = <Div s.Left s.Right >;
 c   '%' s.Left s.Right = <Mod s.Left s.Right >;
 c }
+'@@;
 
-b Entry::CoreBE::Math::NumberCompare
-c $Entry::CoreBE::Math::NumberCompare$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY NumberCompare @@'
+c {
 c   s.Left s.Right, <Compare s.Left s.Right >:
 c     {
 c       '-' = '<';
@@ -18,4 +21,6 @@ c       '0' = '=';
 c       '+' = '>';
 c     }
 c }
+'@@;
 
+$END CoreBE::Math.

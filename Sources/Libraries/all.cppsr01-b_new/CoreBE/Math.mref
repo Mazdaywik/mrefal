@@ -1,0 +1,16 @@
+$MODULE CoreBE::Math;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+
+
+$NATIVE CppSR FUNCTION
+$ENTRY NumberCompare @@'
+  return implement_math::compare(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Binary @@'
+  return implement_math::binary(arg_begin, arg_end);
+'@@;
+
+$END CoreBE::Math.

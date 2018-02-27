@@ -1,0 +1,59 @@
+$MODULE CoreBE::MStrings;
+
+// Как оказалось, не поддерживаются псевдонимы
+// TODO: исправить
+/*
+$NATIVE Refal5 FUNCTION
+$ENTRY Chr @@'p Chr'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Ord @@'p Ord'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Numb @@'p Numb'@@;
+*/
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Chr @@'
+c {
+c   e.Expr = <Chr e.Expr>;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Ord @@'
+c {
+c   e.Expr = <Chr e.Expr>;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Numb @@'
+c {
+c   e.Expr = <Chr e.Expr>;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY Symb @@'
+c {
+c   s.Num = <Symb s.Num >;
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY SerializeAtom @@'
+c {
+c   s.Atom, <Type s.Atom >:
+c     {
+c       'N' e.1 = $Ident::Number$ <Symb s.Atom >;
+c       'L' e.1 = $Ident::Char$ s.Atom;
+c       'D' e.1 = $Ident::Char$ s.Atom;
+c       'P' e.1 = $Ident::Char$ s.Atom;
+c       'O' e.1 = $Ident::Char$ <Symb <Ord s.Atom > >;
+c       e.1     = $Ident::IsntSerializable$ s.Atom;
+c     }
+c }
+'@@;
+
+$END CoreBE::MStrings.

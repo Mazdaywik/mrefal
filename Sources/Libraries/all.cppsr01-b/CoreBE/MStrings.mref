@@ -1,0 +1,34 @@
+$MODULE CoreBE::MStrings;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Chr @@'
+  return implement_strings::convert(
+    implement_strings::chr, arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Ord @@'
+  return implement_strings::convert(
+    implement_strings::ord, arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Symb @@'
+  return implement_strings::symb(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Numb @@'
+  return implement_strings::numb(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY SerializeAtom @@'
+  return implement_strings::serialize_atom(arg_begin, arg_end);
+'@@;
+
+$END CoreBE::MStrings.

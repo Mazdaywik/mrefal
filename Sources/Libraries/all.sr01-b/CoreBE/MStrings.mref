@@ -1,0 +1,36 @@
+$MODULE CoreBE::MStrings;
+
+$NATIVE SimRef TOPLEVEL @@'
+$EXTERN MR-Strings-Chr;
+$EXTERN MR-Strings-Numb;
+$EXTERN MR-Strings-Ord;
+$EXTERN MR-Strings-Symb;
+$EXTERN MR-Strings-SerializeAtom;
+'@@;
+
+$NATIVE SimRef FUNCTION
+$ENTRY Chr @@'
+  e.X = <MR-Strings-Chr e.X>;
+'@@;
+
+$NATIVE SimRef FUNCTION
+$ENTRY Ord @@'
+  e.X = <MR-Strings-Ord e.X>;
+'@@;
+
+$NATIVE SimRef FUNCTION
+$ENTRY Symb @@'
+  e.X = <MR-Strings-Symb e.X>;
+'@@;
+
+$NATIVE SimRef FUNCTION
+$ENTRY Numb @@'
+  e.X = <MR-Strings-Numb e.X>;
+'@@;
+
+$NATIVE SimRef FUNCTION
+$ENTRY SerializeAtom @@'
+  e.X = <MR-Strings-SerializeAtom e.X>;
+'@@;
+
+$END CoreBE::MStrings.

@@ -1,55 +1,68 @@
-v ROUT3 Module Refal 0.1
+$MODULE CoreBE::OS::MFileSystem;
 
-b Entry::CoreBE::OS::MFileSystem::FileAttributes
-c $Entry::CoreBE::OS::MFileSystem::FileAttributes$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY FileAttributes @@'
+c {
 c   e.$Index::FileName$ =
 c     <$Local::CoreBE::OS::MFileSystem::Call$
 c       ('FileAttributes') e.$Index::FileName$
 c     >;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MFileSystem::FindFiles
-c $Entry::CoreBE::OS::MFileSystem::FindFiles$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY FindFiles @@'
+c {
 c   e.$Index::Mask$ =
 c     <$Local::CoreBE::OS::MFileSystem::Call$
 c       ('FindFiles') e.$Index::Mask$
 c     >;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MFileSystem::FullName
-c $Entry::CoreBE::OS::MFileSystem::FullName$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY FullName @@'
+c {
 c   e.$Index::FileName$ =
 c     <$Local::CoreBE::OS::MFileSystem::Call$
 c       ('FullName') e.$Index::FileName$
 c     >;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MFileSystem::MakeDir
-c $Entry::CoreBE::OS::MFileSystem::MakeDir$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY MakeDir @@'
+c {
 c   e.$Index::DirName$ =
 c     <$Local::CoreBE::OS::MFileSystem::Call$
 c       ('MakeDir') e.$Index::DirName$
 c     >;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MFileSystem::RemoveDir
-c $Entry::CoreBE::OS::MFileSystem::RemoveDir$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY RemoveDir @@'
+c {
 c   e.$Index::DirName$ =
 c     <$Local::CoreBE::OS::MFileSystem::Call$
 c       ('RemoveDir') e.$Index::DirName$
 c     >;
 c }
+'@@;
 
-b Entry::CoreBE::OS::MFileSystem::RemoveFile
-c $Entry::CoreBE::OS::MFileSystem::RemoveFile$ {
+$NATIVE Refal5 FUNCTION
+$ENTRY RemoveFile @@'
+c {
 c   e.$Index::FileName$ =
 c     <$Local::CoreBE::OS::MFileSystem::Call$
 c       ('RemoveFile') e.$Index::FileName$
 c     >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::Call
-c $Local::CoreBE::OS::MFileSystem::Call$ {
+$NATIVE Refal5 FUNCTION
+Call @@'
+c {
 c   (e.$Index::FuncName$) e.$Index::Argument$
 
 c       , <$Local::CoreBE::OS::MFileSystem::Serialize$ e.$Index::Argument$ >
@@ -88,9 +101,11 @@ c           };
 c         False = $Ident::Fails$;
 c       };
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::Serialize
-c $Local::CoreBE::OS::MFileSystem::Serialize$ {
+$NATIVE Refal5 FUNCTION
+Serialize @@'
+c {
 c   ( $ADT::__StructureBrackets$ e.$Index::InBrackets$ )
 c   e.$Index::Tail$ =
 c     '('
@@ -108,10 +123,12 @@ c   <$Local::CoreBE::OS::MFileSystem::Serialize$ e.$Index::Tail$ > ;
 
 c   = ;
 c }
+'@@;
 
 
-b Local::CoreBE::OS::MFileSystem::DumpAtom
-c $Local::CoreBE::OS::MFileSystem::DumpAtom$ {
+$NATIVE Refal5 FUNCTION
+DumpAtom @@'
+c {
 c   s.$Index::Atom$
 c     , <Type s.$Index::Atom$ >
 c     :
@@ -141,9 +158,11 @@ c       'P' e.1 = '#c' <Symb <Ord s.$Index::Atom$ > > '+' ;
 c       'O' e.1 = '#c' <Symb <Ord s.$Index::Atom$ > > '+' ;
 c     };
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::GetExtentExe
-c $Local::CoreBE::OS::MFileSystem::GetExtentExe$ {
+$NATIVE Refal5 FUNCTION
+GetExtentExe @@'
+c {
 c   , <Dg FS-Extent > :
 c     {
 c        Loaded e.$Index::Extent$ = e.$Index::Extent$ ;
@@ -153,10 +172,12 @@ c            2 <Arg 1 >
 c          >;
 c     };
 c }
+'@@;
 
 
-b Local::CoreBE::OS::MFileSystem::FindExtent
-c $Local::CoreBE::OS::MFileSystem::FindExtent$ {
+$NATIVE Refal5 FUNCTION
+FindExtent @@'
+c {
 c   s.$Index::Next$
 c     , <Br FS-Extent '=' Loaded 'FS-Extent.cpp.exe' >
 c     :
@@ -173,18 +194,22 @@ c       <Add s.$Index::Next$ 1 >
 c       <Arg s.$Index::Next$ >
 c     >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::UnSerialize
-c $Local::CoreBE::OS::MFileSystem::UnSerialize$ {
+$NATIVE Refal5 FUNCTION
+UnSerialize @@'
+c {
 c   e.$Index::String$ =
 c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
 c       '$' () e.$Index::String$
 c     >;
 c }
+'@@;
 
 
-b Local::CoreBE::OS::MFileSystem::DoUnSerialize
-c $Local::CoreBE::OS::MFileSystem::DoUnSerialize$ {
+$NATIVE Refal5 FUNCTION
+DoUnSerialize @@'
+c {
 c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
 c   '#' e.$Index::Tail$ =
 c     <$Local::CoreBE::OS::MFileSystem::Escaped$
@@ -224,10 +249,12 @@ c       ( e.$Index::Scanned$ s.$Index::Char$ )
 c       e.$Index::Tail$
 c     >;
 c }
+'@@;
 
 
-b Local::CoreBE::OS::MFileSystem::Escaped
-c $Local::CoreBE::OS::MFileSystem::Escaped$ {
+$NATIVE Refal5 FUNCTION
+Escaped @@'
+c {
 c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
 c   s.$Index::Next$ e.$Index::Tail$
 c     , s.$Index::Next$ :
@@ -316,17 +343,21 @@ c     };
 
 c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) = Fails;
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::EscapedSeq
-c $Local::CoreBE::OS::MFileSystem::EscapedSeq$ {
+$NATIVE Refal5 FUNCTION
+EscapedSeq @@'
+c {
 c   ( e.$Index::Valid$ ) e.$Index::Tail$ =
 c     <$Local::CoreBE::OS::MFileSystem::DoEscapedSeq$
 c       ( e.$Index::Valid$ ) ( ) e.$Index::Tail$
 c     >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::DoEscapedSeq
-c $Local::CoreBE::OS::MFileSystem::DoEscapedSeq$ {
+$NATIVE Refal5 FUNCTION
+DoEscapedSeq @@'
+c {
 c   ( e.$Index::Valid$ ) ( e.$Index::Scanned$ )
 c   ' ' e.$Index::Tail$ =
 c     ( e.$Index::Scanned$ ) e.$Index::Tail$ ;
@@ -342,9 +373,11 @@ c       ( e.$Index::Valid-B$ s.$Index::Next$ e.$Index::Valid-E$ )
 c       ( e.$Index::Scanned$ s.$Index::Next$ ) e.$Index::Tail$
 c     >;
 c }
+'@@;
 
-b Local::CoreBE::OS::MFileSystem::Implode
-c $Local::CoreBE::OS::MFileSystem::Implode$ {
+$NATIVE Refal5 FUNCTION
+Implode @@'
+c {
 r   // Ага, хуйня на постном масле
 c   'Success'        = Valid   $Ident::Success$    ;
 c   'Fails'          = Valid   $Ident::Fails$      ;
@@ -355,3 +388,6 @@ c   'Size'           = Valid   $Ident::Size$       ;
 c   'Dir'            = Valid   $Ident::Dir$        ;
 c   e.$Index::Other$ = Invalid                     ;
 c }
+'@@;
+
+$END CoreBE::OS::MFileSystem.

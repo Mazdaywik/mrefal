@@ -1,4 +1,6 @@
+$MODULE CoreBE::OS::MFileSystem;
 
+$NATIVE SimRef TOPLEVEL @@'
 //FROM MR-BaseLib
 $EXTERN
   MR-FS-FindFiles,
@@ -7,32 +9,37 @@ $EXTERN
   MR-FS-MakeDir,
   MR-FS-RemoveDir,
   MR-FS-RemoveFile;
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_RemoveFile {
+
+$NATIVE SimRef FUNCTION
+$ENTRY RemoveFile @@'
   e.FileName = <MR-FS-RemoveFile e.FileName>;
-}
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_RemoveDir {
+$NATIVE SimRef FUNCTION
+$ENTRY RemoveDir @@'
   e.DirName = <MR-FS-RemoveDir e.DirName>;
-}
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_MakeDir {
+$NATIVE SimRef FUNCTION
+$ENTRY MakeDir @@'
   e.DirName = <MR-FS-MakeDir e.DirName>;
-}
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_FullName {
+$NATIVE SimRef FUNCTION
+$ENTRY FullName @@'
   e.FileName = <MR-FS-FullName e.FileName>;
-}
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_FileAttributes {
+$NATIVE SimRef FUNCTION
+$ENTRY FileAttributes @@'
   e.FileName = <MR-FS-FileAttributes e.FileName>;
-}
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_FindFiles {
+$NATIVE SimRef FUNCTION
+$ENTRY FindFiles @@'
   e.FileMask = <MR-FS-FindFiles e.FileMask>;
-}
+'@@;
 
-$ENTRY CoreBEP_OSP_MFileSystemP_EntryPointE_ {
-  = /* пусто */;
-}
-
+$END CoreBE::OS::MFileSystem.

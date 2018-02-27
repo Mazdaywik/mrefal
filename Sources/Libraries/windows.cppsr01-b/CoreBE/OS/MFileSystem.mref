@@ -1,0 +1,41 @@
+$MODULE CoreBE::OS::MFileSystem;
+
+$NATIVE CppSR TOPLEVEL @@'#include "mr_oslib.h"'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY RemoveFile @@'
+  return implement_fs::perform_file_operation(
+    implement_fs::remove_file, arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY RemoveDir @@'
+  return implement_fs::perform_file_operation(
+    implement_fs::remove_dir, arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY MakeDir @@'
+  return implement_fs::perform_file_operation(
+    implement_fs::make_dir, arg_begin, arg_end
+  );
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY FullName @@'
+  return implement_fs::full_name(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY FileAttributes @@'
+  return implement_fs::file_attributes(arg_begin, arg_end);
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY FindFiles @@'
+  return implement_fs::find_files(arg_begin, arg_end);
+'@@;
+
+$END CoreBE::OS::MFileSystem.

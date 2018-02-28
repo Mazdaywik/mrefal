@@ -1,5 +1,6 @@
 $MODULE MPredeclGenerator;
 
+$IMPORT MError;
 $IMPORT MFileIO;
 $IMPORT MIModule;
 $IMPORT MLambda;
@@ -143,7 +144,12 @@ GenerateFunction-Aux {
     <GenFunction s.FnProperties t.AbsolutName s.ScopeClass e.Sentences>;
 
   s.FnProperties
-  t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos s.BackEndID e.Code
+  t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos Refal5 s.Type e.Native
+  t.AbsolutName =
+    <MError::LinkError-BadBackEndID t.SrcPos Refal5 'C++/SR or Simple Refal'>;
+
+  s.FnProperties
+  t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos s.BackEndID Code e.Code
   t.AbsolutName =
     t.hIModule
     (Define

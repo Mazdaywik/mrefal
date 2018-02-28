@@ -1348,24 +1348,82 @@ NNativeInsertion-Function-Name {
 }
 
 NNativeInsertion-Function-Body {
+  t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+  t.hLexer (Identifier t.SrcPos 'ALIAS') =
+    <NNativeInsertion-Function-R5Alias
+      t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+      <MLexer::NextToken t.hLexer>
+    >;
+
   t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
   t.hLexer (RawLiteral t.SrcPos e.Code) =
     <NNativeInsertion-Function-Body-Aux
       <MParser_Common::AddNewFunction
         t.hIModule t.SrcPos
         <MQualifiedName::Create (e.Name)>
-        (NativeBody t.SrcPos s.BackEndID e.Code)
+        (NativeBody t.SrcPos s.BackEndID Code e.Code)
         (ScopeClass s.ScopeClass)
         t.hErrorList
       >
       <MLexer::NextToken t.hLexer>
     >;
 
+  t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+  t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList t.Unexpected 'raw string literal or alias'
+    >
+    t.hLexer t.Unexpected;
+
   t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
   t.hLexer t.Unexpected =
     t.hIModule
     <MError::AddUnexpected
       t.hErrorList t.Unexpected 'raw string literal'
+    >
+    t.hLexer t.Unexpected;
+}
+
+/*
+$NATIVE Refal5 FUNCTION Prout ALIAS Prout;
+$NATIVE Refal5 FUNCTION Card ALIAS 'Card';
+*/
+
+NNativeInsertion-Function-R5Alias {
+  t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+  t.hLexer (Identifier t.SrcPos e.Alias) =
+    /* Для простоты не проверяем корректность псевдонима */
+    <NNativeInsertion-Function-Body-Aux
+      <MParser_Common::AddNewFunction
+        t.hIModule t.SrcPos
+        <MQualifiedName::Create (e.Name)>
+        (NativeBody t.SrcPos Refal5 Alias e.Alias)
+        (ScopeClass s.ScopeClass)
+        t.hErrorList
+      >
+      <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+  t.hLexer (Literal t.SrcPos e.Alias) =
+    /* Для простоты не проверяем корректность псевдонима */
+    <NNativeInsertion-Function-Body-Aux
+      <MParser_Common::AddNewFunction
+        t.hIModule t.SrcPos
+        <MQualifiedName::Create (e.Name)>
+        (NativeBody t.SrcPos Refal5 Alias e.Alias)
+        (ScopeClass s.ScopeClass)
+        t.hErrorList
+      >
+      <MLexer::NextToken t.hLexer>
+    >;
+
+  t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+  t.hLexer t.Unexpected =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList t.Unexpected 'identifier or characters literal'
     >
     t.hLexer t.Unexpected;
 }

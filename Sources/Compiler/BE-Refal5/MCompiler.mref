@@ -200,11 +200,18 @@ GenerateFunction-Body {
 
 GenerateFunction-NativeBody {
   s.FnScopeClass t.QualifiedName
-  t.IModule Found t.SrcPos s.BackEndID e.Code =
+  t.IModule Found t.SrcPos Refal5 Code e.Code =
     t.IModule
     ('b ' <XQualifiedToLine s.FnScopeClass t.QualifiedName>)
     ('c $' <XQualifiedToLine s.FnScopeClass t.QualifiedName> '$')
-    <GenerateNative t.SrcPos s.BackEndID e.Code>;
+    <GenerateNative t.SrcPos Refal5 e.Code>;
+
+  s.FnScopeClass t.QualifiedName
+  t.IModule Found t.SrcPos Refal5 Alias e.Alias =
+    t.IModule
+    ('b ' <XQualifiedToLine s.FnScopeClass t.QualifiedName>)
+    ('p ' e.Alias)
+    ();
 }
 
 GenerateFnHeader

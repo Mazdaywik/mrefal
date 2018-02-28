@@ -1,0 +1,12 @@
+$MODULE CoreBE::MForceExit;
+
+$NATIVE SimRef TOPLEVEL @@'
+$EXTERN ExitE_;
+'@@;
+
+$NATIVE SimRef FUNCTION
+$ENTRY ForceExit @@'
+  s.RetCode = <ExitE_ s.RetCode>;
+'@@;
+
+$END CoreBE::MForceExit.

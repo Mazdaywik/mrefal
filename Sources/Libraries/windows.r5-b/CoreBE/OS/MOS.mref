@@ -116,11 +116,4 @@ c     <$Local::CoreBE::OS::MOS::LoadEnvs$ <Get 20 > >;
 c }
 '@@;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY ForseExit @@'
-c {
-c   s.$Index::RetCode$ = <$Entry::__Exit$ s.$Index::RetCode$ >;
-c }
-'@@;
-
 $END CoreBE::OS::MOS.

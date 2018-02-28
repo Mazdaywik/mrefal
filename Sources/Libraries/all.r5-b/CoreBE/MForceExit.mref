@@ -1,0 +1,10 @@
+$MODULE CoreBE::MForceExit;
+
+$NATIVE Refal5 FUNCTION
+$ENTRY ForceExit @@'
+c {
+c   s.$Index::RetCode$ = <$Entry::__Exit$ s.$Index::RetCode$ >;
+c }
+'@@;
+
+$END CoreBE::MForceExit.

@@ -1,0 +1,20 @@
+$MODULE CoreBE::MForceExit;
+
+$NATIVE CppSR TOPLEVEL @@'
+#include <assert.h>
+
+#include "mr_common.h"
+'@@;
+
+
+$NATIVE CppSR FUNCTION
+$ENTRY ForceExit @@'
+  refalrts::Iter func_name = arg_begin->next;
+  assert(func_name->tag == refalrts::cDataFunction);
+  func_name->function_info = ref_Exit.ref.function;
+  refalrts::push_stack(arg_end);
+  refalrts::push_stack(arg_begin);
+  return refalrts::cSuccess;
+'@@;
+
+$END CoreBE::MForceExit.

@@ -1,6 +1,7 @@
 $MODULE CoreBE::MOS;
 
 $IMPORT Core = CoreBE::OS::MOS;
+$IMPORT CoreBE::MForceExit;
 $IMPORT MStrings;
 $IMPORT MMath;
 
@@ -222,7 +223,7 @@ $ENTRY ProgName = <Arg 0>;
   <Exit s.RetCode>
     завершение программы
 */
-$ENTRY Exit s.RetCode = <Core::ForseExit s.RetCode>;
+$ENTRY Exit s.RetCode = <CoreBE::MForceExit::ForceExit s.RetCode>;
 
 /**
   <EnvList>

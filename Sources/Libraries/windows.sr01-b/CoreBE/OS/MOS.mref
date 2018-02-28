@@ -39,18 +39,4 @@ $ENTRY CommandLine @@'
   = <MR-OS-CommandLine>;
 '@@;
 
-$NATIVE SimRef TOPLEVEL @@'
-// Функции инициализации и финализации
-
-$SWAP G_Finalizers;
-
-$EXTERN ExitE_;
-//$FORWARD DoExit;
-'@@;
-
-$NATIVE SimRef FUNCTION
-$ENTRY ForseExit @@'
-  s.RetCode = <ExitE_ s.RetCode>;
-'@@;
-
 $END CoreBE::OS::MOS.

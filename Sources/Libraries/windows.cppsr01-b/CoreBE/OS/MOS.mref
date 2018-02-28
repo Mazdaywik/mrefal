@@ -1,25 +1,12 @@
 $MODULE CoreBE::OS::MOS;
 
 $NATIVE CppSR TOPLEVEL @@'
-#include <assert.h>
-
-#include "mr_common.h"
 #include "mr_oslib.h"
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY CreateProcess @@'
   return implement_os::create_process(arg_begin, arg_end);
-'@@;
-
-$NATIVE CppSR FUNCTION
-$ENTRY ForseExit @@'
-  refalrts::Iter func_name = arg_begin->next;
-  assert(func_name->tag == refalrts::cDataFunction);
-  func_name->function_info = ref_Exit.ref.function;
-  refalrts::push_stack(arg_end);
-  refalrts::push_stack(arg_begin);
-  return refalrts::cSuccess;
 '@@;
 
 $NATIVE CppSR FUNCTION

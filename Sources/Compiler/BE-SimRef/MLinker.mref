@@ -146,7 +146,7 @@ SrefToCpp {
       <MLambda::Map & FilterSRefs e.RunTimeSrc>
     >
     <MLambda::Map
-      <MLambda::BindLeft & AppendExt e.CExt>
+      <MLambda::BindLeft & TargetFileModule e.CExt>
       e.Modules
     >
     <MLambda::Map
@@ -157,6 +157,14 @@ SrefToCpp {
 
 AppendExt {
   e.L-Ext (e.StrPath) = (e.StrPath '.' e.L-Ext);
+}
+
+TargetFileModule {
+  e.L-CExt (e.StrPath) =
+    (e.StrPath '.' e.L-CExt)
+    <CheckExistNative
+      <MFileSystem::ExistFile-T e.StrPath '.native.' e.L-CExt>
+    >;
 }
 
 FilterSRefs {
@@ -179,12 +187,12 @@ MakeCppRunTime {
 MakeCppRunTime-Sref {
   e.CExt (e.FileName '.sref') =
     (e.FileName '.' e.CExt)
-    <MakeCppRunTime-Sref-SwNative
+    <CheckExistNative
       <MFileSystem::ExistFile-T e.FileName '.native.' e.CExt>
     >;
 }
 
-MakeCppRunTime-Sref-SwNative {
+CheckExistNative {
   True e.NativeName = (e.NativeName);
   False e.NativeName = /* нет нативного файла */;
 }

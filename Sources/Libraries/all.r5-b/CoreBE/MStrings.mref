@@ -1,38 +1,8 @@
 $MODULE CoreBE::MStrings;
 
-// Как оказалось, не поддерживаются псевдонимы
-// TODO: исправить
-/*
-$NATIVE Refal5 FUNCTION
-$ENTRY Chr @@'p Chr'@@;
-
-$NATIVE Refal5 FUNCTION
-$ENTRY Ord @@'p Ord'@@;
-
-$NATIVE Refal5 FUNCTION
-$ENTRY Numb @@'p Numb'@@;
-*/
-
-$NATIVE Refal5 FUNCTION
-$ENTRY Chr @@'
-c {
-c   e.Expr = <Chr e.Expr>;
-c }
-'@@;
-
-$NATIVE Refal5 FUNCTION
-$ENTRY Ord @@'
-c {
-c   e.Expr = <Ord e.Expr>;
-c }
-'@@;
-
-$NATIVE Refal5 FUNCTION
-$ENTRY Numb @@'
-c {
-c   e.Expr = <Numb e.Expr>;
-c }
-'@@;
+$NATIVE Refal5 FUNCTION $ENTRY Chr  ALIAS Chr;
+$NATIVE Refal5 FUNCTION $ENTRY Ord  ALIAS Ord;
+$NATIVE Refal5 FUNCTION $ENTRY Numb ALIAS Numb;
 
 $NATIVE Refal5 FUNCTION
 $ENTRY Symb @@'

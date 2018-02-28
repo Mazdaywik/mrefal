@@ -23,14 +23,14 @@ c }
 $NATIVE Refal5 FUNCTION
 $ENTRY Ord @@'
 c {
-c   e.Expr = <Chr e.Expr>;
+c   e.Expr = <Ord e.Expr>;
 c }
 '@@;
 
 $NATIVE Refal5 FUNCTION
 $ENTRY Numb @@'
 c {
-c   e.Expr = <Chr e.Expr>;
+c   e.Expr = <Numb e.Expr>;
 c }
 '@@;
 

@@ -5,18 +5,6 @@
 %%
 
 
-$ENTRY MR-Math-Binary {
-%%
-  return implement_math::binary(arg_begin, arg_end);
-%%
-}
-
-$ENTRY MR-Math-Compare {
-%%
-  return implement_math::compare(arg_begin, arg_end);
-%%
-}
-
 $ENTRY MR-IO-Open {
 %%
   return implement_fileio::open(arg_begin, arg_end);

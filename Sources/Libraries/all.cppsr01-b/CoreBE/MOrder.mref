@@ -1,10 +1,83 @@
 $MODULE CoreBE::MOrder;
 
-$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+$NATIVE CppSR TOPLEVEL @@'
+#include "refalapi.h"
+'@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY SymbCompare @@'
-  return implement_order::symb_compare(arg_begin, arg_end);
+  /*
+    Функция сравнения двух атомов. Семантика функции устаревшая,
+    т.к. наследует ограничения Модульного Рефала,
+    основанного на back-end'е Рефала 5.
+
+    Порядок сравнения:
+      Числа > Символы > Всё остальное
+    Числа сравниваются по значению, символы сравниваются
+    по ASCII-кодам, всё остальное принимается равным.
+
+    Формат:
+      <SymbCompare s.Left s.Right> == '<' | '=' | '>'
+  */
+
+  using namespace refalrts;
+
+  // Угловые скобки, имя функции.
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+  Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+
+  // Сопоставление с образцом
+  Iter sLeft = 0, sRight = 0;
+  bool match =
+    svar_left( sLeft, arg_begin, arg_end )
+    && svar_left( sRight, arg_begin, arg_end )
+    && empty_seq( arg_begin, arg_end );
+
+  if( ! match ) return cRecognitionImpossible;
+
+  // Сравнение
+  char compare_sign;
+
+  if( sLeft->tag == sRight->tag ) {
+    switch( sLeft->tag ) {
+      case cDataNumber:
+        compare_sign =
+          (sLeft->number_info < sRight->number_info) ? '<' :
+          (sLeft->number_info == sRight->number_info) ? '=' :
+          '>';
+        break;
+
+     case cDataChar:
+       compare_sign =
+         (sLeft->char_info < sRight->char_info) ? '<' :
+         (sLeft->char_info == sRight->char_info) ? '=' :
+         '>';
+       break;
+
+     default:
+       compare_sign = '=';
+       //break;
+    }
+  } else {
+    compare_sign =
+      ( cDataNumber == sLeft->tag ) ? '<' :
+      ( cDataNumber == sRight->tag ) ? '>' :
+      ( cDataChar == sLeft->tag ) ? '<' :
+      ( cDataChar == sRight->tag ) ? '>' :
+      '=';
+  }
+
+  // Переинициализация открывающей скобки
+  open_call->link_info = 0;
+  open_call->tag = cDataChar;
+  open_call->char_info = compare_sign;
+
+  splice_to_freelist( func_name, close_call );
+  return cSuccess;
 '@@;
 
 $END CoreBE::MOrder.

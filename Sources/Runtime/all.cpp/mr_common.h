@@ -39,12 +39,6 @@ extern REFAL_FUNC_IMPL(serialize_atom);
 // Эта функция вызывается из кода, сгенерированного вместе с функцией Go
 extern refalrts::ExternalReference ref_Exit;
 
-namespace implement_order {
-
-extern REFAL_FUNC_IMPL(symb_compare);
-
-} // namespace implement_order
-
 namespace implement_selfdiag {
 
 extern refalrts::FnResult log(

@@ -4,21 +4,6 @@
 #include "refalrts.h"
 #include "refalmacro.h"
 
-namespace implement_fileio {
-
-extern REFAL_FUNC_IMPL(open);
-extern REFAL_FUNC_IMPL(close);
-extern REFAL_FUNC_IMPL(read_line);
-extern REFAL_FUNC_IMPL(write);
-
-refalrts::FnResult
-get_stdin(refalrts::Iter arg_begin, refalrts::Iter arg_end);
-
-refalrts::FnResult
-get_stdout(refalrts::Iter arg_begin, refalrts::Iter arg_end);
-
-} // namespace implement_fileio
-
 namespace implement_strings {
 
 typedef void (*SymConverter)(refalrts::Iter i);

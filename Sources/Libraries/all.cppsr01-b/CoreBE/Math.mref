@@ -1,16 +1,123 @@
 $MODULE CoreBE::Math;
 
-$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+$NATIVE CppSR TOPLEVEL @@'
+#include "refalapi.h"
+'@@;
 
 
 $NATIVE CppSR FUNCTION
 $ENTRY NumberCompare @@'
-  return implement_math::compare(arg_begin, arg_end);
+  // <Math::Compare s.X s.Y>
+
+  using namespace refalrts;
+
+  // Левая скобка конкретизации
+  Iter left_call = arg_begin;
+  move_left(arg_begin, arg_end);
+
+  // Правая скобка конкретизации
+  Iter right_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  // Имя функции
+  Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+
+  // Сопоставление с образцом
+  Iter sX = 0, sY = 0;
+
+  bool pattern =
+    svar_left( sX, arg_begin, arg_end ) && ( cDataNumber == sX->tag )
+    && svar_left( sY, arg_begin, arg_end ) && ( cDataNumber == sY->tag )
+    && empty_seq( arg_begin, arg_end );
+
+  if( pattern == false ) return cRecognitionImpossible;
+
+  RefalNumber x = sX->number_info;
+  RefalNumber y = sY->number_info;
+
+  // Переинициализация открывающей скобки
+  left_call->link_info = 0;
+  left_call->tag = cDataChar;
+  left_call->char_info = (x < y) ? '<' : (x == y) ? '=' : '>';
+
+  // Удаление лишнего: Math::Compare s.X s.Y>
+  splice_to_freelist(func_name, right_call);
+
+  return cSuccess;
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY Binary @@'
-  return implement_math::binary(arg_begin, arg_end);
+  using namespace refalrts;
+
+  // Левая скобка конкретизации
+  Iter left_call = arg_begin;
+  move_left(arg_begin, arg_end);
+
+  // Имя функции
+  // Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+
+  // Правая скобка конкретизации
+  Iter right_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  /*
+    Образец s.Op s.X s.Y,
+    s.Op --- операция, одно из '+-*%/',
+    s.X, s.Y --- целые числа.
+  */
+  Iter sOp = 0, sX = 0, sY = 0;
+
+  bool pattern =
+    svar_left( sOp, arg_begin, arg_end ) && ( cDataChar == sOp->tag )
+    && svar_left( sX, arg_begin, arg_end ) && ( cDataNumber == sX->tag )
+    && svar_left( sY, arg_begin, arg_end ) && ( cDataNumber == sY->tag )
+    && empty_seq( arg_begin, arg_end );
+
+  if( pattern == false ) return cRecognitionImpossible;
+
+  RefalNumber x = sX->number_info;
+  RefalNumber y = sY->number_info;
+
+  // Вычисление арифметической операции
+
+  switch( sOp->char_info ) {
+  case '+':
+    x = x + y;
+    break;
+
+  case '-':
+    x = x - y;
+    break;
+
+  case '*':
+    x = x * y;
+    break;
+
+  case '/':
+  case '%':
+    if( y != 0 ) {
+      x = ('/' == sOp->char_info) ? (x / y) : (x % y);
+      break;
+    } else {
+      return cRecognitionImpossible;
+    }
+  default:
+    return cRecognitionImpossible;
+  }
+
+  // Построение результата
+
+  sX->number_info = x;
+
+  // Уничтожение <Func s.Op
+  splice_to_freelist(left_call, sOp);
+  // Уничтожение s.Y>
+  splice_to_freelist(sY, right_call);
+
+  return cSuccess;
 '@@;
 
 $END CoreBE::Math.

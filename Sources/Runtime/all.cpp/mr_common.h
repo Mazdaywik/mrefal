@@ -4,13 +4,6 @@
 #include "refalrts.h"
 #include "refalmacro.h"
 
-namespace implement_math {
-
-extern REFAL_FUNC_IMPL(binary);
-extern REFAL_FUNC_IMPL(compare);
-
-} // namespace implement_math
-
 namespace implement_fileio {
 
 extern REFAL_FUNC_IMPL(open);

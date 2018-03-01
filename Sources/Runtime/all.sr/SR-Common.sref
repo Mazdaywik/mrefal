@@ -5,42 +5,6 @@
 %%
 
 
-$ENTRY MR-IO-Open {
-%%
-  return implement_fileio::open(arg_begin, arg_end);
-%%
-}
-
-$ENTRY MR-IO-Close {
-%%
-  return implement_fileio::close(arg_begin, arg_end);
-%%
-}
-
-$ENTRY MR-IO-ReadLine {
-%%
-  return implement_fileio::read_line(arg_begin, arg_end);
-%%
-}
-
-$ENTRY MR-IO-Write {
-%%
-  return implement_fileio::write(arg_begin, arg_end);
-%%
-}
-
-$ENTRY MR-IO-StdIn {
-%%
-  return implement_fileio::get_stdin(arg_begin, arg_end);
-%%
-}
-
-$ENTRY MR-IO-StdOut {
-%%
-  return implement_fileio::get_stdout(arg_begin, arg_end);
-%%
-}
-
 $ENTRY MR-Strings-Chr {
 %%
   return implement_strings::convert(implement_strings::chr, arg_begin, arg_end);

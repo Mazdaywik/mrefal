@@ -1,34 +1,268 @@
 $MODULE CoreBE::MStrings;
 
-$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+$NATIVE CppSR TOPLEVEL @@'
+#include "refalapi.h"
+#include "refalmacro.h"
+
+
+namespace {
+
+typedef void (*SymConverter)(refalrts::Iter i);
+
+refalrts::FnResult convert(
+  SymConverter conv,
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  // Функция преобразует все узлы внутри аргумента с помощью функции conv
+
+  using namespace refalrts;
+
+  // Скобки конкретизации, имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  for(
+    Iter ptr = arg_begin, limit = arg_end;
+    ! empty_seq(ptr, limit);
+    move_left(ptr, limit)
+  ) {
+    conv( ptr );
+  }
+
+  // Очистка поля зрения
+  splice_to_freelist(open_call, func_name);
+  splice_to_freelist(close_call, close_call);
+
+  return cSuccess;
+}
+
+void chr(refalrts::Iter ptr) {
+  using namespace refalrts;
+
+  if( cDataNumber == ptr->tag ) {
+    RefalNumber code = ptr->number_info;
+    ptr->tag = cDataChar;
+    ptr->char_info = static_cast<char>( code );
+  } else {
+    // Ничего не делаем
+  }
+}
+
+void ord(refalrts::Iter ptr) {
+  using namespace refalrts;
+
+  if( cDataChar == ptr->tag ) {
+    unsigned char value = ptr->char_info;
+    ptr->tag = cDataNumber;
+    ptr->number_info = static_cast<RefalNumber>( value );
+  } else {
+    // Ничего не делаем
+  }
+}
+
+} // безымянное namespace
+'@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY Chr @@'
-  return implement_strings::convert(
-    implement_strings::chr, arg_begin, arg_end
-  );
+  return convert(chr, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY Ord @@'
-  return implement_strings::convert(
-    implement_strings::ord, arg_begin, arg_end
-  );
+  return convert(ord, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY Symb @@'
-  return implement_strings::symb(arg_begin, arg_end);
+  /*
+    Функция преобразует число в строку
+    <Symb s.Number> == e.Text
+
+    Изначально функция Symb в Рефале 5 использовалась
+    для преобразования в строку цепочки макроцифр
+    и, соответственно, принимала в качестве аргумента
+    цепочку макроцифр, но т.к. Модульный Рефал макроцифр
+    не поддерживает, было решено сократить формат
+    до подмножества --- чисел из одной макроцифры.
+  */
+
+  using namespace refalrts;
+
+  // Скобки вызова, имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  // Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  Iter sNumber = 0;
+  bool match_number =
+    svar_left( sNumber, arg_begin, arg_end )
+    && ( cDataNumber == sNumber->tag )
+    && empty_seq( arg_begin, arg_end );
+
+  if( match_number == false ) return cRecognitionImpossible;
+
+  // На один байт уходит примерно три десятичных разряда.
+  enum { cMaxLen = 3 * sizeof(RefalNumber) };
+  char buffer[ cMaxLen + 1 ] = { 0 };
+  Iter number_b = 0, number_e = 0;
+  char *last_pos = buffer + cMaxLen;
+  RefalNumber num = sNumber->number_info;
+
+  /*
+    Сей хитрый цикл успешно обрабатывает случай, когда num == 0.
+  */
+  do {
+    RefalNumber last_digit = num % 10;
+    num /= 10;
+    --last_pos;
+    *last_pos = static_cast<char>(last_digit + '0');
+  } while( num != 0 );
+
+  reset_allocator();
+
+  if( ! alloc_string(number_b, number_e, last_pos) )
+    return cNoMemory;
+
+  splice_evar( open_call, number_b, number_e );
+  splice_to_freelist( open_call, close_call );
+  return cSuccess;
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY Numb @@'
-  return implement_strings::numb(arg_begin, arg_end);
+  /*
+    Функция преобразует цепочку символов в число.
+
+    <Numb e.Numbers e.Rest> == s.Number
+
+    Преобразованию подвергаются только числа, идущие в начале аргумента,
+    последующая часть строки игнорируется.
+    Если e.Numbers представляют собой десятичное число,
+    большее максимального значения RefalNumber,
+    результат функции не определён.
+  */
+
+  using namespace refalrts;
+
+  // Скобки вызова и имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  RefalNumber result = 0;
+
+  for(
+    Iter ptr = arg_begin, limit = arg_end;
+    ! empty_seq( ptr, limit ) && (cDataChar == ptr->tag )
+    && ('0' <= ptr->char_info) && (ptr->char_info <= '9');
+    move_left( ptr, limit )
+  ) {
+    result *= 10;
+    result += (ptr->char_info - '0');
+  }
+
+  // Повторно используем открывающую угловую скобку
+  open_call->link_info = 0;
+  open_call->tag = cDataNumber;
+  open_call->number_info = result;
+  // Удаляем Numb e.Numbers e.Rest>
+  splice_to_freelist( func_name, close_call );
+
+  return cSuccess;
+'@@;
+
+$NATIVE CppSR TOPLEVEL @@'
+DECL_REFAL_IDENT(Char, "Char");
+DECL_REFAL_IDENT(Number, "Number");
+DECL_REFAL_IDENT(IsntSerializable, "IsntSerializable");
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY SerializeAtom @@'
-  return implement_strings::serialize_atom(arg_begin, arg_end);
+  // Формат
+  // <SerializeAtom s.Atom>
+  //   == Char e.CharRep
+  //   == Number e.StrNumber
+  //   == IsntSerializable s.Atom
+  // e.CharRep ::= s.Atom | s.Digit1 s.Digit2 s.Digit3
+  // e.StrNumber — десятичная запись числа
+
+  using namespace refalrts;
+
+  // Скобки вызова и имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+   Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  Iter sAtom = 0;
+  bool pattern =
+    svar_left(sAtom, arg_begin, arg_end)
+    && empty_seq(arg_begin, arg_end);
+
+  if( pattern == false ) return cRecognitionImpossible;
+
+  if( cDataChar == sAtom->tag ) {
+    if( (32 <= sAtom->char_info) && (sAtom->char_info < 127) ) {
+      func_name->tag = cDataIdentifier;
+      func_name->ident_info = REFAL_IDENT(Char);
+
+      splice_to_freelist(open_call, open_call);
+      splice_to_freelist(close_call, close_call);
+
+      return cSuccess;
+    } else {
+      open_call->tag = cDataIdentifier;
+      open_call->ident_info = REFAL_IDENT(Char);
+
+      unsigned code = static_cast<unsigned char>(sAtom->char_info);
+
+      func_name->tag = cDataChar;
+      func_name->char_info = (code / 100 % 10) + '0';
+
+      sAtom->char_info = (code / 10 % 10) + '0';
+
+      close_call->tag = cDataChar;
+      close_call->char_info = (code % 10) + '0';
+
+      return cSuccess;
+    }
+  } else if( cDataNumber == sAtom->tag ) {
+    Iter number_ident = 0;
+    if( ! alloc_ident(number_ident, REFAL_IDENT(Number)) )
+      return cNoMemory;
+
+    splice_stvar(open_call, number_ident);
+
+    // Необычный ход для не-рефальной функции:
+    // формирование в результатном выражении вызова другой функции
+    func_name->function_info = &descr_CoreBEP_MStringsP_Symb;
+    push_stack(close_call);
+    push_stack(open_call);
+
+    return cSuccess;
+  } else {
+      func_name->tag = cDataIdentifier;
+      func_name->ident_info = REFAL_IDENT(IsntSerializable);
+
+      splice_to_freelist(open_call, open_call);
+      splice_to_freelist(close_call, close_call);
+
+      return cSuccess;
+  }
 '@@;
 
 $END CoreBE::MStrings.

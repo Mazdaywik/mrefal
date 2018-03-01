@@ -2,24 +2,6 @@
 #define MR_Common_H_
 
 #include "refalrts.h"
-#include "refalmacro.h"
-
-namespace implement_strings {
-
-typedef void (*SymConverter)(refalrts::Iter i);
-
-void chr(refalrts::Iter i);
-void ord(refalrts::Iter i);
-
-refalrts::FnResult
-convert(SymConverter conv, refalrts::Iter arg_begin, refalrts::Iter arg_end);
-
-extern REFAL_FUNC_IMPL(symb);
-extern REFAL_FUNC_IMPL(numb);
-
-extern REFAL_FUNC_IMPL(serialize_atom);
-
-} // namespace implement_strings
 
 // Эта функция вызывается из кода, сгенерированного вместе с функцией Go
 extern refalrts::ExternalReference ref_Exit;

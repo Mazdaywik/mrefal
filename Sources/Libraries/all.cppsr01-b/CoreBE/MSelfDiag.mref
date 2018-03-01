@@ -1,22 +1,126 @@
 $MODULE CoreBE::MSelfDiag;
 
-$NATIVE CppSR TOPLEVEL @@'#include "mr_common.h"'@@;
+$IMPORT CoreBE::MForceExit;
+
+$NATIVE CppSR TOPLEVEL @@'
+#include <stdio.h>
+
+
+namespace {
+
+// Глобальный дескриптор файла лога
+FILE *g_log_file = 0;
+
+void *get_log_handle() {
+  if( 0 == g_log_file ) {
+    g_log_file = fopen("__log", "wt");
+  }
+
+  return g_log_file;
+}
+
+void *get_stderror_handle() {
+  return stderr;
+}
+
+refalrts::FnResult log(
+  void *flog,
+  bool transparent,
+  refalrts::Iter arg_begin, refalrts::Iter arg_end
+) {
+  /*
+    Данная функция вызывается из функций печати логирующих сообщений.
+    Печатает в лог информацию в том же формате, что и при аварийном
+    дампе поля зрения.
+    Параметр flog задаёт поток, в который будет писаться дамп ---
+    как правило или в файл __log или на stderr.
+    Параметр transparent задаёт режим сохранения аргумента:
+      * true --- аргумент в поле зрения сохраняется, удаляются только
+        скобки конкретизации и имя функции;
+      * false --- поле зрения после завершения функции оказывается
+        пустым.
+
+    Формат цепочки arg_begin..arg_end:
+      <Log e.Message> == пусто
+      <Log-T e.Message> == e.Message
+
+    Если flog == 0, то вывод производится на stderr.
+  */
+
+  using namespace refalrts;
+
+  // Скобки вызова и имя функции
+  Iter open_call = arg_begin;
+  move_left( arg_begin, arg_end );
+  Iter func_name = arg_begin;
+  move_left( arg_begin, arg_end );
+  Iter close_call = arg_end;
+  move_right( arg_begin, arg_end );
+
+  FILE *fileLOG = (FILE*) flog;
+
+  // Вывод дампа:
+  if( (0 == fileLOG) || (stderr == fileLOG) ) {
+    fprintf(stderr, "<Log>: ");
+    fileLOG = stderr;
+  }
+
+  refalrts::debug_print_expr(fileLOG, arg_begin, arg_end);
+  fprintf(fileLOG, "\n");
+  fflush(fileLOG);
+
+  // Очистка поля зрения
+  if( transparent ) {
+    splice_to_freelist( open_call, func_name );
+    splice_to_freelist( close_call, close_call );
+  } else {
+    splice_to_freelist( open_call, close_call );
+  }
+
+  return cSuccess;
+}
+
+} // безымянное namespace
+'@@;
 
 
 $NATIVE CppSR FUNCTION
 $ENTRY CloseLog @@'
-  return implement_selfdiag::close_log(arg_begin, arg_end);
+  /*
+    Закрывает файл лога.
+
+    Формат:
+      <CloseLog> == пусто.
+  */
+
+  using namespace refalrts;
+
+  // Скобки вызова и имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  // Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter close_call = arg_begin;
+  move_right(arg_begin, arg_end);
+
+  if( ! empty_seq(arg_begin, arg_end) ) return cRecognitionImpossible;
+
+  if( 0 != g_log_file ) {
+    fclose( g_log_file );
+  }
+
+  splice_to_freelist(open_call, close_call);
+  return cSuccess;
 '@@;
 
-$NATIVE CppSR FUNCTION
-$ENTRY ExitFailure @@'
-  return implement_selfdiag::exit_failure(arg_begin, arg_end);
-'@@;
+$ENTRY ExitFailure {
+  = <CoreBE::MForceExit::ForceExit 255>;
+}
 
 $NATIVE CppSR FUNCTION
 $ENTRY Log-T @@'
-  return implement_selfdiag::log(
-    implement_selfdiag::get_log_handle(),
+  return log(
+    get_log_handle(),
     true, // прозрачный режим
     arg_begin, arg_end
   );
@@ -24,8 +128,8 @@ $ENTRY Log-T @@'
 
 $NATIVE CppSR FUNCTION
 $ENTRY Log @@'
-  return implement_selfdiag::log(
-    implement_selfdiag::get_log_handle(),
+  return log(
+    get_log_handle(),
     false, // непрозрачный режим
     arg_begin, arg_end
   );
@@ -33,8 +137,8 @@ $ENTRY Log @@'
 
 $NATIVE CppSR FUNCTION
 $ENTRY PrintMessage @@'
-  return implement_selfdiag::log(
-    implement_selfdiag::get_stderror_handle(),
+  return log(
+    get_stderror_handle(),
     false, // непрозрачный режим
     arg_begin, arg_end
   );

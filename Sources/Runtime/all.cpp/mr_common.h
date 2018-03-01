@@ -24,19 +24,4 @@ extern REFAL_FUNC_IMPL(serialize_atom);
 // Эта функция вызывается из кода, сгенерированного вместе с функцией Go
 extern refalrts::ExternalReference ref_Exit;
 
-namespace implement_selfdiag {
-
-extern refalrts::FnResult log(
-  void *f,
-  bool transparent,
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
-);
-
-extern REFAL_FUNC_IMPL(exit_failure);
-extern REFAL_FUNC_IMPL(close_log);
-extern void* get_log_handle();
-extern void* get_stderror_handle();
-
-} // namespace implement_selfdiag
-
 #endif //MR_Common_H_

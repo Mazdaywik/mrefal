@@ -35,12 +35,6 @@ $ENTRY MR-Strings-Numb {
 %%
 }
 
-$ENTRY MR-Order-SymbCompare {
-%%
-  return implement_order::symb_compare(arg_begin, arg_end);
-%%
-}
-
 $ENTRY MR-SelfDiag-Log {
 %%
   return implement_selfdiag::log(

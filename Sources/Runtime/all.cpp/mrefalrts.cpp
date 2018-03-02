@@ -1,15 +1,16 @@
-#include <stdio.h>
-#include <assert.h>
+// Automatically generated file. Don't edit!
+#include "refalrts.h"
 
+
+static refalrts::ExternalReference ref_Exit("Exit", 0U, 0U);
+
+#line 2 "_mrefalrts.sref"
 #include "refalrts.h"
 #include "refalapi.h"
-#include "mr_common.h"
-
-/*===========================================================================
-  Реализация функций библиотеки.
-===========================================================================*/
-
-REFAL_FUNC_IMPL(func_Exit)
+#include "refalmacro.h"
+#line 12 "_mrefalrts.native.cpp"
+static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
+#line 13 "_mrefalrts.sref"
 {
   // Формат <Exit s.RetCode> == поле зрения не изменяет
 
@@ -40,8 +41,10 @@ REFAL_FUNC_IMPL(func_Exit)
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
+#line 45 "_mrefalrts.native.cpp"
+}
 
-refalrts::RefalNativeFunction descr_Exit(
-  func_Exit, refalrts::RefalFuncName("Exit", 0, 0)
-);
-refalrts::ExternalReference ref_Exit("Exit", 0, 0);
+static refalrts::RefalNativeFunction descr_Exit(func_Exit, refalrts::RefalFuncName("Exit", 0U, 0U));
+
+
+//End of file

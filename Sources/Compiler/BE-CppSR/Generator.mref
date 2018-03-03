@@ -40,6 +40,7 @@ NameCodeChar {
 $ENTRY GenFunction {
   t.FuncName s.ScopeClass e.Algorithm =
     <GenFnStart t.FuncName>
+    ('  refalrts::this_is_generated_function();')
     <GenInitCounter s.ScopeClass>
     <GenBody e.Algorithm>
     <GenFnEnd t.FuncName>;
@@ -50,8 +51,7 @@ GenFnStart {
     (
       'refalrts::FnResult func_' <QNameCode t.Name>
       '(refalrts::Iter arg_begin, refalrts::Iter arg_end) {'
-    )
-    ('  refalrts::this_is_generated_function();');
+    );
 }
 
 GenInitCounter {

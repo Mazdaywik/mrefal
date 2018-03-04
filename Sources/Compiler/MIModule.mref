@@ -521,7 +521,7 @@ $ENTRY GetFunctionAttribute
 /**
   <GetImportAttribute-RealName t.hIModule s.Attrib t.Import>
     == t.hIModule Found e.Value
-    == t.hIMoudle s.ErrorStatus
+    == t.hIModule s.ErrorStatus
 */
 $ENTRY GetImportAttribute-RealName
   t.hIModule s.Attrib t.RealName =
@@ -532,7 +532,7 @@ $ENTRY GetImportAttribute-RealName
 /**
   <GetImportAttribute-AliasName t.hIModule s.Attrib t.Import>
     == t.hIModule Found e.Value
-    == t.hIMoudle s.ErrorStatus
+    == t.hIModule s.ErrorStatus
 */
 $ENTRY GetImportAttribute-AliasName
   t.hIModule s.Attrib t.AliasName =

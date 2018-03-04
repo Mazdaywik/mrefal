@@ -329,7 +329,8 @@ ResolvingBody {
       <ResolvingSentence
         s.Errors t.hErrorList t.ResolveTable
         (e.Resolved) t.NextSentence
-      > e.Tail
+      >
+      e.Tail
     >;
 }
 

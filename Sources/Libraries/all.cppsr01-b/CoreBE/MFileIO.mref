@@ -4,7 +4,6 @@ $NATIVE CppSR TOPLEVEL @@'
 #include <stdio.h>
 
 #include "refalapi.h"
-#include "refalmacro.h"
 
 
 static refalrts::FnResult std_handle(
@@ -250,10 +249,6 @@ $ENTRY Close
   }
 '@@;
 
-$NATIVE CppSR TOPLEVEL @@'
-DECL_REFAL_IDENT(Fails, "Fails");
-'@@;
-
 $NATIVE CppSR FUNCTION
 $ENTRY Open
 @@'
@@ -319,7 +314,7 @@ $ENTRY Open
     // Переинициализация открывающей угловой скобки
     left_call->link_info = 0;
     left_call->tag = cDataIdentifier;
-    left_call->ident_info = REFAL_IDENT(Fails);
+    left_call->ident_info = '@@Fails@@';
 
     splice_to_freelist(func_name, right_call);
     return cSuccess;

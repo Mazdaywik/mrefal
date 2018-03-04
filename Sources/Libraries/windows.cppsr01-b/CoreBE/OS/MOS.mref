@@ -105,13 +105,6 @@ $ENTRY EnvList @@'
   return cSuccess;
 '@@;
 
-$NATIVE CppSR TOPLEVEL @@'
-DECL_REFAL_IDENT(Success, "Success");
-DECL_REFAL_IDENT(Fails, "Fails");
-DECL_REFAL_IDENT(Wait, "Wait");
-DECL_REFAL_IDENT(NoWait, "NoWait");
-'@@;
-
 $NATIVE CppSR FUNCTION
 $ENTRY CreateProcess @@'
   /*
@@ -156,8 +149,8 @@ $ENTRY CreateProcess @@'
     svar_left( sWait, arg_begin, arg_end )
     && ( cDataIdentifier == sWait->tag )
     && (
-         (REFAL_IDENT(Wait) == sWait->ident_info)
-         || (REFAL_IDENT(NoWait) == sWait->ident_info)
+         ('@@Wait@@' == sWait->ident_info)
+         || ('@@NoWait@@' == sWait->ident_info)
        )
     && brackets_left( eProgram_b, eProgram_e, arg_begin, arg_end )
     && (CharArray::from_sequence(program, eProgram_b, eProgram_e) == cSuccess)
@@ -167,7 +160,7 @@ $ENTRY CreateProcess @@'
 
   if( matched == false ) return cRecognitionImpossible;
 
-  bool wait_mode = (REFAL_IDENT(Wait) == sWait->ident_info);
+  bool wait_mode = ('@@Wait@@' == sWait->ident_info);
   char *str_program = (program.strlen() ? program.c_str() : NULL);
   char *str_cmdline = (cmdline.strlen() ? cmdline.c_str() : NULL);
 
@@ -228,12 +221,12 @@ $ENTRY CreateProcess @@'
     // Переинициализация открывающей скобки как #Success
     open_call->link_info = 0;
     open_call->tag = cDataIdentifier;
-    open_call->ident_info = REFAL_IDENT(Success);
+    open_call->ident_info = '@@Success@@';
   } else {
     // Переинициализация открывающей скобки как #Fails
     open_call->link_info = 0;
     open_call->tag = cDataIdentifier;
-    open_call->ident_info = REFAL_IDENT(Fails);
+    open_call->ident_info = '@@Fails@@';
   }
 
   // Очистка поля зрения и завершение

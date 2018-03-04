@@ -1,7 +1,6 @@
 %%
 #include "refalrts.h"
 #include "refalapi.h"
-#include "refalmacro.h"
 %%
 
 /*===========================================================================

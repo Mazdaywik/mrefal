@@ -21,9 +21,6 @@ $NATIVE CppSR TOPLEVEL @@'
 using refalapi::CharArray;
 using refalapi::AllocArray;
 
-DECL_REFAL_IDENT(Success, "Success");
-DECL_REFAL_IDENT(Fails, "Fails");
-
 // Функция, порождающая атрибутную информацию (объявление)
 static bool add_attribute_record(
   AllocArray& allocs,
@@ -33,12 +30,6 @@ static bool add_attribute_record(
   DWORD file_attributes,
   DWORD size
 );
-
-DECL_REFAL_IDENT(ADateTime, "ADateTime");
-DECL_REFAL_IDENT(CDateTime, "CDateTime");
-DECL_REFAL_IDENT(MDateTime, "MDateTime");
-DECL_REFAL_IDENT(Size, "Size");
-DECL_REFAL_IDENT(Dir, "Dir");
 
 static bool append_filetime(
   AllocArray& allocs,
@@ -150,7 +141,7 @@ $ENTRY FindFiles @@'
       // результат вставляем перед именем функции.
       open_call->link_info = 0;
       open_call->tag = cDataIdentifier;
-      open_call->ident_info = REFAL_IDENT(Success);
+      open_call->ident_info = '@@Success@@';
 
       allocs.build( func_name );
       splice_to_freelist( func_name, close_call );
@@ -160,7 +151,7 @@ $ENTRY FindFiles @@'
       // Переинициализация открывающей скобки
       open_call->link_info = 0;
       open_call->tag = cDataIdentifier;
-      open_call->ident_info = REFAL_IDENT(Fails);
+      open_call->ident_info = '@@Fails@@';
 
       splice_to_freelist( func_name, close_call );
       return cSuccess;
@@ -171,7 +162,7 @@ $ENTRY FindFiles @@'
     // Переинициализируем открывающую угловую скобку
     open_call->link_info = 0;
     open_call->tag = cDataIdentifier;
-    open_call->ident_info = REFAL_IDENT(Fails);
+    open_call->ident_info = '@@Fails@@';
 
     splice_to_freelist(func_name, close_call);
     return cSuccess;
@@ -191,9 +182,9 @@ static bool add_attribute_record(
   using namespace refalrts;
 
   bool append_time =
-    append_filetime(allocs, REFAL_IDENT(ADateTime), last_access_time)
-    && append_filetime(allocs, REFAL_IDENT(MDateTime), last_write_time)
-    && append_filetime(allocs, REFAL_IDENT(CDateTime), creation_time);
+    append_filetime(allocs, '@@ADateTime@@', last_access_time)
+    && append_filetime(allocs, '@@MDateTime@@', last_write_time)
+    && append_filetime(allocs, '@@CDateTime@@', creation_time);
 
   if( ! append_time ) return false;
 
@@ -203,11 +194,11 @@ static bool add_attribute_record(
   bool is_directory = (file_attributes & FILE_ATTRIBUTE_DIRECTORY);
   bool size_allocs =
     alloc_open_bracket(open_bracket_size)
-    && alloc_ident(size_ident, REFAL_IDENT(Size))
+    && alloc_ident(size_ident, '@@Size@@')
     &&
       (
         is_directory
-        ? alloc_ident(size_value, REFAL_IDENT(Dir))
+        ? alloc_ident(size_value, '@@Dir@@')
         : alloc_number(size_value, size)
       )
     && alloc_close_bracket(close_bracket_size);
@@ -331,7 +322,7 @@ $ENTRY FileAttributes @@'
     // вставляем перед именем функции
     open_call->link_info = 0;
     open_call->tag = cDataIdentifier;
-    open_call->ident_info = REFAL_IDENT(Success);
+    open_call->ident_info = '@@Success@@';
 
     allocs.build( func_name );
     splice_to_freelist( func_name, close_call );
@@ -340,7 +331,7 @@ $ENTRY FileAttributes @@'
     // Чтение атрибутов не удалось
     open_call->link_info = 0;
     open_call->tag = cDataIdentifier;
-    open_call->ident_info = REFAL_IDENT(Fails);
+    open_call->ident_info = '@@Fails@@';
 
     splice_to_freelist( func_name, close_call );
     return cSuccess;
@@ -429,7 +420,7 @@ $ENTRY FullName @@'
   open_call->link_info = 0;
   open_call->tag = cDataIdentifier;
   open_call->ident_info =
-    (convert_ok ? REFAL_IDENT(Success) : REFAL_IDENT(Fails));
+    (convert_ok ? '@@Success@@' : '@@Fails@@');
 
   // Очиста поля зрения
   splice_to_freelist( func_name, close_call );
@@ -474,7 +465,7 @@ static refalrts::FnResult perform_file_operation(
   open_call->link_info = 0;
   open_call->tag = cDataIdentifier;
   open_call->ident_info =
-    (result ? REFAL_IDENT(Success) : REFAL_IDENT(Fails));
+    (result ? '@@Success@@' : '@@Fails@@');
 
   splice_to_freelist(func_name, close_call);
   return cSuccess;

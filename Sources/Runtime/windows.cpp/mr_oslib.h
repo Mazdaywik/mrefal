@@ -4,14 +4,6 @@
 #include "refalrts.h"
 #include "refalmacro.h"
 
-namespace implement_os {
-
-extern REFAL_FUNC_IMPL(command_line);
-extern REFAL_FUNC_IMPL(env_list);
-extern REFAL_FUNC_IMPL(create_process);
-
-} // namespace implement_os
-
 namespace implement_fs {
 
 extern REFAL_FUNC_IMPL(find_files);

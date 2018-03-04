@@ -72,17 +72,11 @@ GenerateEntity {
   s.FnProperties t.hIModule (ADT t.RelativeName) =
     t.hIModule /* пусто */;
 
-  s.FnProperties t.hIModule (NativeInsertion t.SrcPos s.BackEndID e.Code) =
+  s.FnProperties t.hIModule
+  (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code) =
     t.hIModule
-    (Native
-      <s.FnProperties GenNativeInsertion>
-      t.SrcPos s.BackEndID <SplitCode e.Code>
-    );
-}
-
-SplitCode {
-  e.Line '\n' e.Lines = (e.Line) <SplitCode e.Lines>;
-  e.Line = (e.Line);
+    <Declarations-Expr s.FnProperties e.Code>
+    (Native <s.FnProperties GenNativeInsertion> t.SrcPos s.BackEndID e.Code);
 }
 
 /*
@@ -152,11 +146,12 @@ GenerateFunction-Aux {
   t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos s.BackEndID Code e.Code
   t.AbsolutName =
     t.hIModule
+    <Declarations-Expr s.FnProperties e.Code>
     (Define
       Function
       t.AbsolutName
       (<s.FnProperties GenNativeInsertion-Body>
-        t.AbsolutName s.ScopeClass t.SrcPos s.BackEndID <SplitCode e.Code>
+        t.AbsolutName s.ScopeClass t.SrcPos s.BackEndID e.Code
       )
     );
 }
@@ -357,6 +352,8 @@ Declarations-Term {
 
   s.FnProperties (FnPtr t.Callable) =
     <Declarations-Callable s.FnProperties t.Callable>;
+
+  s.FnProperties (Native t.SrcPos e.Code) = ;
 }
 
 $END MPredeclGenerator.

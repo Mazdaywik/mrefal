@@ -616,11 +616,25 @@ SwInfo {
 $ENTRY GenNativeInsertion {
   t.SrcPos CppSR e.Code =
     (<MSrcPos::SharpLine t.SrcPos>)
-    e.Code
+    <MLambda::Map &CodeItem e.Code>
     PATCH-SHARP-LINE;
 
   t.SrcPos s.BackEndID e.Code =
     <MError::LinkError-BadBackEndID t.SrcPos s.BackEndID 'CppSR'>;
+}
+
+CodeItem {
+  (Native t.SrcPos e.Code) =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    e.Code;
+
+  (Identifier t.SrcPos e.Name) =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    ('ident_' <NameCode e.Name>);
+
+  (FnPtr (s.CallType t.SrcPos t.Name)) =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    ('ref_' <QNameCode t.Name> '.ref.function');
 }
 
 $ENTRY GenNativeInsertion-Body {

@@ -114,7 +114,7 @@ GenerateElement {
 
   t.hIModule (ADT t.NextFnName) = t.hIModule /* пусто */;
 
-  t.hIModule (NativeInsertion t.SrcPos s.BackEndID e.Code) =
+  t.hIModule (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code) =
     t.hIModule
     <GenerateNative t.SrcPos s.BackEndID e.Code>;
 }
@@ -122,16 +122,23 @@ GenerateElement {
 GenerateNative {
   t.SrcPos Refal5 e.Code =
     ('r ' <MSrcPos::ToString t.SrcPos>)
-    <SplitCode e.Code>
+    <MLambda::Map &GenerateNativeElement e.Code>
     ();
 
   t.SrcPos s.BackEndID e.Code =
     <MError::LinkError-BadBackEndID t.SrcPos s.BackEndID 'Refal5'>;
 }
 
-SplitCode {
-  e.Line '\n' e.Lines = (e.Line) <SplitCode e.Lines>;
-  e.Line = (e.Line);
+GenerateNativeElement {
+  (Native t.SrcPos e.Code) =
+    ('r ' <MSrcPos::ToString t.SrcPos>)
+    e.Code;
+
+  (Identifier t.SrcPos e.Name) =
+    ('c ' <GenerateTerm (Identifier t.SrcPos e.Name)>);
+
+  (FnPtr t.Callable) =
+    ('c ' <GenerateTerm (FnPtr t.Callable)>);
 }
 
 GenerateElement-Aux

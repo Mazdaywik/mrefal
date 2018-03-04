@@ -1282,13 +1282,77 @@ c }
 
 NNativeInsertion-TopLevel {
   t.hIModule t.hErrorList s.BackEndID t.hLexer (RawLiteral t.SrcPos e.Code) =
-    <MIModule::AddNativeInsertion t.hIModule t.SrcPos s.BackEndID e.Code>
-    <ExpectEndSent t.hErrorList <MLexer::NextToken t.hLexer>>;
+    <NNativeInsertion-TopLevel-Aux
+      <NNativeInsertion-Code
+        ((t.hIModule s.BackEndID t.SrcPos)) t.hErrorList
+        t.hLexer (RawLiteral t.SrcPos e.Code)
+      >
+    >;
 
   t.hIModule t.hErrorList s.BackEndID t.hLexer t.Unexpected =
     t.hIModule
     <MError::AddUnexpected t.hErrorList t.Unexpected 'raw string literal'>
     t.hLexer t.Unexpected;
+}
+
+NNativeInsertion-TopLevel-Aux {
+  t.hIModule t.hErrorList s.BackEndID t.SrcPos (e.Code) t.hLexer t.NextToken =
+    <MIModule::AddNativeInsertion t.hIModule t.SrcPos s.BackEndID e.Code>
+    t.hErrorList t.hLexer t.NextToken;
+}
+
+NNativeInsertion-Code {
+  (e.Code t.ParentStack) t.hErrorList t.hLexer
+  (RawLiteral t.SrcPos e.NativeCode) =
+    <NNativeInsertion-Code
+      (e.Code (Native t.SrcPos <SplitCode e.NativeCode>) t.ParentStack)
+      t.hErrorList
+      <MLexer::NextToken t.hLexer>
+    >;
+
+  (e.Code t.ParentStack) t.hErrorList t.hLexer (Identifier t.SrcPos e.Ident) =
+    <NNativeInsertion-Code
+      <AnyExpr-AnalyzeStartOfQualifiedName
+        (e.Code t.ParentStack) (t.SrcPos e.Ident)
+        t.hErrorList <MLexer::NextToken t.hLexer>
+      >
+    >;
+
+  (e.Code t.ParentStack) t.hErrorList t.hLexer (Ampersand t.SrcPos) =
+    <NNativeInsertion-Code
+      <QualifiedSuccessed
+        t.SrcPos (e.Code t.ParentStack)
+        <MParser_Common::NDotQualifiedName
+          t.hErrorList <MLexer::NextToken t.hLexer>
+        >
+      >
+    >;
+
+  (e.Code (t.hIModule e.ParentStack)) t.hErrorList
+  t.hLexer (EndSent t.SrcPos) =
+    t.hIModule t.hErrorList e.ParentStack (e.Code)
+    <MLexer::NextToken t.hLexer>;
+
+  (e.Code (t.hIModule e.ParentStack)) t.hErrorList
+  t.hLexer (EndOfText t.SrcPos) =
+    t.hIModule
+    <MError::AddUnexpected
+      t.hErrorList (EndOfText t.SrcPos) 'native insertion body'
+    >
+    e.ParentStack (e.Code)
+    t.hLexer (EndOfText t.SrcPos);
+
+  (e.Code t.ParentStack) t.hErrorList t.hLexer t.Unexpected =
+    <NNativeInsertion-Code
+      (e.Code t.ParentStack)
+      <MError::AddUnexpected t.hErrorList t.Unexpected 'native insertion body'>
+      <MLexer::NextToken t.hLexer>
+    >;
+}
+
+SplitCode {
+  e.Line '\n' e.Lines = (e.Line) <SplitCode e.Lines>;
+  e.Line = (e.Line);
 }
 
 /*
@@ -1297,6 +1361,9 @@ Test1
 @@'
   (void) arg_begin;
   (void) arg_end;
+  (void) '@@ Ident @@';
+  (void) '@@ &Test1 @@';
+  (void) '@@ MLexer.NextToken @@';
   return refalrts::cRecognitionImpossible;
 '@@;
 */
@@ -1306,6 +1373,8 @@ $NATIVE SR FUNCTION
 $ENTRY Test2
 @@'
   #X = #Y;
+  '@@ Test2 @@' = '@@ &Test2 @@';
+  '@@ NextToken @@' = '@@ MLexer.NextToken @@';
 '@@;
 */
 
@@ -1314,6 +1383,9 @@ $NATIVE Refal5 FUNCTION
 Test3
 @@'
 c {
+c   '@@ Test2 @@'
+c = '@@ &Test3 @@'
+c ;
 c   e.X = <Prout e.X>;
 c }
 '@@;
@@ -1358,14 +1430,10 @@ NNativeInsertion-Function-Body {
   t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
   t.hLexer (RawLiteral t.SrcPos e.Code) =
     <NNativeInsertion-Function-Body-Aux
-      <MParser_Common::AddNewFunction
-        t.hIModule t.SrcPos
-        <MQualifiedName::Create (e.Name)>
-        (NativeBody t.SrcPos s.BackEndID Code e.Code)
-        (ScopeClass s.ScopeClass)
-        t.hErrorList
+      <NNativeInsertion-Code
+        ((t.hIModule s.BackEndID s.ScopeClass e.Name t.SrcPos)) t.hErrorList
+        t.hLexer (RawLiteral t.SrcPos e.Code)
       >
-      <MLexer::NextToken t.hLexer>
     >;
 
   t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
@@ -1385,6 +1453,19 @@ NNativeInsertion-Function-Body {
     t.hLexer t.Unexpected;
 }
 
+NNativeInsertion-Function-Body-Aux {
+  t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name t.SrcPos (e.Code)
+  t.hLexer t.NextToken =
+    <MParser_Common::AddNewFunction
+      t.hIModule t.SrcPos
+      <MQualifiedName::Create (e.Name)>
+      (NativeBody t.SrcPos s.BackEndID Code e.Code)
+      (ScopeClass s.ScopeClass)
+      t.hErrorList
+    >
+    t.hLexer t.NextToken;
+}
+
 /*
 $NATIVE Refal5 FUNCTION Prout ALIAS Prout;
 $NATIVE Refal5 FUNCTION Card ALIAS 'Card';
@@ -1394,7 +1475,7 @@ NNativeInsertion-Function-R5Alias {
   t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
   t.hLexer (Identifier t.SrcPos e.Alias) =
     /* Для простоты не проверяем корректность псевдонима */
-    <NNativeInsertion-Function-Body-Aux
+    <NNativeInsertion-Function-R5Alias-Aux
       <MParser_Common::AddNewFunction
         t.hIModule t.SrcPos
         <MQualifiedName::Create (e.Name)>
@@ -1408,7 +1489,7 @@ NNativeInsertion-Function-R5Alias {
   t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
   t.hLexer (Literal t.SrcPos e.Alias) =
     /* Для простоты не проверяем корректность псевдонима */
-    <NNativeInsertion-Function-Body-Aux
+    <NNativeInsertion-Function-R5Alias-Aux
       <MParser_Common::AddNewFunction
         t.hIModule t.SrcPos
         <MQualifiedName::Create (e.Name)>
@@ -1428,7 +1509,7 @@ NNativeInsertion-Function-R5Alias {
     t.hLexer t.Unexpected;
 }
 
-NNativeInsertion-Function-Body-Aux {
+NNativeInsertion-Function-R5Alias-Aux {
   t.hIModule t.hErrorList t.hLexer t.NextToken =
     t.hIModule
     <ExpectEndSent t.hErrorList t.hLexer t.NextToken>;

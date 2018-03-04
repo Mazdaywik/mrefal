@@ -184,25 +184,42 @@ AddModuleInfo-Entity-IF {
 $ENTRY Resolve
   t.hIModule t.hErrorList t.hResolveTable =
     <ResolvingElements
-      <MIModule::GetFunctionList t.hIModule>
+      <MIModule::GetEntityList t.hIModule>
       t.hErrorList
       t.hResolveTable
     >;
 
 ResolvingElements
-  t.IModule e.Functions t.hErrorList t.ResolveTable =
-    <DoResolvingFunctions
+  t.IModule e.Entities t.hErrorList t.ResolveTable =
+    <DoResolvingEntities
       Success
-      t.IModule t.hErrorList t.ResolveTable e.Functions
+      t.IModule t.hErrorList t.ResolveTable e.Entities
     >;
 
-DoResolvingFunctions {
+DoResolvingEntities {
   s.Errors t.hIModule t.hErrorList t.ResolveTable
-  t.NextFunction e.Tail =
-    <DoResolvingFunctions
+  (Function t.NextFunction) e.Tail =
+    <DoResolvingEntities
       <ResolvingFunction
         s.Errors t.hIModule t.hErrorList t.ResolveTable
         t.NextFunction
+      >
+      e.Tail
+    >;
+
+  s.Errors t.hIModule t.hErrorList t.ResolveTable
+  (ADT t.ADTName) e.Tail =
+    // Игнорируем
+    <DoResolvingEntities
+      s.Errors t.hIModule t.hErrorList t.ResolveTable e.Tail
+    >;
+
+  s.Errors t.hIModule t.hErrorList t.ResolveTable
+  (NativeInsertion s.Handle t.SrcPos s.BackEndID e.Code) e.Tail =
+    <DoResolvingEntities
+      <ResolvingNative
+        s.Errors t.hIModule t.hErrorList t.ResolveTable
+        s.Handle t.SrcPos s.BackEndID e.Code
       >
       e.Tail
     >;
@@ -263,7 +280,35 @@ ResolvingFunction-Body {
 
   s.Errors t.hIModule NoAttrib
   t.hErrorList t.ResolveTable t.FnName =
-    s.Errors t.hIModule t.hErrorList t.ResolveTable;
+    <ResolvingFunction-Native
+      s.Errors
+      <MIModule::GetFunctionAttribute t.hIModule NativeBody t.FnName>
+      t.hErrorList t.ResolveTable t.FnName
+    >;
+}
+
+ResolvingFunction-Native {
+  s.Errors t.hIModule Found t.SrcPos s.BackEndID e.Code
+  t.hErrorList t.ResolveTable t.FnName =
+    <ResolvingFunction-Native-Aux
+      t.FnName t.hIModule t.SrcPos s.BackEndID
+      <ResolvingSentence
+        s.Errors t.hErrorList t.ResolveTable
+        (/* scanned code */) (e.Code)
+      >
+    >;
+}
+
+ResolvingFunction-Native-Aux {
+  t.FnName t.hIModule t.SrcPos s.BackEndID
+  s.Errors t.hErrorList t.ResolveTable ((e.ResolvedCode)) =
+    s.Errors
+    <CheckSuccess
+      <MIModule::UpdateFunction
+        t.hIModule t.FnName (NativeBody t.SrcPos s.BackEndID e.ResolvedCode)
+      >
+    >
+    t.hErrorList t.ResolveTable;
 }
 
 ResolvingBody {
@@ -286,6 +331,28 @@ ResolvingBody {
         (e.Resolved) t.NextSentence
       > e.Tail
     >;
+}
+
+ResolvingNative {
+  s.Errors t.hIModule t.hErrorList t.ResolveTable
+  s.Handle t.SrcPos s.BackEndID e.Code =
+    <ResolvingNative-Aux
+      t.hIModule s.Handle t.SrcPos s.BackEndID
+      <ResolvingSentence
+        s.Errors t.hErrorList t.ResolveTable
+        (/* scanned code */) (e.Code)
+      >
+    >;
+}
+
+ResolvingNative-Aux {
+  t.hIModule s.Handle t.SrcPos s.BackEndID
+  s.Errors t.hErrorList t.ResolveTable ((e.ResolvedCode)) =
+    s.Errors
+    <MIModule::UpdateNativeInsertion
+      t.hIModule s.Handle t.SrcPos s.BackEndID e.ResolvedCode
+    >
+    t.hErrorList t.ResolveTable;
 }
 
 /*

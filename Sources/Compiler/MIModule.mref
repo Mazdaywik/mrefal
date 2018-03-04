@@ -1,6 +1,7 @@
 $MODULE MIModule;
 
 $IMPORT MLambda;
+$IMPORT MMath;
 $IMPORT MQualifiedName;
 $IMPORT MSymTable;
 
@@ -14,11 +15,11 @@ $IMPORT MSymTable;
   t.Seq-Go, t.Seq-Init, t.Seq-Final ::=
     None
     (Result e.ResultExpr)
-  t.Entities ::= (t.Entity*)
+  t.Entities ::= (s.NextNativeHandle t.Entity*)
   t.Entity ::=
       (Function e.RelativeName)
     | (ADT e.RelativeName)
-    | (NativeInsertion t.SrcPos s.BackEndID e.Code)
+    | (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code)
 ------------------------------------------------------------------------------*/
 
 $DATA IModule;
@@ -38,7 +39,7 @@ $ENTRY Create
       [IModule
         (Name <MQualifiedName::Parse t.QualifiedName>)
         <InitEntryPoint e.Attribs>
-        (/* entities */)
+        (0 /* entities */)
         <MSymTable::Create>
       ]
       e.Attribs
@@ -665,11 +666,11 @@ GetKind-ReturnIModule {
   t.Entity ::=
       (Function t.RelativeName)
     | (ADT t.RelativeName)
-    | (NativeInsertion t.SrcPos s.BackEndID e.Code)
+    | (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code)
 */
 $ENTRY GetEntityList {
-  [IModule (Name e.Name) t.EntryPoint (e.Entities) t.hSymTable]
-    = [IModule (Name e.Name) t.EntryPoint (e.Entities) t.hSymTable]
+  [IModule (Name e.Name) t.EntryPoint (s.NextHandle e.Entities) t.hSymTable]
+    = [IModule (Name e.Name) t.EntryPoint (s.NextHandle e.Entities) t.hSymTable]
       <MLambda::Map &Entities-WrapName e.Entities>;
 }
 
@@ -678,8 +679,8 @@ Entities-WrapName {
 
   (ADT e.Name) = (ADT <MQualifiedName::Create e.Name>);
 
-  (NativeInsertion t.SrcPos s.BackEndID e.Code)
-    = (NativeInsertion t.SrcPos s.BackEndID e.Code);
+  (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code)
+    = (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code);
 }
 
 /**---------------------------------------------------------------------------*/
@@ -790,12 +791,42 @@ ReturnIModule {
     == t.hIModule
 */
 $ENTRY AddNativeInsertion {
-  [IModule (Name e.Name) t.EntryPoint (e.Entities) t.SymTable]
+  [IModule (Name e.Name) t.EntryPoint (s.NextHandle e.Entities) t.SymTable]
   t.SrcPos s.BackEndID e.Code =
     [IModule
       (Name e.Name)
       t.EntryPoint
-      (e.Entities (NativeInsertion t.SrcPos s.BackEndID e.Code))
+      (
+        <MMath::Inc s.NextHandle>
+        e.Entities
+        (NativeInsertion s.NextHandle t.SrcPos s.BackEndID e.Code)
+      )
+      t.SymTable
+    ];
+}
+
+/**
+  <UpdateNativeInsertion t.hIModule s.NativeHandle t.SrcPos s.BackEndID e.Code>
+    == t.hIModule
+*/
+$ENTRY UpdateNativeInsertion {
+  [IModule
+    (Name e.Name) t.EntryPoint
+    (
+      e.Entities-B
+      (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.OldCode)
+      e.Entities-E
+    )
+    t.SymTable
+  ]
+  s.NativeHandle t.SrcPos s.BackEndID e.NewCode =
+    [IModule
+      (Name e.Name) t.EntryPoint
+      (
+        e.Entities-B
+        (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.NewCode)
+        e.Entities-E
+      )
       t.SymTable
     ];
 }

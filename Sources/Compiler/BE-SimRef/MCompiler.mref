@@ -223,16 +223,44 @@ GenNativeInsertion {
   t.SrcPos CppSR e.Code =
     ('%%')
     (<MSrcPos::SharpLine t.SrcPos>)
-    e.Code
+    <MLambda::Map &CppSRCodeItem e.Code>
     PATCH-SHARP-LINE
     ('%%');
 
   t.SrcPos SimRef e.Code =
     ('/* ' <MSrcPos::ToString t.SrcPos> ' */')
-    e.Code;
+    <MLambda::Map &SimRefCodeItem e.Code>;
 
   t.SrcPos s.BackEndID e.Code =
     <MError::LinkError-BadBackEndID t.SrcPos s.BackEndID 'SimRef or CppSR'>;
+}
+
+CppSRCodeItem {
+  (Native t.SrcPos e.Code) =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    e.Code;
+
+  (Identifier t.SrcPos e.Name) =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    ('ident_' <NameCode e.Name>);
+
+  (FnPtr (s.CallType t.SrcPos t.Name)) =
+    (<MSrcPos::SharpLine t.SrcPos>)
+    ('ref_' <QNameCode t.Name> '.ref.function');
+}
+
+SimRefCodeItem {
+  (Native t.SrcPos e.Code) =
+    ('/* ' <MSrcPos::ToString t.SrcPos> ' */')
+    e.Code;
+
+  (Identifier t.SrcPos e.Name) =
+    ('/* ' <MSrcPos::ToString t.SrcPos> ' */')
+    ('#' <NameCode e.Name>);
+
+  (FnPtr (s.CallType t.SrcPos t.Name)) =
+    ('/* ' <MSrcPos::ToString t.SrcPos> ' */')
+    (<QNameCode t.Name>);
 }
 
 GenNativeInsertion-Body {

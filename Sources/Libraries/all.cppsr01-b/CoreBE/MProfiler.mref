@@ -3,18 +3,14 @@ $MODULE CoreBE::MProfiler;
 $NATIVE CppSR TOPLEVEL @@'
 #include "Profiler.h"
 #include "refalapi.h"
-#include "refalmacro.h"
 
-
-#define PROFILE_STOP_FUNCTION_NAME "@StopProfilerFunction"
 
 using refalapi::CharArray;
 using profiler::Profiler;
+'@@;
 
-namespace {
-
-REFAL_FUNC_IMPL(end_quantify)
-{
+$NATIVE CppSR FUNCTION
+EndQuantify @@'
   refalrts::Iter open_call = arg_begin;
   refalrts::Iter close_call = arg_end;
 
@@ -48,13 +44,6 @@ REFAL_FUNC_IMPL(end_quantify)
   refalrts::reset_allocator();
   refalrts::splice_to_freelist(open_call, close_call);
   return refalrts::cSuccess;
-}
-
-refalrts::RefalNativeFunction endQuantifyDescr(
-  end_quantify, refalrts::RefalFuncName(PROFILE_STOP_FUNCTION_NAME, 0, 0)
-);
-
-} // безымянное namespace
 '@@;
 
 $NATIVE CppSR FUNCTION
@@ -102,7 +91,7 @@ $ENTRY Quantify @@'
   bool allocated =
     refalrts::alloc_close_call(new_close_call)
     && refalrts::alloc_open_call(new_open_call)
-    && refalrts::alloc_name(end_quantify_func, & endQuantifyDescr)
+    && refalrts::alloc_name(end_quantify_func, '@@ &EndQuantify @@')
     && refalrts::copy_stvar(copy_func, func)
     && refalrts::alloc_char(profiler_object, '?');
 

@@ -2,41 +2,34 @@ $MODULE CoreBE::MProfiler;
 
 // Профилировщик в этом back-end'е ничего не делает
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Quantify @@'
-c {
-c   s.$Index::Function$ e.$Index::Arguments$ =
-c     <Mu s.$Index::Function$ e.$Index::Arguments$ > ;
-c }
-'@@;
+$NATIVE Refal5 FUNCTION Mu     ALIAS Mu    ;
+$NATIVE Refal5 FUNCTION Prout  ALIAS Prout ;
+$NATIVE Refal5 FUNCTION Open   ALIAS Open  ;
+$NATIVE Refal5 FUNCTION Putout ALIAS Putout;
+$NATIVE Refal5 FUNCTION Close  ALIAS Close ;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY PrintResults @@'
-c {
-c   =
-c     <Prout 'Profiling for Refal 5 back-end not supported' > ;
-c   e.$Index::FileName$ =
-c     <Open 'w' 18 e.$Index::FileName$ >
-c     <Putout 18 'Profiling for Refal 5 back-end not supported' >
-c     <Close 18 >;
-c }
-'@@;
+$ENTRY Quantify {
+  s.Function e.Arguments = <Mu s.Function e.Arguments> ;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY SetOutputName @@'
-c {
-r   // Ничего не делаем
-c   e.$Index::OptionalFileName$ =
-c     ;
-c }
-'@@;
+$ENTRY PrintResults
+{
+  = <Prout 'Profiling for Refal 5 back-end not supported'>;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Flush @@'
-c {
-r   // Ничего не делаем
-c   = ;
-c }
-'@@;
+  e.FileName =
+    <Open 'w' 18 e.FileName>
+    <Putout 18 'Profiling for Refal 5 back-end not supported'>
+    <Close 18>;
+}
+
+$ENTRY SetOutputName {
+  // Ничего не делаем
+  e.OptionalFileName = ;
+}
+
+$ENTRY Flush {
+  // Ничего не делаем
+  = ;
+}
 
 $END CoreBE::MProfiler.

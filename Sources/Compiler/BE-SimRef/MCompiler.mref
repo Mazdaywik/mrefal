@@ -2,27 +2,45 @@ $MODULE BE-SimRef::MCompiler;
 
 $IMPORT MError;
 $IMPORT MEscape;
+$IMPORT MFileSystem;
 $IMPORT MLambda;
 $IMPORT MPredeclGenerator;
 $IMPORT MQualifiedName;
 $IMPORT MSrcPos;
 $IMPORT MStrings;
 
+$IMPORT MHelpers = Config::MHelpers;
+
 $IMPORT MProfiler;
 
 /**
-  <Generate t.hIModule e.OutName>
+  <Generate t.L-Config t.hIModule e.OutName>
     == t.hIModule
 */
 $ENTRY Generate
-  t.hIModule e.OutName =
-    <MProfiler::Quantify &Profiling-Generate t.hIModule e.OutName>;
+  t.L-Config t.hIModule e.OutName =
+    <MProfiler::Quantify &Profiling-Generate t.L-Config t.hIModule e.OutName>;
 
 Profiling-Generate
-  t.hIModule e.OutName =
+  t.L-Config t.hIModule e.OutName =
+    <CleanupNative t.L-Config e.OutName>
     <MPredeclGenerator::Generate-Generic
       & Generate-Properties t.hIModule e.OutName
     >;
+
+CleanupNative {
+  t.Config e.Name '.sref' =
+    <CleanupNative-SwExist
+      <MFileSystem::ExistFile-T
+        e.Name '.native.' <MHelpers::ConfigExtract t.Config CExt>
+      >
+    >;
+}
+
+CleanupNative-SwExist {
+  True e.FileName = <MFileSystem::RemoveFile e.FileName>;
+  False e.FileName = /* ничего не делаем */;
+}
 
 Generate-Properties {
   GenSwap = & GenSwap;

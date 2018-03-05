@@ -12,7 +12,10 @@ $ENTRY Register
     <Config::MConfig::RegisterBackEnd
       t.Config
       BE-SimRef
-      & BE-SimRef.MCompiler.Generate
+      <MLambda::BindLeft
+        & BE-SimRef.MCompiler.Generate
+        <MHelpers::InitConfig & Tunings e.Tunings>
+      >
       <MLambda::BindLeft
         & BE-SimRef.MLinker.Link
         <MHelpers::InitConfig & Tunings e.Tunings>

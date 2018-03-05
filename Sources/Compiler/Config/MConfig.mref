@@ -118,9 +118,9 @@ $ENTRY GetMakeMode
     == t.Config
   s.Name ::= IDENTIFIER -- имя диспетчера
   t.FnGenerator ::= { t.IModule e.FileName = t.IModule }
-  <t.FnLinker t.hContext (e.OutName) (t.ModuleName e.ObjName)*>
-    == t.hContext Success
-    == t.hContext Fails
+  <t.FnLinker (e.OutName) (t.ModuleName e.ObjName)*>
+    == Success
+    == Fails
   e.Folder -- имя папки
   e.Ext -- расширение файла
 */

@@ -71,6 +71,8 @@ c     <$Local::CoreBE::OS::MOS::PerformSystem$ 'start ' e.CommandLine >;
 c }
 '@@;
 
+// Интерпретатор refgo не поддерживает длинные аргументы команды System,
+// поэтому создаётся сценарий с выполняемой командой
 $NATIVE Refal5 FUNCTION
 PerformSystem @@'
 c {

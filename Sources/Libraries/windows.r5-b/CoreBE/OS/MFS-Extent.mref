@@ -1,0 +1,243 @@
+$MODULE CoreBE::OS::MFS-Extent;
+
+$ENTRY Call {
+  (e.FuncName) e.Argument =
+    <Call-GetExtentExe (e.FuncName) <Serialize e.Argument>>;
+}
+
+Call-GetExtentExe {
+  (e.FuncName) e.SerializedArgument =
+    <Call-System
+      (e.FuncName) (e.SerializedArgument) <GetExtentExe>
+    >;
+}
+
+Call-System {
+  (e.FuncName) (e.SerializedArgument) e.ExtentName =
+    <Call-CheckSystem
+      <System
+        e.ExtentName ' '
+        e.FuncName ' '
+        e.SerializedArgument ' ~$fs_extent.tmp >NUL 2>NUL'
+      >
+    >;
+}
+
+$NATIVE Refal5 FUNCTION System ALIAS System;
+
+Call-CheckSystem {
+  s.RetCode = <Call-SwExistResult <ExistFile '~$fs_extent.tmp'>>;
+}
+
+$NATIVE Refal5 FUNCTION ExistFile ALIAS ExistFile;
+$NATIVE Refal5 FUNCTION True ALIAS True;
+$NATIVE Refal5 FUNCTION False ALIAS False;
+
+Call-SwExistResult {
+  &True =
+    <Call-Deserialize
+      (<Open 'r' 18 '~$fs_extent.tmp'>)
+      (<Get 18>)
+      (<Close 18>)
+      (<System 'del ~$fs_extent.tmp'>)
+    >;
+
+  &False = Fails;
+}
+
+$NATIVE Refal5 FUNCTION Open ALIAS Open;
+$NATIVE Refal5 FUNCTION Get ALIAS Get;
+$NATIVE Refal5 FUNCTION Close ALIAS Close;
+
+Call-Deserialize {
+  () (e.LoadedLine) () (s.RetCode) =
+    <Call-CheckDeserialize <UnSerialize e.LoadedLine>>;
+}
+
+Call-CheckDeserialize {
+  Success e.FunctionResult = e.FunctionResult;
+
+  s.ConvertResult = Fails;
+}
+
+Serialize {
+  (e.InBrackets) e.Tail = '(' <Serialize e.InBrackets> ')' <Serialize e.Tail>;
+  s.Atom e.Tail = <DumpAtom s.Atom> <Serialize e.Tail>;
+  = ;
+}
+
+DumpAtom {
+  s.Atom = <DumpAtom-SwType <Type s.Atom>>;
+}
+
+$NATIVE Refal5 FUNCTION Type ALIAS Type;
+$NATIVE Refal5 FUNCTION Symb ALIAS Symb;
+$NATIVE Refal5 FUNCTION Ord ALIAS Ord;
+
+DumpAtom-SwType {
+  // Печатные символы
+  'L' s.SubType s.Atom = s.Atom;
+  'D' s.SubType s.Atom = s.Atom;
+
+  // Идентификатор
+  'W' s.SubType s.Atom = <DumpAtom-Explode s.Atom>;
+
+  // Число
+  'N' s.SubType s.Atom = '#n' <Symb s.Atom> '+';
+  // Непечатные символы
+  'P' s.SubType s.Atom = '#c' <Symb <Ord s.Atom>> '+';
+  'O' s.SubType s.Atom = '#c' <Symb <Ord s.Atom>> '+';
+}
+
+DumpAtom-Explode {
+  Success = '#iSuccess+' ;
+  Fails = '#iFails+' ;
+  ADateTime = '#iADateTime+' ;
+  CDateTime = '#iCDateTime+' ;
+  MDateTime = '#iMDateTime+' ;
+  Size = '#iSize+' ;
+  Dir = '#iDir+' ;
+  s.Other = '#iError+' ;
+}
+
+$NATIVE Refal5 FUNCTION Dg ALIAS Dg;
+$NATIVE Refal5 FUNCTION Arg ALIAS Arg;
+
+GetExtentExe {
+  = <GetExtentExe-SwLoaded <Dg FS-Extent>>;
+}
+
+GetExtentExe-SwLoaded {
+  Loaded e.Extent = e.Extent;
+
+  /* пусто */ = <FindExtent 2 <Arg 1>>;
+}
+
+$NATIVE Refal5 FUNCTION Br ALIAS Br;
+$NATIVE Refal5 FUNCTION Add ALIAS Add;
+
+FindExtent {
+  s.Next = <Br FS-Extent '=' Loaded 'FS-Extent.cpp.exe'> 'FS-Extent.cpp.exe';
+  s.Next '++extent:' e.Extent = <Br FS-Extent '=' Loaded e.Extent> e.Extent;
+  s.Next e.Arg = <FindExtent <Add s.Next 1> <Arg s.Next>>;
+}
+
+UnSerialize {
+  e.String = <DoUnSerialize '$' () e.String>;
+}
+
+DoUnSerialize {
+  t.MultiBracket ( e.Scanned ) '#' e.Tail =
+    <Escaped t.MultiBracket ( e.Scanned ) e.Tail>;
+
+  t.MultiBracket ( e.Scanned ) '(' e.Tail =
+    <DoUnSerialize ( t.MultiBracket ( e.Scanned ) ) ( ) e.Tail>;
+
+  ( t.MultiBracket ( e.Scanned ) ) ( e.Inner ) ')' e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned ( e.Inner ) ) e.Tail>;
+
+  // Нормальное завершение
+  '$' ( e.Scanned ) = Success e.Scanned;
+
+  // Ненормальное завершение
+  '$' ( e.Scanned ) ')' e.Tail = Fails;
+
+  ( t.MultiBracket ( e.Scanned ) ) ( e.Inner ) = Fails;
+
+  t.MultiBracket ( e.Scanned ) s.Char e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned s.Char ) e.Tail>;
+}
+
+$NATIVE Refal5 FUNCTION Chr ALIAS Chr;
+$NATIVE Refal5 FUNCTION Numb ALIAS Numb;
+
+Escaped {
+  t.MultiBracket ( e.Scanned ) 'c' e.Tail =
+    <Escaped-SwChar
+      t.MultiBracket (e.Scanned) <EscapedSeq ('0123456789') e.Tail>
+    >;
+
+  t.MultiBracket ( e.Scanned ) 'n' e.Tail =
+    <Escaped-SwNumber
+      t.MultiBracket (e.Scanned) <EscapedSeq ('0123456789') e.Tail>
+    >;
+
+  t.MultiBracket ( e.Scanned ) 'i' e.Tail =
+    <Escaped-SwIdent
+      t.MultiBracket (e.Scanned)
+      <EscapedSeq
+        (
+          '0123456789-_'
+          'abcdefghijklmnopqrstuvwxyz'
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        )
+        e.Tail
+      >
+    >;
+
+  t.MultiBracket ( e.Scanned ) '_' e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned ' ' ) e.Tail>;
+
+  t.MultiBracket ( e.Scanned ) s.Escaped e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned s.Escaped ) e.Tail>;
+
+  t.MultiBracket ( e.Scanned ) = Fails;
+}
+
+Escaped-SwChar {
+  t.MultiBracket (e.Scanned) ( ) e.NewTail = Fails;
+
+  t.MultiBracket (e.Scanned) ( e.CharCode ) e.NewTail =
+    <DoUnSerialize
+      t.MultiBracket (e.Scanned <Chr <Numb e.CharCode>>) e.NewTail
+    >;
+}
+
+Escaped-SwNumber {
+  t.MultiBracket (e.Scanned) ( ) e.NewTail = Fails;
+
+  t.MultiBracket (e.Scanned) ( e.StrNumber ) e.NewTail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned <Numb e.StrNumber>) e.NewTail>;
+}
+
+Escaped-SwIdent {
+  t.MultiBracket (e.Scanned) ( ) e.NewTail = Fails;
+
+  t.MultiBracket (e.Scanned) ( e.StrIdent ) e.NewTail =
+    <Escaped-SwIdent-SwImplode
+      t.MultiBracket (e.Scanned) <Implode e.StrIdent> e.NewTail
+    >;
+}
+
+Escaped-SwIdent-SwImplode {
+  t.MultiBracket (e.Scanned) Valid s.Ident e.NewTail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned s.Ident ) e.NewTail>;
+
+  t.MultiBracket (e.Scanned) Invalid e.NewTail = Fails;
+}
+
+EscapedSeq {
+  ( e.Valid ) e.Tail = <DoEscapedSeq ( e.Valid ) ( ) e.Tail>;
+}
+
+DoEscapedSeq {
+  (e.Valid) (e.Scanned) ' ' e.Tail = (e.Scanned) e.Tail ;
+  (e.Valid) (e.Scanned) '+' e.Tail = (e.Scanned) e.Tail ;
+
+  (e.Valid-B s.Next e.Valid-E) (e.Scanned) s.Next e.Tail =
+    <DoEscapedSeq (e.Valid-B s.Next e.Valid-E) (e.Scanned s.Next) e.Tail>;
+}
+
+Implode {
+  // Ага, хуйня на постном масле
+  'Success'        = Valid   Success    ;
+  'Fails'          = Valid   Fails      ;
+  'ADateTime'      = Valid   ADateTime  ;
+  'CDateTime'      = Valid   CDateTime  ;
+  'MDateTime'      = Valid   MDateTime  ;
+  'Size'           = Valid   Size       ;
+  'Dir'            = Valid   Dir        ;
+  e.Other = Invalid                     ;
+}
+
+$END CoreBE::OS::MFS-Extent.

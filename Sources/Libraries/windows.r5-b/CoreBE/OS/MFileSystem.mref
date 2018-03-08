@@ -1,393 +1,268 @@
 $MODULE CoreBE::OS::MFileSystem;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY FileAttributes @@'
-c {
-c   e.$Index::FileName$ =
-c     <$Local::CoreBE::OS::MFileSystem::Call$
-c       ('FileAttributes') e.$Index::FileName$
-c     >;
-c }
-'@@;
+$ENTRY FileAttributes {
+  e.FileName = <Call ('FileAttributes') e.FileName>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY FindFiles @@'
-c {
-c   e.$Index::Mask$ =
-c     <$Local::CoreBE::OS::MFileSystem::Call$
-c       ('FindFiles') e.$Index::Mask$
-c     >;
-c }
-'@@;
+$ENTRY FindFiles {
+  e.Mask = <Call ('FindFiles') e.Mask>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY FullName @@'
-c {
-c   e.$Index::FileName$ =
-c     <$Local::CoreBE::OS::MFileSystem::Call$
-c       ('FullName') e.$Index::FileName$
-c     >;
-c }
-'@@;
+$ENTRY FullName {
+  e.FileName = <Call ('FullName') e.FileName>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY MakeDir @@'
-c {
-c   e.$Index::DirName$ =
-c     <$Local::CoreBE::OS::MFileSystem::Call$
-c       ('MakeDir') e.$Index::DirName$
-c     >;
-c }
-'@@;
+$ENTRY MakeDir {
+  e.DirName = <Call ('MakeDir') e.DirName>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY RemoveDir @@'
-c {
-c   e.$Index::DirName$ =
-c     <$Local::CoreBE::OS::MFileSystem::Call$
-c       ('RemoveDir') e.$Index::DirName$
-c     >;
-c }
-'@@;
+$ENTRY RemoveDir {
+  e.DirName = <Call ('RemoveDir') e.DirName>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY RemoveFile @@'
-c {
-c   e.$Index::FileName$ =
-c     <$Local::CoreBE::OS::MFileSystem::Call$
-c       ('RemoveFile') e.$Index::FileName$
-c     >;
-c }
-'@@;
-
-$NATIVE Refal5 FUNCTION
-Call @@'
-c {
-c   (e.$Index::FuncName$) e.$Index::Argument$
-
-c       , <$Local::CoreBE::OS::MFileSystem::Serialize$ e.$Index::Argument$ >
-c       : e.$Index::SerializedArgument$
-
-c       , <$Local::CoreBE::OS::MFileSystem::GetExtentExe$>
-c       : e.$Index::ExtentName$
-
-c       , <System
-c           e.$Index::ExtentName$ ' '
-c           e.$Index::FuncName$ ' '
-c           e.$Index::SerializedArgument$ ' ~$fs_extent.tmp >NUL 2>NUL'
-c         >
-c       : s.$Index::RetCode1$
-
-c       , <ExistFile '~$fs_extent.tmp' > :
-c       {
-c         True
-c           , <Open 'r' 18 '~$fs_extent.tmp' >
-c           :
-
-c           , <Get 18 > <Close 18 >
-c           : e.$Index::LoadedLine$
-
-c          , <System 'del ~$fs_extent.tmp' >
-c          : s.$Index::RetCode2$
-
-c           , <$Local::CoreBE::OS::MFileSystem::UnSerialize$ e.$Index::LoadedLine$ > :
-c           {
-c             s.$Index::ConvertResult$ = $Ident::Fails$ ;
-
-c             Success e.$Index::FunctionResult$ =
-c               e.$Index::FunctionResult$ ;
-c           };
-
-c         False = $Ident::Fails$;
-c       };
-c }
-'@@;
-
-$NATIVE Refal5 FUNCTION
-Serialize @@'
-c {
-c   ( $ADT::__StructureBrackets$ e.$Index::InBrackets$ )
-c   e.$Index::Tail$ =
-c     '('
-c       <$Local::CoreBE::OS::MFileSystem::Serialize$
-c         e.$Index::InBrackets$
-c       >
-c     ')'
-c     <$Local::CoreBE::OS::MFileSystem::Serialize$
-c       e.$Index::Tail$
-c     >;
-
-c   s.$Index::Atom$ e.$Index::Tail$ =
-c   <$Local::CoreBE::OS::MFileSystem::DumpAtom$ s.$Index::Atom$ >
-c   <$Local::CoreBE::OS::MFileSystem::Serialize$ e.$Index::Tail$ > ;
-
-c   = ;
-c }
-'@@;
+$ENTRY RemoveFile {
+  e.FileName = <Call ('RemoveFile') e.FileName>;
+}
 
 
-$NATIVE Refal5 FUNCTION
-DumpAtom @@'
-c {
-c   s.$Index::Atom$
-c     , <Type s.$Index::Atom$ >
-c     :
-c     {
-r       // Печатные символы
-c       'L' e.1 = s.$Index::Atom$ ;
-c       'D' e.1 = s.$Index::Atom$ ;
+Call {
+  (e.FuncName) e.Argument =
+    <Call-GetExtentExe (e.FuncName) <Serialize e.Argument>>;
+}
 
-r       // Идентификатор
-c       'W' e.1
-c          , s.$Index::Atom$ :
-c          {
-c            $Ident::Success$ = '#iSuccess+' ;
-c            $Ident::Fails$ = '#iFails+' ;
-c            $Ident::ADateTime$ = '#iADateTime+' ;
-c            $Ident::CDateTime$ = '#iCDateTime+' ;
-c            $Ident::MDateTime$ = '#iMDateTime+' ;
-c            $Ident::Size$ = '#iSize+' ;
-c            $Ident::Dir$ = '#iDir+' ;
-c            s.$Index::Other$ = '#iError+' ;
-c          };
+Call-GetExtentExe {
+  (e.FuncName) e.SerializedArgument =
+    <Call-System
+      (e.FuncName) (e.SerializedArgument) <GetExtentExe>
+    >;
+}
 
-r       // Число
-c       'N' e.1 = '#n' <Symb s.$Index::Atom$ > '+' ;
-r       // Непечатные символы
-c       'P' e.1 = '#c' <Symb <Ord s.$Index::Atom$ > > '+' ;
-c       'O' e.1 = '#c' <Symb <Ord s.$Index::Atom$ > > '+' ;
-c     };
-c }
-'@@;
+Call-System {
+  (e.FuncName) (e.SerializedArgument) e.ExtentName =
+    <Call-CheckSystem
+      <System
+        e.ExtentName ' '
+        e.FuncName ' '
+        e.SerializedArgument ' ~$fs_extent.tmp >NUL 2>NUL'
+      >
+    >;
+}
 
-$NATIVE Refal5 FUNCTION
-GetExtentExe @@'
-c {
-c   , <Dg FS-Extent > :
-c     {
-c        Loaded e.$Index::Extent$ = e.$Index::Extent$ ;
-c        =
-c          <$Local::CoreBE::OS::MFileSystem::FindExtent$
-c            2 <Arg 1 >
-c          >;
-c     };
-c }
-'@@;
+$NATIVE Refal5 FUNCTION System ALIAS System;
 
+Call-CheckSystem {
+  s.RetCode = <Call-SwExistResult <ExistFile '~$fs_extent.tmp'>>;
+}
 
-$NATIVE Refal5 FUNCTION
-FindExtent @@'
-c {
-c   s.$Index::Next$
-c     , <Br FS-Extent '=' Loaded 'FS-Extent.cpp.exe' >
-c     :
-c     = 'FS-Extent.cpp.exe' ;
+$NATIVE Refal5 FUNCTION ExistFile ALIAS ExistFile;
+$NATIVE Refal5 FUNCTION True ALIAS True;
+$NATIVE Refal5 FUNCTION False ALIAS False;
 
-c   s.$Index::Next$ '++extent:' e.$Index::Extent$
-c     , <Br FS-Extent '=' Loaded e.$Index::Extent$ >
-c     :
-c     = e.$Index::Extent$;
+Call-SwExistResult {
+  &True =
+    <Call-Deserialize
+      (<Open 'r' 18 '~$fs_extent.tmp'>)
+      (<Get 18>)
+      (<Close 18>)
+      (<System 'del ~$fs_extent.tmp'>)
+    >;
 
-c   s.$Index::Next$ e.$Index::Arg$ =
-c     <$Local::CoreBE::OS::MFileSystem::FindExtent$
-c       <Add s.$Index::Next$ 1 >
-c       <Arg s.$Index::Next$ >
-c     >;
-c }
-'@@;
+  &False = Fails;
+}
 
-$NATIVE Refal5 FUNCTION
-UnSerialize @@'
-c {
-c   e.$Index::String$ =
-c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c       '$' () e.$Index::String$
-c     >;
-c }
-'@@;
+$NATIVE Refal5 FUNCTION Open ALIAS Open;
+$NATIVE Refal5 FUNCTION Get ALIAS Get;
+$NATIVE Refal5 FUNCTION Close ALIAS Close;
 
+Call-Deserialize {
+  () (e.LoadedLine) () (s.RetCode) =
+    <Call-CheckDeserialize <UnSerialize e.LoadedLine>>;
+}
 
-$NATIVE Refal5 FUNCTION
-DoUnSerialize @@'
-c {
-c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
-c   '#' e.$Index::Tail$ =
-c     <$Local::CoreBE::OS::MFileSystem::Escaped$
-c       t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) e.$Index::Tail$
-c     >;
+Call-CheckDeserialize {
+  Success e.FunctionResult = e.FunctionResult;
 
-c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
-c   '(' e.$Index::Tail$ =
-c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c       ( t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) ) ( )
-c       e.$Index::Tail$
-c     >;
+  s.ConvertResult = Fails;
+}
 
-c   ( t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) )
-c   ( e.$Index::Inner$ ) ')' e.$Index::Tail$ =
-c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c       t.$Index::MultiBracket$
-c       ( e.$Index::Scanned$ ( $ADT::__StructureBrackets$ e.$Index::Inner$ ) )
-c       e.$Index::Tail$
-c     >;
+Serialize {
+  (e.InBrackets) e.Tail = '(' <Serialize e.InBrackets> ')' <Serialize e.Tail>;
+  s.Atom e.Tail = <DumpAtom s.Atom> <Serialize e.Tail>;
+  = ;
+}
 
-r   // Нормальное завершение
-c   '$' ( e.$Index::Scanned$ ) = Success e.$Index::Scanned$;
+DumpAtom {
+  s.Atom = <DumpAtom-SwType <Type s.Atom>>;
+}
 
-r   // Ненормальное завершение
-c   '$' ( e.$Index::Scanned$ ) ')' e.$Index::Tail$ = Fails;
+$NATIVE Refal5 FUNCTION Type ALIAS Type;
+$NATIVE Refal5 FUNCTION Symb ALIAS Symb;
+$NATIVE Refal5 FUNCTION Ord ALIAS Ord;
 
-c   ( t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) )
-c   ( e.$Index::Inner$ ) =
-c     Fails;
+DumpAtom-SwType {
+  // Печатные символы
+  'L' s.SubType s.Atom = s.Atom;
+  'D' s.SubType s.Atom = s.Atom;
 
-c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
-c   s.$Index::Char$ e.$Index::Tail$ =
-c     <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c       t.$Index::MultiBracket$
-c       ( e.$Index::Scanned$ s.$Index::Char$ )
-c       e.$Index::Tail$
-c     >;
-c }
-'@@;
+  // Идентификатор
+  'W' s.SubType s.Atom = <DumpAtom-Explode s.Atom>;
 
+  // Число
+  'N' s.SubType s.Atom = '#n' <Symb s.Atom> '+';
+  // Непечатные символы
+  'P' s.SubType s.Atom = '#c' <Symb <Ord s.Atom>> '+';
+  'O' s.SubType s.Atom = '#c' <Symb <Ord s.Atom>> '+';
+}
 
-$NATIVE Refal5 FUNCTION
-Escaped @@'
-c {
-c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ )
-c   s.$Index::Next$ e.$Index::Tail$
-c     , s.$Index::Next$ :
-c     {
-c       'c'
-c         , <$Local::CoreBE::OS::MFileSystem::EscapedSeq$
-c             ('0123456789')
-c             e.$Index::Tail$
-c           >
-c         :
-c         {
-c           ( ) e.$Index::NewTail$ = Fails;
+DumpAtom-Explode {
+  Success = '#iSuccess+' ;
+  Fails = '#iFails+' ;
+  ADateTime = '#iADateTime+' ;
+  CDateTime = '#iCDateTime+' ;
+  MDateTime = '#iMDateTime+' ;
+  Size = '#iSize+' ;
+  Dir = '#iDir+' ;
+  s.Other = '#iError+' ;
+}
 
-c           ( e.$Index::CharCode$ ) e.$Index::NewTail$
-c             , <Chr <Numb e.$Index::CharCode$ > >
-c             : s.$Index::Char$
-c             =
-c               <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c                 t.$Index::MultiBracket$
-c                 ( e.$Index::Scanned$ s.$Index::Char$ )
-c                 e.$Index::NewTail$
-c               >;
-c         };
+$NATIVE Refal5 FUNCTION Dg ALIAS Dg;
+$NATIVE Refal5 FUNCTION Arg ALIAS Arg;
 
-c       'n'
-c         , <$Local::CoreBE::OS::MFileSystem::EscapedSeq$
-c             ('0123456789')
-c             e.$Index::Tail$
-c           >
-c         :
-c         {
-c           ( ) e.$Index::NewTail$ = Fails;
+GetExtentExe {
+  = <GetExtentExe-SwLoaded <Dg FS-Extent>>;
+}
 
-c           ( e.$Index::StrNumber$ ) e.$Index::NewTail$
-c             , <Numb e.$Index::StrNumber$ >
-c             : s.$Index::Number$
-c             =
-c               <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c                 t.$Index::MultiBracket$
-c                 ( e.$Index::Scanned$ s.$Index::Number$ )
-c                 e.$Index::NewTail$
-c               >;
-c         };
+GetExtentExe-SwLoaded {
+  Loaded e.Extent = e.Extent;
 
-c       'i'
-c         , <$Local::CoreBE::OS::MFileSystem::EscapedSeq$
-c             (
-c               '0123456789-_'
-c               'abcdefghijklmnopqrstuvwxyz'
-c               'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-c             )
-c             e.$Index::Tail$
-c           >
-c         :
-c         {
-c           ( ) e.$Index::NewTail$ = Fails;
+  /* пусто */ = <FindExtent 2 <Arg 1>>;
+}
 
-c           ( e.$Index::StrIdent$ ) e.$Index::NewTail$
-c             , <$Local::CoreBE::OS::MFileSystem::Implode$ e.$Index::StrIdent$ > :
-c             {
-c               Valid s.$Index::Ident$ =
-c                 <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c                   t.$Index::MultiBracket$
-c                   ( e.$Index::Scanned$ s.$Index::Ident$ )
-c                   e.$Index::NewTail$
-c                 >;
+$NATIVE Refal5 FUNCTION Br ALIAS Br;
+$NATIVE Refal5 FUNCTION Add ALIAS Add;
 
-c               Invalid = Fails;
-c             };
-c         };
+FindExtent {
+  s.Next = <Br FS-Extent '=' Loaded 'FS-Extent.cpp.exe'> 'FS-Extent.cpp.exe';
+  s.Next '++extent:' e.Extent = <Br FS-Extent '=' Loaded e.Extent> e.Extent;
+  s.Next e.Arg = <FindExtent <Add s.Next 1> <Arg s.Next>>;
+}
 
-c       '_' =
-c         <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c           t.$Index::MultiBracket$
-c           ( e.$Index::Scanned$ ' ' )
-c           e.$Index::Tail$
-c         >;
+UnSerialize {
+  e.String = <DoUnSerialize '$' () e.String>;
+}
 
-c       s.$Index::Escaped$ =
-c         <$Local::CoreBE::OS::MFileSystem::DoUnSerialize$
-c           t.$Index::MultiBracket$
-c           ( e.$Index::Scanned$ s.$Index::Escaped$ )
-c           e.$Index::Tail$
-c         >;
-c     };
+DoUnSerialize {
+  t.MultiBracket ( e.Scanned ) '#' e.Tail =
+    <Escaped t.MultiBracket ( e.Scanned ) e.Tail>;
 
-c   t.$Index::MultiBracket$ ( e.$Index::Scanned$ ) = Fails;
-c }
-'@@;
+  t.MultiBracket ( e.Scanned ) '(' e.Tail =
+    <DoUnSerialize ( t.MultiBracket ( e.Scanned ) ) ( ) e.Tail>;
 
-$NATIVE Refal5 FUNCTION
-EscapedSeq @@'
-c {
-c   ( e.$Index::Valid$ ) e.$Index::Tail$ =
-c     <$Local::CoreBE::OS::MFileSystem::DoEscapedSeq$
-c       ( e.$Index::Valid$ ) ( ) e.$Index::Tail$
-c     >;
-c }
-'@@;
+  ( t.MultiBracket ( e.Scanned ) ) ( e.Inner ) ')' e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned ( e.Inner ) ) e.Tail>;
 
-$NATIVE Refal5 FUNCTION
-DoEscapedSeq @@'
-c {
-c   ( e.$Index::Valid$ ) ( e.$Index::Scanned$ )
-c   ' ' e.$Index::Tail$ =
-c     ( e.$Index::Scanned$ ) e.$Index::Tail$ ;
+  // Нормальное завершение
+  '$' ( e.Scanned ) = Success e.Scanned;
 
-c   ( e.$Index::Valid$ ) ( e.$Index::Scanned$ )
-c   '+' e.$Index::Tail$ =
-c     ( e.$Index::Scanned$ ) e.$Index::Tail$ ;
+  // Ненормальное завершение
+  '$' ( e.Scanned ) ')' e.Tail = Fails;
 
-c   ( e.$Index::Valid-B$ s.$Index::Next$ e.$Index::Valid-E$ )
-c   ( e.$Index::Scanned$ ) s.$Index::Next$ e.$Index::Tail$ =
-c     <$Local::CoreBE::OS::MFileSystem::DoEscapedSeq$
-c       ( e.$Index::Valid-B$ s.$Index::Next$ e.$Index::Valid-E$ )
-c       ( e.$Index::Scanned$ s.$Index::Next$ ) e.$Index::Tail$
-c     >;
-c }
-'@@;
+  ( t.MultiBracket ( e.Scanned ) ) ( e.Inner ) = Fails;
 
-$NATIVE Refal5 FUNCTION
-Implode @@'
-c {
-r   // Ага, хуйня на постном масле
-c   'Success'        = Valid   $Ident::Success$    ;
-c   'Fails'          = Valid   $Ident::Fails$      ;
-c   'ADateTime'      = Valid   $Ident::ADateTime$  ;
-c   'CDateTime'      = Valid   $Ident::CDateTime$  ;
-c   'MDateTime'      = Valid   $Ident::MDateTime$  ;
-c   'Size'           = Valid   $Ident::Size$       ;
-c   'Dir'            = Valid   $Ident::Dir$        ;
-c   e.$Index::Other$ = Invalid                     ;
-c }
-'@@;
+  t.MultiBracket ( e.Scanned ) s.Char e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned s.Char ) e.Tail>;
+}
+
+$NATIVE Refal5 FUNCTION Chr ALIAS Chr;
+$NATIVE Refal5 FUNCTION Numb ALIAS Numb;
+
+Escaped {
+  t.MultiBracket ( e.Scanned ) 'c' e.Tail =
+    <Escaped-SwChar
+      t.MultiBracket (e.Scanned) <EscapedSeq ('0123456789') e.Tail>
+    >;
+
+  t.MultiBracket ( e.Scanned ) 'n' e.Tail =
+    <Escaped-SwNumber
+      t.MultiBracket (e.Scanned) <EscapedSeq ('0123456789') e.Tail>
+    >;
+
+  t.MultiBracket ( e.Scanned ) 'i' e.Tail =
+    <Escaped-SwIdent
+      t.MultiBracket (e.Scanned)
+      <EscapedSeq
+        (
+          '0123456789-_'
+          'abcdefghijklmnopqrstuvwxyz'
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        )
+        e.Tail
+      >
+    >;
+
+  t.MultiBracket ( e.Scanned ) '_' e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned ' ' ) e.Tail>;
+
+  t.MultiBracket ( e.Scanned ) s.Escaped e.Tail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned s.Escaped ) e.Tail>;
+
+  t.MultiBracket ( e.Scanned ) = Fails;
+}
+
+Escaped-SwChar {
+  t.MultiBracket (e.Scanned) ( ) e.NewTail = Fails;
+
+  t.MultiBracket (e.Scanned) ( e.CharCode ) e.NewTail =
+    <DoUnSerialize
+      t.MultiBracket (e.Scanned <Chr <Numb e.CharCode>>) e.NewTail
+    >;
+}
+
+Escaped-SwNumber {
+  t.MultiBracket (e.Scanned) ( ) e.NewTail = Fails;
+
+  t.MultiBracket (e.Scanned) ( e.StrNumber ) e.NewTail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned <Numb e.StrNumber>) e.NewTail>;
+}
+
+Escaped-SwIdent {
+  t.MultiBracket (e.Scanned) ( ) e.NewTail = Fails;
+
+  t.MultiBracket (e.Scanned) ( e.StrIdent ) e.NewTail =
+    <Escaped-SwIdent-SwImplode
+      t.MultiBracket (e.Scanned) <Implode e.StrIdent> e.NewTail
+    >;
+}
+
+Escaped-SwIdent-SwImplode {
+  t.MultiBracket (e.Scanned) Valid s.Ident e.NewTail =
+    <DoUnSerialize t.MultiBracket ( e.Scanned s.Ident ) e.NewTail>;
+
+  t.MultiBracket (e.Scanned) Invalid e.NewTail = Fails;
+}
+
+EscapedSeq {
+  ( e.Valid ) e.Tail = <DoEscapedSeq ( e.Valid ) ( ) e.Tail>;
+}
+
+DoEscapedSeq {
+  (e.Valid) (e.Scanned) ' ' e.Tail = (e.Scanned) e.Tail ;
+  (e.Valid) (e.Scanned) '+' e.Tail = (e.Scanned) e.Tail ;
+
+  (e.Valid-B s.Next e.Valid-E) (e.Scanned) s.Next e.Tail =
+    <DoEscapedSeq (e.Valid-B s.Next e.Valid-E) (e.Scanned s.Next) e.Tail>;
+}
+
+Implode {
+  // Ага, хуйня на постном масле
+  'Success'        = Valid   Success    ;
+  'Fails'          = Valid   Fails      ;
+  'ADateTime'      = Valid   ADateTime  ;
+  'CDateTime'      = Valid   CDateTime  ;
+  'MDateTime'      = Valid   MDateTime  ;
+  'Size'           = Valid   Size       ;
+  'Dir'            = Valid   Dir        ;
+  e.Other = Invalid                     ;
+}
 
 $END CoreBE::OS::MFileSystem.

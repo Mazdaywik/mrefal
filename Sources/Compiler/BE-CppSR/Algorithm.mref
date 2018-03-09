@@ -153,10 +153,6 @@ DoPrepareExpr-Result {
   (FnPtr (s.CallType t.SrcPos t.Name)) e.Tail =
     (TkName t.Name) <DoPrepareExpr-Result e.Tail>;
 
-  (EntryCode s.CodeType e.InBrackets) e.Tail =
-    (Brackets EntryCode s.CodeType <DoPrepareExpr-Result e.InBrackets>)
-    <DoPrepareExpr-Result e.Tail>;
-
   (Structure e.InBrackets) e.Tail =
     (Brackets Structure <DoPrepareExpr-Result e.InBrackets>)
     <DoPrepareExpr-Result e.Tail>;
@@ -762,24 +758,6 @@ DoGenResult {
       (Function s.Counter e.Result t.MultiBracket)
     >;
 
-  (e.Vars) (e.Commands) s.Counter
-  (Brackets EntryCode s.CodeType e.InBrackets) e.Result
-  t.MultiBracket =
-    <DoGenResult
-      (e.Vars)
-      (e.Commands (CtEndEntryCode))
-      s.Counter e.InBrackets
-      (EntryCode s.CodeType e.Result t.MultiBracket)
-    >;
-
-  (e.Vars) (e.Commands) s.Counter
-  (EntryCode s.CodeType e.Result t.MultiBracket) =
-    <DoGenResult
-      (e.Vars)
-      (e.Commands (CtEntryCode s.CodeType)) s.Counter
-      e.Result t.MultiBracket
-    >;
-
   /*
     Закрывающие скобки надо обрабатывать особым образом.
     Круглые скобки и АТД --
@@ -1031,11 +1009,6 @@ ConvertCommand {
 
   (CtBrackets StLink s.LeftNumber s.RightNumber) =
     (CmdLinkBrackets s.LeftNumber s.RightNumber);
-
-  (CtEntryCode s.CodeType) =
-    (CmdStartEntryCode s.CodeType);
-
-  (CtEndEntryCode) = (CmdEndEntryCode);
 }
 
 $END BE-CppSR::Algorithm.

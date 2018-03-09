@@ -8,14 +8,38 @@ $IMPORT MMath;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
 
+
 /**
   <Generate t.hIModule e.OutName>
     == t.hIModule
 */
 $ENTRY Generate {
-  t.hIModule e.OutName =
+  t.hIModule e.OutName = <Generate-Aux t.hIModule &CreateBinary e.OutName>;
+}
+
+CreateBinary {
+  (e.OutName) e.RaslCode =
+    <MFileIO::Close
+      <MFileIO::Write
+        <MFileIO::Open 'bw' e.OutName>
+        <MStrings::Chr e.RaslCode>
+      >
+    >;
+}
+
+
+/**
+  <Generate-Src t.hIModule e.OutName>
+    == t.hIModule
+*/
+$ENTRY Generate-Src {
+  t.hIModule e.OutName = <Generate-Aux t.hIModule &CreateCpp e.OutName>;
+}
+
+Generate-Aux {
+  t.hIModule s.FnCreateFile e.OutName =
     <CreateFile
-      (e.OutName)
+      (e.OutName) s.FnCreateFile
       <MLambda::MapReduce
         & GenerateEntity
         <MIModule::GetEntityList t.hIModule>
@@ -24,36 +48,41 @@ $ENTRY Generate {
 }
 
 CreateFile {
-  (e.OutName) t.hIModule e.RaslCode =
+  (e.OutName) s.FnCreateFile t.hIModule e.RaslCode =
     <CreateFile-EntryPoint
-      (e.OutName)
+      (e.OutName) s.FnCreateFile
       <GenerateEntryCode <MIModule::GetEntryPoint t.hIModule>>
       e.RaslCode
     >;
 }
 
 CreateFile-EntryPoint {
-  (e.OutName) t.hIModule e.RaslCode =
+  (e.OutName) s.FnCreateFile t.hIModule e.RaslCode =
     t.hIModule
+    <s.FnCreateFile
+      (e.OutName)
+      <GenBlock Start 'RASLCODE'>
+      <GenBlock
+        ConstTable
+        // cookies
+        <DWord 0> <DWord 0>
+        // external count, ident count, number count, string count
+        <DWord 0> <DWord 0> <DWord 0> <DWord 0>
+        // RASL length, external size, ident size, string size
+        <DWord 0> <DWord 0> <DWord 0> <DWord 0>
+      >
+      e.RaslCode
+    >;
+}
+
+CreateCpp {
+  (e.OutName) e.RaslCode =
     <MFileIO::Save
       (e.OutName)
       ('#include "refalrts.h"')
       ()
       ('static unsigned char bytes[] = {')
-      <MLambda::Map
-        &FormatByte
-        <GenBlock Start 'RASLCODE'>
-        <GenBlock
-          ConstTable
-          // cookies
-          <DWord 0> <DWord 0>
-          // external count, ident count, number count, string count
-          <DWord 0> <DWord 0> <DWord 0> <DWord 0>
-          // RASL length, external size, ident size, string size
-          <DWord 0> <DWord 0> <DWord 0> <DWord 0>
-        >
-        e.RaslCode
-      >
+      <MLambda::Map &FormatByte e.RaslCode>
       ('  0')
       ('};')
       ()

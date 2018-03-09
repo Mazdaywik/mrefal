@@ -3,11 +3,30 @@ $MODULE BE-CppSR::MInit;
 $IMPORT Config::MConfig;
 $IMPORT BE-CppSR::MCompiler;
 $IMPORT BE-CppSR::MLinker;
+$IMPORT BE-CppSR::MRASL;
 
 $IMPORT MHelpers = Config::MHelpers;
 $IMPORT MLambda;
 
-$ENTRY Register
+$ENTRY Register-RASL
+  t.Config (e.Directory) (e.Ext) e.Tunings =
+    <Config::MConfig::RegisterBackEnd
+      t.Config
+      BE-CppSR-RASL
+      & BE-CppSR.MRASL.Generate
+      & Fake-RASL-Link
+      (e.Directory) (e.Ext)
+    >;
+
+Fake-RASL-Link {
+  (e.PtProgName) e.Modules =
+    <MInOut::WriteLine 'fake link ' e.PtProgName>
+    Success;
+}
+
+$IMPORT MInOut;
+
+$ENTRY Register-Native
   t.Config (e.Directory) (e.Ext) e.Tunings =
     <Config::MConfig::RegisterBackEnd
       t.Config
@@ -20,7 +39,7 @@ $ENTRY Register
       (e.Directory) (e.Ext)
     >;
 
-$ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
+$ENTRY Extent-Native = <MHelpers::GenExtent <Tunings>>;
 
 Tunings =
   (Single CCompiler ('compiler') 'call call-C++.bat')

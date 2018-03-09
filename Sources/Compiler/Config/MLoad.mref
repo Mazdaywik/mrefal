@@ -873,12 +873,19 @@ SwTuneFEHandler {
 //------------------------------------------------------------------------------
 
 BackEndsTable =
+  (BE-CppSR-RASL
+    ('CppSR-RASL')
+    ((Relative) ('~CppSR-RASL'))
+    ('rasl')
+    & BE-CppSR.MInit.Register-RASL
+    & ExtentNone
+  )
   (BE-CppSR
     ('CppSR')
     ((Relative) ('~CppSR'))
     ('cpp')
-    & BE-CppSR.MInit.Register
-    & BE-CppSR.MInit.Extent
+    & BE-CppSR.MInit.Register-Native
+    & BE-CppSR.MInit.Extent-Native
   )
   (BE-ModuleIF
     ('ModuleIF')
@@ -921,7 +928,7 @@ ExtentNone = <MHelpers::GenExtent /* пусто */>;
 ProfileBackEnd =
   (Pr-Refal5 (BE-Refal5 BE-ModuleIF) ('Refal5') ('R5'))
   (Pr-SimRef (BE-SimRef BE-ModuleIF) ('SimRef') ('SRefal') ('SR'))
-  (Pr-CppSR  (BE-CppSR BE-ModuleIF)  ('CPPSR') ('C++/SR'));
+  (Pr-CppSR  (BE-CppSR BE-CppSR-RASL BE-ModuleIF)  ('CPPSR') ('C++/SR'));
 
 LookupDefault-BE-Ext
   s.BackEndId =

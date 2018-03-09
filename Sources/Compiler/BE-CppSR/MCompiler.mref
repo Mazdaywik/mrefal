@@ -18,7 +18,7 @@ $IMPORT MProfiler;
 $ENTRY Generate
   t.hIModule e.OutName '.cpp' =
     <Generate-Aux
-      <BE-CppSR::MRASL::Generate
+      <BE-CppSR::MRASL::Generate-Src
         t.hIModule e.OutName '.rasl.cpp'
       >
       e.OutName

@@ -2,6 +2,7 @@ $MODULE BE-CppSR::MCompiler;
 
 $IMPORT Algorithm = BE-CppSR::Algorithm;
 $IMPORT Generator = BE-CppSR::Generator;
+$IMPORT BE-CppSR::MRASL;
 $IMPORT MLambda;
 $IMPORT MMath;
 $IMPORT MPredeclGenerator;
@@ -15,10 +16,20 @@ $IMPORT MProfiler;
     == t.hIModule
 */
 $ENTRY Generate
+  t.hIModule e.OutName '.cpp' =
+    <Generate-Aux
+      <BE-CppSR::MRASL::Generate
+        t.hIModule e.OutName '.rasl.cpp'
+      >
+      e.OutName
+    >;
+
+Generate-Aux {
   t.hIModule e.OutName =
     <MPredeclGenerator::Generate-Generic
-      & Generate-Properties t.hIModule e.OutName
+      & Generate-Properties t.hIModule e.OutName '.cpp'
     >;
+}
 
 Generate-Properties {
   GenSwap = & Generator.GenSwap;

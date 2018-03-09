@@ -123,7 +123,21 @@ SwC-LinkOption {
 }
 
 PrepareName
-  (t.ModuleName e.StrFileName) = (e.StrFileName);
+  (t.ModuleName e.StrFileName '.cpp') =
+    (e.StrFileName '.cpp')
+    <RaslIfExist e.StrFileName>;
+
+RaslIfExist {
+  e.StrFileName =
+    <CheckExistFile
+      <MFileSystem::ExistFile-T e.StrFileName '.rasl.cpp'>
+    >;
+}
+
+CheckExistFile {
+  True e.RaslFile = (e.RaslFile);
+  False e.RaslFile = /* нет файла с байткодом */;
+}
 
 GetRunTimeFiles
   t.Config =
@@ -149,7 +163,13 @@ GetRunTimeFiles-SwFound {
 
 PrepareRtsName
   (Found (e.Ext) e.PtFullPath) =
-    (<MFileSystem::StrFromPath e.PtFullPath>);
+    <PrepareRtsName-Aux
+      <MFileSystem::StrFromPath e.PtFullPath>
+    >;
+
+PrepareRtsName-Aux {
+  e.Name '.cpp' = (e.Name '.cpp') <RaslIfExist e.Name>;
+}
 
 Link-Cojoint
   t.Config (e.PtProgName) e.Modules =

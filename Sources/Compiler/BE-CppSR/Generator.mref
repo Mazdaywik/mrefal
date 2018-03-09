@@ -66,8 +66,8 @@ GenFnEnd {
   t.Name =
     ('}')
     (
-      'refalrts::RefalNativeFunction descr_' <QNameCode t.Name>
-      '(func_' <QNameCode t.Name> ', ' <MakeNameObject t.Name> ');'
+      'static refalrts::NativeReference nat_ref_' <QNameCode t.Name>
+      '("' <MakeExternalName t.Name> '", 0, 0, func_' <QNameCode t.Name> ');'
     )
     ();
 }
@@ -79,11 +79,7 @@ $ENTRY GenADT {
 }
 
 $ENTRY GenEnum {
-  t.Name =
-    (
-      'refalrts::RefalEmptyFunction descr_' <QNameCode t.Name>
-      '(' <MakeNameObject t.Name> ');'
-    );
+  t.Name = ('// $ENUM ' <MakeExternalName t.Name> ' / ' <QNameCode t.Name>);
 }
 
 $ENTRY GenExtern {
@@ -96,11 +92,7 @@ $ENTRY GenExtern {
 }
 
 $ENTRY GenSwap {
-  t.Name =
-    (
-      'refalrts::RefalSwap descr_' <QNameCode t.Name>
-      '(' <MakeNameObject t.Name> ');'
-    );
+  t.Name = ('// $SWAP ' <MakeExternalName t.Name> ' / ' <QNameCode t.Name>);
 }
 
 $ENTRY GenIdent {
@@ -111,12 +103,7 @@ $ENTRY GenIdent {
     );
 }
 
-MakeNameObject {
-  t.Name =
-    'refalrts::RefalFuncName("' <MakeExternalName t.Name> '", 0, 0)';
-}
-
-MakeExternalName {
+$ENTRY MakeExternalName {
   t.Name =
     <MakeExternalName-Aux <MQualifiedName::ToPrintable-Dot t.Name>>;
 }

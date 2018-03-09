@@ -4,12 +4,12 @@
 
 static refalrts::ExternalReference ref_Exit("Exit", 0U, 0U);
 
-#line 2 "_mrefalrts.sref"
+#line 2 "../all.sr/mrefalrts.sref"
 #include "refalrts.h"
 #include "refalapi.h"
-#line 11 "_mrefalrts.native.cpp"
+#line 11 "../all.sr/mrefalrts.native.cpp"
 static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
-#line 12 "_mrefalrts.sref"
+#line 12 "../all.sr/mrefalrts.sref"
 {
   // Формат <Exit s.RetCode> == поле зрения не изменяет
 
@@ -40,10 +40,10 @@ static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
-#line 44 "_mrefalrts.native.cpp"
+#line 44 "../all.sr/mrefalrts.native.cpp"
 }
 
-static refalrts::RefalNativeFunction descr_Exit(func_Exit, refalrts::RefalFuncName("Exit", 0U, 0U));
+static refalrts::NativeReference nat_ref_Exit("Exit", 0U, 0U, func_Exit);
 
 
 //End of file

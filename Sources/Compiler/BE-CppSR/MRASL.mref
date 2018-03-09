@@ -1,0 +1,190 @@
+$MODULE BE-CppSR::MRASL;
+
+$IMPORT BE-CppSR::Generator;
+$IMPORT MFileIO;
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MMath;
+$IMPORT MQualifiedName;
+$IMPORT MStrings;
+
+/**
+  <Generate t.hIModule e.OutName>
+    == t.hIModule
+*/
+$ENTRY Generate {
+  t.hIModule e.OutName =
+    <CreateFile
+      (e.OutName)
+      <MLambda::MapReduce
+        & GenerateEntity
+        <MIModule::GetEntityList t.hIModule>
+      >
+    >;
+}
+
+CreateFile {
+  (e.OutName) t.hIModule e.RaslCode =
+    <CreateFile-EntryPoint
+      (e.OutName)
+      <GenerateEntryCode <MIModule::GetEntryPoint t.hIModule>>
+      e.RaslCode
+    >;
+}
+
+CreateFile-EntryPoint {
+  (e.OutName) t.hIModule e.RaslCode =
+    t.hIModule
+    <MFileIO::Save
+      (e.OutName)
+      ('#include "refalrts.h"')
+      ()
+      ('static unsigned char bytes[] = {')
+      <MLambda::Map
+        &FormatByte
+        <GenBlock Start 'RASLCODE'>
+        <GenBlock
+          ConstTable
+          // cookies
+          <DWord 0> <DWord 0>
+          // external count, ident count, number count, string count
+          <DWord 0> <DWord 0> <DWord 0> <DWord 0>
+          // RASL length, external size, ident size, string size
+          <DWord 0> <DWord 0> <DWord 0> <DWord 0>
+        >
+        e.RaslCode
+      >
+      ('  0')
+      ('};')
+      ()
+      ('static refalrts::RawBytesBlock block(bytes, sizeof(bytes) - 1);')
+      ()
+      ('// end of file')
+    >;
+}
+
+FormatByte {
+  s.Byte = ('  ' <MStrings::Symb <MStrings::Ord s.Byte>> ',');
+}
+
+GenerateEntryCode {
+  t.hIModule Go t.GoSeq =
+    <MLambda::Apply
+      <MLambda::Parallel-H
+        <MLambda::BindLeft-H
+          &GenDefinition-Absolut
+          <MQualifiedName::Create (Go)> Native Entry
+        >
+        <MLambda::BindLeft-H
+          &GenDefinition-Absolut
+          <MQualifiedName::Create ('Exit' Entry)> Native Entry
+        >
+      >
+      t.hIModule
+    >;
+
+  t.hIModule Regular t.InitSeq t.FinalSeq =
+    <MLambda::Apply
+      <MLambda::Parallel-H
+        <MLambda::BindLeft-H
+          &GenDefinition-Relative
+          <MQualifiedName::Create ('Init' Entry)> Native Entry
+        >
+      >
+      t.hIModule
+    >;
+}
+
+GenerateEntity {
+  t.hIModule (Function t.RelativeName) =
+    <GenerateFunction t.hIModule t.RelativeName>;
+
+  t.hIModule (ADT t.RelativeName) =
+    <GenDefinition-Relative t.hIModule t.RelativeName Empty Local>;
+
+  t.hIModule (NativeInsertion e.NativeCode) = t.hIModule;
+}
+
+GenerateFunction {
+  t.hIModule t.RelativeName =
+    <GenerateFunction-Aux
+      <MLambda::Apply
+        <MLambda::Parallel-H
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+          >
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute Body t.RelativeName
+          >
+          <MLambda::BindLeft-H
+            & MIModule.GetFunctionAttribute NativeBody t.RelativeName
+          >
+        >
+        t.hIModule
+      >
+      t.RelativeName
+    >;
+}
+
+GenerateFunction-Aux {
+  t.hIModule Found Swap NoAttrib NoAttrib t.RelativeName =
+    <GenDefinition-Relative t.hIModule t.RelativeName Swap Local>;
+
+  t.hIModule Found s.ScopeClass Found (/* пусто */) NoAttrib t.RelativeName =
+    <GenDefinition-Relative t.hIModule t.RelativeName Empty s.ScopeClass>;
+
+  t.hIModule Found s.ScopeClass Found (e.Sentences) NoAttrib t.RelativeName =
+    <GenDefinition-Relative t.hIModule t.RelativeName Native s.ScopeClass>;
+
+  t.hIModule Found s.ScopeClass NoAttrib Found e.NativeData t.RelativeName =
+    <GenDefinition-Relative t.hIModule t.RelativeName Native s.ScopeClass>;
+}
+
+GenDefinition-Relative {
+  t.hIModule t.RelativeName s.Type s.ScopeClass =
+    <GenDefinition-Absolut
+      <MIModule::AbsolutName t.hIModule t.RelativeName> s.Type s.ScopeClass
+    >;
+}
+
+GenDefinition-Absolut {
+  t.hIModule t.AbsolutName s.Type s.ScopeClass =
+    t.hIModule
+    <GenBlock
+      s.Type
+      <MarkerFromScopeClass s.ScopeClass>
+      <BE-CppSR::Generator::MakeExternalName t.AbsolutName> '\0'
+    >;
+}
+
+CodeFromType {
+  Start = 1;
+  ConstTable = 2;
+  Native = 4;
+  Empty = 5;
+  Swap = 6;
+}
+
+MarkerFromScopeClass {
+  Local = '#'; Entry = '*';
+}
+
+GenBlock {
+  s.Type e.Bytes = <CodeFromType s.Type> <CalcLen e.Bytes>;
+}
+
+CalcLen {
+  e.Bytes = <CalcLen-Aux <MStrings::Length-T e.Bytes>>;
+}
+
+CalcLen-Aux {
+  s.Len e.Bytes = <DWord s.Len> e.Bytes;
+}
+
+DWord {
+  s.1 s.2 s.3 s.4 = s.1 s.2 s.3 s.4;
+
+  s.Low e.High = <DWord <MMath::Mod s.Low 256> <MMath::Div s.Low 256> e.High>;
+}
+
+$END BE-CppSR::MRASL.

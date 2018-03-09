@@ -1,6 +1,5 @@
 @setlocal
-  @..\..\..\simple-refal-distrib\bin\srefc-core _mrefalrts.sref
-  @move _mrefalrts.native.cpp mrefalrts.cpp
-  :: TODO: fix for next versions of Simple Refal
-  @erase _mrefalrts.cpp
+  @..\..\..\simple-refal-distrib\bin\srefc-core ../all.sr/mrefalrts.sref
+  @move ../all.sr/mrefalrts.native.cpp mrefalrts.cpp
+  @move ../all.sr/mrefalrts.cpp mrefalrts.rasl.cpp
 @endlocal

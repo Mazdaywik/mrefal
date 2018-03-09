@@ -161,10 +161,9 @@ AppendExt {
 
 TargetFileModule {
   e.L-CExt (e.StrPath) =
-    (e.StrPath '.' e.L-CExt)
-    <CheckExistNative
-      <MFileSystem::ExistFile-T e.StrPath '.native.' e.L-CExt>
-    >;
+    <CheckExistFile e.StrPath '.' e.L-CExt>
+    <CheckExistFile e.StrPath '.native.' e.L-CExt>
+    <CheckExistFile e.StrPath '.rasl.' e.L-CExt>;
 }
 
 FilterSRefs {
@@ -186,15 +185,18 @@ MakeCppRunTime {
 
 MakeCppRunTime-Sref {
   e.CExt (e.FileName '.sref') =
-    (e.FileName '.' e.CExt)
-    <CheckExistNative
-      <MFileSystem::ExistFile-T e.FileName '.native.' e.CExt>
-    >;
+    <CheckExistFile e.FileName '.' e.CExt>
+    <CheckExistFile e.FileName '.native.' e.CExt>
+    <CheckExistFile e.FileName '.rasl.' e.CExt>;
 }
 
-CheckExistNative {
-  True e.NativeName = (e.NativeName);
-  False e.NativeName = /* нет нативного файла */;
+CheckExistFile {
+  e.FileName = <CheckExistFile-Aux <MFileSystem::ExistFile-T e.FileName>>;
+}
+
+CheckExistFile-Aux {
+  True e.FileName = (e.FileName);
+  False e.FileName = /* нет нативного файла */;
 }
 
 CallSRefC

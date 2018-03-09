@@ -7,7 +7,7 @@ static refalrts::ExternalReference ref_Exit("Exit", 0U, 0U);
 #line 2 "../all.sr/mrefalrts.sref"
 #include "refalrts.h"
 #include "refalapi.h"
-#line 11 "../all.sr/mrefalrts.native.cpp"
+#line 11 "../all.sr/mrefalrts.cpp"
 static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
 #line 12 "../all.sr/mrefalrts.sref"
 {
@@ -40,7 +40,7 @@ static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
-#line 44 "../all.sr/mrefalrts.native.cpp"
+#line 44 "../all.sr/mrefalrts.cpp"
 }
 
 static refalrts::NativeReference nat_ref_Exit("Exit", 0U, 0U, func_Exit);

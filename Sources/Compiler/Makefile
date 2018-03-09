@@ -39,6 +39,7 @@ check-s:
 	$(call CHECKPARAM, mode)
 	$(comp_tr) $(mode_tr) $(xlinx_tr) \
 	  +cfg:.Config/config-work.cfg +MP:. +be:$(profile) \
+	  +cfg:../Libraries/modulepath-$(profile).cfg \
 	  $(TESTFLAGS) \
 	  $*.mref ( +target:$* )
 	$(call RUNTEST_tr, $*)

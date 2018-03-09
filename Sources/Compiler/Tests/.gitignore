@@ -2,6 +2,8 @@
 *.tds
 *.sr_main.cpp
 *.sr_main.sref
+*.sr_main.rasl
+*.sr_main.rasl.cpp
 *.ref
 *.rsl
 *-Aliases.txt

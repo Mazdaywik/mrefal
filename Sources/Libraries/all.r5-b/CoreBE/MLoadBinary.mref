@@ -1,0 +1,10 @@
+$MODULE CoreBE::MLoadBinary;
+
+$IMPORT MExtent = CoreBE::OS::MFS-Extent;
+
+
+$ENTRY Load {
+  e.FileName = <MExtent::Call ('LoadBinary') e.FileName>;
+}
+
+$END CoreBE::MLoadBinary.

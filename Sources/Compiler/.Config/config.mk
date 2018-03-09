@@ -99,8 +99,8 @@ sprofile-SR = stable-mrefal-SR
 sprofile-CPPSR = stable-mrefal-CPPSR
 sprofile-C++/SR = stable-mrefal-CPPSR
 
-RUNTEST-R5 = echo Y | refgo $(1)
-RUNTEST-R5T = echo Y | refgo $(1)
+RUNTEST-R5 = echo Y | refgo $(1) ++extent:..\Bin\FS-Extent.cpp.exe
+RUNTEST-R5T = echo Y | refgo $(1) ++extent:..\Bin\FS-Extent.cpp.exe
 RUNTEST-SR = ./$(strip $(1))
 RUNTEST-CPPSR = ./$(strip $(1))
 RUNTEST-C++/SR = ./$(strip $(1))

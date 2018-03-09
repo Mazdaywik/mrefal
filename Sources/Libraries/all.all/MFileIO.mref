@@ -1,6 +1,7 @@
 $MODULE MFileIO;
 
 $IMPORT CoreBE::MFileIO;
+$IMPORT CoreBE::MLoadBinary;
 
 /**
   <Open s.Mode e.FileName> == t.Handle
@@ -127,6 +128,13 @@ DoSave {
     >;
 
   t.File = <NulClose t.File>;
+}
+
+/**
+  <LoadBinary e.FileName> == e.Chars
+*/
+$ENTRY LoadBinary {
+  e.FileName = <CoreBE::MLoadBinary::Load e.FileName>;
 }
 
 $END MFileIO.

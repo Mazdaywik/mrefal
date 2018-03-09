@@ -5,6 +5,7 @@ $IMPORT FS = CoreBE::OS::MFileSystem;
 $IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MStrings;
+$IMPORT CoreBE::MLoadBinary;
 
 $ENTRY Go =
   <Main <MOS::ArgList>>;
@@ -195,6 +196,9 @@ SwCallFunction {
 
   ('RemoveFile') e.FileName =
     <Result-Simple <FS::RemoveFile e.FileName>>;
+
+  ('LoadBinary') e.FileName =
+    <DumpString <CoreBE::MLoadBinary::Load e.FileName>>;
 }
 
 Result-FileAttributes {

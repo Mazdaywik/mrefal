@@ -1,0 +1,20 @@
+$MODULE CoreBE::MLoadBinary;
+
+$IMPORT FileIO = CoreBE::MFileIO;
+
+
+$ENTRY Load {
+  e.FileName = <DoLoad <FileIO::Open 'br' e.FileName>>;
+}
+
+DoLoad {
+  s.Handle = <DoLoad-SwEOF <FileIO::ReadLine s.Handle> s.Handle>;
+}
+
+DoLoad-SwEOF {
+  e.Line 0 s.Handle = e.Line <FileIO::Close s.Handle>;
+
+  e.Line s.Handle = e.Line '\n' <DoLoad s.Handle>;
+}
+
+$END CoreBE::MLoadBinary.

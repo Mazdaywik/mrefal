@@ -278,6 +278,11 @@ DoPatchSrcPos {
 $ENTRY GenFunction
   s.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
     <GenFunction-Declarations s.FnProperties e.Sentences>
+    (Declare
+      Function
+      t.AbsolutName
+      (<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName)
+    )
     (Define
       Function
       t.AbsolutName

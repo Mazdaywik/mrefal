@@ -48,6 +48,9 @@ GenFunction-Decl {
 
   Swap t.FunctionName =
     <Generator::GenExtern t.FunctionName>;
+
+  InitFinal t.FunctionName =
+    <Generator::GenExtern t.FunctionName>;
 }
 
 GenFunction-Code {

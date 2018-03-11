@@ -212,7 +212,7 @@ Profiling-CallSRefC {
   t.Config (e.ErrorFlag) e.InputFileNames =
     <MOS::System
       '"' <MHelpers::ConfigExtract t.Config SRCompiler> '"'
-      ' -e "' e.ErrorFlag '"'
+      ' -C -e "' e.ErrorFlag '"'
       <MLambda::Map & MakeInputFileNames e.InputFileNames>
     >;
 }

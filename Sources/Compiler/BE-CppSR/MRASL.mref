@@ -1,7 +1,11 @@
 $MODULE BE-CppSR::MRASL;
 
 $IMPORT BE-CppSR::Generator;
+$IMPORT C-Link::MLinker;
+$IMPORT Config::MHelpers;
+$IMPORT MError;
 $IMPORT MFileIO;
+$IMPORT MFileSystem;
 $IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MMath;
@@ -14,7 +18,14 @@ $IMPORT MStrings;
     == t.hIModule
 */
 $ENTRY Generate {
-  t.hIModule e.OutName = <Generate-Aux t.hIModule &CreateBinary e.OutName>;
+  t.hIModule e.OutName =
+    <CreateFile
+      (e.OutName)
+      <MLambda::MapReduce
+        & GenerateEntity
+        <MIModule::GetEntityList t.hIModule>
+      >
+    >;
 }
 
 CreateBinary {
@@ -27,39 +38,19 @@ CreateBinary {
     >;
 }
 
-
-/**
-  <Generate-Src t.hIModule e.OutName>
-    == t.hIModule
-*/
-$ENTRY Generate-Src {
-  t.hIModule e.OutName = <Generate-Aux t.hIModule &CreateCpp e.OutName>;
-}
-
-Generate-Aux {
-  t.hIModule s.FnCreateFile e.OutName =
-    <CreateFile
-      (e.OutName) s.FnCreateFile
-      <MLambda::MapReduce
-        & GenerateEntity
-        <MIModule::GetEntityList t.hIModule>
-      >
-    >;
-}
-
 CreateFile {
-  (e.OutName) s.FnCreateFile t.hIModule e.RaslCode =
+  (e.OutName) t.hIModule e.RaslCode =
     <CreateFile-EntryPoint
-      (e.OutName) s.FnCreateFile
+      (e.OutName)
       <GenerateEntryCode <MIModule::GetEntryPoint t.hIModule>>
       e.RaslCode
     >;
 }
 
 CreateFile-EntryPoint {
-  (e.OutName) s.FnCreateFile t.hIModule e.RaslCode =
+  (e.OutName) t.hIModule e.RaslCode =
     t.hIModule
-    <s.FnCreateFile
+    <CreateBinary
       (e.OutName)
       <GenBlock Start 'RASLCODE'>
       <GenBlock
@@ -73,27 +64,6 @@ CreateFile-EntryPoint {
       >
       e.RaslCode
     >;
-}
-
-CreateCpp {
-  (e.OutName) e.RaslCode =
-    <MFileIO::Save
-      (e.OutName)
-      ('#include "refalrts.h"')
-      ()
-      ('static unsigned char bytes[] = {')
-      <MLambda::Map &FormatByte e.RaslCode>
-      ('  0')
-      ('};')
-      ()
-      ('static refalrts::RawBytesBlock block(bytes, sizeof(bytes) - 1);')
-      ()
-      ('// end of file')
-    >;
-}
-
-FormatByte {
-  s.Byte = ('  ' <MStrings::Symb <MStrings::Ord s.Byte>> ',');
 }
 
 GenerateEntryCode {
@@ -214,6 +184,114 @@ DWord {
   s.1 s.2 s.3 s.4 = s.1 s.2 s.3 s.4;
 
   s.Low e.High = <DWord <MMath::Mod s.Low 256> <MMath::Div s.Low 256> e.High>;
+}
+
+
+/**
+  <Link t.L-Config (e.PtProgName) (t.ModuleName e.OutName)*>
+    == Success
+    == Fails
+*/
+$ENTRY Link {
+  t.L-Config (e.PtProgName) e.Modules =
+    <Link-ExistTarget
+      t.L-Config
+      (<FindTargets <MFileSystem::StrFromPath e.PtProgName>>)
+      e.Modules
+    >;
+}
+
+FindTargets {
+  e.StrProgName =
+    <FindTargets-SwExist
+      (e.StrProgName)
+      (<MFileSystem::ExistFile-T e.StrProgName>)
+      (<MFileSystem::ExistFile-T e.StrProgName '.exe'>)
+    >;
+}
+
+FindTargets-SwExist {
+  (e.StrProgName) e.Targets-B (True e.TargetName) e.Targets-E = e.TargetName;
+
+  (e.StrProgName) e.Targets =
+    <MError::LinkError
+      'RASL linker: target file ' e.StrProgName ' is not found'
+    >;
+}
+
+Link-ExistTarget {
+  t.Config (e.StrProgName) e.Modules =
+    <Link-GetFileList
+      (e.StrProgName)
+      <MLambda::Map & PrepareName e.Modules>
+      <GetRunTimeFiles (e.StrProgName) t.Config>
+    >;
+}
+
+PrepareName {
+  (t.ModuleName e.FileName) = (e.FileName);
+}
+
+GetRunTimeFiles
+  (e.TargetName) t.Config =
+    <MLambda::Map
+      <MLambda::BindLeft & PrepareRtsName e.TargetName>
+      <C-Link::MLinker::LookupRuntimeFiles
+        (('rasl'))
+        (<Config::MHelpers::ConfigExtract t.Config RunTimeDirs>)
+        <Config::MHelpers::ConfigExtract t.Config RunTimeFiles>
+      >
+    >;
+
+PrepareRtsName {
+  e.TargetName (NotFound e.PtNotFound) =
+    <MFileSystem::RemoveFile e.TargetName>
+    <MError::LinkError
+      'Run-time file '
+      <MFileSystem::StrFromPath e.PtNotFound>
+      ' not found'
+    >;
+
+  e.TargetName (Found (e.Ext) e.PtFullPath) =
+    (<MFileSystem::StrFromPath e.PtFullPath>);
+}
+
+Link-GetFileList {
+  (e.TargetName) e.Files =
+    Success
+    <MFileIO::Close
+      <MFileIO::Write
+        <PrepareAlignedTarget e.TargetName>
+        <MLambda::Map
+          <MLambda::Composite
+            & MLambda.UnBracket
+            & MFileIO.LoadBinary
+          >
+          e.Files
+        >
+      >
+    >;
+}
+
+PrepareAlignedTarget {
+  e.TargetName =
+    <PrepareAlignedTarget-Mod
+      <MFileSystem::FileAttribute Size e.TargetName>
+      <MFileIO::Open 'ba' e.TargetName>
+    >;
+}
+
+PrepareAlignedTarget-Mod {
+  (s.FileSize) t.hTarget =
+    <PrepareAlignedTarget-WriteAlign t.hTarget <MMath::Mod s.FileSize 4096>>;
+}
+
+PrepareAlignedTarget-WriteAlign {
+  t.hTarget 0 = t.hTarget;
+  t.hTarget s.NotAligned =
+    <MFileIO::Write
+      t.hTarget <MStrings::Repeat <MMath::Sub 4096 s.NotAligned> '@'>
+    >;
 }
 
 $END BE-CppSR::MRASL.

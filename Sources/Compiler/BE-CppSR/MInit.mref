@@ -14,17 +14,18 @@ $ENTRY Register-RASL
       t.Config
       BE-CppSR-RASL
       & BE-CppSR.MRASL.Generate
-      & Fake-RASL-Link
+      <MLambda::BindLeft
+        & BE-CppSR.MRASL.Link
+        <MHelpers::InitConfig & RASL-Tunings e.Tunings>
+      >
       (e.Directory) (e.Ext)
     >;
 
-Fake-RASL-Link {
-  (e.PtProgName) e.Modules =
-    <MInOut::WriteLine 'fake link ' e.PtProgName>
-    Success;
-}
+$ENTRY Extent-RASL = <MHelpers::GenExtent <RASL-Tunings>>;
 
-$IMPORT MInOut;
+RASL-Tunings =
+  (PathList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
+  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')));
 
 $ENTRY Register-Native
   t.Config (e.Directory) (e.Ext) e.Tunings =
@@ -34,17 +35,16 @@ $ENTRY Register-Native
       & BE-CppSR.MCompiler.Generate
       <MLambda::BindLeft
         & BE-CppSR.MLinker.Link
-        <MHelpers::InitConfig & Tunings e.Tunings>
+        <MHelpers::InitConfig & Native-Tunings e.Tunings>
       >
       (e.Directory) (e.Ext)
     >;
 
-$ENTRY Extent-Native = <MHelpers::GenExtent <Tunings>>;
+$ENTRY Extent-Native = <MHelpers::GenExtent <Native-Tunings>>;
 
-Tunings =
+Native-Tunings =
   (Single CCompiler ('compiler') 'call call-C++.bat')
-  (PathList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
-  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
+  <RASL-Tunings>
   (Single IncludeOpt ('include-opt') '-I')
   (Single DefineOpt ('define') '-D')
   (Single Prologue ('prologue') /* пусто */)

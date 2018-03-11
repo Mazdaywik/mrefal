@@ -12,13 +12,14 @@ $IMPORT C-Link::MMake;
 $IMPORT C-Link::MPartialLinker;
 
 /**
-  <Link t.L-Config (e.PtProgName) (t.ModuleName e.OutName)>
+  <Link t.L-Config (e.PtProgName) (t.ModuleName e.OutName)*>
     == Success
     == Fails
 */
 $ENTRY Link
   t.Config (e.PtProgName) e.Modules =
     Success
+    <C-Link::MLinker::CleanupTargetFiles e.PtProgName>
     <MLambda::Apply
       <Link-SwitchMode <MHelpers::ConfigExtract t.Config LinkerType>>
       t.Config (e.PtProgName) e.Modules
@@ -45,7 +46,7 @@ Link-With-C-Link
       &C-Link.MLinker.C-Link t.Config (e.PtProgName) (e.Modules)
       (Output
         <C-LinkOption t.Config ExecutableFile>
-        <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
+        <MFileSystem::StrFromPath e.PtProgName>
       )
     >;
 
@@ -55,7 +56,7 @@ Link-With-C-Make
       &C-Link.MMake.C-Link t.Config (e.PtProgName) (e.Modules)
       (Output-Exe
         <C-LinkOption t.Config ExecutableFile>
-        <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
+        <MFileSystem::StrFromPath e.PtProgName>
       )
       (Output-Obj
         <C-LinkOption t.Config ObjectFile>
@@ -73,7 +74,7 @@ Link-With-C-Part
       &C-Link.MPartialLinker.C-Link t.Config (e.PtProgName) (e.Modules)
       (Output-Exe
         <C-LinkOption t.Config ExecutableFile>
-        <MFileSystem::StrFromPath e.PtProgName> //'.cpp.exe'
+        <MFileSystem::StrFromPath e.PtProgName>
       )
       (Output-Obj
         <C-LinkOption t.Config ObjectFile>
@@ -124,20 +125,7 @@ SwC-LinkOption {
 
 PrepareName
   (t.ModuleName e.StrFileName '.cpp') =
-    (e.StrFileName '.cpp')
-    <RaslIfExist e.StrFileName>;
-
-RaslIfExist {
-  e.StrFileName =
-    <CheckExistFile
-      <MFileSystem::ExistFile-T e.StrFileName '.rasl.cpp'>
-    >;
-}
-
-CheckExistFile {
-  True e.RaslFile = (e.RaslFile);
-  False e.RaslFile = /* нет файла с байткодом */;
-}
+    (e.StrFileName '.cpp');
 
 GetRunTimeFiles
   t.Config =
@@ -162,14 +150,7 @@ GetRunTimeFiles-SwFound {
 }
 
 PrepareRtsName
-  (Found (e.Ext) e.PtFullPath) =
-    <PrepareRtsName-Aux
-      <MFileSystem::StrFromPath e.PtFullPath>
-    >;
-
-PrepareRtsName-Aux {
-  e.Name '.cpp' = (e.Name '.cpp') <RaslIfExist e.Name>;
-}
+  (Found (e.Ext) e.PtFullPath) = (<MFileSystem::StrFromPath e.PtFullPath>);
 
 Link-Cojoint
   t.Config (e.PtProgName) e.Modules =

@@ -226,4 +226,19 @@ SwCheckExist-Pt {
   (e.PtFileName) (e.Ext) False e.PtFullPath = (NotFound e.PtFileName);
 }
 
+
+/**
+  <CleanupTargetFiles e.PtProgName> == пусто
+*/
+$ENTRY CleanupTargetFiles {
+  e.PtProgName =
+    <CleanupTargetFiles-Str <MFileSystem::StrFromPath e.PtProgName>>;
+}
+
+CleanupTargetFiles-Str {
+  e.StrProgName =
+    <MFileSystem::RemoveFile e.StrProgName>
+    <MFileSystem::RemoveFile e.StrProgName '.exe'>;
+}
+
 $END C-Link::MLinker.

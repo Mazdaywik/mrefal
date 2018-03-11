@@ -1,12 +1,13 @@
 $MODULE BE-SimRef::MLinker;
 
-$IMPORT MFileIO;
+$IMPORT BE-CppSR::MRASL;
 $IMPORT MError;
-$IMPORT MLambda;
-$IMPORT MStrings;
+$IMPORT MFileIO;
 $IMPORT MFileSystem;
+$IMPORT MLambda;
 $IMPORT MOS;
 $IMPORT MQualifiedName;
+$IMPORT MStrings;
 
 $IMPORT MHelpers = Config::MHelpers;
 
@@ -28,6 +29,7 @@ $ENTRY Link
 Profiling-Link {
   t.L-Config (e.PtProgName) e.Modules =
     Success
+    <C-Link::CleanupTargetFiles e.PtProgName>
     <MakeHeadFile
       (<HeadFileNamePt e.PtProgName> '.sref')
       <MLambda::Map & ModuleName e.Modules>
@@ -55,6 +57,13 @@ Profiling-Link {
         <MFileSystem::StrFromPath e.PtProgName>
       )
       <GetSourceList (e.PtProgName) t.L-Config e.Modules>
+    >
+    <Success
+      <BE-CppSR::MRASL::Link
+        t.L-Config (e.PtProgName)
+        <MLambda::Map & RaslNames e.Modules>
+        (NO-MODULE <HeadFileNamePt e.PtProgName> '.rasl')
+      >
     >;
 }
 
@@ -160,10 +169,7 @@ AppendExt {
 }
 
 TargetFileModule {
-  e.L-CExt (e.StrPath) =
-    <CheckExistFile e.StrPath '.' e.L-CExt>
-    <CheckExistFile e.StrPath '.native.' e.L-CExt>
-    <CheckExistFile e.StrPath '.rasl.' e.L-CExt>;
+  e.L-CExt (e.StrPath) = <CheckExistFile e.StrPath '.' e.L-CExt>;
 }
 
 FilterSRefs {
@@ -184,10 +190,7 @@ MakeCppRunTime {
 }
 
 MakeCppRunTime-Sref {
-  e.CExt (e.FileName '.sref') =
-    <CheckExistFile e.FileName '.' e.CExt>
-    <CheckExistFile e.FileName '.native.' e.CExt>
-    <CheckExistFile e.FileName '.rasl.' e.CExt>;
+  e.CExt (e.FileName '.sref') = <CheckExistFile e.FileName '.' e.CExt>;
 }
 
 CheckExistFile {
@@ -302,6 +305,14 @@ NameCode {
 
 NameCodeChar {
   '!' = 'B_'; '?' = 'Q_'; '_' = 'U_'; '-' = 'D_'; s.Other = s.Other;
+}
+
+Success {
+  Success = ;
+}
+
+RaslNames {
+  (t.ModuleName e.FileName '.sref') = (t.ModuleName e.FileName '.rasl');
 }
 
 

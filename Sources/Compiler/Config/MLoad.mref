@@ -878,7 +878,7 @@ BackEndsTable =
     ((Relative) ('~CppSR-RASL'))
     ('rasl')
     & BE-CppSR.MInit.Register-RASL
-    & ExtentNone
+    & BE-CppSR.MInit.Extent-RASL
   )
   (BE-CppSR
     ('CppSR')

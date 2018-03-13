@@ -23,24 +23,9 @@ $ENTRY Generate
 
 Profiling-Generate
   t.L-Config t.hIModule e.OutName =
-    <CleanupNative t.L-Config e.OutName>
     <MPredeclGenerator::Generate-Generic
       & Generate-Properties t.hIModule e.OutName
     >;
-
-CleanupNative {
-  t.Config e.Name '.sref' =
-    <CleanupNative-SwExist
-      <MFileSystem::ExistFile-T
-        e.Name '.native.' <MHelpers::ConfigExtract t.Config CExt>
-      >
-    >;
-}
-
-CleanupNative-SwExist {
-  True e.FileName = <MFileSystem::RemoveFile e.FileName>;
-  False e.FileName = /* ничего не делаем */;
-}
 
 Generate-Properties {
   GenSwap = & GenSwap;

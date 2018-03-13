@@ -204,9 +204,30 @@ CheckExistFile-Aux {
 
 CallSRefC
   t.Config (e.ErrorFlag) e.InputFileNames =
+    <MLambda::Map
+      <MLambda::Composite
+        & MLambda.UnBracket
+        <MLambda::BindLeft & CleanupNative t.Config>
+      >
+      e.InputFileNames
+    >
     <MProfiler::Quantify
       &Profiling-CallSRefC t.Config (e.ErrorFlag) e.InputFileNames
     >;
+
+CleanupNative {
+  t.Config e.Name '.sref' =
+    <CleanupNative-SwExist
+      <MFileSystem::ExistFile-T
+        e.Name '.' <MHelpers::ConfigExtract t.Config CExt>
+      >
+    >;
+}
+
+CleanupNative-SwExist {
+  True e.FileName = <MFileSystem::RemoveFile e.FileName>;
+  False e.FileName = /* ничего не делаем */;
+}
 
 Profiling-CallSRefC {
   t.Config (e.ErrorFlag) e.InputFileNames =

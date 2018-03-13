@@ -3,23 +3,27 @@ $MODULE MOutModuleStatus;
 $IMPORT InOut = MInOut;
 $IMPORT Math = MMath;
 $IMPORT MLambda;
+$IMPORT MOS;
 $IMPORT MSwapSupport;
 $IMPORT MQualifiedName;
 
 $ENTRY Updated-Q
   t.QualifiedName =
     <FlushCompilingRecompiled>
-    <Out-Q Updated t.QualifiedName>;
+    <Out-Q Updated t.QualifiedName>
+    <FlushByTime>;
 
 $ENTRY Compiling-Q
   t.ModuleName =
-    <MSwapSupport::PushBack & G_Compiling (Compiling t.ModuleName)>;
+    <MSwapSupport::PushBack & G_Compiling (Compiling t.ModuleName)>
+    <FlushByTime>;
 
 $ENTRY Compiled-Q
   t.ModuleName =
     <Compiled-Aux
       ( <MSwapSupport::Read & G_Compiling> ) t.ModuleName
-    >;
+    >
+    <FlushByTime>;
 
 Compiled-Aux {
   ( e.Compiling (Compiling t.ModuleName) ) t.ModuleName =
@@ -34,22 +38,26 @@ Compiled-Aux {
 $ENTRY Library-Q
   t.QualifiedName =
     <FlushCompilingRecompiled>
-    <Out-Q Library t.QualifiedName>;
+    <Out-Q Library t.QualifiedName>
+    <FlushByTime>;
 
 $ENTRY Fails-Q
   t.QualifiedName =
     <FlushCompilingRecompiled>
-    <Out-Q Fails t.QualifiedName>;
+    <Out-Q Fails t.QualifiedName>
+    <FlushByTime>;
 
 $ENTRY Linking
   e.ProgName =
     <FlushCompilingRecompiled>
-    <Out Linking e.ProgName>;
+    <Out Linking e.ProgName>
+    <FlushByTime>;
 
 $ENTRY XLinx
   e.ProgName =
     <FlushCompilingRecompiled>
-    <Out XLinx e.ProgName>;
+    <Out XLinx e.ProgName>
+    <FlushByTime>;
 
 $SWAP G_Compiling, G_Recompiled;
 
@@ -61,6 +69,20 @@ FlushCompilingRecompiled =
     >
     <G_Compiling> <G_Recompiled>
   >;
+
+$SWAP G_Time;
+
+FlushByTime = <FlushByTime-SwChanged <MOS::Time> (<G_Time>)>;
+
+FlushByTime-SwChanged {
+  e.OldTime (/* пусто */) = <G_Time e.OldTime>;
+  e.OldTime (e.OldTime) = <G_Time e.OldTime>;
+
+  e.NewTime (e.OldTime) =
+    <FlushCompilingRecompiled>
+    <NewLine>
+    <G_Time e.NewTime>;
+}
 
 //------------------------------------------------------------------------------
 

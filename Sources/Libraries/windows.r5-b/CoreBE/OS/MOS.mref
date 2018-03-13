@@ -1,122 +1,106 @@
 $MODULE CoreBE::OS::MOS;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY CommandLine @@'
-c {
-c   =
-c     <$Local::CoreBE::OS::MOS::Load$ 1 <Arg 0 > >;
-c }
-'@@;
+$ENTRY CommandLine {
+  = <Load 1 <Arg 0>>;
+}
 
-$NATIVE Refal5 FUNCTION
-Load @@'
-c {
-c   s.$Index::Next$ = ;
-r   // Пропуск "особых" параметров
-c   s.$Index::Next$ '++' e.$Index::Arg$ =
-c     <$Local::CoreBE::OS::MOS::Load$
-c       <Add s.$Index::Next$ 1 >
-c       <Arg s.$Index::Next$ >
-c     >;
-c   s.$Index::Next$ e.$Index::Arg$ =
-c     '\"' <$Local::CoreBE::OS::MOS::Quote-Slash$ e.$Index::Arg$> '\" '
-c     <$Local::CoreBE::OS::MOS::Load$
-c       <Add s.$Index::Next$ 1 >
-c       <Arg s.$Index::Next$ >
-c     >;
-c }
-'@@;
+$NATIVE Refal5 FUNCTION Arg ALIAS Arg;
 
-$NATIVE Refal5 FUNCTION
-Quote @@'
-c {
-c   e.$Index::Arg$ '\"' =
-c     <$Local::CoreBE::OS::MOS::Quote-Slash$ e.$Index::Arg$ >
-c     '\\\"';
+Load {
+  s.Next = ;
 
-c   e.$Index::Arg$ s.$Index::Other$ =
-c     <$Local::CoreBE::OS::MOS::Quote$ e.$Index::Arg$ >
-c     s.$Index::Other$ ;
+  // Пропуск "особых" параметров
+  s.Next '++' e.Arg = <Load <Add s.Next 1> <Arg s.Next>>;
 
-c   = ;
-c }
-'@@;
+  s.Next e.Arg =
+    '\"' <Quote-Slash e.Arg> '\" '
+    <Load <Add s.Next 1> <Arg s.Next>>;
+}
 
-$NATIVE Refal5 FUNCTION
-Quote-Slash @@'
-c {
-c   e.$Index::Arg$ '\\' =
-c     <$Local::CoreBE::OS::MOS::Quote-Slash$ e.$Index::Arg$ >
-c     '\\\\';
+$NATIVE Refal5 FUNCTION Add ALIAS Add;
 
-c   e.$Index::Arg$ =
-c     <$Local::CoreBE::OS::MOS::Quote$ e.$Index::Arg$ > ;
-c }
-'@@;
+Quote {
+  e.Arg '\"' = <Quote-Slash e.Arg> '\\\"';
+  e.Arg s.Other = <Quote e.Arg> s.Other;
+  = ;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY CreateProcess @@'
-c {
-c   $Ident::Wait$
-c   ($ADT::__StructureBrackets$ e.ExeModule)
-c   ($ADT::__StructureBrackets$ e.CommandLine) =
-r     // Кривое решение --- игнорировать параметр e.ExeModule,
-r     // но любые другие пути будут костылявее.
-c     <$Local::CoreBE::OS::MOS::PerformSystem$ e.CommandLine >;
+Quote-Slash {
+  e.Arg '\\' = <Quote-Slash e.Arg> '\\\\';
+  e.Arg = <Quote e.Arg>;
+}
 
-c   $Ident::NoWait$
-c   ($ADT::__StructureBrackets$ e.ExeModule)
-c   ($ADT::__StructureBrackets$ e.CommandLine) =
-c     <$Local::CoreBE::OS::MOS::PerformSystem$ 'start ' e.CommandLine >;
-c }
-'@@;
+$ENTRY CreateProcess {
+  Wait (e.ExeModule) (e.CommandLine) =
+    // Кривое решение --- игнорировать параметр e.ExeModule,
+    // но любые другие пути будут костылявее.
+    <PerformSystem e.CommandLine>;
+
+  NoWait (e.ExeModule) (e.CommandLine) =
+    <PerformSystem 'start ' e.CommandLine>;
+}
+
 
 // Интерпретатор refgo не поддерживает длинные аргументы команды System,
 // поэтому создаётся сценарий с выполняемой командой
-$NATIVE Refal5 FUNCTION
-PerformSystem @@'
-c {
-c   e.CommandLine
-c   , '~' <Symb <Random 1 > > '.tmp.bat' : e.TempBat
-c   , <Open 'w' 20 e.TempBat > :
-c   , <Write 20 '@' e.CommandLine > :
-c   , <Close 20 > :
-c   , <System e.TempBat > : s.RetCode
-c   , <RemoveFile e.TempBat > : e.RemoveResult
-c   = s.RetCode ;
-c }
-'@@;
+PerformSystem {
+  e.CommandLine =
+    <PerformSystem-CreateFile (e.CommandLine) '~' <Symb <Random 1>> '.tmp.bat'>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY EnvList @@'
-c {
-c   , <Cp EnvList > :
-c   {
-c     Loaded e.List = e.List;
+$NATIVE Refal5 FUNCTION Symb ALIAS Symb;
+$NATIVE Refal5 FUNCTION Random ALIAS Random;
 
-c     , <System 'set>~envlist.tmp' > : s.$Index::Ret1$
-c     , <Open 'r' 20 '~envlist.tmp' > : e.$Index::Empty1$
-c     , <$Local::CoreBE::OS::MOS::LoadEnvs$ <Get 20 > > : e.$Index::Result$
-c     , <System 'del ~envlist.tmp' > : s.$Index::Ret2$
-c     = e.$Index::Result$ ;
-c   };
-c }
-'@@;
+PerformSystem-CreateFile {
+  (e.CommandLine) e.TempBat =
+    <PerformSystem-Return
+      (<Open 'w' 20 e.TempBat>)
+      (<Write 20 '@' e.CommandLine>)
+      (<Close 20>)
+      (<System e.TempBat>)
+      (<RemoveFile e.TempBat>)
+    >;
+}
 
-$NATIVE Refal5 FUNCTION
-LoadEnvs @@'
-c {
-c   0 = <Close 20 >;
+$NATIVE Refal5 FUNCTION Open ALIAS Open;
+$NATIVE Refal5 FUNCTION Write ALIAS Write;
+$NATIVE Refal5 FUNCTION Close ALIAS Close;
+$NATIVE Refal5 FUNCTION System ALIAS System;
+$NATIVE Refal5 FUNCTION RemoveFile ALIAS RemoveFile;
 
-c   e.$Index::Line$ 0 =
-c     ($ADT::__StructureBrackets$ e.$Index::Line$)
-c     <Close 20 >;
+PerformSystem-Return {
+  () () () (s.RetCode) (e.RemoveResult) = s.RetCode;
+}
 
-c   e.$Index::Line$ =
-c     ($ADT::__StructureBrackets$ e.$Index::Line$)
-c     <$Local::CoreBE::OS::MOS::LoadEnvs$ <Get 20 > >;
-c }
-'@@;
+$ENTRY EnvList = <EnvList-SwLoaded <Cp EnvList>>;
+
+EnvList-SwLoaded {
+  Loaded e.List = e.List;
+
+  /* пусто */ =
+    <EnvList-Load
+      (<System 'set>~envlist.tmp'>)
+      (<Open 'r' 20 '~envlist.tmp'>)
+      (<LoadEnvs <Get 20>>)
+      (<RemoveFile '~envlist.tmp'>)
+    >;
+}
+
+$NATIVE Refal5 FUNCTION Cp ALIAS Cp;
+$NATIVE Refal5 FUNCTION Get ALIAS Get;
+
+EnvList-Load {
+  (s.Ret1) () (e.Result) (e.RemoveResult) = <Br Loaded '=' e.Result> e.Result;
+}
+
+$NATIVE Refal5 FUNCTION Br ALIAS Br;
+
+LoadEnvs {
+  0 = <Close 20>;
+  e.Line 0 = (e.Line) <Close 20>;
+  e.Line = (e.Line) <LoadEnvs <Get 20>>;
+}
+
 
 $NATIVE Refal5 FUNCTION
 $ENTRY Time ALIAS Time;

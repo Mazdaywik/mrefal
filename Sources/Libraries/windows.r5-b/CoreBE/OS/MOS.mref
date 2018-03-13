@@ -118,4 +118,7 @@ c     <$Local::CoreBE::OS::MOS::LoadEnvs$ <Get 20 > >;
 c }
 '@@;
 
+$NATIVE Refal5 FUNCTION
+$ENTRY Time ALIAS Time;
+
 $END CoreBE::OS::MOS.

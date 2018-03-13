@@ -48,4 +48,11 @@ $ENTRY EnvList = <Core::EnvList>;
 $ENTRY Env
   e.Name = <Core::Env e.Name>;
 
+/**
+  <Time> == e.Time
+
+  e.Time has format "Tue Mar 13 11:58:02 2018"
+*/
+$ENTRY Time = <Core::Time>;
+
 $END MOS.

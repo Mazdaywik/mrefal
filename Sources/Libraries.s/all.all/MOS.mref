@@ -48,4 +48,20 @@ $ENTRY EnvList = <Core::EnvList>;
 $ENTRY Env
   e.Name = <Core::Env e.Name>;
 
+/**
+  <Time> == e.Time
+
+  e.Time has format "Tue Mar 13 11:58:02 2018"
+*/
+$ENTRY Time = <FakeTime <G_Time> '@'>;
+
+FakeTime {
+  e.Ats = <G_Time e.Ats> <Decimate e.Ats>;
+}
+
+Decimate {
+  '@@@@@@@' e.Ats = '@' <Decimate e.Ats>;
+  e.Ats = '@';
+}
+
 $END MOS.

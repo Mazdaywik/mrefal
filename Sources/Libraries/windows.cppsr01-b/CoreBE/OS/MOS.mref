@@ -3,6 +3,7 @@ $MODULE CoreBE::OS::MOS;
 $NATIVE CppSR TOPLEVEL @@'
 #include <windows.h>
 #include <stdio.h>
+#include <time.h>
 
 // Для Watcom (перед refalapi.h, после windows.h)
 #ifdef min
@@ -231,6 +232,47 @@ $ENTRY CreateProcess @@'
 
   // Очистка поля зрения и завершение
   splice_to_freelist( garbage_start, close_call );
+  return cSuccess;
+'@@;
+
+$NATIVE CppSR FUNCTION
+$ENTRY Time @@'
+  // Формат <Time> == e.Time
+
+  using namespace refalrts;
+
+  // Скобки вызова и имя функции
+  Iter open_call = arg_begin;
+  move_left(arg_begin, arg_end);
+  // Iter func_name = arg_begin;
+  move_left(arg_begin, arg_end);
+  Iter close_call = arg_end;
+  move_right(arg_begin, arg_end);
+
+  // Формат аргумента --- пустое выражение
+
+  if( ! empty_seq(arg_begin, arg_end) ) return cRecognitionImpossible;
+
+  time_t raw_time;
+  time(&raw_time);
+  char *str_time = ctime(&raw_time);
+
+  char *p = str_time;
+  while (*p && *p != '\n') {
+    ++p;
+  }
+  *p = '\0';
+
+  unsigned len = strlen(str_time);
+  Iter time_b = 0, time_e = 0;
+
+  reset_allocator();
+
+  if( ! alloc_chars(time_b, time_e, str_time, len) ) return cNoMemory;
+
+  // Построение результата
+  splice_evar(open_call, time_b, time_e);
+  splice_to_freelist(open_call, close_call);
   return cSuccess;
 '@@;
 

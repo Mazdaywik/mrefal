@@ -64,4 +64,6 @@ Decimate {
   e.Ats = '@';
 }
 
+$SWAP G_Time;
+
 $END MOS.

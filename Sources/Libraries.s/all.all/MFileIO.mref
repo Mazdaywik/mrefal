@@ -129,6 +129,13 @@ DoSave {
   t.File = <NulClose t.File>;
 }
 
-$ENTRY LoadBinary e.FileName = ;
+$ENTRY LoadBinary
+  // Функция не работает в back-end’е Рефала-5, но тут не важно
+  e.FileName = <DoLoadBinary <ReadLine <Open 'br' e.FileName>>>;
+
+DoLoadBinary {
+  t.File e.Line 0 = e.Line <NulClose t.File>;
+  t.File e.Line = e.Line '\n' <DoLoadBinary <ReadLine t.File>>;
+}
 
 $END MFileIO.

@@ -25,7 +25,7 @@ $ENTRY Extent-RASL = <MHelpers::GenExtent <RASL-Tunings>>;
 
 RASL-Tunings =
   (PathList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
-  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')));
+  (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.rasl')));
 
 $ENTRY Register-Native
   t.Config (e.Directory) (e.Ext) e.Tunings =

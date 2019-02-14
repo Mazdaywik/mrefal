@@ -1,14 +1,17 @@
-// Automatically generated file. Don't edit!
+// This file automatically generated from '../all.sr/mrefalrts.sref'
+// Don't edit! Edit '../all.sr/mrefalrts.sref' and recompile it
+
 #include "refalrts.h"
 
-
+#define cookie_ns cookie_ns_3956669088_2378895849
 static refalrts::ExternalReference ref_Exit("Exit", 0U, 0U);
-
 #line 2 "../all.sr/mrefalrts.sref"
 #include "refalrts.h"
 #include "refalapi.h"
-#line 11 "../all.sr/mrefalrts.cpp"
-static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg_end) {
+#line 12 "../all.sr/mrefalrts.cpp"
+
+static refalrts::FnResult func_Exit(refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end) {
+  (void) vm;
 #line 12 "../all.sr/mrefalrts.sref"
 {
   // Формат <Exit s.RetCode> == поле зрения не изменяет
@@ -34,13 +37,13 @@ static refalrts::FnResult func_Exit(refalrts::Iter arg_begin, refalrts::Iter arg
   if( match == false ) return cRecognitionImpossible;
 
   // Устанавливаем результат возврата
-  ::refalrts::set_return_code( sRetCode->number_info );
+  ::refalrts::set_return_code( vm, sRetCode->number_info );
 
   // Поле зрения не очищаем
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
-#line 44 "../all.sr/mrefalrts.cpp"
+#line 47 "../all.sr/mrefalrts.cpp"
 }
 
 static refalrts::NativeReference nat_ref_Exit("Exit", 0U, 0U, func_Exit);

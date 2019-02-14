@@ -26,7 +26,7 @@ void *get_stderror_handle() {
 refalrts::FnResult log(
   void *flog,
   bool transparent,
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+  refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   /*
     Данная функция вызывается из функций печати логирующих сообщений.
@@ -65,16 +65,16 @@ refalrts::FnResult log(
     fileLOG = stderr;
   }
 
-  refalrts::debug_print_expr(fileLOG, arg_begin, arg_end);
+  refalrts::debug_print_expr(vm, fileLOG, arg_begin, arg_end);
   fprintf(fileLOG, "\n");
   fflush(fileLOG);
 
   // Очистка поля зрения
   if( transparent ) {
-    splice_to_freelist( open_call, func_name );
-    splice_to_freelist( close_call, close_call );
+    splice_to_freelist( vm, open_call, func_name );
+    splice_to_freelist( vm, close_call, close_call );
   } else {
-    splice_to_freelist( open_call, close_call );
+    splice_to_freelist( vm, open_call, close_call );
   }
 
   return cSuccess;
@@ -109,7 +109,7 @@ $ENTRY CloseLog @@'
     fclose( g_log_file );
   }
 
-  splice_to_freelist(open_call, close_call);
+  splice_to_freelist(vm, open_call, close_call);
   return cSuccess;
 '@@;
 
@@ -122,7 +122,7 @@ $ENTRY Log-T @@'
   return log(
     get_log_handle(),
     true, // прозрачный режим
-    arg_begin, arg_end
+    vm, arg_begin, arg_end
   );
 '@@;
 
@@ -131,7 +131,7 @@ $ENTRY Log @@'
   return log(
     get_log_handle(),
     false, // непрозрачный режим
-    arg_begin, arg_end
+    vm, arg_begin, arg_end
   );
 '@@;
 
@@ -140,7 +140,7 @@ $ENTRY PrintMessage @@'
   return log(
     get_stderror_handle(),
     false, // непрозрачный режим
-    arg_begin, arg_end
+    vm, arg_begin, arg_end
   );
 '@@;
 

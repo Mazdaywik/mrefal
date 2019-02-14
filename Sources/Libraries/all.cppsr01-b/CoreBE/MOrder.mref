@@ -76,7 +76,7 @@ $ENTRY SymbCompare @@'
   open_call->tag = cDataChar;
   open_call->char_info = compare_sign;
 
-  splice_to_freelist( func_name, close_call );
+  splice_to_freelist( vm, func_name, close_call );
   return cSuccess;
 '@@;
 

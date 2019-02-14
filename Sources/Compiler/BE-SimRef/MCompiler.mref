@@ -245,11 +245,11 @@ CppSRCodeItem {
 
   (Identifier t.SrcPos e.Name) =
     (<MSrcPos::SharpLine t.SrcPos>)
-    ('ident_' <SRCode <NameCode e.Name>>);
+    ('ident_' <SRCode <NameCode e.Name>> '.ref(vm)');
 
   (FnPtr (s.CallType t.SrcPos t.Name)) =
     (<MSrcPos::SharpLine t.SrcPos>)
-    ('ref_' <SRCode <QNameCode t.Name>> '.ref.function');
+    ('ref_' <SRCode <QNameCode t.Name>> '.ref(vm)');
 }
 
 SRCode {

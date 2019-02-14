@@ -10,7 +10,7 @@ typedef void (*SymConverter)(refalrts::Iter i);
 
 refalrts::FnResult convert(
   SymConverter conv,
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+  refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   // Функция преобразует все узлы внутри аргумента с помощью функции conv
 
@@ -33,8 +33,8 @@ refalrts::FnResult convert(
   }
 
   // Очистка поля зрения
-  splice_to_freelist(open_call, func_name);
-  splice_to_freelist(close_call, close_call);
+  splice_to_freelist(vm, open_call, func_name);
+  splice_to_freelist(vm, close_call, close_call);
 
   return cSuccess;
 }
@@ -68,12 +68,12 @@ void ord(refalrts::Iter ptr) {
 
 $NATIVE CppSR FUNCTION
 $ENTRY Chr @@'
-  return convert(chr, arg_begin, arg_end);
+  return convert(chr, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY Ord @@'
-  return convert(ord, arg_begin, arg_end);
+  return convert(ord, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
@@ -125,13 +125,13 @@ $ENTRY Symb @@'
     *last_pos = static_cast<char>(last_digit + '0');
   } while( num != 0 );
 
-  reset_allocator();
+  reset_allocator(vm);
 
-  if( ! alloc_string(number_b, number_e, last_pos) )
+  if( ! alloc_string(vm, number_b, number_e, last_pos) )
     return cNoMemory;
 
   splice_evar( open_call, number_b, number_e );
-  splice_to_freelist( open_call, close_call );
+  splice_to_freelist( vm, open_call, close_call );
   return cSuccess;
 '@@;
 
@@ -176,7 +176,7 @@ $ENTRY Numb @@'
   open_call->tag = cDataNumber;
   open_call->number_info = result;
   // Удаляем Numb e.Numbers e.Rest>
-  splice_to_freelist( func_name, close_call );
+  splice_to_freelist( vm, func_name, close_call );
 
   return cSuccess;
 '@@;
@@ -213,8 +213,8 @@ $ENTRY SerializeAtom @@'
       func_name->tag = cDataIdentifier;
       func_name->ident_info = '@@Char@@';
 
-      splice_to_freelist(open_call, open_call);
-      splice_to_freelist(close_call, close_call);
+      splice_to_freelist(vm, open_call, open_call);
+      splice_to_freelist(vm, close_call, close_call);
 
       return cSuccess;
     } else {
@@ -235,7 +235,7 @@ $ENTRY SerializeAtom @@'
     }
   } else if( cDataNumber == sAtom->tag ) {
     Iter number_ident = 0;
-    if( ! alloc_ident(number_ident, '@@Number@@') )
+    if( ! alloc_ident(vm, number_ident, '@@Number@@') )
       return cNoMemory;
 
     splice_stvar(open_call, number_ident);
@@ -243,16 +243,16 @@ $ENTRY SerializeAtom @@'
     // Необычный ход для не-рефальной функции:
     // формирование в результатном выражении вызова другой функции
     func_name->function_info = '@@ &Symb @@';
-    push_stack(close_call);
-    push_stack(open_call);
+    push_stack(vm, close_call);
+    push_stack(vm, open_call);
 
     return cSuccess;
   } else {
       func_name->tag = cDataIdentifier;
       func_name->ident_info = '@@IsntSerializable@@';
 
-      splice_to_freelist(open_call, open_call);
-      splice_to_freelist(close_call, close_call);
+      splice_to_freelist(vm, open_call, open_call);
+      splice_to_freelist(vm, close_call, close_call);
 
       return cSuccess;
   }

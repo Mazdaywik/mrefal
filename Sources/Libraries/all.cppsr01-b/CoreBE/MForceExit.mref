@@ -11,9 +11,9 @@ $NATIVE CppSR FUNCTION
 $ENTRY ForceExit @@'
   refalrts::Iter func_name = arg_begin->next;
   assert(func_name->tag == refalrts::cDataFunction);
-  func_name->function_info = ref_ExitE_.ref.function;
-  refalrts::push_stack(arg_end);
-  refalrts::push_stack(arg_begin);
+  func_name->function_info = ref_ExitE_.ref(vm);
+  refalrts::push_stack(vm, arg_end);
+  refalrts::push_stack(vm, arg_begin);
   return refalrts::cSuccess;
 '@@;
 

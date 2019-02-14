@@ -21,8 +21,8 @@ profiler::Metrics::Metrics() {
 }
 
 inline
-profiler::Metrics::Metrics(NowTag) {
-  refalrts::read_performance_counters(m_counters);
+profiler::Metrics::Metrics(NowTag, refalrts::VM *vm) {
+  refalrts::read_performance_counters(vm, m_counters);
 }
 
 profiler::MetricsDifference profiler::Metrics::operator -(
@@ -537,15 +537,17 @@ bool profiler::TableLinesIE::put_item_part(
 
 profiler::Profiler::Profiler(
     const std::string& name,
+    refalrts::VM *vm,
     bool lifetime /*= false*/
 )
   : m_name(name),
   m_total(),
   m_pure(),
   m_stopPrev((sm_stack != 0) && (lifetime == false)),
-  m_has_nested(false)
+  m_has_nested(false),
+  m_vm(vm)
 {
-  Metrics current(Metrics::now());
+  Metrics current(Metrics::now(), m_vm);
 
   if( m_stopPrev ) {
     sm_stack->m_pure.Pause(current);
@@ -558,7 +560,7 @@ profiler::Profiler::Profiler(
 }
 
 profiler::Profiler::~Profiler() {
-  Metrics current(Metrics::now());
+  Metrics current(Metrics::now(), m_vm);
   if( m_stopPrev ) {
     sm_stack = sm_stack->m_next;
     sm_stack->m_pure.Continue(current);
@@ -569,21 +571,23 @@ profiler::Profiler::~Profiler() {
   static unsigned counter = 0;
   if( ++counter % 500 == 0 )
   {
-    flush();
+    flush(m_vm);
   }
   sm_Times[m_name].add_value(
     m_pure.accumulated(), m_total.accumulated(), m_has_nested
   );
 }
 
-profiler::Statistics profiler::Profiler::total_program_statistics() {
+profiler::Statistics profiler::Profiler::total_program_statistics(
+    refalrts::VM *vm
+) {
   //Создаём копию, т.к. чтение прошедшего времени из ...m_total
   //приводит к его полной остановке. Приостановка этого секундомера
-  //невозможна, т.к. sm_bottom_profiler нельзя останавливать.
-  Secundomer copyOfTotal(sm_bottom_profiler.m_total);
-  Secundomer copyOfPure(sm_bottom_profiler.m_pure);
+  //невозможна, т.к. sm_pbottom_profiler нельзя останавливать.
+  Secundomer copyOfTotal(sm_pbottom_profiler->m_total);
+  Secundomer copyOfPure(sm_pbottom_profiler->m_pure);
 
-  Metrics current(Metrics::now());
+  Metrics current(Metrics::now(), vm);
   copyOfTotal.Pause(current);
   // copyOfPure уже остановлен, останавливать его не надо
   Statistics result;
@@ -591,9 +595,9 @@ profiler::Statistics profiler::Profiler::total_program_statistics() {
   return result;
 }
 
-void profiler::Profiler::OutToStream(std::FILE *output) {
+void profiler::Profiler::OutToStream(std::FILE *output, refalrts::VM *vm) {
   using namespace refalrts;
-  Statistics program_stat = total_program_statistics();
+  Statistics program_stat = total_program_statistics(vm);
   std::vector<ProfilerInfo> items = Profiler::items();
   Report report(output, program_stat.total);
 
@@ -616,8 +620,10 @@ void profiler::Profiler::OutToStream(std::FILE *output) {
   metrics_enum.enumerate();
 }
 
-profiler::Profiler* profiler::Profiler::create(const char *name) {
-  return new Profiler(name);
+profiler::Profiler* profiler::Profiler::create(
+  const char *name, refalrts::VM *vm
+) {
+  return new Profiler(name, vm);
 }
 
 void profiler::Profiler::destroy(profiler::Profiler *profiler) {
@@ -632,15 +638,28 @@ void profiler::Profiler::set_output_name(const char *filename) {
   sm_output_name = filename;
 }
 
-void profiler::Profiler::flush() {
-  Profiler flush_profiler("::profiler::Profiler::flush()");
+void profiler::Profiler::flush(refalrts::VM *vm) {
+  Profiler flush_profiler("::profiler::Profiler::flush()", vm);
   if (sm_output_name.length() > 0) {
     std::FILE *file = std::fopen(sm_output_name.c_str(), "wt");
     if (file) {
-      OutToStream(file);
+      OutToStream(file, vm);
       std::fclose(file);
     }
   }
+}
+
+void profiler::Profiler::create_bottom(refalrts::VM *vm) {
+  sm_pbottom_profiler = new Profiler("__TotalTime", vm, true);
+  sm_stack = sm_pbottom_profiler;
+}
+
+void profiler::Profiler::destroy_bottom() {
+  assert(sm_stack == sm_pbottom_profiler);
+
+  delete sm_pbottom_profiler;
+  sm_pbottom_profiler = 0;
+  sm_stack = 0;
 }
 
 std::vector<profiler::ProfilerInfo> profiler::Profiler::items() {
@@ -654,7 +673,6 @@ std::vector<profiler::ProfilerInfo> profiler::Profiler::items() {
 }
 
 profiler::Profiler::MapTimes profiler::Profiler::sm_Times;
-profiler::Profiler
-  profiler::Profiler::sm_bottom_profiler("__TotalTime", true);
-profiler::Profiler *profiler::Profiler::sm_stack = &sm_bottom_profiler;
+profiler::Profiler *profiler::Profiler::sm_pbottom_profiler = 0;
+profiler::Profiler *profiler::Profiler::sm_stack = 0;
 std::string profiler::Profiler::sm_output_name = "Profiler.log";

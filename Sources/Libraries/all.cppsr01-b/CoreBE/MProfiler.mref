@@ -41,8 +41,8 @@ EndQuantify @@'
     reinterpret_cast<Profiler*>(profiler_object->file_info);
   Profiler::destroy(profiler);
 
-  refalrts::reset_allocator();
-  refalrts::splice_to_freelist(open_call, close_call);
+  refalrts::reset_allocator(vm);
+  refalrts::splice_to_freelist(vm, open_call, close_call);
   return refalrts::cSuccess;
 '@@;
 
@@ -86,14 +86,14 @@ $ENTRY Quantify @@'
   refalrts::Iter copy_func = 0;
   refalrts::Iter profiler_object = 0;
 
-  refalrts::reset_allocator();
+  refalrts::reset_allocator(vm);
 
   bool allocated =
-    refalrts::alloc_close_call(new_close_call)
-    && refalrts::alloc_open_call(new_open_call)
-    && refalrts::alloc_name(end_quantify_func, '@@ &EndQuantify @@')
-    && refalrts::copy_stvar(copy_func, func)
-    && refalrts::alloc_char(profiler_object, '?');
+    refalrts::alloc_close_call(vm, new_close_call)
+    && refalrts::alloc_open_call(vm, new_open_call)
+    && refalrts::alloc_name(vm, end_quantify_func, '@@ &EndQuantify @@')
+    && refalrts::copy_stvar(vm, copy_func, func)
+    && refalrts::alloc_char(vm, profiler_object, '?');
 
   refalrts::Iter func_open_call = open_call;
   refalrts::Iter func_close_call = new_close_call;
@@ -103,22 +103,22 @@ $ENTRY Quantify @@'
   if ( ! allocated )
     return refalrts::cNoMemory;
 
-  const char *func_name = func->function_info->name.name;
+  const char *func_name = refalrts::function_name(func->function_info)->name;
 
   profiler_object->char_info = 0;
   profiler_object->tag = refalrts::cDataFile;
-  profiler_object->file_info = Profiler::create(func_name);
+  profiler_object->file_info = Profiler::create(func_name, vm);
 
   // Перемещаем аллоцированный кусок перед закрывающей скобкой
   refalrts::splice_evar(close_call, new_close_call, profiler_object);
 
   // Удаляем вызов Quantify
-  refalrts::splice_to_freelist(this_func_name, this_func_name);
+  refalrts::splice_to_freelist(vm, this_func_name, this_func_name);
 
-  refalrts::push_stack(stop_close_call);
-  refalrts::push_stack(stop_open_call);
-  refalrts::push_stack(func_close_call);
-  refalrts::push_stack(func_open_call);
+  refalrts::push_stack(vm, stop_close_call);
+  refalrts::push_stack(vm, stop_open_call);
+  refalrts::push_stack(vm, func_close_call);
+  refalrts::push_stack(vm, func_open_call);
 
   return refalrts::cSuccess;
 '@@;
@@ -134,7 +134,7 @@ $ENTRY PrintResults @@'
   if (refalrts::empty_seq(arg_begin, arg_end))
   {
     using namespace std;
-    Profiler::OutToStream(stdout);
+    Profiler::OutToStream(stdout, vm);
   }
   else
   {
@@ -148,13 +148,13 @@ $ENTRY PrintResults @@'
     }
 
     if (std::FILE *fout = std::fopen(file_name.c_str(), "wt")) {
-      Profiler::OutToStream(fout);
+      Profiler::OutToStream(fout, vm);
       std::fclose(fout);
     }
   }
 
-  refalrts::reset_allocator();
-  refalrts::splice_to_freelist( open_call, close_call );
+  refalrts::reset_allocator(vm);
+  refalrts::splice_to_freelist( vm, open_call, close_call );
   return refalrts::cSuccess;
 '@@;
 
@@ -176,8 +176,8 @@ $ENTRY SetOutputName @@'
 
   Profiler::set_output_name(file_name.c_str());
 
-  refalrts::reset_allocator();
-  refalrts::splice_to_freelist(open_call, close_call);
+  refalrts::reset_allocator(vm);
+  refalrts::splice_to_freelist(vm, open_call, close_call);
   return refalrts::cSuccess;
 '@@;
 
@@ -193,11 +193,32 @@ $ENTRY Flush @@'
     return refalrts::cRecognitionImpossible;
   }
 
-  Profiler::flush();
+  Profiler::flush(vm);
 
-  refalrts::reset_allocator();
-  refalrts::splice_to_freelist(open_call, close_call);
+  refalrts::reset_allocator(vm);
+  refalrts::splice_to_freelist(vm, open_call, close_call);
   return refalrts::cSuccess;
 '@@;
+
+$NATIVE CppSR FUNCTION
+Init @@'
+  Profiler::create_bottom(vm);
+
+  refalrts::reset_allocator(vm);
+  refalrts::splice_to_freelist(vm, arg_begin, arg_end);
+  return refalrts::cSuccess;
+'@@;
+
+$NATIVE CppSR FUNCTION
+Final @@'
+  Profiler::destroy_bottom();
+
+  refalrts::reset_allocator(vm);
+  refalrts::splice_to_freelist(vm, arg_begin, arg_end);
+  return refalrts::cSuccess;
+'@@;
+
+$INIT <Init>;
+$FINAL <Final>;
 
 $END CoreBE::MProfiler.

@@ -39,13 +39,13 @@ $ENTRY CommandLine @@'
   unsigned len = strlen(cmd_line);
   Iter cmd_b = 0, cmd_e = 0;
 
-  reset_allocator();
+  reset_allocator(vm);
 
-  if( ! alloc_chars(cmd_b, cmd_e, cmd_line, len) ) return cNoMemory;
+  if( ! alloc_chars(vm, cmd_b, cmd_e, cmd_line, len) ) return cNoMemory;
 
   // Построение результата
   splice_evar(open_call, cmd_b, cmd_e);
-  splice_to_freelist(open_call, close_call);
+  splice_to_freelist(vm, open_call, close_call);
   return cSuccess;
 '@@;
 
@@ -74,7 +74,7 @@ $ENTRY EnvList @@'
 
   // Распределение памяти
   refalapi::AllocArray allocs;
-  reset_allocator();
+  reset_allocator(vm);
 
   for(
     char *cur_line = env_block;
@@ -85,9 +85,9 @@ $ENTRY EnvList @@'
     Iter env_begin = 0, env_end = 0;
 
     bool allocated =
-      alloc_open_bracket(open_bracket)
-      && alloc_string(env_begin, env_end, cur_line)
-      && alloc_close_bracket(close_bracket);
+      alloc_open_bracket(vm, open_bracket)
+      && alloc_string(vm, env_begin, env_end, cur_line)
+      && alloc_close_bracket(vm, close_bracket);
 
     if( ! allocated ) return cNoMemory;
 
@@ -102,7 +102,7 @@ $ENTRY EnvList @@'
 
   // Построение результата
   allocs.build(open_call);
-  splice_to_freelist(open_call, close_call);
+  splice_to_freelist(vm, open_call, close_call);
   return cSuccess;
 '@@;
 
@@ -231,7 +231,7 @@ $ENTRY CreateProcess @@'
   }
 
   // Очистка поля зрения и завершение
-  splice_to_freelist( garbage_start, close_call );
+  splice_to_freelist( vm, garbage_start, close_call );
   return cSuccess;
 '@@;
 
@@ -266,13 +266,13 @@ $ENTRY Time @@'
   unsigned len = strlen(str_time);
   Iter time_b = 0, time_e = 0;
 
-  reset_allocator();
+  reset_allocator(vm);
 
-  if( ! alloc_chars(time_b, time_e, str_time, len) ) return cNoMemory;
+  if( ! alloc_chars(vm, time_b, time_e, str_time, len) ) return cNoMemory;
 
   // Построение результата
   splice_evar(open_call, time_b, time_e);
-  splice_to_freelist(open_call, close_call);
+  splice_to_freelist(vm, open_call, close_call);
   return cSuccess;
 '@@;
 

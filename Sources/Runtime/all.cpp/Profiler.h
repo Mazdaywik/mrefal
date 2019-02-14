@@ -25,7 +25,7 @@ public:
   static inline NowTag now() { return NowTag(); }
 
   Metrics();
-  Metrics(NowTag);
+  Metrics(NowTag, refalrts::VM *vm);
   //Конструктор копирования по умолчанию.
   //Оператор присваивания по умолчанию.
   //Деструктор по умолчанию.
@@ -463,7 +463,7 @@ private:
 class Profiler
 {
 public:
-  Profiler(const std::string& name, bool lifetime = false);
+  Profiler(const std::string& name, refalrts::VM *vm, bool lifetime = false);
   ~Profiler();
 
 private:
@@ -478,17 +478,21 @@ private:
   bool m_stopPrev;
   Profiler *m_next;
   bool m_has_nested;
+  refalrts::VM *m_vm;
 
 // Статические поля
 public:
-  static Statistics total_program_statistics();
-  static void OutToStream(std::FILE *file);
+  static Statistics total_program_statistics(refalrts::VM *vm);
+  static void OutToStream(std::FILE *file, refalrts::VM *vm);
 
-  static Profiler *create(const char *name);
+  static Profiler *create(const char *name, refalrts::VM *vm);
   static void destroy(Profiler *profiler);
 
   static void set_output_name(const char *filename);
-  static void flush();
+  static void flush(refalrts::VM *vm);
+
+  static void create_bottom(refalrts::VM *vm);
+  static void destroy_bottom();
 
 private:
   static std::vector<ProfilerInfo> items();
@@ -496,7 +500,7 @@ private:
   typedef std::map<std::string, Statistics> MapTimes;
 
   static MapTimes sm_Times;
-  static Profiler sm_bottom_profiler;
+  static Profiler *sm_pbottom_profiler;
   static Profiler *sm_stack;
   static std::string sm_output_name;
 };

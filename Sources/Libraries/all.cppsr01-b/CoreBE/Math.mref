@@ -42,7 +42,7 @@ $ENTRY NumberCompare @@'
   left_call->char_info = (x < y) ? '<' : (x == y) ? '=' : '>';
 
   // Удаление лишнего: Math::Compare s.X s.Y>
-  splice_to_freelist(func_name, right_call);
+  splice_to_freelist(vm, func_name, right_call);
 
   return cSuccess;
 '@@;
@@ -113,9 +113,9 @@ $ENTRY Binary @@'
   sX->number_info = x;
 
   // Уничтожение <Func s.Op
-  splice_to_freelist(left_call, sOp);
+  splice_to_freelist(vm, left_call, sOp);
   // Уничтожение s.Y>
-  splice_to_freelist(sY, right_call);
+  splice_to_freelist(vm, sY, right_call);
 
   return cSuccess;
 '@@;

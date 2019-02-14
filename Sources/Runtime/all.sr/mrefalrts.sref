@@ -33,7 +33,7 @@ $ENTRY Exit {
   if( match == false ) return cRecognitionImpossible;
 
   // Устанавливаем результат возврата
-  ::refalrts::set_return_code( sRetCode->number_info );
+  ::refalrts::set_return_code( vm, sRetCode->number_info );
 
   // Поле зрения не очищаем
   // Возвращаем сигнал о нормальном останове

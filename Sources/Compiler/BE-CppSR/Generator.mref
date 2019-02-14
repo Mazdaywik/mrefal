@@ -40,7 +40,7 @@ NameCodeChar {
 $ENTRY GenFunction {
   t.FuncName s.ScopeClass e.Algorithm =
     <GenFnStart t.FuncName>
-    ('  refalrts::this_is_generated_function();')
+    ('  refalrts::this_is_generated_function(vm);')
     <GenInitCounter s.ScopeClass>
     <GenBody e.Algorithm>
     <GenFnEnd t.FuncName>;
@@ -50,7 +50,7 @@ GenFnStart {
   t.Name =
     (
       'refalrts::FnResult func_' <QNameCode t.Name>
-      '(refalrts::Iter arg_begin, refalrts::Iter arg_end) {'
+      '(refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end) {'
     );
 }
 
@@ -98,8 +98,8 @@ $ENTRY GenSwap {
 $ENTRY GenIdent {
   t.Name =
     (
-      'const refalrts::RefalIdentifier ident_' <QNameCode t.Name> ' = '
-      'refalrts::ident_from_static("' <MakeExternalName t.Name> '");'
+      'const refalrts::IdentReference ident_' <QNameCode t.Name>
+      '("' <MakeExternalName t.Name> '");'
     );
 }
 
@@ -272,7 +272,7 @@ GenCommand {
     AlgLeft s.BracketNum s.Nested 'e' e.Index (e.BracketsForSave)
   ) =
     (e.Indent '  ')
-    (e.Indent 'refalrts::start_e_loop();')
+    (e.Indent 'refalrts::start_e_loop(vm);')
     (e.Indent <PrintEVar-B 1 'e' e.Index> ' = 0;')
     (e.Indent <PrintEVar-E 1 'e' e.Index> ' = 0;')
     (e.Indent 'do {')
@@ -295,7 +295,7 @@ GenCommand {
   (e.Indent) (CmdEmptyResult) =
     (e.Indent)
     ()
-    (e.Indent 'refalrts::reset_allocator();');
+    (e.Indent 'refalrts::reset_allocator(vm);');
 
   (e.Indent) (CmdCopyVar s.ElemNumber s.Mode e.Index) =
     (e.Indent)
@@ -311,7 +311,7 @@ GenCommand {
     (e.Indent)
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.BeginNumber> ' = 0;')
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.EndNumber> ' = 0;')
-    (e.Indent 'if( ! refalrts::alloc_chars( '
+    (e.Indent 'if( ! refalrts::alloc_chars( vm, '
       <PrintElemVar s.BeginNumber> ', ' <PrintElemVar s.EndNumber> ', '
       '\"' <MLambda::Map & MEscape.EscapeChar-Oct e.String> '\", '
       <MStrings::Symb s.Len> ' ) )'
@@ -336,7 +336,7 @@ GenCommand {
 
   (e.Indent) (CmdPushStack s.ElemNumber) =
     (e.Indent)
-    (e.Indent 'refalrts::push_stack( ' <PrintElemVar s.ElemNumber> ' );');
+    (e.Indent 'refalrts::push_stack( vm, ' <PrintElemVar s.ElemNumber> ' );');
 
   (e.Indent) (CmdInsertEVarBefore s.Prev s.Usings 'e' e.Index) =
     (e.Indent)
@@ -355,11 +355,11 @@ GenCommand {
 
   (e.Indent) (CmdSpliceFromFreeList) =
     (e.Indent)
-    (e.Indent 'refalrts::splice_from_freelist( arg_begin );');
+    (e.Indent 'refalrts::splice_from_freelist( vm, arg_begin );');
 
   (e.Indent) (CmdReturnResult) =
     (e.Indent)
-    (e.Indent 'refalrts::splice_to_freelist( arg_begin, arg_end );')
+    (e.Indent 'refalrts::splice_to_freelist( vm, arg_begin, arg_end );')
     (e.Indent 'return refalrts::cSuccess;');
 
   (e.Indent) (CmdStartEntryCode s.EntryType) =
@@ -383,7 +383,7 @@ GenCommand {
   (e.Indent '  ') (CmdEndSentence) =
     (e.Indent)
     (e.Indent '} while ( 0 );')
-    (e.Indent 'refalrts::stop_sentence();')
+    (e.Indent 'refalrts::stop_sentence(vm);')
     ();
 }
 
@@ -427,7 +427,7 @@ PrintMatchName {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('function') 'ref_' <QNameCode t.Name> '.ref.function'
+      ('function') 'ref_' <QNameCode t.Name> '.ref(vm)'
     >;
 }
 
@@ -435,7 +435,7 @@ PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('ident') 'ident_' <QNameCode t.Name>
+      ('ident') 'ident_' <QNameCode t.Name> '.ref(vm)'
     >;
 }
 
@@ -455,7 +455,7 @@ PrintMatchADT {
       ('adt')
       <BracketsVar-B s.InnerNum 0> ', '
       <BracketsVar-E s.InnerNum 0> ', '
-      'ref_' <QNameCode t.Name> '.ref.function'
+      'ref_' <QNameCode t.Name> '.ref(vm)'
     >;
 }
 
@@ -498,6 +498,7 @@ PrintMatchRepeated {
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
       ('repeated_evar')
+      'vm, '
       <PrintEVar-B s.Usings 'e' e.Index> ', '
       <PrintEVar-E s.Usings 'e' e.Index> ', '
       <PrintEVar-B <Math::Dec s.Usings> 'e' e.Index> ', '
@@ -507,7 +508,8 @@ PrintMatchRepeated {
   (e.Indent) s.Direction s.BracketNum s.Nested s.Usings s.Mode e.Index =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('repeated_stvar') <PrintVar s.Usings s.Mode e.Index>
+      ('repeated_stvar')
+      'vm, ' <PrintVar s.Usings s.Mode e.Index>
       ', ' <PrintVar <Math::Dec s.Usings> s.Mode e.Index>
     >;
 }
@@ -535,7 +537,7 @@ PrintAllocateCopyVar {
   (e.Indent) s.ElemNumber 'e' e.Index =
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
     (e.Indent
-      'if( ! refalrts::alloc_copy_evar( '
+      'if( ! refalrts::alloc_copy_evar( vm, '
       <PrintElemVar s.ElemNumber> ', '
       <PrintEVar-B 1 'e' e.Index> ', '
       <PrintEVar-E 1 'e' e.Index>
@@ -546,7 +548,7 @@ PrintAllocateCopyVar {
   (e.Indent) s.ElemNumber s.Mode e.Index =
     (e.Indent 'refalrts::Iter ' <PrintElemVar s.ElemNumber> ' = 0;')
     (e.Indent
-      'if( ! refalrts::alloc_copy_' s.Mode 'var( '
+      'if( ! refalrts::alloc_copy_' s.Mode 'var( vm, '
       <PrintElemVar s.ElemNumber> ', '
       <PrintVar 1 s.Mode e.Index> ' ) )'
     )
@@ -566,7 +568,7 @@ PrintAllocateElem {
 PrintAllocate_Aux {
   (e.Indent) s.ElemNumber (e.Constructor) (e.Value) =
     (e.Indent
-      'if( ! refalrts::' e.Constructor '( ' <PrintElemVar s.ElemNumber>
+      'if( ! refalrts::' e.Constructor '( vm, ' <PrintElemVar s.ElemNumber>
       e.Value ' ) )'
     );
 }
@@ -590,11 +592,11 @@ SwAllocator {
 SwInfo {
   ElChar s.Char = ', ' '\'' <MEscape::EscapeChar-Hex s.Char> '\'';
 
-  ElName t.Name = ', ref_' <QNameCode t.Name> '.ref.function';
+  ElName t.Name = ', ref_' <QNameCode t.Name> '.ref(vm)';
 
   ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 
-  ElIdent t.Name = ', ident_' <QNameCode t.Name>;
+  ElIdent t.Name = ', ident_' <QNameCode t.Name> '.ref(vm)';
 
   // Остальное -- скобки
   s.Other = ;
@@ -617,11 +619,11 @@ CodeItem {
 
   (Identifier t.SrcPos e.Name) =
     (<MSrcPos::SharpLine t.SrcPos>)
-    ('ident_' <NameCode e.Name>);
+    ('ident_' <NameCode e.Name> '.ref(vm)');
 
   (FnPtr (s.CallType t.SrcPos t.Name)) =
     (<MSrcPos::SharpLine t.SrcPos>)
-    ('ref_' <QNameCode t.Name> '.ref.function');
+    ('ref_' <QNameCode t.Name> '.ref(vm)');
 }
 
 $ENTRY GenNativeInsertion-Body {

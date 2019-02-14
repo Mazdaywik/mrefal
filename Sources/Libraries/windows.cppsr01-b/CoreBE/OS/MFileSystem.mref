@@ -23,6 +23,7 @@ using refalapi::AllocArray;
 
 // Функция, порождающая атрибутную информацию (объявление)
 static bool add_attribute_record(
+  refalrts::VM *vm,
   AllocArray& allocs,
   const FILETIME& creation_time,
   const FILETIME& last_access_time,
@@ -32,6 +33,7 @@ static bool add_attribute_record(
 );
 
 static bool append_filetime(
+  refalrts::VM *vm,
   AllocArray& allocs,
   refalrts::RefalIdentifier ident,
   const FILETIME& time
@@ -92,7 +94,7 @@ $ENTRY FindFiles @@'
     // Открыли папку для просмотра, сканируем
     AllocArray allocs;
 
-    reset_allocator();
+    reset_allocator(vm);
 
     do {
       Iter open_main_bracket = 0, close_main_bracket = 0;
@@ -100,11 +102,11 @@ $ENTRY FindFiles @@'
       Iter filename_b = 0, filename_e = 0;
 
       bool allocated =
-        alloc_open_bracket(open_main_bracket)
-        && alloc_close_bracket(close_main_bracket)
-        && alloc_open_bracket(open_filename_bracket)
-        && alloc_close_bracket(close_filename_bracket)
-        && alloc_string(filename_b, filename_e, find_file_data.cFileName);
+        alloc_open_bracket(vm, open_main_bracket)
+        && alloc_close_bracket(vm, close_main_bracket)
+        && alloc_open_bracket(vm, open_filename_bracket)
+        && alloc_close_bracket(vm, close_filename_bracket)
+        && alloc_string(vm, filename_b, filename_e, find_file_data.cFileName);
 
       if( ! allocated ) return cRecognitionImpossible;
 
@@ -117,6 +119,7 @@ $ENTRY FindFiles @@'
       allocs.push_back(close_filename_bracket);
 
       allocated = add_attribute_record(
+        vm,
         allocs,
         find_file_data.ftCreationTime,
         find_file_data.ftLastAccessTime,
@@ -144,7 +147,7 @@ $ENTRY FindFiles @@'
       open_call->ident_info = '@@Success@@';
 
       allocs.build( func_name );
-      splice_to_freelist( func_name, close_call );
+      splice_to_freelist( vm, func_name, close_call );
       return cSuccess;
     } else {
       // Чтение завершилось ошибкой
@@ -153,7 +156,7 @@ $ENTRY FindFiles @@'
       open_call->tag = cDataIdentifier;
       open_call->ident_info = '@@Fails@@';
 
-      splice_to_freelist( func_name, close_call );
+      splice_to_freelist( vm, func_name, close_call );
       return cSuccess;
     }
 
@@ -164,7 +167,7 @@ $ENTRY FindFiles @@'
     open_call->tag = cDataIdentifier;
     open_call->ident_info = '@@Fails@@';
 
-    splice_to_freelist(func_name, close_call);
+    splice_to_freelist(vm, func_name, close_call);
     return cSuccess;
   }
 '@@;
@@ -172,6 +175,7 @@ $ENTRY FindFiles @@'
 $NATIVE CppSR TOPLEVEL @@'
 // Функция, порождающая атрибутную информацию (определение)
 static bool add_attribute_record(
+  refalrts::VM *vm,
   AllocArray& allocs,
   const FILETIME& creation_time,
   const FILETIME& last_access_time,
@@ -182,9 +186,9 @@ static bool add_attribute_record(
   using namespace refalrts;
 
   bool append_time =
-    append_filetime(allocs, '@@ADateTime@@', last_access_time)
-    && append_filetime(allocs, '@@MDateTime@@', last_write_time)
-    && append_filetime(allocs, '@@CDateTime@@', creation_time);
+    append_filetime(vm, allocs, '@@ADateTime@@', last_access_time)
+    && append_filetime(vm, allocs, '@@MDateTime@@', last_write_time)
+    && append_filetime(vm, allocs, '@@CDateTime@@', creation_time);
 
   if( ! append_time ) return false;
 
@@ -193,15 +197,15 @@ static bool add_attribute_record(
 
   bool is_directory = (file_attributes & FILE_ATTRIBUTE_DIRECTORY);
   bool size_allocs =
-    alloc_open_bracket(open_bracket_size)
-    && alloc_ident(size_ident, '@@Size@@')
+    alloc_open_bracket(vm, open_bracket_size)
+    && alloc_ident(vm, size_ident, '@@Size@@')
     &&
       (
         is_directory
-        ? alloc_ident(size_value, '@@Dir@@')
-        : alloc_number(size_value, size)
+        ? alloc_ident(vm, size_value, '@@Dir@@')
+        : alloc_number(vm, size_value, size)
       )
-    && alloc_close_bracket(close_bracket_size);
+    && alloc_close_bracket(vm, close_bracket_size);
 
   if( ! size_allocs ) return false;
 
@@ -215,6 +219,7 @@ static bool add_attribute_record(
 }
 
 static bool append_filetime(
+  refalrts::VM *vm,
   AllocArray& allocs,
   refalrts::RefalIdentifier ident,
   const FILETIME& time
@@ -235,16 +240,16 @@ static bool append_filetime(
   Iter milliseconds = 0;
 
   bool alloc_time =
-    alloc_open_bracket( open_bracket )
-    && alloc_close_bracket( close_bracket )
-    && alloc_ident( time_ident, ident )
-    && alloc_number( year, file_system_time.wYear )
-    && alloc_number( month, file_system_time.wMonth )
-    && alloc_number( day, file_system_time.wDay )
-    && alloc_number( hour, file_system_time.wHour )
-    && alloc_number( minute, file_system_time.wMinute )
-    && alloc_number( second, file_system_time.wSecond )
-    && alloc_number( milliseconds, file_system_time.wMilliseconds );
+    alloc_open_bracket( vm, open_bracket )
+    && alloc_close_bracket( vm, close_bracket )
+    && alloc_ident( vm, time_ident, ident )
+    && alloc_number( vm, year, file_system_time.wYear )
+    && alloc_number( vm, month, file_system_time.wMonth )
+    && alloc_number( vm, day, file_system_time.wDay )
+    && alloc_number( vm, hour, file_system_time.wHour )
+    && alloc_number( vm, minute, file_system_time.wMinute )
+    && alloc_number( vm, second, file_system_time.wSecond )
+    && alloc_number( vm, milliseconds, file_system_time.wMilliseconds );
 
   if( ! alloc_time ) return false;
 
@@ -304,11 +309,11 @@ $ENTRY FileAttributes @@'
     // Получение атрибутов удалось
 
     // Распределяем память для результата
-    reset_allocator();
+    reset_allocator(vm);
 
     AllocArray allocs;
     bool alloc_attribs = add_attribute_record(
-      allocs,
+      vm, allocs,
       attributes.ftCreationTime,
       attributes.ftLastAccessTime,
       attributes.ftLastWriteTime,
@@ -325,7 +330,7 @@ $ENTRY FileAttributes @@'
     open_call->ident_info = '@@Success@@';
 
     allocs.build( func_name );
-    splice_to_freelist( func_name, close_call );
+    splice_to_freelist( vm, func_name, close_call );
     return cSuccess;
   } else {
     // Чтение атрибутов не удалось
@@ -333,7 +338,7 @@ $ENTRY FileAttributes @@'
     open_call->tag = cDataIdentifier;
     open_call->ident_info = '@@Fails@@';
 
-    splice_to_freelist( func_name, close_call );
+    splice_to_freelist( vm, func_name, close_call );
     return cSuccess;
   }
 '@@;
@@ -407,10 +412,10 @@ $ENTRY FullName @@'
 
   if( convert_ok ) {
     // Распределяем память для имени и помещаем его перед именем функции.
-    reset_allocator();
+    reset_allocator(vm);
 
     Iter eName_b = 0, eName_e = 0;
-    if( ! alloc_string(eName_b, eName_e, absolut_name.c_str()) )
+    if( ! alloc_string(vm, eName_b, eName_e, absolut_name.c_str()) )
       return cNoMemory;
 
     splice_evar( func_name, eName_b, eName_e );
@@ -423,7 +428,7 @@ $ENTRY FullName @@'
     (convert_ok ? '@@Success@@' : '@@Fails@@');
 
   // Очиста поля зрения
-  splice_to_freelist( func_name, close_call );
+  splice_to_freelist( vm, func_name, close_call );
   return cSuccess;
 '@@;
 
@@ -433,7 +438,7 @@ typedef bool (*FileFunc)(const char *file_name);
 
 static refalrts::FnResult perform_file_operation(
   FileFunc operation,
-  refalrts::Iter arg_begin, refalrts::Iter arg_end
+  refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   /*
     Функция выполняет заданную операцию над заданным файлом.
@@ -467,7 +472,7 @@ static refalrts::FnResult perform_file_operation(
   open_call->ident_info =
     (result ? '@@Success@@' : '@@Fails@@');
 
-  splice_to_freelist(func_name, close_call);
+  splice_to_freelist(vm, func_name, close_call);
   return cSuccess;
 }
 
@@ -486,17 +491,17 @@ static bool remove_file(const char *filename) {
 
 $NATIVE CppSR FUNCTION
 $ENTRY RemoveFile @@'
-  return perform_file_operation(remove_file, arg_begin, arg_end);
+  return perform_file_operation(remove_file, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY RemoveDir @@'
-  return perform_file_operation(remove_dir, arg_begin, arg_end);
+  return perform_file_operation(remove_dir, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY MakeDir @@'
-  return perform_file_operation(make_dir, arg_begin, arg_end);
+  return perform_file_operation(make_dir, vm, arg_begin, arg_end);
 '@@;
 
 $END CoreBE::OS::MFileSystem.

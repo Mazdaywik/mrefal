@@ -7,7 +7,7 @@ $NATIVE CppSR TOPLEVEL @@'
 
 
 static refalrts::FnResult std_handle(
-  FILE *file, refalrts::Iter arg_begin, refalrts::Iter arg_end
+  FILE *file, refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   /*
     Функция возвращает заданный дескриптор.
@@ -33,7 +33,7 @@ static refalrts::FnResult std_handle(
   open_call->file_info = file;
 
   // Очистка поля зрения
-  splice_to_freelist( func_name, close_call );
+  splice_to_freelist( vm, func_name, close_call );
 
   return cSuccess;
 }
@@ -43,13 +43,13 @@ static refalrts::FnResult std_handle(
 $NATIVE CppSR FUNCTION
 $ENTRY StdOut
 @@'
-  return std_handle(stdout, arg_begin, arg_end);
+  return std_handle(stdout, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY StdIn
 @@'
-  return std_handle(stdin, arg_begin, arg_end);
+  return std_handle(stdin, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
@@ -85,7 +85,7 @@ $ENTRY ReadLine
   AllocArray allocs;
   FILE *f = static_cast<FILE*>( sHandle->file_info );
 
-  reset_allocator();
+  reset_allocator(vm);
 
   while( ! at_eol ) {
     unsigned pos = 0;
@@ -105,7 +105,7 @@ $ENTRY ReadLine
     Iter frag_begin = 0, frag_end = 0;
 
     if(pos > 0) {
-      if( !alloc_chars(frag_begin, frag_end, buffer, pos) ) {
+      if( !alloc_chars(vm, frag_begin, frag_end, buffer, pos) ) {
         return cNoMemory;
       }
 
@@ -116,12 +116,12 @@ $ENTRY ReadLine
   if( at_eof ) {
     // Добавляем в конец строки число 0
     Iter sEOFMarker = 0;
-    if( ! alloc_number( sEOFMarker, 0 ) ) return cNoMemory;
+    if( ! alloc_number( vm, sEOFMarker, 0 ) ) return cNoMemory;
     allocs.push_back( sEOFMarker );
   }
 
   allocs.build( open_call );
-  splice_to_freelist( open_call, close_call );
+  splice_to_freelist( vm, open_call, close_call );
 
   return cSuccess;
 '@@;
@@ -170,7 +170,9 @@ $ENTRY Write
         continue;
 
       case cDataFunction:
-        printf_res = fprintf(f, "%s ", ptr->function_info->name.name);
+        printf_res = fprintf(
+          f, "%s ", refalrts::function_name(ptr->function_info)->name
+        );
         continue;
 
       case cDataIdentifier:
@@ -205,7 +207,7 @@ $ENTRY Write
   // Здесь (printf_res < 0) || empty_seq(ptr, limit)
   if( printf_res >= 0 ) {
     // Успешный вывод в поток
-    splice_to_freelist(open_call, close_call);
+    splice_to_freelist(vm, open_call, close_call);
     return cSuccess;
   } else {
     // В процессе вывода произшла ошибка
@@ -242,7 +244,7 @@ $ENTRY Close
   int fclose_res = fclose( static_cast<FILE*>( sHandle->file_info ) );
 
   if( EOF != fclose_res ) {
-    splice_to_freelist(open_call, close_call);
+    splice_to_freelist(vm, open_call, close_call);
     return cSuccess;
   } else {
     return cRecognitionImpossible;
@@ -308,7 +310,7 @@ $ENTRY Open
     left_call->file_info = f;
 
     // Уничтожение остальных элементов поля зрения
-    splice_to_freelist(func_name, right_call);
+    splice_to_freelist(vm, func_name, right_call);
     return cSuccess;
   } else {
     // Переинициализация открывающей угловой скобки
@@ -316,7 +318,7 @@ $ENTRY Open
     left_call->tag = cDataIdentifier;
     left_call->ident_info = '@@Fails@@';
 
-    splice_to_freelist(func_name, right_call);
+    splice_to_freelist(vm, func_name, right_call);
     return cSuccess;
   }
 '@@;
@@ -324,7 +326,7 @@ $ENTRY Open
 $NATIVE CppSR FUNCTION
 $ENTRY FlushIO
 @@'
-  refalrts::splice_to_freelist(arg_begin, arg_end);
+  refalrts::splice_to_freelist(vm, arg_begin, arg_end);
   return refalrts::cSuccess;
 '@@;
 

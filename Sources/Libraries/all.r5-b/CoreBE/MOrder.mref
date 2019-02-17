@@ -1,42 +1,40 @@
 $MODULE CoreBE::MOrder;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY SymbCompare @@'
-c {
-c   s.Left s.Right
-c     , <$Local::CoreBE::MOrder::GetType$ s.Left >
-c       <$Local::CoreBE::MOrder::GetType$ s.Right >:
-c     {
-c       s.Type s.LeftVal s.Type s.RightVal
-c         , <Compare s.LeftVal s.RightVal >:
-c         {
-c           '-' = '<';
-c           '0' = '=';
-c           '+' = '>';
-c         };
+$IMPORT Platform::Refal5;
 
-c       Number s.LeftVal s.Type s.RightVal = '>';
-c       s.Type s.LeftVal Number s.RightVal = '<';
-c       Char s.LeftVal s.Type s.RightVal = '>';
-c       s.Type s.LeftVal Char s.RightVal = '<';
-c       s.L-Type s.L-Val s.R-Type s.R-Val = '=';
-c     }
-c }
-'@@;
 
-$NATIVE Refal5 FUNCTION
-GetType @@'
-c {
-c   s.Atom, <Type s.Atom >:
-c     {
-c       'N' e.1 = Number s.Atom;
-c       'L' e.1 = Char <Ord s.Atom >;
-c       'O' e.1 = Char <Ord s.Atom >;
-c       'P' e.1 = Char <Ord s.Atom >;
-c       'D' e.1 = Char <Ord s.Atom >;
-c       e.1     = Other 0;
-c     }
-c }
-'@@;
+$ENTRY SymbCompare {
+  s.Left s.Right = <SymbCompare-SwTypes <GetType s.Left> <GetType s.Right>>;
+}
+
+SymbCompare-SwTypes {
+  s.Type s.LeftVal s.Type s.RightVal =
+    <SymbCompare-SwTypes-Sign <Platform.Refal5.Compare s.LeftVal s.RightVal>>;
+
+  Number s.LeftVal s.Type s.RightVal = '>';
+  s.Type s.LeftVal Number s.RightVal = '<';
+  Char s.LeftVal s.Type s.RightVal = '>';
+  s.Type s.LeftVal Char s.RightVal = '<';
+  s.L-Type s.L-Val s.R-Type s.R-Val = '=';
+}
+
+SymbCompare-SwTypes-Sign {
+  '-' = '<';
+  '0' = '=';
+  '+' = '>';
+}
+
+GetType {
+  s.Atom = <GetType-SwType <Platform.Refal5.Type s.Atom>>;
+}
+
+GetType-SwType {
+  'N' s.SybType s.Atom = Number s.Atom;
+  'L' s.SybType s.Atom = Char <Platform.Refal5.Ord s.Atom>;
+  'O' s.SybType s.Atom = Char <Platform.Refal5.Ord s.Atom>;
+  'P' s.SybType s.Atom = Char <Platform.Refal5.Ord s.Atom>;
+  'D' s.SybType s.Atom = Char <Platform.Refal5.Ord s.Atom>;
+  s.Type s.SybType s.Atom = Other 0;
+}
 
 $END CoreBE::MOrder.

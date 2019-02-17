@@ -1,15 +1,15 @@
 $MODULE CoreBE::MExistFile;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY ExistFile @@'
-c {
-c   e.$Index::FileName$
-c     , <ExistFile e.$Index::FileName$>
-c     : {
-c         True = $Ident::True$;
-c         False = $Ident::False$;
-c       };
-c }
-'@@;
+$IMPORT Platform::Refal5;
+
+
+$ENTRY ExistFile {
+  e.FileName = <ExistFile-ConvertBool <Platform.Refal5.ExistFile e.FileName>>;
+}
+
+ExistFile-ConvertBool {
+  &Platform.Refal5.True = True;
+  &Platform.Refal5.False = False;
+}
 
 $END CoreBE::MExistFile.

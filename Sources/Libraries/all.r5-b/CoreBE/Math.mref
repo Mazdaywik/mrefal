@@ -1,26 +1,28 @@
 $MODULE CoreBE::Math;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Binary @@'
-c {
-c   '+' s.Left s.Right , <Add s.Left s.Right > : e.Car s.Last = s.Last;
-c   '-' s.Left s.Right , <Sub s.Left s.Right > : e.Car s.Last = s.Last;
-c   '*' s.Left s.Right , <Mul s.Left s.Right > : e.Car s.Last = s.Last;
-c   '/' s.Left s.Right = <Div s.Left s.Right >;
-c   '%' s.Left s.Right = <Mod s.Left s.Right >;
-c }
-'@@;
+$IMPORT Platform::Refal5;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY NumberCompare @@'
-c {
-c   s.Left s.Right, <Compare s.Left s.Right >:
-c     {
-c       '-' = '<';
-c       '0' = '=';
-c       '+' = '>';
-c     }
-c }
-'@@;
+
+$ENTRY Binary {
+  '+' s.Left s.Right = <Last <Platform.Refal5.Add s.Left s.Right>>;
+  '-' s.Left s.Right = <Last <Platform.Refal5.Sub s.Left s.Right>>;
+  '*' s.Left s.Right = <Last <Platform.Refal5.Mul s.Left s.Right>>;
+  '/' s.Left s.Right = <Platform.Refal5.Div s.Left s.Right>;
+  '%' s.Left s.Right = <Platform.Refal5.Mod s.Left s.Right>;
+}
+
+Last { e.Car s.Last = s.Last; }
+
+
+$ENTRY NumberCompare {
+  s.Left s.Right =
+    <NumberCompare-SwSign <Platform.Refal5.Compare s.Left s.Right>>;
+}
+
+NumberCompare-SwSign {
+  '-' = '<';
+  '0' = '=';
+  '+' = '>';
+}
 
 $END CoreBE::Math.

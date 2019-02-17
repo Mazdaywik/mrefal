@@ -1,15 +1,16 @@
 $MODULE CoreBE::MSelfDiag;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY CloseLog @@'
-c {
-c   , <Dg LogHandle>:
-c   {
-c     s.Handle = <Close s.Handle >;
-c     = ;
-c   }
-c }
-'@@;
+$IMPORT Platform::Refal5;
+
+
+$ENTRY CloseLog {
+  = <CloseLog-SwOpened <Platform.Refal5.Dg LogHandle>>;
+}
+
+CloseLog-SwOpened {
+  s.Handle = <Platform.Refal5.Close s.Handle>;
+  /* пусто */ = ;
+}
 
 $NATIVE Refal5 FUNCTION
 $ENTRY ExitFailure @@'
@@ -18,41 +19,29 @@ c   s.ExitCode = <$Entry::__Exit$ 1 >;
 c }
 '@@;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Log @@'
-c {
-c   e.Message =
-c     <Putout <$Local::CoreBE::MSelfDiag::GetHandle$ > e.Message >;
-c }
-'@@;
+$ENTRY Log {
+  e.Message = <Platform.Refal5.Putout <GetHandle> e.Message>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Log-T @@'
-c {
-c   e.Message =
-c     <Put <$Local::CoreBE::MSelfDiag::GetHandle$ > e.Message >;
-c }
-'@@;
+$ENTRY Log-T {
+  e.Message = <Platform.Refal5.Put <GetHandle> e.Message>;
+}
 
-$NATIVE Refal5 FUNCTION
-GetHandle @@'
-c {
-c   , <Cp LogHandle >:
-c   {
-c     s.Handle = s.Handle;
-c     =
-c       <Open 'w' 19 '__log' >
-c       <Br LogHandle '=' 19 >
-c       19;
-c   };
-c }
-'@@;
+GetHandle {
+  = <GetHandle-SwOpened <Platform.Refal5.Cp LogHandle>>;
+}
 
-$NATIVE Refal5 FUNCTION
-$ENTRY PrintMessage @@'
-c {
-c   e.Message = <Write 0 e.Message '\n' >;
-c }
-'@@;
+GetHandle-SwOpened {
+  s.Handle = s.Handle;
+
+  /* пусто */ =
+    <Platform.Refal5.Open 'w' 19 '__log' >
+    <Platform.Refal5.Br LogHandle '=' 19 >
+    19;
+}
+
+$ENTRY PrintMessage {
+  e.Message = <Platform.Refal5.Write 0 e.Message '\n'>;
+}
 
 $END CoreBE::MSelfDiag.

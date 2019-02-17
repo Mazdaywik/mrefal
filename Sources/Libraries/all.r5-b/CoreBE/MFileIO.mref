@@ -1,5 +1,13 @@
 $MODULE CoreBE::MFileIO;
 
+$IMPORT Platform::Refal5;
+
+
+/*
+  Функция намеренно оставлена в виде нативной вставки ради лучшей диагностики
+  ошибок: благодаря условиям и блокам в дампе будет падение именно
+  CoreBE::FileIO::Open, а не каких-то её «кишок».
+*/
 $NATIVE Refal5 FUNCTION
 $ENTRY Open
 @@'
@@ -7,8 +15,6 @@ c {
 c   'b' s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
-c     , <$Local::CoreBE::MFileIO::Open-CheckHandles$ >
-c       :
 c     , <Dg FreeHandles > :
 c     {
 r       //Найден свободный дескриптор
@@ -23,8 +29,6 @@ c     };
 c   s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
-c     , <$Local::CoreBE::MFileIO::Open-CheckHandles$ >
-c       :
 c     , <Dg FreeHandles > :
 c     {
 r       //Найден свободный дескриптор
@@ -38,70 +42,57 @@ c     };
 c }
 '@@;
 
-$NATIVE Refal5 FUNCTION
-Open-CheckHandles
-@@'
-c {
-c   , <Cp FreeHandles > :
-c   {
-c     Handles e.Handles = ;
-c     = <Br FreeHandles '=' Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 >;
-c   }
-c }
-'@@;
+// Эти алиасы используются только в этом модуле
+$NATIVE Refal5 FUNCTION FreeHandles ALIAS FreeHandles;
+$NATIVE Refal5 FUNCTION Handles ALIAS Handles;
 
-$NATIVE Refal5 FUNCTION
+$INIT
+  <Platform.Refal5.Br
+    &FreeHandles '=' &Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+  >;
+
 $ENTRY Close
-@@'
-c {
-c   s.Handle =
-c     <Close s.Handle >
-c     <Br FreeHandles '=' <Dg FreeHandles> s.Handle >;
-c }
-'@@;
+{
+  s.Handle =
+    <Platform.Refal5.Close s.Handle >
+    <Platform.Refal5.Br
+      &FreeHandles '=' <Platform.Refal5.Dg &FreeHandles> s.Handle
+    >;
+}
 
-$NATIVE Refal5 FUNCTION
 $ENTRY ReadLine
-@@'
-c {
-c   StdIn = <Card >;
-c   s.Handle = <Get s.Handle >;
-c }
-'@@;
+{
+  &StdIn = <Platform.Refal5.Card>;
+  s.Handle = <Platform.Refal5.Get s.Handle>;
+}
 
-$NATIVE Refal5 FUNCTION
 $ENTRY StdIn
-@@'
-c {
-c   = StdIn ;
-c }
-'@@;
+{
+  = &StdIn;
+}
 
-$NATIVE Refal5 FUNCTION
 $ENTRY StdOut
-@@'
-c {
-c  = StdOut ;
-c }
-'@@;
+{
+  = &StdOut;
+}
 
-$NATIVE Refal5 FUNCTION
 $ENTRY Write
-@@'
-c {
-c   StdOut e.Text '\n' = <Prout <Dg CachedLine > e.Text >;
-c   StdOut e.Text = <Br CachedLine '=' <Dg CachedLine > e.Text >;
-c   s.Handle e.Text '\n' = <Putout s.Handle e.Text >;
-c   s.Handle e.Text  = <Write s.Handle e.Text >;
-c }
-'@@;
+{
+  &StdOut e.Text '\n' =
+    <Platform.Refal5.Prout <Platform.Refal5.Dg CachedLine> e.Text >;
 
-$NATIVE Refal5 FUNCTION
+  &StdOut e.Text =
+    <Platform.Refal5.Br
+      CachedLine '=' <Platform.Refal5.Dg CachedLine> e.Text
+    >;
+
+  s.Handle e.Text '\n' = <Platform.Refal5.Putout s.Handle e.Text>;
+  s.Handle e.Text  = <Platform.Refal5.Write s.Handle e.Text>;
+}
+
 $ENTRY FlushIO
-@@'
-c {
-c   = <Prout <Dg CachedLine > >;
-c }
-'@@;
+{
+  = <Platform.Refal5.Prout <Platform.Refal5.Dg CachedLine>>;
+}
 
 $END CoreBE::MFileIO.

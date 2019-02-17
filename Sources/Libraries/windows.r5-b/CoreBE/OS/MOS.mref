@@ -1,23 +1,22 @@
 $MODULE CoreBE::OS::MOS;
 
-$ENTRY CommandLine {
-  = <Load 1 <Arg 0>>;
-}
+$IMPORT Platform::Refal5;
 
-$NATIVE Refal5 FUNCTION Arg ALIAS Arg;
+$ENTRY CommandLine {
+  = <Load 1 <Platform.Refal5.Arg 0>>;
+}
 
 Load {
   s.Next = ;
 
   // Пропуск "особых" параметров
-  s.Next '++' e.Arg = <Load <Add s.Next 1> <Arg s.Next>>;
+  s.Next '++' e.Arg =
+    <Load <Platform.Refal5.Add s.Next 1> <Platform.Refal5.Arg s.Next>>;
 
   s.Next e.Arg =
     '\"' <Quote-Slash e.Arg> '\" '
-    <Load <Add s.Next 1> <Arg s.Next>>;
+    <Load <Platform.Refal5.Add s.Next 1> <Platform.Refal5.Arg s.Next>>;
 }
-
-$NATIVE Refal5 FUNCTION Add ALIAS Add;
 
 Quote {
   e.Arg '\"' = <Quote-Slash e.Arg> '\\\"';
@@ -45,64 +44,53 @@ $ENTRY CreateProcess {
 // поэтому создаётся сценарий с выполняемой командой
 PerformSystem {
   e.CommandLine =
-    <PerformSystem-CreateFile (e.CommandLine) '~' <Symb <Random 1>> '.tmp.bat'>;
+    <PerformSystem-CreateFile
+      (e.CommandLine)
+      '~' <Platform.Refal5.Symb <Platform.Refal5.Random 1>> '.tmp.bat'
+    >;
 }
-
-$NATIVE Refal5 FUNCTION Symb ALIAS Symb;
-$NATIVE Refal5 FUNCTION Random ALIAS Random;
 
 PerformSystem-CreateFile {
   (e.CommandLine) e.TempBat =
     <PerformSystem-Return
-      (<Open 'w' 20 e.TempBat>)
-      (<Write 20 '@' e.CommandLine>)
-      (<Close 20>)
-      (<System e.TempBat>)
-      (<RemoveFile e.TempBat>)
+      (<Platform.Refal5.Open 'w' 20 e.TempBat>)
+      (<Platform.Refal5.Write 20 '@' e.CommandLine>)
+      (<Platform.Refal5.Close 20>)
+      (<Platform.Refal5.System e.TempBat>)
+      (<Platform.Refal5.RemoveFile e.TempBat>)
     >;
 }
-
-$NATIVE Refal5 FUNCTION Open ALIAS Open;
-$NATIVE Refal5 FUNCTION Write ALIAS Write;
-$NATIVE Refal5 FUNCTION Close ALIAS Close;
-$NATIVE Refal5 FUNCTION System ALIAS System;
-$NATIVE Refal5 FUNCTION RemoveFile ALIAS RemoveFile;
 
 PerformSystem-Return {
   () () () (s.RetCode) (e.RemoveResult) = s.RetCode;
 }
 
-$ENTRY EnvList = <EnvList-SwLoaded <Cp EnvList>>;
+$ENTRY EnvList = <EnvList-SwLoaded <Platform.Refal5.Cp EnvList>>;
 
 EnvList-SwLoaded {
   Loaded e.List = e.List;
 
   /* пусто */ =
     <EnvList-Load
-      (<System 'set>~envlist.tmp'>)
-      (<Open 'r' 20 '~envlist.tmp'>)
-      (<LoadEnvs <Get 20>>)
-      (<RemoveFile '~envlist.tmp'>)
+      (<Platform.Refal5.System 'set>~envlist.tmp'>)
+      (<Platform.Refal5.Open 'r' 20 '~envlist.tmp'>)
+      (<LoadEnvs <Platform.Refal5.Get 20>>)
+      (<Platform.Refal5.RemoveFile '~envlist.tmp'>)
     >;
 }
 
-$NATIVE Refal5 FUNCTION Cp ALIAS Cp;
-$NATIVE Refal5 FUNCTION Get ALIAS Get;
-
 EnvList-Load {
-  (s.Ret1) () (e.Result) (e.RemoveResult) = <Br Loaded '=' e.Result> e.Result;
+  (s.Ret1) () (e.Result) (e.RemoveResult) =
+    <Platform.Refal5.Br Loaded '=' e.Result> e.Result;
 }
-
-$NATIVE Refal5 FUNCTION Br ALIAS Br;
 
 LoadEnvs {
-  0 = <Close 20>;
-  e.Line 0 = (e.Line) <Close 20>;
-  e.Line = (e.Line) <LoadEnvs <Get 20>>;
+  0 = <Platform.Refal5.Close 20>;
+  e.Line 0 = (e.Line) <Platform.Refal5.Close 20>;
+  e.Line = (e.Line) <LoadEnvs <Platform.Refal5.Get 20>>;
 }
 
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Time ALIAS Time;
+$ENTRY Time { = <Platform.Refal5.Time>; }
 
 $END CoreBE::OS::MOS.

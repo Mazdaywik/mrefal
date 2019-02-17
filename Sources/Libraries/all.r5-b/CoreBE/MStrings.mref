@@ -1,29 +1,43 @@
 $MODULE CoreBE::MStrings;
 
-$NATIVE Refal5 FUNCTION $ENTRY Chr  ALIAS Chr;
-$NATIVE Refal5 FUNCTION $ENTRY Ord  ALIAS Ord;
-$NATIVE Refal5 FUNCTION $ENTRY Numb ALIAS Numb;
+$IMPORT Platform::Refal5;
 
-$NATIVE Refal5 FUNCTION
-$ENTRY Symb @@'
-c {
-c   s.Num = <Symb s.Num >;
-c }
-'@@;
+$ENTRY Chr { e.Expr = <Platform.Refal5.Chr e.Expr>; }
+$ENTRY Ord { e.Expr = <Platform.Refal5.Ord e.Expr>; }
 
-$NATIVE Refal5 FUNCTION
-$ENTRY SerializeAtom @@'
-c {
-c   s.Atom, <Type s.Atom >:
-c     {
-c       'N' e.1 = $Ident::Number$ <Symb s.Atom >;
-c       'L' e.1 = $Ident::Char$ s.Atom;
-c       'D' e.1 = $Ident::Char$ s.Atom;
-c       'P' e.1 = $Ident::Char$ s.Atom;
-c       'O' e.1 = $Ident::Char$ <Symb <Ord s.Atom > >;
-c       e.1     = $Ident::IsntSerializable$ s.Atom;
-c     }
-c }
-'@@;
+$ENTRY Numb {
+  e.Digits = <Numb-OneDigit <Platform.Refal5.Numb e.Digits>>;
+}
+
+Numb-OneDigit {
+  s.Macrodigit = s.Macrodigit;
+}
+
+$ENTRY Symb {
+  s.Num = <Platform.Refal5.Symb s.Num >;
+}
+
+$ENTRY SerializeAtom {
+  s.Atom = <SerializeAtom-SwType <Platform.Refal5.Type s.Atom>>;
+}
+
+SerializeAtom-SwType {
+  'N' s.SubType s.Atom = Number <Platform.Refal5.Symb s.Atom>;
+
+  'L' s.SubType s.Atom = Char s.Atom;
+  'D' s.SubType s.Atom = Char s.Atom;
+  'P' s.SubType s.Atom = Char s.Atom;
+
+  'O' s.SubType s.Atom =
+    Char <Three <Platform.Refal5.Symb <Platform.Refal5.Ord s.Atom>>>;
+
+  s.Type s.SubType s.Atom = IsntSerializable s.Atom;
+}
+
+Three {
+  s.1 s.2 s.3 = s.1 s.2 s.3;
+      s.2 s.3 = '0' s.2 s.3;
+          s.3 = '0' '0' s.3;
+}
 
 $END CoreBE::MStrings.

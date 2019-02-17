@@ -1,25 +1,21 @@
 $MODULE CoreBE::MProfiler;
 
+$IMPORT Platform::Refal5;
+
 // Профилировщик в этом back-end'е ничего не делает
 
-$NATIVE Refal5 FUNCTION Mu     ALIAS Mu    ;
-$NATIVE Refal5 FUNCTION Prout  ALIAS Prout ;
-$NATIVE Refal5 FUNCTION Open   ALIAS Open  ;
-$NATIVE Refal5 FUNCTION Putout ALIAS Putout;
-$NATIVE Refal5 FUNCTION Close  ALIAS Close ;
-
 $ENTRY Quantify {
-  s.Function e.Arguments = <Mu s.Function e.Arguments> ;
+  s.Function e.Arguments = <Platform.Refal5.Mu s.Function e.Arguments> ;
 }
 
 $ENTRY PrintResults
 {
-  = <Prout 'Profiling for Refal 5 back-end not supported'>;
+  = <Platform.Refal5.Prout 'Profiling for Refal 5 back-end not supported'>;
 
   e.FileName =
-    <Open 'w' 18 e.FileName>
-    <Putout 18 'Profiling for Refal 5 back-end not supported'>
-    <Close 18>;
+    <Platform.Refal5.Open 'w' 18 e.FileName>
+    <Platform.Refal5.Putout 18 'Profiling for Refal 5 back-end not supported'>
+    <Platform.Refal5.Close 18>;
 }
 
 $ENTRY SetOutputName {

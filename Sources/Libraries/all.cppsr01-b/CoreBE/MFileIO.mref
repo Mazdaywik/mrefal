@@ -162,7 +162,7 @@ $ENTRY Write
   ) {
     switch( ptr->tag ) {
       case cDataChar:
-        printf_res = fprintf(f, "%c", ptr->char_info);
+        printf_res = (fputc(ptr->char_info, f) != EOF ? +1 : -1);
         continue;
 
       case cDataNumber:

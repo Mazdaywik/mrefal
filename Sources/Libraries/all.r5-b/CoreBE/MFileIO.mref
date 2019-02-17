@@ -51,8 +51,7 @@ $INIT
     &FreeHandles '=' &Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
   >;
 
-$ENTRY Close
-{
+$ENTRY Close {
   s.Handle =
     <Platform.Refal5.Close s.Handle >
     <Platform.Refal5.Br
@@ -60,24 +59,15 @@ $ENTRY Close
     >;
 }
 
-$ENTRY ReadLine
-{
+$ENTRY ReadLine {
   &StdIn = <Platform.Refal5.Card>;
   s.Handle = <Platform.Refal5.Get s.Handle>;
 }
 
-$ENTRY StdIn
-{
-  = &StdIn;
-}
+$ENTRY StdIn { = &StdIn; }
+$ENTRY StdOut { = &StdOut; }
 
-$ENTRY StdOut
-{
-  = &StdOut;
-}
-
-$ENTRY Write
-{
+$ENTRY Write {
   &StdOut e.Text '\n' =
     <Platform.Refal5.Prout <Platform.Refal5.Dg CachedLine> e.Text >;
 
@@ -90,8 +80,7 @@ $ENTRY Write
   s.Handle e.Text  = <Platform.Refal5.Write s.Handle e.Text>;
 }
 
-$ENTRY FlushIO
-{
+$ENTRY FlushIO {
   = <Platform.Refal5.Prout <Platform.Refal5.Dg CachedLine>>;
 }
 

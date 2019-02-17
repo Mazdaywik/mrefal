@@ -58,7 +58,7 @@ GeneralizeInfo-PrepareLocal {
     >;
 
   t.hErrorList Fails =
-    t.hErrorList Fail;
+    t.hErrorList Fails;
 }
 
 GeneralizeInfo-PrepareLocal-Aux {

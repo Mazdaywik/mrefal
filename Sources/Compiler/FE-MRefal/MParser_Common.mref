@@ -57,8 +57,7 @@ GeneralizeInfo-PrepareLocal {
       <GetErrorLevel t.hErrorList> t.hIModule
     >;
 
-  t.hErrorList Fails =
-    t.hErrorList Fails;
+  t.hErrorList Fails = t.hErrorList Fails;
 }
 
 GeneralizeInfo-PrepareLocal-Aux {
@@ -74,14 +73,9 @@ GetErrorLevel {
 }
 
 GetErrorLevel-Transform {
-  t.hErrorList Empty =
-    t.hErrorList Success;
-
-  t.hErrorList Warnigs =
-    t.hErrorList Warnings;
-
-  t.hErrorList Errors =
-    t.hErrorList Errors;
+  t.hErrorList Empty = t.hErrorList Success;
+  t.hErrorList Warnigs = t.hErrorList Warnings;
+  t.hErrorList Errors = t.hErrorList Errors;
 }
 
 //------------------------------------------------------------------------------
@@ -251,12 +245,9 @@ NGenericModule
 NGenericModule-SwParseHeader {
   s.FnBody
   t.hErrorList Success t.IModule t.Lexer t.NextToken =
-    <s.FnBody
-      t.IModule t.hErrorList t.Lexer t.NextToken
-    >;
+    <s.FnBody t.IModule t.hErrorList t.Lexer t.NextToken>;
 
-  s.FnBody t.hErrorList Fails =
-    t.hErrorList Fails;
+  s.FnBody t.hErrorList Fails = t.hErrorList Fails;
 }
 
 //-------------------------------------------------------------------------------

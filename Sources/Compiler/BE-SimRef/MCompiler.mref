@@ -225,7 +225,6 @@ NameCodeChar {
 GenNativeInsertion {
   t.SrcPos CppSR e.Code =
     ('%%')
-    (<MSrcPos::SharpLine t.SrcPos>)
     <MLambda::Map &CppSRCodeItem e.Code>
     PATCH-SHARP-LINE
     ('%%');

@@ -15,25 +15,25 @@ $IMPORT MProfiler;
     GenFunction-Code = & GenFunction-Code;
   }
 
-  <Generate-Generic s.FnProperties t.hIModule e.OutName>
+  <Generate-Generic t.FnProperties t.hIModule e.OutName>
     == t.hIModule
 
-  <<s.FnProperties GenSwap> t.AbsolutName> == e.Lines
-  <<s.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName> == e.Lines
+  <<t.FnProperties GenSwap> t.AbsolutName> == e.Lines
+  <<t.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName> == e.Lines
   s.ScopeClass ::= Entry | Local
-  <s.FnProperties GenCommonHeaders> == e.Lines
-  <<s.FnProperties GenIdent> e.Name> == e.Lines
-  <<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName>
+  <t.FnProperties GenCommonHeaders> == e.Lines
+  <<t.FnProperties GenIdent> e.Name> == e.Lines
+  <<t.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName>
     == e.Lines
-  <<s.FnProperties Generate-EntryCode-Go>
-    s.FnProperties t.ModuleName (e.Result) e.Imports
+  <<t.FnProperties Generate-EntryCode-Go>
+    t.FnProperties t.ModuleName (e.Result) e.Imports
   >
     == e.GenFunctionResult
-  <<s.FnProperties Generate-EntryCode-InitFinal>
-    s.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports
+  <<t.FnProperties Generate-EntryCode-InitFinal>
+    t.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports
   >
     == e.GenFunctionResult
-  <<s.FnProperties GenFunction-Code>
+  <<t.FnProperties GenFunction-Code>
     t.AbsolutName s.ScopeClass e.Sentences
   >
     == e.Lines
@@ -42,53 +42,56 @@ $IMPORT MProfiler;
   e.GenFunctionResult — результат выполнения функции GenFunction
 */
 $ENTRY Generate-Generic
-  s.FnProperties t.hIModule e.OutName =
+  t.FnProperties t.hIModule e.OutName =
     <Generate-Aux
-      s.FnProperties
+      t.FnProperties
       (e.OutName)
       <MLambda::Apply
         <MLambda::Parallel-H
-          <MLambda::BindLeft & GenerateFunctions s.FnProperties>
-          <MLambda::BindLeft & GenerateEntryCode s.FnProperties>
+          <MLambda::BindLeft & GenerateFunctions t.FnProperties>
+          <MLambda::BindLeft & GenerateEntryCode t.FnProperties>
         >
         t.hIModule
       >
     >;
 
 GenerateFunctions
-  s.FnProperties t.hIModule =
+  t.FnProperties t.hIModule =
     <MLambda::MapReduce
-      <MLambda::BindLeft & GenerateEntity s.FnProperties>
+      <MLambda::BindLeft & GenerateEntity t.FnProperties>
       <MIModule::GetEntityList t.hIModule>
     >;
 
 GenerateEntity {
-  s.FnProperties t.hIModule (Function t.RelativeName) =
+  t.FnProperties t.hIModule (Function t.RelativeName) =
     <GenerateFunction
-      s.FnProperties
+      t.FnProperties
       <MIModule::AbsolutName t.hIModule t.RelativeName> t.RelativeName
     >;
 
-  s.FnProperties t.hIModule (ADT t.RelativeName) =
+  t.FnProperties t.hIModule (ADT t.RelativeName) =
     t.hIModule /* пусто */;
 
-  s.FnProperties t.hIModule
+  t.FnProperties t.hIModule
   (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code) =
     t.hIModule
-    <Declarations-Expr s.FnProperties e.Code>
-    (Native <s.FnProperties GenNativeInsertion> t.SrcPos s.BackEndID e.Code);
+    <Declarations-Expr t.FnProperties e.Code>
+    (Native
+      <MLambda::Apply t.FnProperties GenNativeInsertion>
+      t.SrcPos s.BackEndID e.Code
+    );
 }
 
 /*
   <GenerateFunction
-    s.FnProperties t.hIModule t.AbsolutName t.RelativeName
+    t.FnProperties t.hIModule t.AbsolutName t.RelativeName
   >
     == t.hIModule ( (e.Definitions) (e.FunctionCode) )
 */
 GenerateFunction
-  s.FnProperties t.hIModule t.AbsolutName t.RelativeName =
+  t.FnProperties t.hIModule t.AbsolutName t.RelativeName =
     <GenerateFunction-Aux
-      s.FnProperties
+      t.FnProperties
       <MLambda::Apply
         <MLambda::Parallel-H
           <MLambda::BindLeft-H
@@ -107,59 +110,63 @@ GenerateFunction
     >;
 
 GenerateFunction-Aux {
-  s.FnProperties
+  t.FnProperties
   t.hIModule Found Swap NoAttrib NoAttrib t.AbsolutName =
     t.hIModule
     (Declare
       Function
       t.AbsolutName
-      (<s.FnProperties GenFunction-Decl> Swap t.AbsolutName)
+      (<MLambda::Apply t.FnProperties GenFunction-Decl> Swap t.AbsolutName)
     )
     (Define
-      Function t.AbsolutName (<s.FnProperties GenSwap> t.AbsolutName)
+      Function t.AbsolutName
+      (<MLambda::Apply t.FnProperties GenSwap> t.AbsolutName)
     );
 
-  s.FnProperties
+  t.FnProperties
   t.hIModule Found s.ScopeClass Found (/* пусто */) NoAttrib t.AbsolutName =
     t.hIModule
     (Declare
       Function
       t.AbsolutName
-      (<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName)
+      (
+        <MLambda::Apply t.FnProperties GenFunction-Decl>
+        s.ScopeClass t.AbsolutName
+      )
     )
     (Define
       Function t.AbsolutName
-      (<s.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName)
+      (<MLambda::Apply t.FnProperties SwitchEnum s.ScopeClass> t.AbsolutName)
     );
 
-  s.FnProperties
+  t.FnProperties
   t.hIModule Found s.ScopeClass Found (e.Sentences) NoAttrib t.AbsolutName =
     t.hIModule
-    <GenFunction s.FnProperties t.AbsolutName s.ScopeClass e.Sentences>;
+    <GenFunction t.FnProperties t.AbsolutName s.ScopeClass e.Sentences>;
 
-  s.FnProperties
+  t.FnProperties
   t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos Refal5 s.Type e.Native
   t.AbsolutName =
     <MError::LinkError-BadBackEndID t.SrcPos Refal5 'C++/SR or Simple Refal'>;
 
-  s.FnProperties
+  t.FnProperties
   t.hIModule Found s.ScopeClass NoAttrib Found t.SrcPos s.BackEndID Code e.Code
   t.AbsolutName =
     t.hIModule
-    <Declarations-Expr s.FnProperties e.Code>
+    <Declarations-Expr t.FnProperties e.Code>
     (Define
       Function
       t.AbsolutName
-      (<s.FnProperties GenNativeInsertion-Body>
+      (<MLambda::Apply t.FnProperties GenNativeInsertion-Body>
         t.AbsolutName s.ScopeClass t.SrcPos s.BackEndID e.Code
       )
     );
 }
 
 GenerateEntryCode
-  s.FnProperties t.hIModule =
+  t.FnProperties t.hIModule =
     <Generate-EntryCode-Aux
-      s.FnProperties
+      t.FnProperties
       <MLambda::Apply
         <MLambda::Parallel-H
           & MIModule.GetModuleName
@@ -174,13 +181,13 @@ GenerateEntryCode
     >;
 
 Generate-Aux
-  s.FnProperties (e.OutName) t.hIModule e.FunctionsEntries =
+  t.FnProperties (e.OutName) t.hIModule e.FunctionsEntries =
     t.hIModule
     <MProfiler::Quantify & Profiling-MFileIO-Save
       (e.OutName)
       <MProfiler::Quantify & PatchSrcPos
         (e.OutName)
-        <s.FnProperties GenCommonHeaders>
+        <MLambda::Apply t.FnProperties GenCommonHeaders>
         <FilterDecls e.FunctionsEntries>
       >
     >;
@@ -189,20 +196,20 @@ Profiling-MFileIO-Save
   (e.OutName) e.Lines = <MFileIO::Save (e.OutName) e.Lines>;
 
 Generate-EntryCode-Aux {
-  s.FnProperties
+  t.FnProperties
   t.hIModule t.ModuleName (Go (Result e.Result)) e.Imports =
     t.hIModule
     <MLambda::Apply
-      <s.FnProperties Generate-EntryCode-Go>
-      s.FnProperties t.ModuleName (e.Result) e.Imports
+      <MLambda::Apply t.FnProperties Generate-EntryCode-Go>
+      t.FnProperties t.ModuleName (e.Result) e.Imports
     >;
 
-  s.FnProperties
+  t.FnProperties
   t.hIModule t.ModuleName (Regular t.InitSeq t.FinalSeq) e.Imports =
     t.hIModule
     <MLambda::Apply
-      <s.FnProperties Generate-EntryCode-InitFinal>
-      s.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports
+      <MLambda::Apply t.FnProperties Generate-EntryCode-InitFinal>
+      t.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports
     >;
 }
 
@@ -270,95 +277,101 @@ DoPatchSrcPos {
 //----------------------------------------------------------------------
 
 /**
-  <GenFunction s.FnProperties t.AbsolutName s.ScopeClass e.Sentences>
+  <GenFunction t.FnProperties t.AbsolutName s.ScopeClass e.Sentences>
     == e.GenFunctionResult
 
   Эту функцию можно использовать только для генерации кода точек входа.
 */
 $ENTRY GenFunction
-  s.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
-    <GenFunction-Declarations s.FnProperties e.Sentences>
+  t.FnProperties t.AbsolutName s.ScopeClass e.Sentences =
+    <GenFunction-Declarations t.FnProperties e.Sentences>
     (Declare
       Function
       t.AbsolutName
-      (<s.FnProperties GenFunction-Decl> s.ScopeClass t.AbsolutName)
+      (
+        <MLambda::Apply t.FnProperties GenFunction-Decl>
+        s.ScopeClass t.AbsolutName
+      )
     )
     (Define
       Function
       t.AbsolutName
-      (<s.FnProperties GenFunction-Code>
+      (<MLambda::Apply t.FnProperties GenFunction-Code>
         t.AbsolutName s.ScopeClass e.Sentences
       )
     );
 
 GenFunction-Declarations {
-  s.FnProperties
+  t.FnProperties
   ( (Pattern e.PatternExpr) (Result e.ResultExpr) ) e.Tail =
-    <Declarations-Expr s.FnProperties e.PatternExpr>
-    <Declarations-Expr s.FnProperties e.ResultExpr>
-    <GenFunction-Declarations s.FnProperties e.Tail>;
+    <Declarations-Expr t.FnProperties e.PatternExpr>
+    <Declarations-Expr t.FnProperties e.ResultExpr>
+    <GenFunction-Declarations t.FnProperties e.Tail>;
 
-  s.FnProperties
+  t.FnProperties
   ( (Pattern e.PatternExpr) s.EntryCodeType (Result e.ResultExpr) ) e.Tail =
-    <Declarations-Expr s.FnProperties e.PatternExpr>
-    <Declarations-Expr s.FnProperties e.ResultExpr>
-    <GenFunction-Declarations s.FnProperties e.Tail>;
+    <Declarations-Expr t.FnProperties e.PatternExpr>
+    <Declarations-Expr t.FnProperties e.ResultExpr>
+    <GenFunction-Declarations t.FnProperties e.Tail>;
 
-  s.FnProperties = ;
+  t.FnProperties = ;
 }
 
 Declarations-Expr {
-  s.FnProperties (Structure e.InBrackets) e.Tail =
-    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+  t.FnProperties (Structure e.InBrackets) e.Tail =
+    <Declarations-Expr t.FnProperties e.InBrackets e.Tail>;
 
-  s.FnProperties (Abstract t.Callable e.InBrackets) e.Tail =
-    <Declarations-Callable s.FnProperties t.Callable>
-    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+  t.FnProperties (Abstract t.Callable e.InBrackets) e.Tail =
+    <Declarations-Callable t.FnProperties t.Callable>
+    <Declarations-Expr t.FnProperties e.InBrackets e.Tail>;
 
-  s.FnProperties (Function t.Callable e.InBrackets) e.Tail =
-    <Declarations-Callable s.FnProperties t.Callable>
-    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+  t.FnProperties (Function t.Callable e.InBrackets) e.Tail =
+    <Declarations-Callable t.FnProperties t.Callable>
+    <Declarations-Expr t.FnProperties e.InBrackets e.Tail>;
 
-  s.FnProperties (IndirectCall (SVar e.Index) e.InBrackets) e.Tail =
-    <Declarations-Expr s.FnProperties e.InBrackets e.Tail>;
+  t.FnProperties (IndirectCall (SVar e.Index) e.InBrackets) e.Tail =
+    <Declarations-Expr t.FnProperties e.InBrackets e.Tail>;
 
-  s.FnProperties (EntryCode s.CodeType e.InBracket) e.Tail =
-    <Declarations-Expr s.FnProperties e.InBracket e.Tail>;
+  t.FnProperties (EntryCode s.CodeType e.InBracket) e.Tail =
+    <Declarations-Expr t.FnProperties e.InBracket e.Tail>;
 
-  s.FnProperties t.SimpleTerm e.Tail =
-    <Declarations-Term s.FnProperties t.SimpleTerm>
-    <Declarations-Expr s.FnProperties e.Tail>;
+  t.FnProperties t.SimpleTerm e.Tail =
+    <Declarations-Term t.FnProperties t.SimpleTerm>
+    <Declarations-Expr t.FnProperties e.Tail>;
 
-  s.FnProperties = ;
+  t.FnProperties = ;
 }
 
 Declarations-Callable {
-  s.FnProperties (s.CallType t.SrcPos t.QualifiedName) =
+  t.FnProperties (s.CallType t.SrcPos t.QualifiedName) =
     (Declare
       Function
       t.QualifiedName
-      (<s.FnProperties GenFunction-Decl> s.CallType t.QualifiedName)
+      (
+        <MLambda::Apply t.FnProperties GenFunction-Decl>
+        s.CallType t.QualifiedName
+      )
     );
 }
 
 Declarations-Term {
-  s.FnProperties (Identifier t.SrcPos e.Name) =
+  t.FnProperties (Identifier t.SrcPos e.Name) =
     (Declare
       Identifier <MQualifiedName::Create (e.Name)>
-      (<s.FnProperties GenIdent> e.Name)
+      (<MLambda::Apply t.FnProperties GenIdent> e.Name)
     );
 
-  s.FnProperties (EVar e.Index) = ;
-  s.FnProperties (TVar e.Index) = ;
-  s.FnProperties (SVar e.Index) = ;
+  t.FnProperties (EVar e.Index) = ;
+  t.FnProperties (TVar e.Index) = ;
+  t.FnProperties (SVar e.Index) = ;
 
-  s.FnProperties (Literal e.Content) = ;
-  s.FnProperties (Macro s.Value) = ;
+  t.FnProperties (Literal e.Content) = ;
+  t.FnProperties (Macro s.Value) = ;
 
-  s.FnProperties (FnPtr t.Callable) =
-    <Declarations-Callable s.FnProperties t.Callable>;
+  t.FnProperties (FnPtr t.Callable) =
+    <Declarations-Callable t.FnProperties t.Callable>;
 
-  s.FnProperties (Native t.SrcPos e.Code) = ;
+  t.FnProperties (Native t.SrcPos e.Code) = ;
 }
 
 $END MPredeclGenerator.

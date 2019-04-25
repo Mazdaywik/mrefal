@@ -62,9 +62,9 @@ GenFunction-Code {
 }
 
 Generate-EntryCode-Go
-  s.FnProperties t.ModuleName (e.Result) e.Imports =
+  t.FnProperties t.ModuleName (e.Result) e.Imports =
     <MPredeclGenerator::GenFunction
-      s.FnProperties
+      t.FnProperties
       <MQualifiedName::Create (Go)>
       Entry
       (
@@ -80,7 +80,7 @@ Generate-EntryCode-Go
       )
     >
     <MPredeclGenerator::GenFunction
-      s.FnProperties
+      t.FnProperties
       <MQualifiedName::Create ('Exit' Entry)>
       Entry
       (
@@ -99,9 +99,9 @@ Generate-EntryCode-Go
     >;
 
 Generate-EntryCode-InitFinal
-  s.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports =
+  t.FnProperties t.ModuleName t.InitSeq t.FinalSeq e.Imports =
     <MPredeclGenerator::GenFunction
-      s.FnProperties
+      t.FnProperties
       <MQualifiedName::AddSubName t.ModuleName 'Init' Entry>
       InitFinal
       (

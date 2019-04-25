@@ -183,7 +183,7 @@ CalcLen-Aux {
 DWord {
   s.1 s.2 s.3 s.4 = s.1 s.2 s.3 s.4;
 
-  s.Low e.High = <DWord <MMath::Mod s.Low 256> <MMath::Div s.Low 256> e.High>;
+  e.Low s.High = <DWord e.Low <MMath::Mod s.High 256> <MMath::Div s.High 256>>;
 }
 
 

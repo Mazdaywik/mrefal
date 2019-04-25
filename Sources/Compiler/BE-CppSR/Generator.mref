@@ -51,7 +51,10 @@ GenFnStart {
     (
       'refalrts::FnResult func_' <QNameCode t.Name>
       '(refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end) {'
-    );
+    )
+    ('  refalrts::RefalFunction **functions;')
+    ('  const refalrts::RefalIdentifier *identifiers;')
+    ('  refalrts::load_constants(arg_begin, &functions, &identifiers);');
 }
 
 GenInitCounter {
@@ -83,12 +86,7 @@ $ENTRY GenEnum {
 }
 
 $ENTRY GenExtern {
-  t.Name =
-    (
-      'static refalrts::ExternalReference ref_' <QNameCode t.Name>
-      '("' <MakeExternalName t.Name> '", 0, 0);'
-    )
-    ();
+  t.Name = ('// $EXTERN ' <MakeExternalName t.Name> ' / ' <QNameCode t.Name>);
 }
 
 $ENTRY GenSwap {
@@ -96,11 +94,7 @@ $ENTRY GenSwap {
 }
 
 $ENTRY GenIdent {
-  t.Name =
-    (
-      'const refalrts::IdentReference ident_' <QNameCode t.Name>
-      '("' <MakeExternalName t.Name> '");'
-    );
+  t.Name = ('// $LABEL ' <MakeExternalName t.Name> ' / ' <QNameCode t.Name>);
 }
 
 $ENTRY MakeExternalName {
@@ -119,6 +113,34 @@ MakeExternalName-Aux {
 $ENTRY GenCommonHeaders {
   = ('// Automatically generated file. Don\'t edit!')
   ('#include "refalrts.h"') () ();
+}
+
+$ENTRY GenExternsEnum {
+  /* пусто */ = /* ничего не генерируем */;
+
+  e.Functions
+    = ('enum efunc {')
+      <MLambda::Map &GenExternEnum e.Functions>
+      ('};')
+      () ();
+}
+
+GenExternEnum {
+  (s.Type t.FuncName) = ('  efunc_' <QNameCode t.FuncName> ',');
+}
+
+$ENTRY GenIdentsEnum {
+  /* пусто */ = /* ничего не генерируем */;
+
+  e.Identifiers
+    = ('enum ident {')
+      <MLambda::Map &GenIdentEnum e.Identifiers>
+      ('};')
+      () ();
+}
+
+GenIdentEnum {
+  (e.Name) = ('  ident_' <NameCode e.Name> ',');
 }
 
 
@@ -427,7 +449,7 @@ PrintMatchName {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('function') 'ref_' <QNameCode t.Name> '.ref(vm)'
+      ('function') 'functions[efunc_' <QNameCode t.Name> ']'
     >;
 }
 
@@ -435,7 +457,7 @@ PrintMatchIdent {
   (e.Indent) s.Direction s.BracketNum s.Nested t.Name =
     <PrintMatch
       (e.Indent) s.Direction s.BracketNum s.Nested
-      ('ident') 'ident_' <QNameCode t.Name> '.ref(vm)'
+      ('ident') 'identifiers[ident_' <QNameCode t.Name> ']'
     >;
 }
 
@@ -455,7 +477,7 @@ PrintMatchADT {
       ('adt')
       <BracketsVar-B s.InnerNum 0> ', '
       <BracketsVar-E s.InnerNum 0> ', '
-      'ref_' <QNameCode t.Name> '.ref(vm)'
+      'functions[efunc_' <QNameCode t.Name> ']'
     >;
 }
 
@@ -592,11 +614,11 @@ SwAllocator {
 SwInfo {
   ElChar s.Char = ', ' '\'' <MEscape::EscapeChar-Hex s.Char> '\'';
 
-  ElName t.Name = ', ref_' <QNameCode t.Name> '.ref(vm)';
+  ElName t.Name = ', functions[efunc_' <QNameCode t.Name> ']';
 
   ElNumber s.Number = ', ' <MStrings::Symb s.Number> 'UL';
 
-  ElIdent t.Name = ', ident_' <QNameCode t.Name> '.ref(vm)';
+  ElIdent t.Name = ', identifiers[ident_' <QNameCode t.Name> ']';
 
   // Остальное -- скобки
   s.Other = ;
@@ -619,11 +641,11 @@ CodeItem {
 
   (Identifier t.SrcPos e.Name) =
     (<MSrcPos::SharpLine t.SrcPos>)
-    ('ident_' <NameCode e.Name> '.ref(vm)');
+    ('identifiers[ident_' <NameCode e.Name> ']');
 
   (FnPtr (s.CallType t.SrcPos t.Name)) =
     (<MSrcPos::SharpLine t.SrcPos>)
-    ('ref_' <QNameCode t.Name> '.ref(vm)');
+    ('functions[efunc_' <QNameCode t.Name> ']');
 }
 
 $ENTRY GenNativeInsertion-Body {

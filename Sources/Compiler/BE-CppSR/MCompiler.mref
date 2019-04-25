@@ -3,10 +3,10 @@ $MODULE BE-CppSR::MCompiler;
 $IMPORT Algorithm = BE-CppSR::Algorithm;
 $IMPORT Generator = BE-CppSR::Generator;
 $IMPORT MLambda;
-$IMPORT MMath;
 $IMPORT MPredeclGenerator;
 $IMPORT MQualifiedName;
 $IMPORT MStrings;
+$IMPORT BE-CppSR::MFunctionsAndIdents;
 
 /**
   <Generate t.hIModule e.OutName>
@@ -14,12 +14,30 @@ $IMPORT MStrings;
 */
 $ENTRY Generate {
   t.hIModule e.OutName '.cpp' =
+    <Generate-Aux
+      <BE-CppSR::MFunctionsAndIdents::Extract t.hIModule> e.OutName
+    >;
+}
+
+Generate-Aux {
+  t.hIModule (e.Functions) (e.Identifiers) e.OutName =
     <MPredeclGenerator::Generate-Generic
-      & Generate-Properties t.hIModule e.OutName '.cpp'
+      <MLambda::BindLeft & Generate-Properties (e.Functions) (e.Identifiers)>
+      t.hIModule e.OutName '.cpp'
     >;
 }
 
 Generate-Properties {
+  (e.Functions) (e.Identifiers) GenCommonHeaders
+    = <Generator::GenCommonHeaders>
+      <Generator::GenExternsEnum e.Functions>
+      <Generator::GenIdentsEnum e.Identifiers>;
+
+  (e.Functions) (e.Identifiers) e.Other
+    = <Generate-Properties-Old e.Other>;
+}
+
+Generate-Properties-Old {
   GenSwap = & Generator.GenSwap;
   SwitchEnum Entry = & Generator.GenEnum;
   SwitchEnum Local = & Generator.GenEnum;

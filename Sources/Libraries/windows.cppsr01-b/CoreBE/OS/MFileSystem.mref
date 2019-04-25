@@ -25,6 +25,7 @@ using refalapi::AllocArray;
 static bool add_attribute_record(
   refalrts::VM *vm,
   AllocArray& allocs,
+  const refalrts::RefalIdentifier *identifiers,
   const FILETIME& creation_time,
   const FILETIME& last_access_time,
   const FILETIME& last_write_time,
@@ -119,8 +120,7 @@ $ENTRY FindFiles @@'
       allocs.push_back(close_filename_bracket);
 
       allocated = add_attribute_record(
-        vm,
-        allocs,
+        vm, allocs, identifiers,
         find_file_data.ftCreationTime,
         find_file_data.ftLastAccessTime,
         find_file_data.ftLastWriteTime,
@@ -177,6 +177,7 @@ $NATIVE CppSR TOPLEVEL @@'
 static bool add_attribute_record(
   refalrts::VM *vm,
   AllocArray& allocs,
+  const refalrts::RefalIdentifier *identifiers,
   const FILETIME& creation_time,
   const FILETIME& last_access_time,
   const FILETIME& last_write_time,
@@ -313,7 +314,7 @@ $ENTRY FileAttributes @@'
 
     AllocArray allocs;
     bool alloc_attribs = add_attribute_record(
-      vm, allocs,
+      vm, allocs, identifiers,
       attributes.ftCreationTime,
       attributes.ftLastAccessTime,
       attributes.ftLastWriteTime,
@@ -438,6 +439,7 @@ typedef bool (*FileFunc)(const char *file_name);
 
 static refalrts::FnResult perform_file_operation(
   FileFunc operation,
+  const refalrts::RefalIdentifier *identifiers,
   refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end
 ) {
   /*
@@ -491,17 +493,17 @@ static bool remove_file(const char *filename) {
 
 $NATIVE CppSR FUNCTION
 $ENTRY RemoveFile @@'
-  return perform_file_operation(remove_file, vm, arg_begin, arg_end);
+  return perform_file_operation(remove_file, identifiers, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY RemoveDir @@'
-  return perform_file_operation(remove_dir, vm, arg_begin, arg_end);
+  return perform_file_operation(remove_dir, identifiers, vm, arg_begin, arg_end);
 '@@;
 
 $NATIVE CppSR FUNCTION
 $ENTRY MakeDir @@'
-  return perform_file_operation(make_dir, vm, arg_begin, arg_end);
+  return perform_file_operation(make_dir, identifiers, vm, arg_begin, arg_end);
 '@@;
 
 $END CoreBE::OS::MFileSystem.

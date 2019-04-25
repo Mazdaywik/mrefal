@@ -4,14 +4,21 @@
 #include "refalrts.h"
 
 #define cookie_ns cookie_ns_3956669088_2378895849
-static refalrts::ExternalReference ref_Exit("Exit", 0U, 0U);
+
+enum efunc {
+  efunc_Exit = 0,
+};
+
 #line 2 "../all.sr/mrefalrts.sref"
 #include "refalrts.h"
 #include "refalapi.h"
-#line 12 "../all.sr/mrefalrts.cpp"
+#line 16 "../all.sr/mrefalrts.cpp"
 
 static refalrts::FnResult func_Exit(refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end) {
   (void) vm;
+  refalrts::RefalFunction **functions;
+  const refalrts::RefalIdentifier *identifiers;
+  refalrts::load_constants(arg_begin, &functions, &identifiers);
 #line 12 "../all.sr/mrefalrts.sref"
 {
   // Формат <Exit s.RetCode> == поле зрения не изменяет
@@ -43,7 +50,7 @@ static refalrts::FnResult func_Exit(refalrts::VM *vm, refalrts::Iter arg_begin, 
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
-#line 47 "../all.sr/mrefalrts.cpp"
+#line 54 "../all.sr/mrefalrts.cpp"
 }
 
 static refalrts::NativeReference nat_ref_Exit("Exit", 0U, 0U, func_Exit);

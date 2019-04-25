@@ -1,0 +1,210 @@
+$MODULE BE-CppSR::MFunctionsAndIdents;
+
+$IMPORT MIModule;
+$IMPORT MLambda;
+$IMPORT MQualifiedName;
+$IMPORT MStrings;
+
+
+/**
+  <Extract t.hIModule>
+    == t.hIModule (e.FunctionNames) (e.Identifiers)
+
+  e.FunctionNames ::= (s.Type t.AbsolutName)*
+  e.Identifiers ::= (e.Name)*
+  s.Type ::= Defined | Extern | Enum | Swap
+*/
+$ENTRY Extract {
+  t.hIModule
+    = <Extract-Aux
+        <MLambda::Apply
+          <MLambda::Parallel-H
+            & MIModule.GetModuleName
+            <MLambda::Composite
+              &MIModule.GetEntityList
+              <MLambda::BindLeft &MLambda.MapReduce &Extract-Entity>
+              &MLambda.Bracket-H
+            >
+            <MLambda::Composite
+              &MIModule.GetEntryPoint
+              &MLambda.Bracket-H
+            >
+            &MIModule.GetImportList-RealNames
+          >
+          t.hIModule
+        >
+      >;
+}
+
+Extract-Aux {
+  t.hIModule t.ModuleName (e.FunctionEntities) (e.EntryPoints) e.Imports
+    = t.hIModule
+      <Extract-Sort
+        (/* functions */) (/* identifiers */)
+        e.FunctionEntities
+        <Extract-EntryPoints t.ModuleName e.EntryPoints>
+        <MLambda::Map &ImportFunctions e.Imports>
+      >;
+}
+
+Extract-Sort {
+  (e.Functions) (e.Identifiers) (Function s.Type t.Name) e.Items
+    = <Extract-Sort
+        (e.Functions (s.Type t.Name)) (e.Identifiers) e.Items
+      >;
+
+  (e.Functions) (e.Identifiers) (Identifier e.Name) e.Items
+    = <Extract-Sort (e.Functions) (e.Identifiers (e.Name)) e.Items>;
+
+  (e.Functions) (e.Identifiers) /* пусто */
+    = (<RedudandExterns <MStrings::Unique e.Functions>>)
+      (<MStrings::Unique e.Identifiers>);
+}
+
+RedudandExterns {
+  e.Functions-B (Extern t.Name) e.Functions-M (s.Type t.Name) e.Functions-E
+    = <RedudandExterns
+        e.Functions-B e.Functions-M (s.Type t.Name) e.Functions-E
+      >;
+
+  e.Functions-B (s.Type t.Name) e.Functions-M (Extern t.Name) e.Functions-E
+    = <RedudandExterns
+        e.Functions-B (s.Type t.Name) e.Functions-M e.Functions-E
+      >;
+
+  e.Functions = e.Functions;
+}
+
+Extract-EntryPoints {
+  t.ModuleName Go (Result e.Result)
+    = <Extract-Expr e.Result>
+      (Function Defined <MQualifiedName::Create (Go)>)
+      (Function Extern <MQualifiedName::Create ('Exit')>)
+      (Function Defined <MQualifiedName::Create ('Exit' Entry)>);
+
+  t.ModuleName Regular t.InitSeq t.FinalSeq
+    = <Extract-InitFinalSeq t.InitSeq>
+      <Extract-InitFinalSeq t.FinalSeq>
+      (Identifier 'Init')
+      (Identifier 'Final')
+      (Function Defined <MQualifiedName::AddSubName t.ModuleName 'Init' Entry>);
+}
+
+Extract-InitFinalSeq {
+  None = /* пусто */;
+  (Result e.Expr) = <Extract-Expr e.Expr>;
+}
+
+ImportFunctions {
+  t.ImportName
+    = (Identifier 'Init')
+      (Identifier 'Final')
+      (Function Extern <MQualifiedName::AddSubName t.ImportName 'Init' Entry>);
+}
+
+Extract-Entity {
+  t.hIModule (Function t.RelativeName)
+    = <Extract-Function
+        t.RelativeName <MIModule::AbsolutName t.hIModule t.RelativeName>
+      >;
+
+  t.hIModule (ADT t.RelativeName)
+    = <Extract-ADT <MIModule::AbsolutName t.hIModule t.RelativeName>>;
+
+  t.hIModule (NativeInsertion s.NativeHandle t.SrcPos s.BackEndID e.Code)
+    = t.hIModule <Extract-Expr e.Code>;
+}
+
+Extract-ADT {
+  t.hIModule t.Name = t.hIModule (Function Enum t.Name);
+}
+
+Extract-Function {
+  t.RelativeName t.hIModule t.AbsolutName
+    = <Extract-Function-Aux
+        t.AbsolutName
+        <MLambda::Apply
+          <MLambda::Parallel-H
+            <MLambda.BindLeft-H
+              & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
+            >
+            <MLambda.BindLeft-H
+              & MIModule.GetFunctionAttribute Body t.RelativeName
+            >
+            <MLambda.BindLeft-H
+              & MIModule.GetFunctionAttribute NativeBody t.RelativeName
+            >
+          >
+          t.hIModule
+        >
+      >;
+}
+
+Extract-Function-Aux {
+  t.AbsolutName t.hIModule
+  Found Swap NoAttrib NoAttrib
+    = t.hIModule (Function Swap t.AbsolutName);
+
+  t.AbsolutName t.hIModule
+  Found s.ScopeClass Found (/* пусто */) NoAttrib
+    = t.hIModule (Function Enum t.AbsolutName);
+
+  t.AbsolutName t.hIModule
+  Found s.ScopeClass Found (e.Sentences) NoAttrib
+    = t.hIModule
+      (Function Defined t.AbsolutName)
+      <Extract-Sentences e.Sentences>;
+
+  t.AbsolutName t.hIModule
+  Found s.ScopeClass NoAttrib Found t.SrcPos s.BackEndID Code e.Code
+    = t.hIModule
+      (Function Defined t.AbsolutName)
+      <Extract-Expr e.Code>;
+}
+
+Extract-Sentences {
+  e.Sentences = <MLambda::Map &Extract-Sentence e.Sentences>;
+}
+
+Extract-Sentence {
+  ((Pattern e.Pattern) (Result e.Result))
+    = <Extract-Expr e.Pattern> <Extract-Expr e.Result>;
+
+  ((Pattern e.Pattern) s.EntryCodeType (Result e.Result))
+    = <Extract-Expr e.Pattern> <Extract-Expr e.Result>;
+}
+
+Extract-Expr {
+  e.Expr = <MLambda::Map &Extract-Term e.Expr>;
+}
+
+Extract-Term {
+  (Structure e.Nested) = <Extract-Expr e.Nested>;
+
+  (Abstract t.Callable e.Nested)
+    = <Extract-Callable t.Callable> <Extract-Expr e.Nested>;
+
+  (Function t.Callable e.Nested)
+    = <Extract-Callable t.Callable> <Extract-Expr e.Nested>;
+
+  (IndirectCall (SVar e.Index) e.Nested) = <Extract-Expr e.Nested>;
+
+  (Identifier t.SrcPos e.Name) = (Identifier e.Name);
+
+  (EVar e.Index) = ;
+  (TVar e.Index) = ;
+  (SVar e.Index) = ;
+
+  (Literal e.Content) = ;
+  (Macro s.Value) = ;
+
+  (FnPtr t.Callable) = <Extract-Callable t.Callable>;
+
+  (Native t.SrcPos e.Code) = ;
+}
+
+Extract-Callable {
+  (s.CallType t.SrcPos t.QualifiedName) = (Function Extern t.QualifiedName);
+}
+
+$END BE-CppSR::MFunctionsAndIdents.

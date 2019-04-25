@@ -1,15 +1,14 @@
 $MODULE BE-CppSR::MRASL;
 
 $IMPORT BE-CppSR::Generator;
+$IMPORT BE-CppSR::MFunctionsAndIdents;
 $IMPORT C-Link::MLinker;
 $IMPORT Config::MHelpers;
 $IMPORT MError;
 $IMPORT MFileIO;
 $IMPORT MFileSystem;
-$IMPORT MIModule;
 $IMPORT MLambda;
 $IMPORT MMath;
-$IMPORT MQualifiedName;
 $IMPORT MStrings;
 
 
@@ -19,12 +18,9 @@ $IMPORT MStrings;
 */
 $ENTRY Generate {
   t.hIModule e.OutName =
-    <CreateFile
+    <CreateRASL
       (e.OutName)
-      <MLambda::MapReduce
-        & GenerateEntity
-        <MIModule::GetEntityList t.hIModule>
-      >
+      <BE-CppSR::MFunctionsAndIdents::Extract t.hIModule>
     >;
 }
 
@@ -38,18 +34,22 @@ CreateBinary {
     >;
 }
 
-CreateFile {
-  (e.OutName) t.hIModule e.RaslCode =
-    <CreateFile-EntryPoint
+CreateRASL {
+  (e.OutName) t.hIModule (e.Functions) (e.Identifiers) =
+    t.hIModule
+    <CreateRASL-Aux
       (e.OutName)
-      <GenerateEntryCode <MIModule::GetEntryPoint t.hIModule>>
-      e.RaslCode
+      (<PrepareExternals e.Functions>)
+      (<PrepareIdents e.Identifiers>)
+      e.Functions
     >;
 }
 
-CreateFile-EntryPoint {
-  (e.OutName) t.hIModule e.RaslCode =
-    t.hIModule
+CreateRASL-Aux {
+  (e.OutName)
+  (s.ExternalCount s.ExternalSize e.ExternalBytes)
+  (s.IdentCount s.IdentSize e.IdentBytes)
+  e.Functions =
     <CreateBinary
       (e.OutName)
       <GenBlock Start 'RASLCODE'>
@@ -58,103 +58,58 @@ CreateFile-EntryPoint {
         // cookies
         <DWord 0> <DWord 0>
         // external count, ident count, number count, string count
-        <DWord 0> <DWord 0> <DWord 0> <DWord 0>
+        <DWord s.ExternalCount> <DWord s.IdentCount> <DWord 0> <DWord 0>
         // RASL length, external size, ident size, string size
-        <DWord 0> <DWord 0> <DWord 0> <DWord 0>
+        <DWord 0> <DWord s.ExternalSize> <DWord s.IdentSize> <DWord 0>
+        e.ExternalBytes
+        e.IdentBytes
+        /* no numbers */
+        /* no strings */
+        /* no RASL */
       >
-      e.RaslCode
+      <MLambda::Map &GenFunction e.Functions>
     >;
 }
 
-GenerateEntryCode {
-  t.hIModule Go t.GoSeq =
-    <MLambda::Apply
-      <MLambda::Parallel-H
-        <MLambda::BindLeft-H
-          &GenDefinition-Absolut
-          <MQualifiedName::Create (Go)> Native Entry
-        >
-        <MLambda::BindLeft-H
-          &GenDefinition-Absolut
-          <MQualifiedName::Create ('Exit' Entry)> Native Entry
-        >
-      >
-      t.hIModule
-    >;
-
-  t.hIModule Regular t.InitSeq t.FinalSeq =
-    <MLambda::Apply
-      <MLambda::Parallel-H
-        <MLambda::BindLeft-H
-          &GenDefinition-Relative
-          <MQualifiedName::Create ('Init' Entry)> Native Entry
-        >
-      >
-      t.hIModule
-    >;
+PrepareExternals {
+  e.Functions = <PrepareExternals-Aux <MStrings::Length-T e.Functions>>;
 }
 
-GenerateEntity {
-  t.hIModule (Function t.RelativeName) =
-    <GenerateFunction t.hIModule t.RelativeName>;
-
-  t.hIModule (ADT t.RelativeName) =
-    <GenDefinition-Relative t.hIModule t.RelativeName Empty Local>;
-
-  t.hIModule (NativeInsertion e.NativeCode) = t.hIModule;
+PrepareExternals-Aux {
+  s.ExternalCount e.Functions
+    = s.ExternalCount
+      <MStrings::Length-T <MLambda::Map &PrepareExternal e.Functions>>;
 }
 
-GenerateFunction {
-  t.hIModule t.RelativeName =
-    <GenerateFunction-Aux
-      <MLambda::Apply
-        <MLambda::Parallel-H
-          <MLambda::BindLeft-H
-            & MIModule.GetFunctionAttribute ScopeClass t.RelativeName
-          >
-          <MLambda::BindLeft-H
-            & MIModule.GetFunctionAttribute Body t.RelativeName
-          >
-          <MLambda::BindLeft-H
-            & MIModule.GetFunctionAttribute NativeBody t.RelativeName
-          >
-        >
-        t.hIModule
-      >
-      t.RelativeName
-    >;
+PrepareExternal {
+  (s.Type t.AbsolutName) = <MakeFuncName t.AbsolutName>;
 }
 
-GenerateFunction-Aux {
-  t.hIModule Found Swap NoAttrib NoAttrib t.RelativeName =
-    <GenDefinition-Relative t.hIModule t.RelativeName Swap Local>;
-
-  t.hIModule Found s.ScopeClass Found (/* пусто */) NoAttrib t.RelativeName =
-    <GenDefinition-Relative t.hIModule t.RelativeName Empty s.ScopeClass>;
-
-  t.hIModule Found s.ScopeClass Found (e.Sentences) NoAttrib t.RelativeName =
-    <GenDefinition-Relative t.hIModule t.RelativeName Native s.ScopeClass>;
-
-  t.hIModule Found s.ScopeClass NoAttrib Found e.NativeData t.RelativeName =
-    <GenDefinition-Relative t.hIModule t.RelativeName Native s.ScopeClass>;
+MakeFuncName {
+  t.Name = '*' <BE-CppSR::Generator::MakeExternalName t.Name> '\0';
 }
 
-GenDefinition-Relative {
-  t.hIModule t.RelativeName s.Type s.ScopeClass =
-    <GenDefinition-Absolut
-      <MIModule::AbsolutName t.hIModule t.RelativeName> s.Type s.ScopeClass
-    >;
+PrepareIdents {
+  e.Identifiers = <PrepareIdents-Aux <MStrings::Length-T e.Identifiers>>;
 }
 
-GenDefinition-Absolut {
-  t.hIModule t.AbsolutName s.Type s.ScopeClass =
-    t.hIModule
-    <GenBlock
-      s.Type
-      <MarkerFromScopeClass s.ScopeClass>
-      <BE-CppSR::Generator::MakeExternalName t.AbsolutName> '\0'
-    >;
+PrepareIdents-Aux {
+  s.IdentCount e.Identifiers
+    = s.IdentCount
+      <MStrings::Length-T <MLambda::Map &PrepareIdent e.Identifiers>>;
 }
+
+PrepareIdent {
+  (e.Name) = e.Name '\0';
+}
+
+GenFunction {
+  (Defined t.Name) = <GenBlock Native <MakeFuncName t.Name>>;
+  (Extern t.Name) = /* ничего не генерируем */;
+  (Enum t.Name) = <GenBlock Empty <MakeFuncName t.Name>>;
+  (Swap t.Name) = <GenBlock Swap <MakeFuncName t.Name>>;
+}
+
 
 CodeFromType {
   Start = 1;
@@ -162,10 +117,6 @@ CodeFromType {
   Native = 4;
   Empty = 5;
   Swap = 6;
-}
-
-MarkerFromScopeClass {
-  Local = '#'; Entry = '*';
 }
 
 GenBlock {

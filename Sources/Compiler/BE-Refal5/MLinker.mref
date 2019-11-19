@@ -226,6 +226,12 @@ AddRequest {
   t.UnitStorage 'Swap::' e.Name =
     <AddRequestAux t.UnitStorage 'Swap::' e.Name>;
 
+  t.UnitStorage 'ADT::' e.Name =
+    <AddRequestAux t.UnitStorage 'ADT::' e.Name>;
+
+  t.UnitStorage 'Ident::' e.Name =
+    <AddRequestAux t.UnitStorage 'Ident::' e.Name>;
+
   t.UnitStorage e.OtherName =
     t.UnitStorage;
 }
@@ -315,9 +321,29 @@ GetNextUnit {
       t.Linked
     ] ((e.NextName s.Hash) e.Body);
 
+  [UnitStorage (Requests ('ADT::' e.Name) e.Requests) t.Units t.Linked] =
+    [UnitStorage (Requests e.Requests) t.Units t.Linked]
+    <MakeGhostUnit 'ADT::' e.Name>;
+
+  [UnitStorage (Requests ('Ident::' e.Name) e.Requests) t.Units t.Linked] =
+    [UnitStorage (Requests e.Requests) t.Units t.Linked]
+    <MakeGhostUnit 'Ident::' e.Name>;
+
   [UnitStorage (Requests (e.NextName s.Hash) e.Requests) t.Units t.Linked] =
     [UnitStorage (Requests (e.NextName s.Hash) e.Requests) t.Units t.Linked]
     UnresolvedName e.NextName;
+}
+
+MakeGhostUnit {
+  e.Name =
+    (
+      (e.Name)
+      (('$' e.Name) ' { Explode = ' ('' <DropHash e.Name>) '; }')
+    );
+}
+
+DropHash {
+  e.Name s.Hash = e.Name;
 }
 
 /**

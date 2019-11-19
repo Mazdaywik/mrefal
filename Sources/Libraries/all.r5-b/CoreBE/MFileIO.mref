@@ -15,14 +15,26 @@ c {
 c   'b' s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
-c     , <Dg FreeHandles > :
+c     , <Dg
+c         '@@FreeHandles@@'
+c       > :
 c     {
 r       //Найден свободный дескриптор
-c       Handles s.FreeHandle e.Handles
-c         = <Open <'@@&Implode@@'
-c                                s.Mode 'b'> s.FreeHandle e.FileName >
-c         <Br FreeHandles '=' Handles e.Handles >
-c         s.FreeHandle;
+c       '@@Handles@@'
+c       s.FreeHandle e.Handles
+c         = <Open
+c             <'@@&Implode@@'
+c                s.Mode 'b'
+c             >
+c             s.FreeHandle e.FileName
+c           >
+c           <Br
+c             '@@FreeHandles@@'
+c             '='
+c             '@@Handles@@'
+c             e.Handles
+c           >
+c           s.FreeHandle;
 
 r       //Свободных дескрипторов не осталось --- функция должна падать
 c     };
@@ -30,13 +42,21 @@ c     };
 c   s.Mode e.FileName
 c     , 'rwa'
 c       : e.X s.Mode e.Y
-c     , <Dg FreeHandles > :
+c     , <Dg
+c         '@@FreeHandles@@'
+c       > :
 c     {
 r       //Найден свободный дескриптор
-c       Handles s.FreeHandle e.Handles
+c       '@@Handles@@'
+c       s.FreeHandle e.Handles
 c         = <Open s.Mode s.FreeHandle e.FileName >
-c         <Br FreeHandles '=' Handles e.Handles >
-c         s.FreeHandle;
+c           <Br
+c             '@@FreeHandles@@'
+c             '='
+c             '@@Handles@@'
+c             e.Handles
+c           >
+c           s.FreeHandle;
 
 r       //Свободных дескрипторов не осталось --- функция должна падать
 c     };
@@ -53,20 +73,16 @@ Implode {
   'ab' = &Ab;
 }
 
-// Эти алиасы используются только в этом модуле
-$NATIVE Refal5 FUNCTION FreeHandles ALIAS FreeHandles;
-$NATIVE Refal5 FUNCTION Handles ALIAS Handles;
-
 $INIT
   <Platform.Refal5.Br
-    &FreeHandles '=' &Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+    FreeHandles '=' Handles 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
   >;
 
 $ENTRY Close {
   s.Handle =
     <Platform.Refal5.Close s.Handle >
     <Platform.Refal5.Br
-      &FreeHandles '=' <Platform.Refal5.Dg &FreeHandles> s.Handle
+      FreeHandles '=' <Platform.Refal5.Dg FreeHandles> s.Handle
     >;
 }
 

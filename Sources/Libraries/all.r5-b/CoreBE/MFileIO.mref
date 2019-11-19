@@ -43,15 +43,15 @@ c     };
 c }
 '@@;
 
-$NATIVE Refal5 FUNCTION
-Implode
-@@'
-c {
-c   'rb' = rb;
-c   'wb' = wb;
-c   'ab' = ab;
-c }
-'@@;
+$NATIVE Refal5 FUNCTION Rb EXTERN 'rb';
+$NATIVE Refal5 FUNCTION Wb EXTERN 'wb';
+$NATIVE Refal5 FUNCTION Ab EXTERN 'ab';
+
+Implode {
+  'rb' = &Rb;
+  'wb' = &Wb;
+  'ab' = &Ab;
+}
 
 // Эти алиасы используются только в этом модуле
 $NATIVE Refal5 FUNCTION FreeHandles ALIAS FreeHandles;

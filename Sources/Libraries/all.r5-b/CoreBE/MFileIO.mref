@@ -19,7 +19,8 @@ c     , <Dg FreeHandles > :
 c     {
 r       //Найден свободный дескриптор
 c       Handles s.FreeHandle e.Handles
-c         = <Open <Implode s.Mode 'b'> s.FreeHandle e.FileName >
+c         = <Open <'@@&Implode@@'
+c                                s.Mode 'b'> s.FreeHandle e.FileName >
 c         <Br FreeHandles '=' Handles e.Handles >
 c         s.FreeHandle;
 
@@ -39,6 +40,16 @@ c         s.FreeHandle;
 
 r       //Свободных дескрипторов не осталось --- функция должна падать
 c     };
+c }
+'@@;
+
+$NATIVE Refal5 FUNCTION
+Implode
+@@'
+c {
+c   'rb' = rb;
+c   'wb' = wb;
+c   'ab' = ab;
 c }
 '@@;
 

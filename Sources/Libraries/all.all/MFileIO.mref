@@ -78,7 +78,7 @@ $ENTRY Write-T
   <WriteLine t.Handle e.Line> == t.Handle
 
   Записывает строку e.Line в файл, завершая её символом \n.
-  Эквивалентенр <Write t.Handle e.Line '\n'>
+  Эквивалентен <Write t.Handle e.Line '\n'>
 */
 $ENTRY WriteLine
   s.Handle e.Line =

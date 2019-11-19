@@ -104,7 +104,10 @@ AddBuiltIn {
 
 CreateExeTyper {
   e.TargetFileName =
-    <MExeTyper::Create <DefLim> e.TargetFileName '.ref'>;
+    <MExeTyper::TypeLine
+      <MExeTyper::Create <DefLim> e.TargetFileName '.ref'>
+      '*$ENUM Finalizers, NF'
+    >;
 }
 
 DefLim = 64;

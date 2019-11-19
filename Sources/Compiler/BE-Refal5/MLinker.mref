@@ -71,7 +71,9 @@ StartLinkLoop {
     <StopLinkLoop
       <LinkLoop
         <CreateAliasTable e.BuiltIns>
-        <CreateExeTyper e.TargetFileName>
+        <TypeExterns
+          <CreateExeTyper e.TargetFileName> e.BuiltIns
+        >
         <CreateUnitStorage
           (<MLambda::Map & SelectBuiltInMRName e.BuiltIns>)
           <ExitFunctionCode> e.Units
@@ -83,7 +85,7 @@ StartLinkLoop {
 }
 
 SelectBuiltInMRName {
-  (RealName (e.MR-Name) e.R5-Name) = (e.MR-Name);
+  (RealName (e.MR-Name) s.Type e.R5-Name) = (e.MR-Name);
 }
 
 CreateAliasTable {
@@ -94,7 +96,7 @@ CreateAliasTable {
 }
 
 AddBuiltIn {
-  t.AliasTable (RealName (e.MR-Name s.Hash) e.R5-Name) =
+  t.AliasTable (RealName (e.MR-Name s.Hash) s.Type e.R5-Name) =
     <MLinkerAliasTable::AddBuiltIn
       t.AliasTable (e.MR-Name s.Hash) e.R5-Name
     >;
@@ -414,8 +416,8 @@ GroupOneLinkUnit {
       (e.Unit (e.CodeLine)) e.Lines
     >;
 
-  ((e.Banner)) (RealName e.RealName) e.Lines =
-    (RealName (e.Banner) e.RealName)
+  ((e.Banner)) (RealName s.Type e.RealName) e.Lines =
+    (RealName (e.Banner) s.Type e.RealName)
     <DoGroupLinkUnits e.Lines>;
 
   (e.Unit) t.OtherLine e.Lines =
@@ -434,7 +436,8 @@ AnalyseLine {
 
   ('c ' e.CodeLine) = (Code <HideQuotes e.CodeLine>);
 
-  ('p ' e.RealName) = (RealName e.RealName);
+  ('p ' e.RealName) = (RealName Local e.RealName);
+  ('x ' e.RealName) = (RealName Extern e.RealName);
 
   ('e ' e.EntryPointCode) = (EntryPoint <HideQuotes e.EntryPointCode>);
 
@@ -531,5 +534,25 @@ TypeLine {
 TypeRenamed
   (t.Aliases e.FnAlias) t.ExeTyper e.Raw =
     t.Aliases <MExeTyper::TypeRenamed t.ExeTyper e.FnAlias> e.Raw;
+
+TypeExterns {
+  t.ExeTyper (RealName (e.MR-Name) Local e.R5-Name) e.Names
+    = <TypeExterns t.ExeTyper e.Names>;
+
+  t.ExeTyper (RealName (e.MR-Name) Extern e.R5-Name) e.Names
+    = <TypeExterns
+        <MExeTyper::TypeLine t.ExeTyper '$EXTERN ' e.R5-Name ';'>
+        <TypeExterns-Cleanup (e.R5-Name) e.Names>
+      >;
+
+  t.ExeTyper /* пусто */ = t.ExeTyper;
+}
+
+TypeExterns-Cleanup {
+  (e.R5-Name) e.Names-B (RealName (e.MR-Name) s.Type e.R5-Name) e.Names-E
+    = e.Names-B <TypeExterns-Cleanup (e.R5-Name) e.Names-E>;
+
+  (e.R5-Name) e.Names = e.Names;
+}
 
 $END BE-Refal5::MLinker.

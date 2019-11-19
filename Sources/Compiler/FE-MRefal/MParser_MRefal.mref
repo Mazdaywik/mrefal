@@ -1424,7 +1424,14 @@ NNativeInsertion-Function-Body {
   t.hLexer (Identifier t.SrcPos 'ALIAS') =
     <NNativeInsertion-Function-R5Alias
       t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
-      <MLexer::NextToken t.hLexer>
+      <MLexer::NextToken t.hLexer> Local
+    >;
+
+  t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+  t.hLexer (Identifier t.SrcPos 'EXTERN') =
+    <NNativeInsertion-Function-R5Alias
+      t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
+      <MLexer::NextToken t.hLexer> Extern
     >;
 
   t.hIModule t.hErrorList s.BackEndID s.ScopeClass e.Name
@@ -1473,13 +1480,13 @@ $NATIVE Refal5 FUNCTION Card ALIAS 'Card';
 
 NNativeInsertion-Function-R5Alias {
   t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
-  t.hLexer (Identifier t.SrcPos e.Alias) =
+  t.hLexer (Identifier t.SrcPos e.Alias) s.AliasType =
     /* Для простоты не проверяем корректность псевдонима */
     <NNativeInsertion-Function-R5Alias-Aux
       <MParser_Common::AddNewFunction
         t.hIModule t.SrcPos
         <MQualifiedName::Create (e.Name)>
-        (NativeBody t.SrcPos Refal5 Alias e.Alias)
+        (NativeBody t.SrcPos Refal5 Alias s.AliasType e.Alias)
         (ScopeClass s.ScopeClass)
         t.hErrorList
       >
@@ -1487,13 +1494,13 @@ NNativeInsertion-Function-R5Alias {
     >;
 
   t.hIModule t.hErrorList Refal5 s.ScopeClass e.Name
-  t.hLexer (Literal t.SrcPos e.Alias) =
+  t.hLexer (Literal t.SrcPos e.Alias) s.AliasType =
     /* Для простоты не проверяем корректность псевдонима */
     <NNativeInsertion-Function-R5Alias-Aux
       <MParser_Common::AddNewFunction
         t.hIModule t.SrcPos
         <MQualifiedName::Create (e.Name)>
-        (NativeBody t.SrcPos Refal5 Alias e.Alias)
+        (NativeBody t.SrcPos Refal5 Alias s.AliasType e.Alias)
         (ScopeClass s.ScopeClass)
         t.hErrorList
       >

@@ -214,11 +214,16 @@ GenerateFunction-NativeBody {
     <GenerateNative t.SrcPos Refal5 e.Code>;
 
   s.FnScopeClass t.QualifiedName
-  t.IModule Found t.SrcPos Refal5 Alias e.Alias =
+  t.IModule Found t.SrcPos Refal5 Alias s.AliasType e.Alias =
     t.IModule
     ('b ' <XQualifiedToLine s.FnScopeClass t.QualifiedName>)
-    ('p ' e.Alias)
+    (<AliasType s.AliasType> ' ' e.Alias)
     ();
+}
+
+AliasType {
+  Local = 'p';
+  Extern = 'x';
 }
 
 GenerateFnHeader

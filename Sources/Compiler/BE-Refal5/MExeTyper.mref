@@ -322,20 +322,21 @@ $ENTRY TypeRenamed {
   <TypeComment t.ExeTyper e.Comment> == t.ExeTyper
 */
 $ENTRY TypeComment {
-  [ExeTyper s.Limit s.Free t.FOut] e.Comment =
-    [ExeTyper s.Limit s.Limit
-      <FileIO::WriteLine
-        <FileIO::WriteLine t.FOut> '* ' e.Comment
-      >
-    ];
+  t.ExeTyper e.Comment = <TypeLine t.ExeTyper '\n* ' e.Comment>;
+}
 
-  [ExeTyper s.Limit s.Free t.FOut e.Converted] e.Comment =
+/**
+  <TypeLine t.ExeType e.Line> == t.ExeTyper
+*/
+$ENTRY TypeLine {
+  [ExeTyper s.Limit s.Free t.FOut] e.Line =
+    [ExeTyper s.Limit s.Limit <FileIO::WriteLine t.FOut e.Line>];
+
+  [ExeTyper s.Limit s.Free t.FOut e.Converted] e.Line =
     [ExeTyper s.Limit s.Limit
       <FileIO::WriteLine
-        <FileIO::WriteLine
-          <FileIO::WriteLine t.FOut e.Converted>
-        >
-        '* ' e.Comment
+        <FileIO::WriteLine t.FOut e.Converted>
+        e.Line
       >
     ];
 }

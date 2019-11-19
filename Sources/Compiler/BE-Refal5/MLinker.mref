@@ -192,10 +192,7 @@ PrintNotLinkedUnits
 $DATA UnitStorage;
 
 /**
-  <CreateUnitStorage
-    ((e.BuiltInName)*) t.Unit*
-  >
-    == t.UnitStorage
+  <CreateUnitStorage ((e.BuiltInName)*) t.Unit*> == t.UnitStorage
 */
 CreateUnitStorage {
   (e.BuiltIns) e.Units =
@@ -352,9 +349,7 @@ LoadUnits
     <GroupLinkUnits
       (e.FileName)
       (<MVersion::ROut>)
-      <DoLoadUnits
-        <MFileIO::Load e.FileName>
-      >
+      <MLambda::Map &AnalyseLine <MFileIO::Load e.FileName>>
     >;
 
 GroupLinkUnits {
@@ -402,14 +397,6 @@ GroupOneLinkUnit {
     <DoGroupLinkUnits t.OtherLine e.Lines>;
 
   (e.Unit) = (e.Unit);
-}
-
-DoLoadUnits {
-  = ;
-
-  (e.NextLine) e.Lines =
-    <AnalyseLine (e.NextLine)>
-    <DoLoadUnits e.Lines>;
 }
 
 AnalyseLine {

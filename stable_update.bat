@@ -6,7 +6,7 @@ mkdir Libraries
 rmdir /s /q Runtime
 mkdir Runtime
 
-for %%i in (~Defs ~ROut ~XLinx ~SimRef-01 ~Cpp-01) do (
+for %%i in (~Defs ~ROut ~XLinx ~SimRef-01 ~Cpp-01 ~Cpp-01-RASL) do (
   for %%p in (all windows) do (
     xcopy /S /I /Y Sources\Libraries\%%p.all\%%i       Libraries\%%p.all\%%i
     xcopy /S /I /Y Sources\Libraries\%%p.cppsr01-b\%%i Libraries\%%p.cppsr01\%%i

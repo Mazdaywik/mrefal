@@ -1,0 +1,10 @@
+& None t.Tree None
+: $rec ValidTree? {
+    s.Min Leaf s.Max
+
+  | s.Min (Tree s.Key t.Value t.Left t.Right) s.Max
+    & { s.Min : None | <Lt? s.Min s.Key> }
+    & { s.Max : None | <Gt? s.Max s.Key> }
+    & <ValidTree? s.Min t.Left s.Key>
+    & <ValidTree? s.Key t.Right s.Max>
+  }

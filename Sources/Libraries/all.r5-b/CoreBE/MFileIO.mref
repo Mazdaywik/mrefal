@@ -63,9 +63,9 @@ c     };
 c }
 '@@;
 
-$NATIVE Refal5 FUNCTION Rb EXTERN 'rb';
-$NATIVE Refal5 FUNCTION Wb EXTERN 'wb';
-$NATIVE Refal5 FUNCTION Ab EXTERN 'ab';
+$NATIVE Refal5 FUNCTION Rb ALIAS 'rb';
+$NATIVE Refal5 FUNCTION Wb ALIAS 'wb';
+$NATIVE Refal5 FUNCTION Ab ALIAS 'ab';
 
 Implode {
   'rb' = &Rb;

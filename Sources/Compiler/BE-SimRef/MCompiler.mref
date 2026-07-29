@@ -227,7 +227,12 @@ GenNativeInsertion {
     ('%%')
     <MLambda::Map &CppSRCodeItem e.Code>
     PATCH-SHARP-LINE
-    ('%%');
+    ('%%')
+    /*
+      Ошибка в лексическом анализаторе Простого Рефала — две нативные вставки
+      подряд не разбираются.
+    */
+    ();
 
   t.SrcPos SimRef e.Code =
     ('/* ' <MSrcPos::ToString t.SrcPos> ' */')

@@ -12,7 +12,7 @@ enum efunc {
 #line 2 "../all.sr/mrefalrts.sref"
 #include "refalrts.h"
 #include "refalapi.h"
-#line 16 "../all.sr/mrefalrts.cpp"
+#line 16 "mrefalrts.cpp"
 
 static refalrts::FnResult func_Exit(refalrts::VM *vm, refalrts::Iter arg_begin, refalrts::Iter arg_end) {
   (void) vm;
@@ -50,7 +50,7 @@ static refalrts::FnResult func_Exit(refalrts::VM *vm, refalrts::Iter arg_begin, 
   // Возвращаем сигнал о нормальном останове
   return ::refalrts::cExit;
 }
-#line 54 "../all.sr/mrefalrts.cpp"
+#line 54 "mrefalrts.cpp"
 }
 
 static refalrts::NativeReference nat_ref_Exit("Exit", 0U, 0U, func_Exit);

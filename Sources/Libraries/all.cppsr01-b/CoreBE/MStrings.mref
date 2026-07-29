@@ -195,7 +195,7 @@ $ENTRY SerializeAtom @@'
   move_left(arg_begin, arg_end);
   Iter func_name = arg_begin;
   move_left(arg_begin, arg_end);
-   Iter close_call = arg_end;
+  Iter close_call = arg_end;
   move_right(arg_begin, arg_end);
 
   Iter sAtom = 0;

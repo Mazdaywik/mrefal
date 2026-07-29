@@ -42,6 +42,7 @@ A:  Автотесты (стабильная версия)
 --:  
 L:  Удалить промежуточные файлы
     for /d %d in (~*) do rmdir /s /q %d
+    rmdir /s /q objects.tmp objects.s.tmp
     ncmenu
 --:  
 I:  Статистика и информация

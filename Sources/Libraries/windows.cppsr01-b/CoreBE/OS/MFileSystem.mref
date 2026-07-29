@@ -21,8 +21,35 @@ $NATIVE CppSR TOPLEVEL @@'
 using refalapi::CharArray;
 using refalapi::AllocArray;
 
+template <typename T>
+struct AddCommonData {
+  AllocArray &allocs;
+  T &common_data;
+  const refalrts::RefalIdentifier *identifiers;
+
+  AddCommonData(
+    AllocArray &allocs,
+    T &common_data,
+    const refalrts::RefalIdentifier *identifiers
+  )
+    : allocs(allocs)
+    , common_data(common_data)
+    , identifiers(identifiers)
+  {}
+};
+
+// Функция, порождающая запись о файле (объявление),
+// передаётся в refalrts::checked_array().
+typedef AddCommonData<WIN32_FIND_DATA> AddFileRecordData;
+static refalrts::FnResult add_file_record(refalrts::VM *vm, void *vdata);
+
+// Функция, порождающая запись об атрибутах (объявление),
+// передаётся в refalrts::checked_array().
+typedef AddCommonData<WIN32_FILE_ATTRIBUTE_DATA> AddFileAttributeData;
+static refalrts::FnResult add_attribute_record(refalrts::VM *vm, void *vdata);
+
 // Функция, порождающая атрибутную информацию (объявление)
-static bool add_attribute_record(
+static void add_attribute_record(
   refalrts::VM *vm,
   AllocArray& allocs,
   const refalrts::RefalIdentifier *identifiers,
@@ -33,7 +60,7 @@ static bool add_attribute_record(
   DWORD size
 );
 
-static bool append_filetime(
+static void append_filetime(
   refalrts::VM *vm,
   AllocArray& allocs,
   refalrts::RefalIdentifier ident,
@@ -98,40 +125,11 @@ $ENTRY FindFiles @@'
     reset_allocator(vm);
 
     do {
-      Iter open_main_bracket = 0, close_main_bracket = 0;
-      Iter open_filename_bracket = 0, close_filename_bracket = 0;
-      Iter filename_b = 0, filename_e = 0;
+      AddFileRecordData args(allocs, find_file_data, identifiers);
 
-      bool allocated =
-        alloc_open_bracket(vm, open_main_bracket)
-        && alloc_close_bracket(vm, close_main_bracket)
-        && alloc_open_bracket(vm, open_filename_bracket)
-        && alloc_close_bracket(vm, close_filename_bracket)
-        && alloc_string(vm, filename_b, filename_e, find_file_data.cFileName);
-
-      if( ! allocated ) return cRecognitionImpossible;
-
-      link_brackets(open_main_bracket, close_main_bracket);
-      link_brackets(open_filename_bracket, close_filename_bracket);
-
-      allocs.push_back(open_main_bracket);
-      allocs.push_back(open_filename_bracket);
-      allocs.push_back(filename_b, filename_e);
-      allocs.push_back(close_filename_bracket);
-
-      allocated = add_attribute_record(
-        vm, allocs, identifiers,
-        find_file_data.ftCreationTime,
-        find_file_data.ftLastAccessTime,
-        find_file_data.ftLastWriteTime,
-        find_file_data.dwFileAttributes,
-        find_file_data.nFileSizeLow
-      );
-
-      if( ! allocated ) return cRecognitionImpossible;
-
-      allocs.push_back(close_main_bracket);
-
+      if (! refalrts::checked_alloc(vm, add_file_record, &args)) {
+        return cNoMemory;
+      }
     } while( FindNextFile(hFind, &find_file_data) != 0 );
 
     // Просмотр папки мог прерваться и ошибкой
@@ -173,8 +171,47 @@ $ENTRY FindFiles @@'
 '@@;
 
 $NATIVE CppSR TOPLEVEL @@'
+// Функция, порождающая запись о файле (определение)
+static refalrts::FnResult add_file_record(refalrts::VM *vm, void *vdata) {
+  using namespace refalrts;
+  AddFileRecordData *data = static_cast<AddFileRecordData*>(vdata);
+  const WIN32_FIND_DATA &find_file_data = data->common_data;
+
+  Iter open_main_bracket = 0, close_main_bracket = 0;
+  Iter open_filename_bracket = 0, close_filename_bracket = 0;
+  Iter filename_b = 0, filename_e = 0;
+
+  alloc_open_bracket(vm, open_main_bracket);
+  alloc_close_bracket(vm, close_main_bracket);
+  alloc_open_bracket(vm, open_filename_bracket);
+  alloc_close_bracket(vm, close_filename_bracket);
+  alloc_string(vm, filename_b, filename_e, find_file_data.cFileName);
+
+  link_brackets(open_main_bracket, close_main_bracket);
+  link_brackets(open_filename_bracket, close_filename_bracket);
+
+  data->allocs.push_back(open_main_bracket);
+  data->allocs.push_back(open_filename_bracket);
+  data->allocs.push_back(filename_b, filename_e);
+  data->allocs.push_back(close_filename_bracket);
+
+  add_attribute_record(
+    vm, data->allocs, data->identifiers,
+    find_file_data.ftCreationTime,
+    find_file_data.ftLastAccessTime,
+    find_file_data.ftLastWriteTime,
+    find_file_data.dwFileAttributes,
+    find_file_data.nFileSizeLow
+  );
+
+  data->allocs.push_back(close_main_bracket);
+  return cSuccess;
+}
+'@@;
+
+$NATIVE CppSR TOPLEVEL @@'
 // Функция, порождающая атрибутную информацию (определение)
-static bool add_attribute_record(
+static void add_attribute_record(
   refalrts::VM *vm,
   AllocArray& allocs,
   const refalrts::RefalIdentifier *identifiers,
@@ -186,40 +223,30 @@ static bool add_attribute_record(
 ) {
   using namespace refalrts;
 
-  bool append_time =
-    append_filetime(vm, allocs, '@@ADateTime@@', last_access_time)
-    && append_filetime(vm, allocs, '@@MDateTime@@', last_write_time)
-    && append_filetime(vm, allocs, '@@CDateTime@@', creation_time);
-
-  if( ! append_time ) return false;
+  append_filetime(vm, allocs, '@@ADateTime@@', last_access_time);
+  append_filetime(vm, allocs, '@@MDateTime@@', last_write_time);
+  append_filetime(vm, allocs, '@@CDateTime@@', creation_time);
 
   Iter open_bracket_size = 0, close_bracket_size = 0;
   Iter size_ident = 0, size_value = 0;
 
-  bool is_directory = (file_attributes & FILE_ATTRIBUTE_DIRECTORY);
-  bool size_allocs =
-    alloc_open_bracket(vm, open_bracket_size)
-    && alloc_ident(vm, size_ident, '@@Size@@')
-    &&
-      (
-        is_directory
-        ? alloc_ident(vm, size_value, '@@Dir@@')
-        : alloc_number(vm, size_value, size)
-      )
-    && alloc_close_bracket(vm, close_bracket_size);
-
-  if( ! size_allocs ) return false;
+  alloc_open_bracket(vm, open_bracket_size);
+  alloc_ident(vm, size_ident, '@@Size@@');
+  if (file_attributes & FILE_ATTRIBUTE_DIRECTORY) {
+    alloc_ident(vm, size_value, '@@Dir@@');
+  } else {
+    alloc_number(vm, size_value, size);
+  }
+  alloc_close_bracket(vm, close_bracket_size);
 
   link_brackets(open_bracket_size, close_bracket_size);
   allocs.push_back(open_bracket_size);
   allocs.push_back(size_ident);
   allocs.push_back(size_value);
   allocs.push_back(close_bracket_size);
-
-  return true;
 }
 
-static bool append_filetime(
+static void append_filetime(
   refalrts::VM *vm,
   AllocArray& allocs,
   refalrts::RefalIdentifier ident,
@@ -240,19 +267,16 @@ static bool append_filetime(
   Iter second = 0;
   Iter milliseconds = 0;
 
-  bool alloc_time =
-    alloc_open_bracket( vm, open_bracket )
-    && alloc_close_bracket( vm, close_bracket )
-    && alloc_ident( vm, time_ident, ident )
-    && alloc_number( vm, year, file_system_time.wYear )
-    && alloc_number( vm, month, file_system_time.wMonth )
-    && alloc_number( vm, day, file_system_time.wDay )
-    && alloc_number( vm, hour, file_system_time.wHour )
-    && alloc_number( vm, minute, file_system_time.wMinute )
-    && alloc_number( vm, second, file_system_time.wSecond )
-    && alloc_number( vm, milliseconds, file_system_time.wMilliseconds );
-
-  if( ! alloc_time ) return false;
+  alloc_open_bracket( vm, open_bracket );
+  alloc_close_bracket( vm, close_bracket );
+  alloc_ident( vm, time_ident, ident );
+  alloc_number( vm, year, file_system_time.wYear );
+  alloc_number( vm, month, file_system_time.wMonth );
+  alloc_number( vm, day, file_system_time.wDay );
+  alloc_number( vm, hour, file_system_time.wHour );
+  alloc_number( vm, minute, file_system_time.wMinute );
+  alloc_number( vm, second, file_system_time.wSecond );
+  alloc_number( vm, milliseconds, file_system_time.wMilliseconds );
 
   link_brackets( open_bracket, close_bracket );
   allocs.push_back( open_bracket );
@@ -265,8 +289,26 @@ static bool append_filetime(
   allocs.push_back( second );
   allocs.push_back( milliseconds );
   allocs.push_back( close_bracket );
+}
+'@@;
 
-  return true;
+$NATIVE CppSR TOPLEVEL @@'
+// Функция, порождающая запись об атрибутах (определение)
+static refalrts::FnResult add_attribute_record(
+  refalrts::VM *vm, void *vdata
+) {
+  AddFileAttributeData *data = static_cast<AddFileAttributeData*>(vdata);
+  const WIN32_FILE_ATTRIBUTE_DATA &attributes = data->common_data;
+  add_attribute_record(
+    vm, data->allocs, data->identifiers,
+    attributes.ftCreationTime,
+    attributes.ftLastAccessTime,
+    attributes.ftLastWriteTime,
+    attributes.dwFileAttributes,
+    attributes.nFileSizeLow
+  );
+
+  return refalrts::cSuccess;
 }
 '@@;
 
@@ -313,17 +355,9 @@ $ENTRY FileAttributes @@'
     reset_allocator(vm);
 
     AllocArray allocs;
-    bool alloc_attribs = add_attribute_record(
-      vm, allocs, identifiers,
-      attributes.ftCreationTime,
-      attributes.ftLastAccessTime,
-      attributes.ftLastWriteTime,
-      attributes.dwFileAttributes,
-      attributes.nFileSizeLow
-    );
-
-    if( ! alloc_attribs ) return cNoMemory;
-
+    AddFileAttributeData args(allocs, attributes, identifiers);
+    FnResult result = checked_alloc(vm, add_attribute_record, &args);
+    if (result != cSuccess) return result;
     // Переиспользуем открывающую угловую сбоку,
     // вставляем перед именем функции
     open_call->link_info = 0;
@@ -342,6 +376,25 @@ $ENTRY FileAttributes @@'
     splice_to_freelist( vm, func_name, close_call );
     return cSuccess;
   }
+'@@;
+
+$NATIVE CppSR TOPLEVEL @@'
+
+struct AllocStringData {
+  refalrts::Iter begin;
+  refalrts::Iter end;
+  const char *str;
+
+  static refalrts::FnResult alloc(refalrts::VM *vm, void *vdata) {
+    return static_cast<AllocStringData*>(vdata)->alloc(vm);
+  }
+
+  refalrts::FnResult alloc(refalrts::VM *vm) {
+    refalrts::alloc_string(vm, begin, end, str);
+    return refalrts::cSuccess;
+  }
+};
+
 '@@;
 
 $NATIVE CppSR FUNCTION
@@ -415,11 +468,11 @@ $ENTRY FullName @@'
     // Распределяем память для имени и помещаем его перед именем функции.
     reset_allocator(vm);
 
-    Iter eName_b = 0, eName_e = 0;
-    if( ! alloc_string(vm, eName_b, eName_e, absolut_name.c_str()) )
-      return cNoMemory;
+    AllocStringData asd = { 0, 0, absolut_name.c_str() };
+    FnResult result = checked_alloc(vm, AllocStringData::alloc, &asd);
+    if (result != cSuccess) return result;
 
-    splice_evar( func_name, eName_b, eName_e );
+    splice_evar( func_name, asd.begin, asd.end );
   }
 
   // Переиспользуем открывающую угловую скобку

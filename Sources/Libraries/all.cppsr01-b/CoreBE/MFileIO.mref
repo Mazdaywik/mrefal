@@ -37,6 +37,29 @@ static refalrts::FnResult std_handle(
 
   return cSuccess;
 }
+
+struct AllocCharsChecked {
+  refalrts::Iter *begin;
+  refalrts::Iter *end;
+  const char *buffer;
+  size_t size;
+
+  static refalrts::FnResult alloc(refalrts::VM *vm, void *vpthis) {
+    AllocCharsChecked *pthis = static_cast<AllocCharsChecked*>(vpthis);
+    refalrts::alloc_chars(vm, *pthis->begin, *pthis->end, pthis->buffer, pthis->size);
+    return refalrts::cSuccess;
+  }
+};
+
+struct AllocNumberChecked {
+  refalrts::Iter *pos;
+  refalrts::RefalNumber value;
+  static refalrts::FnResult alloc(refalrts::VM *vm, void *vpthis) {
+    AllocNumberChecked *pthis = static_cast<AllocNumberChecked*>(vpthis);
+    refalrts::alloc_number(vm, *pthis->pos, pthis->value);
+    return refalrts::cSuccess;
+  }
+};
 '@@;
 
 
@@ -105,7 +128,8 @@ $ENTRY ReadLine
     Iter frag_begin = 0, frag_end = 0;
 
     if(pos > 0) {
-      if( !alloc_chars(vm, frag_begin, frag_end, buffer, pos) ) {
+      AllocCharsChecked args = { &frag_begin, &frag_end, buffer, pos };
+      if ( checked_alloc(vm, AllocCharsChecked::alloc, &args) == cNoMemory ) {
         return cNoMemory;
       }
 
@@ -116,7 +140,11 @@ $ENTRY ReadLine
   if( at_eof ) {
     // Добавляем в конец строки число 0
     Iter sEOFMarker = 0;
-    if( ! alloc_number( vm, sEOFMarker, 0 ) ) return cNoMemory;
+    AllocNumberChecked args = { &sEOFMarker, 0 };
+    if( checked_alloc(vm, AllocNumberChecked::alloc, &args) == cNoMemory ) {
+      return cNoMemory;
+    }
+
     allocs.push_back( sEOFMarker );
   }
 

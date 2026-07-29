@@ -41,12 +41,47 @@ $ENTRY CommandLine @@'
 
   reset_allocator(vm);
 
-  if( ! alloc_chars(vm, cmd_b, cmd_e, cmd_line, len) ) return cNoMemory;
+  alloc_chars(vm, cmd_b, cmd_e, cmd_line, len);
 
   // Построение результата
   splice_evar(open_call, cmd_b, cmd_e);
   splice_to_freelist(vm, open_call, close_call);
   return cSuccess;
+'@@;
+
+$NATIVE CppSR TOPLEVEL @@'
+// Функция для вызова из refalrts::checked_alloc
+
+struct AllocBracketedLineData {
+  refalapi::AllocArray &allocs;
+  char *cur_line;
+
+  AllocBracketedLineData(refalapi::AllocArray &allocs, char *cur_line)
+    : allocs(allocs), cur_line(cur_line) {}
+
+  refalrts::FnResult alloc(refalrts::VM *vm) {
+    using namespace refalrts;
+
+    Iter open_bracket = 0, close_bracket = 0;
+    Iter env_begin = 0, env_end = 0;
+
+    alloc_open_bracket(vm, open_bracket);
+    alloc_string(vm, env_begin, env_end, cur_line);
+    alloc_close_bracket(vm, close_bracket);
+
+    link_brackets(open_bracket, close_bracket);
+
+    allocs.push_back(open_bracket);
+    allocs.push_back(env_begin, env_end);
+    allocs.push_back(close_bracket);
+
+    return refalrts::cSuccess;
+  }
+};
+
+static refalrts::FnResult alloc_bracketed_line(refalrts::VM *vm, void *vdata) {
+  return static_cast<AllocBracketedLineData*>(vdata)->alloc(vm);
+}
 '@@;
 
 $NATIVE CppSR FUNCTION
@@ -81,21 +116,10 @@ $ENTRY EnvList @@'
     *cur_line != '\0';
     cur_line += strlen(cur_line) + 1
   ) {
-    Iter open_bracket = 0, close_bracket = 0;
-    Iter env_begin = 0, env_end = 0;
-
-    bool allocated =
-      alloc_open_bracket(vm, open_bracket)
-      && alloc_string(vm, env_begin, env_end, cur_line)
-      && alloc_close_bracket(vm, close_bracket);
-
-    if( ! allocated ) return cNoMemory;
-
-    link_brackets(open_bracket, close_bracket);
-
-    allocs.push_back(open_bracket);
-    allocs.push_back(env_begin, env_end);
-    allocs.push_back(close_bracket);
+    AllocBracketedLineData args(allocs, cur_line);
+    refalrts::FnResult result =
+      refalrts::checked_alloc(vm, alloc_bracketed_line, &args);
+    if (result != cSuccess) return result;
   }
 
   FreeEnvironmentStrings(env_block);
@@ -268,7 +292,7 @@ $ENTRY Time @@'
 
   reset_allocator(vm);
 
-  if( ! alloc_chars(vm, time_b, time_e, str_time, len) ) return cNoMemory;
+  alloc_chars(vm, time_b, time_e, str_time, len);
 
   // Построение результата
   splice_evar(open_call, time_b, time_e);

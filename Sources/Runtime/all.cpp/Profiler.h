@@ -15,11 +15,11 @@ class MetricsDifference;
 
 class Metrics
 {
-  unsigned long m_counters[refalrts::cPerformanceCounter_COUNTERS_NUMBER];
+  double m_counters[refalrts::cPerformanceCounter_COUNTERS_NUMBER];
 
   friend class MetricsDifference;
 
-  static unsigned long sm_ticks_per_sec;
+  static double sm_ticks_per_sec;
 public:
   struct NowTag {};
   static inline NowTag now() { return NowTag(); }
@@ -32,14 +32,14 @@ public:
 
   MetricsDifference operator - (const Metrics& other) const;
 
-  static unsigned long ticks_per_second() {
+  static double ticks_per_second() {
     return sm_ticks_per_sec;
   }
 };
 
 class MetricsDifference
 {
-  unsigned long m_counters[refalrts::cPerformanceCounter_COUNTERS_NUMBER];
+  double m_counters[refalrts::cPerformanceCounter_COUNTERS_NUMBER];
   friend class Metrics;
 public:
   MetricsDifference();
@@ -47,7 +47,7 @@ public:
   //Оператор присваивания по умолчанию.
   //Деструктор по умолчанию.
 
-  unsigned long operator[](int index) const {
+  double operator[](int index) const {
     return m_counters[index];
   }
 
@@ -246,7 +246,7 @@ public:
   void enumerate();
 
 private:
-  virtual unsigned long amount(int metric) const = 0;
+  virtual double amount(int metric) const = 0;
   virtual const MetricsDifference& metrics_for_compare() const = 0;
   virtual void put_metric(int metric) const = 0;
 
@@ -375,7 +375,7 @@ struct TableLinesME : public MetricsEnumerator {
   Selector selector;
 
 private:
-  virtual unsigned long amount(int field) const {
+  virtual double amount(int field) const {
     return info->sum(selector)[field];
   }
 
@@ -402,7 +402,7 @@ struct TablesME: public MetricsEnumerator {
   Report *report;
 
 private:
-  virtual unsigned long amount(int field) const {
+  virtual double amount(int field) const {
     return program_stat->total[field];
   }
 

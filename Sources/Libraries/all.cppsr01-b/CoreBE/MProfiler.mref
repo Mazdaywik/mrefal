@@ -88,20 +88,16 @@ $ENTRY Quantify @@'
 
   refalrts::reset_allocator(vm);
 
-  bool allocated =
-    refalrts::alloc_close_call(vm, new_close_call)
-    && refalrts::alloc_open_call(vm, new_open_call)
-    && refalrts::alloc_name(vm, end_quantify_func, '@@ &EndQuantify @@')
-    && refalrts::copy_stvar(vm, copy_func, func)
-    && refalrts::alloc_char(vm, profiler_object, '?');
+  refalrts::alloc_close_call(vm, new_close_call);
+  refalrts::alloc_open_call(vm, new_open_call);
+  refalrts::alloc_name(vm, end_quantify_func, '@@ &EndQuantify @@');
+  refalrts::copy_stvar(vm, copy_func, func);
+  refalrts::alloc_char(vm, profiler_object, '?');
 
   refalrts::Iter func_open_call = open_call;
   refalrts::Iter func_close_call = new_close_call;
   refalrts::Iter stop_open_call = new_open_call;
   refalrts::Iter stop_close_call = close_call;
-
-  if ( ! allocated )
-    return refalrts::cNoMemory;
 
   const char *func_name = refalrts::function_name(func->function_info)->name;
 

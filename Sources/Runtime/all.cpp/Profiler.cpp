@@ -9,8 +9,7 @@
 //------------------------------------------------------------------------------
 
 
-unsigned long profiler::Metrics::sm_ticks_per_sec =
-  refalrts::ticks_per_second();
+double profiler::Metrics::sm_ticks_per_sec = refalrts::ticks_per_second();
 
 #define NELEM(array) (sizeof(array) / sizeof(array[0]))
 
@@ -113,7 +112,7 @@ void profiler::Report::print_number_line_suffix(
 ) {
   std::fprintf(
     m_file,
-    "|    %9ld  %9.3g    %5.1f %%           |\n",
+    "|    %9f  %9.3g    %5.1f %%           |\n",
     info->sum(selector)[metric],
     info->mean(selector, metric),
     info->percent(selector, metric, m_total_program_metrics)

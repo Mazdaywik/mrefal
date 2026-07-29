@@ -126,10 +126,7 @@ $ENTRY Symb @@'
   } while( num != 0 );
 
   reset_allocator(vm);
-
-  if( ! alloc_string(vm, number_b, number_e, last_pos) )
-    return cNoMemory;
-
+  alloc_string(vm, number_b, number_e, last_pos);
   splice_evar( open_call, number_b, number_e );
   splice_to_freelist( vm, open_call, close_call );
   return cSuccess;
@@ -235,9 +232,7 @@ $ENTRY SerializeAtom @@'
     }
   } else if( cDataNumber == sAtom->tag ) {
     Iter number_ident = 0;
-    if( ! alloc_ident(vm, number_ident, '@@Number@@') )
-      return cNoMemory;
-
+    alloc_ident(vm, number_ident, '@@Number@@');
     splice_stvar(open_call, number_ident);
 
     // Необычный ход для не-рефальной функции:

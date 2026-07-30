@@ -121,6 +121,8 @@ void profiler::Report::print_number_line_suffix(
 
 profiler::Report::SuffixMethod profiler::Report::get_method(int metric) {
   using namespace refalrts;
+  profiler::Report::SuffixMethod result = 0;
+
   switch(metric) {
     case cPerformanceCounter_TotalTime:
     case cPerformanceCounter_BuiltInTime:
@@ -140,17 +142,22 @@ profiler::Report::SuffixMethod profiler::Report::get_method(int metric) {
     case cPerformanceCounter_PatternMatchTime:
     case cPerformanceCounter_LinearRefalTime:
     case cPerformanceCounter_OpenELoopTime:
-      return &Report::print_time_line_suffix;
+      result = &Report::print_time_line_suffix;
+      break;
 
     case cPerformanceCounter_HeapSize:
-      return &Report::print_size_line_suffix;
+      result = &Report::print_size_line_suffix;
+      break;
 
     case cPerformanceCounter_TotalSteps:
-      return &Report::print_number_line_suffix;
+      result = &Report::print_number_line_suffix;
+      break;
 
     default:
       refalrts_switch_default_violation(metric);
   }
+
+  return result;
 }
 
 bool profiler::Report::print_metric_line(
@@ -308,71 +315,94 @@ std::string profiler::Report::format_size(double size) {
 const char *
 profiler::Report::metric_name(int metric) {
   using namespace refalrts;
+  const char *result = 0;
 
   switch (metric) {
     case cPerformanceCounter_TotalTime:
-      return "= Total time";
+      result = "= Total time";
+      break;
 
     case cPerformanceCounter_BuiltInTime:
-      return "* Built in time";
+      result = "* Built in time";
+      break;
 
     case cPerformanceCounter_RuntimeTime:
-      return "+ Runtime time";
+      result = "+ Runtime time";
+      break;
 
     case cPerformanceCounter_NativeTime:
-      return "+ Native time";
+      result = "+ Native time";
+      break;
 
     case cPerformanceCounter_RefalTime:
-      return "* Refal time";
+      result = "* Refal time";
+      break;
 
     case cPerformanceCounter_PatternMatchTime:
-      return "* Pattern time";
+      result = "* Pattern time";
+      break;
 
     case cPerformanceCounter_BuildResultTime:
-      return "* Result time";
+      result = "* Result time";
+      break;
 
     case cPerformanceCounter_TotalSteps:
-      return "= Total steps";
+      result = "= Total steps";
+      break;
 
     case cPerformanceCounter_HeapSize:
-      return "= Heap growing";
+      result = "= Heap growing";
+      break;
 
     case cPerformanceCounter_TEvarCopyTime:
-      return "+ t-, e-vars copy time";
+      result = "+ t-, e-vars copy time";
+      break;
 
     case cPerformanceCounter_ContextCopyTime:
-      return "+ context copy time";
+      result = "+ context copy time";
+      break;
 
     case cPerformanceCounter_RepeatTvarMatchTime:
-      return "+ Repeated t-var time (in e-loop)";
+      result = "+ Repeated t-var time (in e-loop)";
+      break;
 
     case cPerformanceCounter_RepeatTvarMatchTimeOutsideECycle:
-      return "+ Repeated t-var time (out e-loop)";
+      result = "+ Repeated t-var time (out e-loop)";
+      break;
 
     case cPerformanceCounter_RepeatEvarMatchTime:
-      return "+ Repeated e-var time (in e-loop)";
+      result = "+ Repeated e-var time (in e-loop)";
+      break;
 
     case cPerformanceCounter_RepeatEvarMatchTimeOutsideECycle:
-      return "+ Repeated e-var time (out e-loop)";
+      result = "+ Repeated e-var time (out e-loop)";
+      break;
 
     case cPerformanceCounter_OpenELoopTime:
-      return "* Open e-loop time (total)";
+      result = "* Open e-loop time (total)";
+      break;
 
     case cPerformanceCounter_OpenELoopTimeClear:
-      return "+ Open e-loop time (clear)";
+      result = "+ Open e-loop time (clear)";
+      break;
 
     case cPerformanceCounter_LinearRefalTime:
-      return "* Linear refal time";
+      result = "* Linear refal time";
+      break;
 
     case cPerformanceCounter_LinearPatternTime:
-      return "+ Linear pattern-match time";
+      result = "+ Linear pattern-match time";
+      break;
 
     case cPerformanceCounter_LinearResultTime:
-      return "+ Linear result time";
+      result = "+ Linear result time";
+      break;
 
     default:
       refalrts_switch_default_violation(metric);
   }
+
+  return result;
 }
 
 //------------------------------------------------------------------------------

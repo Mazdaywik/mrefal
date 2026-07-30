@@ -231,15 +231,62 @@ CleanupNative-SwExist {
 
 Profiling-CallSRefC {
   t.Config (e.ErrorFlag) e.InputFileNames =
-    <MOS::System
-      '"' <MHelpers::ConfigExtract t.Config SRCompiler> '"'
-      ' -C -e "' e.ErrorFlag '"'
-      <MLambda::Map & MakeInputFileNames e.InputFileNames>
+    <MLambda::Map
+      <MLambda::BindLeft &CallSRefCForFile t.Config e.ErrorFlag>
+      e.InputFileNames
     >;
 }
 
-MakeInputFileNames {
-  (e.FileName) = ' "' e.FileName '"';
+/*
+  TODO: отрефакторить. Здесь мы парсим имена файлов, которые выше
+  по тексту сами конструировали. Возможно, стоит иначе формировать
+  входные данные, чтобы не пришлось их дополнительно разбирать.
+*/
+
+CallSRefCForFile {
+  t.Config e.ErrorFlag (e.InputFileName) =
+    <CallSRefCForFile-Parsed
+      t.Config
+      (<MHelpers::ConfigExtract t.Config CExt>)
+      (e.ErrorFlag)
+      (e.InputFileName)
+      <MFileSystem::ParseFileName e.InputFileName>
+    >;
+}
+
+CallSRefCForFile-Parsed {
+  t.Config (e.CExt) (e.ErrorFlag) (e.InputFileName '.sref')
+  (e.Directory) e.BaseName ('sref') =
+    <MOS::System
+      '"' <MHelpers::ConfigExtract t.Config SRCompiler> '" '
+      '--keep-rasls -C -e "' e.ErrorFlag '" '
+      '"' e.InputFileName '.sref"'
+    >
+    <MoveFile (e.BaseName '.rasl') (e.InputFileName '.rasl')>
+    <MoveFileIfExist (e.BaseName '.' e.CExt) (e.InputFileName '.' e.CExt)>;
+}
+
+MoveFile {
+  (e.Source) (e.Dest) =
+    <MFileIO::Close
+      <MFileIO::Write
+        <MFileIO::Open 'bw' e.Dest>
+        <MFileIO::LoadBinary e.Source>
+      >
+    >
+    <MFileSystem::RemoveFile e.Source>;
+}
+
+MoveFileIfExist {
+  (e.Source) (e.Dest) =
+    <MoveFileIfExist-SwExist
+      <MFileSystem::ExistFile-T e.Source> (e.Dest)
+    >;
+}
+
+MoveFileIfExist-SwExist {
+  True e.Source (e.Dest) = <MoveFile (e.Source) (e.Dest)>;
+  False e.Source (e.Dest) = /* ничего не делаем */;
 }
 
 GetRunTimeFiles {

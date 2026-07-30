@@ -26,7 +26,7 @@ $ENTRY Register
 $ENTRY Extent = <MHelpers::GenExtent <Tunings>>;
 
 Tunings =
-  (Single SRCompiler ('srcomp') 'srefc.exe')
+  (Single SRCompiler ('srcomp') 'rlc-core.exe')
   (Single CCompiler ('ccomp') 'call call-C++.bat')
   (PathList RunTimeDirs ('runtime-dirs') ((Relative) ('.')))
   (FileList RunTimeFiles ('runtime-files') ((Relative) ('refalrts.cpp')))
